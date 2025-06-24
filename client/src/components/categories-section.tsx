@@ -66,8 +66,8 @@ export default function CategoriesSection() {
       <section className="px-4 py-6 bg-white">
         <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 touch-action-pan-x">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex-shrink-0 text-center min-w-16">
-              <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mb-2" />
+            <div key={index} className="flex-shrink-0 text-center min-w-18">
+              <div className="w-14 h-14 bg-gray-200 rounded-2xl animate-pulse mb-2" />
               <div className="h-3 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
@@ -85,7 +85,7 @@ export default function CategoriesSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex-shrink-0 text-center min-w-16"
+            className="flex-shrink-0 text-center min-w-18"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}

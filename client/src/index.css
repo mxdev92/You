@@ -254,6 +254,11 @@ select {
     width: 90vw;
     max-width: 320px;
   }
+  
+  /* Category spacing adjustments for mobile */
+  .min-w-18 {
+    min-width: 4.5rem;
+  }
 }
 
 /* iOS specific fixes */

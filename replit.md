@@ -94,11 +94,16 @@ FreshCart is a modern grocery shopping web application built with a full-stack a
 - **Database**: Local PostgreSQL with environment-based connection
 - **Module System**: ES modules throughout the application
 
-## Changelog
+## Recent Changes
 
 ```
-Changelog:
-- June 24, 2025. Initial setup
+June 24, 2025:
+✓ Enhanced mobile responsiveness with cross-device compatibility
+✓ Added rounded bottom edges to header for modern design
+✓ Optimized category icons with larger rounded-rectangle backgrounds
+✓ Implemented touch-friendly interactions for Android/iOS
+✓ Added safe area support and proper viewport handling
+✓ Cross-browser compatibility improvements
 ```
 
 ## User Preferences
