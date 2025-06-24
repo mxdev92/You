@@ -29,7 +29,7 @@ export default function Home() {
         onClose={() => setIsRightSidebarOpen(false)}
       />
 
-      <main className="pt-36 pb-8">
+      <main className="mt-48 pb-8">
         <ProductsGrid />
       </main>
     </div>

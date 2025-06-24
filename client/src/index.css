@@ -255,7 +255,10 @@ select {
     max-width: 320px;
   }
   
-
+  /* Adjust spacing for mobile */
+  .mt-48 {
+    margin-top: 11rem;
+  }
 }
 
 /* iOS specific fixes */
