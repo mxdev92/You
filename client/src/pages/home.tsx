@@ -11,10 +11,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header
-        onMenuClick={() => setIsLeftSidebarOpen(true)}
-        onCartClick={() => setIsRightSidebarOpen(true)}
-      />
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white shadow-sm rounded-b-3xl">
+        <Header
+          onMenuClick={() => setIsLeftSidebarOpen(true)}
+          onCartClick={() => setIsRightSidebarOpen(true)}
+        />
+        <CategoriesSection />
+      </div>
       
       <LeftSidebar 
         isOpen={isLeftSidebarOpen}
@@ -26,8 +29,7 @@ export default function Home() {
         onClose={() => setIsRightSidebarOpen(false)}
       />
 
-      <main className="pb-8">
-        <CategoriesSection />
+      <main className="pt-32 pb-8">
         <ProductsGrid />
       </main>
     </div>
