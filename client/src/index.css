@@ -241,3 +241,32 @@ select {
 .scroll-smooth {
   scroll-behavior: smooth;
 }
+
+/* Additional mobile optimizations */
+@media (max-width: 767px) {
+  /* Better touch targets on mobile */
+  .grid-cols-3 > * {
+    min-height: 200px;
+  }
+  
+  /* Larger sidebar on very small screens */
+  .w-80 {
+    width: 90vw;
+    max-width: 320px;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-appearance: none) {
+  input[type="search"] {
+    -webkit-appearance: none;
+  }
+}
+
+/* Android Chrome address bar compensation */
+@media screen and (max-width: 767px) {
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+}

@@ -40,7 +40,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
               stiffness: 300,
               duration: 0.3 
             }}
-            className="relative w-80 bg-white h-full shadow-2xl rounded-r-3xl flex flex-col"
+            className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-r-3xl flex flex-col safe-area-inset"
           >
             {/* Top Section */}
             <div className="flex-1 pt-8 pb-4">
@@ -57,7 +57,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="flex items-center space-x-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                    className="flex items-center space-x-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors duration-200 touch-action-manipulation min-h-12"
                   >
                     <item.icon className="h-5 w-5 text-gray-600" />
                     <span className="font-medium text-gray-700">{item.label}</span>
@@ -75,7 +75,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
             >
               <Button
                 variant="destructive"
-                className="w-full bg-red-50 text-red-600 hover:bg-red-100 border-0"
+                className="w-full bg-red-50 text-red-600 hover:bg-red-100 border-0 touch-action-manipulation min-h-12"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out

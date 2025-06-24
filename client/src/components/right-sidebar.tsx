@@ -80,7 +80,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => removeFromCart(item.id)}
-                        className="hover:bg-red-50 hover:text-red-500"
+                        className="hover:bg-red-50 hover:text-red-500 touch-action-manipulation min-h-8 min-w-8"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
