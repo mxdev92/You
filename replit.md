@@ -101,7 +101,7 @@ Changelog:
 - June 24, 2025: Initial setup
 - June 24, 2025: Made app fully responsive for all devices and browsers
 - June 24, 2025: Added rounded bottom edges to header
-- June 24, 2025: Changed categories from horizontal scrolling to fixed 5-column grid
+- June 24, 2025: Made categories sticky with horizontal scrolling (fixed in vertical position)
 ```
 
 ## User Preferences
