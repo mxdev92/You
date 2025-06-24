@@ -13,77 +13,45 @@ export function KiwiLogo({ size = 64, className = "" }: KiwiLogoProps) {
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Outer kiwi ring */}
+        {/* Modern circular background */}
         <circle 
           cx="50" 
           cy="50" 
-          r="46" 
-          fill="#7CB342" 
-          stroke="#5A8A2B" 
-          strokeWidth="2"
+          r="48" 
+          fill="url(#modernGradient)"
         />
         
-        {/* White ring */}
-        <circle 
-          cx="50" 
-          cy="50" 
-          r="38" 
-          fill="none" 
+        {/* Stylized Q letter */}
+        <path 
+          d="M35 35 Q35 25 45 25 L55 25 Q65 25 65 35 L65 55 Q65 65 55 65 L50 65 Q60 65 70 75"
           stroke="white" 
-          strokeWidth="3"
+          strokeWidth="6" 
+          strokeLinecap="round" 
+          strokeLinejoin="round"
+          fill="none"
         />
         
-        {/* Inner kiwi flesh */}
+        {/* Modern dot accent */}
         <circle 
-          cx="50" 
-          cy="50" 
-          r="32" 
-          fill="#A4D65E"
+          cx="62" 
+          cy="68" 
+          r="3" 
+          fill="white"
         />
         
-        {/* Center core */}
-        <circle 
-          cx="50" 
-          cy="50" 
-          r="8" 
-          fill="#CDEC8B"
+        {/* Subtle leaf accent */}
+        <path 
+          d="M72 28 Q78 25 82 30 Q80 35 75 33 Q70 30 72 28 Z" 
+          fill="rgba(255,255,255,0.3)"
         />
         
-        {/* Kiwi seeds */}
-        <ellipse cx="50" cy="38" rx="1.5" ry="3" fill="#2E4A1F" />
-        <ellipse cx="58" cy="42" rx="1.5" ry="3" fill="#2E4A1F" transform="rotate(36 58 42)" />
-        <ellipse cx="62" cy="50" rx="1.5" ry="3" fill="#2E4A1F" transform="rotate(72 62 50)" />
-        <ellipse cx="58" cy="58" rx="1.5" ry="3" fill="#2E4A1F" transform="rotate(108 58 58)" />
-        <ellipse cx="50" cy="62" rx="1.5" ry="3" fill="#2E4A1F" transform="rotate(144 50 62)" />
-        <ellipse cx="42" cy="58" rx="1.5" ry="3" fill="#2E4A1F" transform="rotate(180 42 58)" />
-        <ellipse cx="38" cy="50" rx="1.5" ry="3" fill="#2E4A1F" transform="rotate(216 38 50)" />
-        <ellipse cx="42" cy="42" rx="1.5" ry="3" fill="#2E4A1F" transform="rotate(252 42 42)" />
-        
-        {/* Leaf decoration */}
-        <path 
-          d="M20 25 Q15 20 10 25 Q12 30 18 28 Q22 26 20 25 Z" 
-          fill="#5A8A2B"
-        />
-        <path 
-          d="M16 23 Q20 18 25 22 Q23 27 17 25 Q13 23 16 23 Z" 
-          fill="#7CB342"
-        />
-        
-        {/* Leaf highlights */}
-        <path 
-          d="M12 24 Q16 22 18 26" 
-          stroke="white" 
-          strokeWidth="1" 
-          fill="none" 
-          opacity="0.6"
-        />
-        <path 
-          d="M19 21 Q22 23 23 26" 
-          stroke="white" 
-          strokeWidth="1" 
-          fill="none" 
-          opacity="0.6"
-        />
+        {/* Gradient definitions */}
+        <defs>
+          <linearGradient id="modernGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#22c55e" />
+            <stop offset="100%" stopColor="#16a34a" />
+          </linearGradient>
+        </defs>
       </svg>
     </div>
   );

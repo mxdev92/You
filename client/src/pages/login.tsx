@@ -48,12 +48,12 @@ export default function Login() {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <motion.div
-            initial={{ scale: 0.8, rotate: -5 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, duration: 0.6, type: "spring" }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
             className="mx-auto mb-6 flex items-center justify-center"
           >
-            <KiwiLogo size={80} className="drop-shadow-lg" />
+            <KiwiLogo size={72} className="drop-shadow-xl" />
           </motion.div>
           <h1 className="text-4xl font-bold text-gray-800 mb-2">QiwiQ</h1>
           <p className="text-gray-600 text-lg">
