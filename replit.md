@@ -1,8 +1,8 @@
-# QiwiQ - Grocery Shopping Application
+# KiwiQ - Grocery Shopping Application
 
 ## Overview
 
-QiwiQ is a modern grocery shopping web application built with a full-stack architecture using React, Express, PostgreSQL, and Firebase Authentication. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates and secure user authentication.
+KiwiQ is a modern grocery shopping web application built with a full-stack architecture using React, Express, PostgreSQL, and Firebase Authentication. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates and secure user authentication.
 
 ## System Architecture
 
@@ -97,6 +97,10 @@ QiwiQ is a modern grocery shopping web application built with a full-stack archi
 ## Recent Changes
 
 ```
+June 25, 2025:
+✓ Rebranded application from QiwiQ to KiwiQ
+✓ Updated professional logo design with modern gradient and stylized "Q"
+
 June 24, 2025:
 ✓ Enhanced mobile responsiveness with cross-device compatibility
 ✓ Added rounded bottom edges to header for modern design
@@ -106,7 +110,7 @@ June 24, 2025:
 ✓ Cross-browser compatibility improvements
 ✓ Integrated Firebase Authentication with professional login page
 ✓ Added user authentication flow with email/password
-✓ Updated app branding to QiwiQ with modern design
+✓ Updated app branding to KiwiQ with modern design
 ✓ Integrated custom kiwi fruit logo design throughout the app
 ```
 

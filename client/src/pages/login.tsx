@@ -55,7 +55,7 @@ export default function Login() {
           >
             <KiwiLogo size={72} className="drop-shadow-xl" />
           </motion.div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">QiwiQ</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">KiwiQ</h1>
           <p className="text-gray-600 text-lg">
             {isLogin ? "Welcome back!" : "Create your account"}
           </p>
@@ -209,7 +209,7 @@ export default function Login() {
           className="text-center mt-6"
         >
           <p className="text-xs text-gray-400">
-            By {isLogin ? "signing in" : "creating an account"}, you agree to our Terms & Privacy Policy
+            By {isLogin ? "signing in" : "creating an account"}, you agree to KiwiQ's Terms & Privacy Policy
           </p>
         </motion.div>
       </motion.div>

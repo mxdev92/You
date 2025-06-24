@@ -56,7 +56,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
               <div className="px-6 mb-8">
                 <div className="flex items-center space-x-3 mb-3">
                   <KiwiLogo size={36} />
-                  <h2 className="text-2xl font-bold text-gray-800">QiwiQ</h2>
+                  <h2 className="text-2xl font-bold text-gray-800">KiwiQ</h2>
                 </div>
                 <p className="text-gray-500 text-sm mt-1">Welcome back!</p>
                 {user?.email && (
