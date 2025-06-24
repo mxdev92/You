@@ -43,12 +43,12 @@ export class MemStorage implements IStorage {
   private async initializeData() {
     // Categories
     const categoriesData: InsertCategory[] = [
-      { name: "Fruits", icon: "fas fa-apple-alt", isSelected: true },
-      { name: "Vegetables", icon: "fas fa-carrot", isSelected: false },
-      { name: "Dairy", icon: "fas fa-cheese", isSelected: false },
-      { name: "Bakery", icon: "fas fa-bread-slice", isSelected: false },
-      { name: "Seafood", icon: "fas fa-fish", isSelected: false },
-      { name: "Meat", icon: "fas fa-drumstick-bite", isSelected: false },
+      { name: "Fruits", icon: "Apple", isSelected: true },
+      { name: "Vegetables", icon: "Carrot", isSelected: false },
+      { name: "Dairy", icon: "Milk", isSelected: false },
+      { name: "Bakery", icon: "Cookie", isSelected: false },
+      { name: "Seafood", icon: "Fish", isSelected: false },
+      { name: "Meat", icon: "Beef", isSelected: false },
     ];
 
     for (const cat of categoriesData) {

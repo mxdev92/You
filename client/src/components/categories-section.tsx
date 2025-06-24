@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { Apple, Carrot, Milk, Cookie, Fish, Beef } from "lucide-react";
 import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -9,6 +10,15 @@ export default function CategoriesSection() {
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+
+  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    Apple,
+    Carrot,
+    Milk,
+    Cookie,
+    Fish,
+    Beef,
+  };
 
   const selectCategoryMutation = useMutation({
     mutationFn: async (categoryId: number) => {
@@ -61,9 +71,18 @@ export default function CategoriesSection() {
                   : "bg-gray-100 hover:bg-gray-200"
               }`}
             >
-              <i className={`${category.icon} text-lg ${
-                category.isSelected ? "text-fresh-green" : "text-gray-600"
-              }`} />
+              {(() => {
+                const IconComponent = iconMap[category.icon];
+                return IconComponent ? (
+                  <IconComponent className={`w-5 h-5 ${
+                    category.isSelected ? "text-fresh-green" : "text-gray-600"
+                  }`} />
+                ) : (
+                  <Apple className={`w-5 h-5 ${
+                    category.isSelected ? "text-fresh-green" : "text-gray-600"
+                  }`} />
+                );
+              })()}
             </motion.div>
             <span className="text-xs font-medium text-gray-700">{category.name}</span>
           </motion.div>
