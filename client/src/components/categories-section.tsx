@@ -28,10 +28,10 @@ export default function CategoriesSection() {
   if (isLoading) {
     return (
       <section className="px-4 py-6 bg-white">
-        <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
+        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex-shrink-0 text-center min-w-20">
-              <div className="w-16 h-16 bg-gray-200 rounded-2xl animate-pulse mb-2" />
+            <div key={index} className="flex-shrink-0 text-center min-w-16">
+              <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mb-2" />
               <div className="h-3 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
@@ -42,26 +42,26 @@ export default function CategoriesSection() {
 
   return (
     <section className="px-4 py-6 bg-white">
-      <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
+      <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
         {categories?.map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex-shrink-0 text-center min-w-20"
+            className="flex-shrink-0 text-center min-w-16"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-2 cursor-pointer transition-colors duration-200 ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-colors duration-200 ${
                 category.isSelected
                   ? "bg-fresh-green bg-opacity-20"
                   : "bg-gray-100 hover:bg-gray-200"
               }`}
             >
-              <i className={`${category.icon} text-xl ${
+              <i className={`${category.icon} text-lg ${
                 category.isSelected ? "text-fresh-green" : "text-gray-600"
               }`} />
             </motion.div>
