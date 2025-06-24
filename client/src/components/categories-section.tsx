@@ -91,7 +91,7 @@ export default function CategoriesSection() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 ${
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-2 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-14 min-w-14 ${
                 category.isSelected
                   ? "bg-fresh-green text-white shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
