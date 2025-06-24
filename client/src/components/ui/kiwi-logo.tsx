@@ -13,45 +13,81 @@ export function KiwiLogo({ size = 64, className = "" }: KiwiLogoProps) {
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Modern circular background */}
+        {/* Outer brown fuzzy skin */}
         <circle 
           cx="50" 
           cy="50" 
-          r="48" 
-          fill="url(#modernGradient)"
+          r="47" 
+          fill="#8B4513"
+          stroke="#654321"
+          strokeWidth="1"
         />
         
-        {/* Stylized Q letter */}
-        <path 
-          d="M35 35 Q35 25 45 25 L55 25 Q65 25 65 35 L65 55 Q65 65 55 65 L50 65 Q60 65 70 75"
-          stroke="white" 
-          strokeWidth="6" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-          fill="none"
-        />
-        
-        {/* Modern dot accent */}
+        {/* Inner white ring */}
         <circle 
-          cx="62" 
-          cy="68" 
-          r="3" 
-          fill="white"
+          cx="50" 
+          cy="50" 
+          r="40" 
+          fill="none" 
+          stroke="#F5F5DC"
+          strokeWidth="2.5"
         />
         
-        {/* Subtle leaf accent */}
-        <path 
-          d="M72 28 Q78 25 82 30 Q80 35 75 33 Q70 30 72 28 Z" 
-          fill="rgba(255,255,255,0.3)"
+        {/* Green flesh */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="35" 
+          fill="#9ACD32"
         />
         
-        {/* Gradient definitions */}
-        <defs>
-          <linearGradient id="modernGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#16a34a" />
-          </linearGradient>
-        </defs>
+        {/* Lighter inner flesh */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="28" 
+          fill="#ADFF2F"
+        />
+        
+        {/* Center white core */}
+        <circle 
+          cx="50" 
+          cy="50" 
+          r="8" 
+          fill="#F0F8E8"
+        />
+        
+        {/* Black seeds arranged in circle */}
+        <circle cx="50" cy="35" r="1.5" fill="#2F4F2F" />
+        <circle cx="58" cy="38" r="1.5" fill="#2F4F2F" />
+        <circle cx="63" cy="45" r="1.5" fill="#2F4F2F" />
+        <circle cx="65" cy="53" r="1.5" fill="#2F4F2F" />
+        <circle cx="62" cy="61" r="1.5" fill="#2F4F2F" />
+        <circle cx="55" cy="67" r="1.5" fill="#2F4F2F" />
+        <circle cx="47" cy="68" r="1.5" fill="#2F4F2F" />
+        <circle cx="39" cy="65" r="1.5" fill="#2F4F2F" />
+        <circle cx="33" cy="58" r="1.5" fill="#2F4F2F" />
+        <circle cx="30" cy="50" r="1.5" fill="#2F4F2F" />
+        <circle cx="32" cy="42" r="1.5" fill="#2F4F2F" />
+        <circle cx="38" cy="36" r="1.5" fill="#2F4F2F" />
+        
+        {/* Small brown spots on skin for texture */}
+        <circle cx="25" cy="30" r="1" fill="#654321" opacity="0.7" />
+        <circle cx="35" cy="25" r="0.8" fill="#654321" opacity="0.6" />
+        <circle cx="65" cy="35" r="1" fill="#654321" opacity="0.7" />
+        <circle cx="75" cy="55" r="0.8" fill="#654321" opacity="0.6" />
+        <circle cx="70" cy="70" r="1" fill="#654321" opacity="0.7" />
+        <circle cx="30" cy="75" r="0.8" fill="#654321" opacity="0.6" />
+        
+        {/* Subtle highlight on flesh */}
+        <ellipse 
+          cx="42" 
+          cy="42" 
+          rx="8" 
+          ry="12" 
+          fill="rgba(255,255,255,0.2)"
+          transform="rotate(-30 42 42)"
+        />
       </svg>
     </div>
   );
