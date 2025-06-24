@@ -28,7 +28,6 @@ export default function CategoriesSection() {
   if (isLoading) {
     return (
       <section className="px-4 py-6 bg-white">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Categories</h2>
         <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex-shrink-0 text-center min-w-20">
@@ -43,7 +42,6 @@ export default function CategoriesSection() {
 
   return (
     <section className="px-4 py-6 bg-white">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Categories</h2>
       <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
         {categories?.map((category, index) => (
           <motion.div

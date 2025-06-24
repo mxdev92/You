@@ -82,7 +82,11 @@ export class MemStorage implements IStorage {
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
     const id = this.currentCategoryId++;
-    const category: Category = { ...insertCategory, id };
+    const category: Category = { 
+      ...insertCategory, 
+      id,
+      isSelected: insertCategory.isSelected ?? false
+    };
     this.categories.set(id, category);
     return category;
   }
@@ -116,7 +120,11 @@ export class MemStorage implements IStorage {
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const id = this.currentProductId++;
-    const product: Product = { ...insertProduct, id };
+    const product: Product = { 
+      ...insertProduct, 
+      id,
+      categoryId: insertProduct.categoryId ?? null
+    };
     this.products.set(id, product);
     return product;
   }
@@ -140,7 +148,7 @@ export class MemStorage implements IStorage {
 
     if (existingItem) {
       // Update quantity
-      const updatedItem = { ...existingItem, quantity: existingItem.quantity + insertCartItem.quantity };
+      const updatedItem = { ...existingItem, quantity: existingItem.quantity + (insertCartItem.quantity ?? 1) };
       this.cartItems.set(existingItem.id, updatedItem);
       return updatedItem;
     }
@@ -149,6 +157,7 @@ export class MemStorage implements IStorage {
     const cartItem: CartItem = {
       ...insertCartItem,
       id,
+      quantity: insertCartItem.quantity ?? 1,
       addedAt: new Date().toISOString(),
     };
     this.cartItems.set(id, cartItem);
