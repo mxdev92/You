@@ -25,14 +25,6 @@ export default function ProductsGrid() {
 
   return (
     <section className="px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">
-          {selectedCategory ? `${selectedCategory.name}` : "All Products"}
-        </h2>
-        <button className="text-fresh-green font-medium text-sm hover:text-fresh-green-dark transition-colors duration-200">
-          View All
-        </button>
-      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-3 gap-3 md:gap-4">
