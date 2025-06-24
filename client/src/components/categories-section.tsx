@@ -65,9 +65,9 @@ export default function CategoriesSection() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-colors duration-200 ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-all duration-200 relative ${
                 category.isSelected
-                  ? "bg-fresh-green bg-opacity-20"
+                  ? "bg-fresh-green text-white shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200"
               }`}
             >
@@ -75,11 +75,11 @@ export default function CategoriesSection() {
                 const IconComponent = iconMap[category.icon];
                 return IconComponent ? (
                   <IconComponent className={`w-5 h-5 ${
-                    category.isSelected ? "text-fresh-green" : "text-gray-600"
+                    category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 ) : (
                   <Apple className={`w-5 h-5 ${
-                    category.isSelected ? "text-fresh-green" : "text-gray-600"
+                    category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 );
               })()}
