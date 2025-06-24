@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import type { Product } from "@shared/schema";
@@ -85,10 +85,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 Added!
               </>
             ) : (
-              <>
-                <Plus className="h-3 w-3 mr-1" />
-                Add to Cart
-              </>
+              "Add to Cart"
             )}
           </Button>
         </motion.div>
