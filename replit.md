@@ -98,7 +98,10 @@ FreshCart is a modern grocery shopping web application built with a full-stack a
 
 ```
 Changelog:
-- June 24, 2025. Initial setup
+- June 24, 2025: Initial setup
+- June 24, 2025: Made app fully responsive for all devices and browsers
+- June 24, 2025: Added rounded bottom edges to header
+- June 24, 2025: Changed categories from horizontal scrolling to fixed 5-column grid
 ```
 
 ## User Preferences

@@ -64,10 +64,10 @@ export default function CategoriesSection() {
   if (isLoading) {
     return (
       <section className="px-4 py-6 bg-white">
-        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 touch-action-pan-x">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex-shrink-0 text-center min-w-16">
-              <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mb-2" />
+        <div className="grid grid-cols-5 gap-2 justify-items-center">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="text-center w-full">
+              <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mb-2 mx-auto" />
               <div className="h-3 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
@@ -78,20 +78,20 @@ export default function CategoriesSection() {
 
   return (
     <section className="px-4 py-6 bg-white">
-      <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 touch-action-pan-x">
-        {categories?.map((category, index) => (
+      <div className="grid grid-cols-5 gap-2 justify-items-center">
+        {categories?.slice(0, 5).map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex-shrink-0 text-center min-w-16"
+            className="text-center w-full"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 mx-auto ${
                 category.isSelected
                   ? "bg-fresh-green text-white shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
@@ -110,7 +110,7 @@ export default function CategoriesSection() {
                 );
               })()}
             </motion.div>
-            <span className="text-xs font-medium text-gray-700">{category.name}</span>
+            <span className="text-xs font-medium text-gray-700 block truncate">{category.name}</span>
           </motion.div>
         ))}
       </div>

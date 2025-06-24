@@ -254,6 +254,19 @@ select {
     width: 90vw;
     max-width: 320px;
   }
+  
+  /* Categories responsive on mobile */
+  .grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Smaller gap for categories on very small screens */
+  .grid-cols-5 {
+    gap: 0.125rem;
+  }
 }
 
 /* iOS specific fixes */
