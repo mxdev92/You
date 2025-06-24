@@ -63,7 +63,7 @@ export default function CategoriesSection() {
 
   if (isLoading) {
     return (
-      <section className="px-4 py-2 bg-white sticky top-20 z-30 border-b border-gray-100">
+      <section className="px-4 py-4 pb-6 bg-white">
         <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 touch-action-pan-x">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex-shrink-0 text-center min-w-16">
@@ -77,7 +77,7 @@ export default function CategoriesSection() {
   }
 
   return (
-    <section className="px-4 py-2 bg-white sticky top-20 z-30 border-b border-gray-100">
+    <section className="px-4 py-4 pb-6 bg-white">
       <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 touch-action-pan-x">
         {categories?.map((category, index) => (
           <motion.div

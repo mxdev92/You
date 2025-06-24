@@ -12,7 +12,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { cartItemsCount } = useCart();
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
+    <header className="bg-white safe-area-inset">
       <div className="flex items-center justify-between px-4 py-4 touch-action-manipulation">
         {/* Menu Icon */}
         <Button
