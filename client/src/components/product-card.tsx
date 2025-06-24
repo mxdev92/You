@@ -73,7 +73,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <Button
             onClick={handleAddToCart}
             disabled={isAdding}
-            className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 ${
+            className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 touch-action-manipulation min-h-9 ${
               isAdding
                 ? "bg-green-500 hover:bg-green-500"
                 : "bg-fresh-green hover:bg-fresh-green-dark"

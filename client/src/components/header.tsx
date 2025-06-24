@@ -12,14 +12,14 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { cartItemsCount } = useCart();
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40">
-      <div className="flex items-center justify-between px-4 py-3">
+    <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset">
+      <div className="flex items-center justify-between px-4 py-3 touch-action-manipulation">
         {/* Menu Icon */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
-          className="hover:bg-gray-100 rounded-lg"
+          className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
         >
           <Menu className="h-6 w-6 text-gray-700" />
         </Button>
@@ -41,7 +41,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={onCartClick}
-          className="relative hover:bg-gray-100 rounded-lg"
+          className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
         >
           <ShoppingCart className="h-6 w-6 text-gray-700" />
           {cartItemsCount > 0 && (
