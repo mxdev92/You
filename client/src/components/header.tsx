@@ -13,7 +13,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
-      <div className="flex items-center justify-between px-4 py-3 touch-action-manipulation">
+      <div className="flex items-center justify-between px-4 py-4 touch-action-manipulation">
         {/* Menu Icon */}
         <Button
           variant="ghost"
