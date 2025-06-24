@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,13 +50,16 @@ export default function Login() {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="w-20 h-20 bg-fresh-green rounded-3xl mx-auto mb-4 flex items-center justify-center shadow-lg"
+            className="w-20 h-20 bg-gradient-to-br from-fresh-green to-green-600 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-xl"
           >
             <span className="text-3xl font-bold text-white">Q</span>
           </motion.div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">QiwiQ</h1>
-          <p className="text-gray-600">
-            {isLogin ? "Welcome back to fresh groceries" : "Join QiwiQ for fresh groceries"}
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">QiwiQ</h1>
+          <p className="text-gray-600 text-lg">
+            {isLogin ? "Welcome back!" : "Create your account"}
+          </p>
+          <p className="text-gray-500 text-sm mt-1">
+            {isLogin ? "Sign in to continue shopping" : "Join us for fresh groceries"}
           </p>
         </div>
 
@@ -81,7 +84,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="pl-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green"
+                  className="pl-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green/20"
                   required
                 />
               </div>
@@ -100,7 +103,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="pl-10 pr-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green"
+                  className="pl-10 pr-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green/20"
                   required
                 />
                 <button
@@ -136,7 +139,7 @@ export default function Login() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm your password"
-                    className="pl-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green"
+                    className="pl-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green/20"
                     required
                   />
                 </div>
@@ -161,10 +164,13 @@ export default function Login() {
             <Button
               type="submit"
               disabled={loading || (!isLogin && password !== confirmPassword)}
-              className="w-full h-12 bg-fresh-green hover:bg-fresh-green-dark text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center group"
+              className="w-full h-12 bg-fresh-green hover:bg-green-600 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center group shadow-lg hover:shadow-xl"
             >
               {loading ? (
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  {isLogin ? "Signing In..." : "Creating Account..."}
+                </>
               ) : (
                 <>
                   {isLogin ? "Sign In" : "Create Account"}
@@ -176,15 +182,20 @@ export default function Login() {
 
           {/* Toggle Login/Register */}
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-sm">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
             </p>
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="mt-1 text-fresh-green hover:text-fresh-green-dark font-medium transition-colors"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setEmail("");
+                setPassword("");
+                setConfirmPassword("");
+              }}
+              className="mt-2 text-fresh-green hover:text-green-600 font-semibold transition-colors text-sm"
             >
-              {isLogin ? "Sign Up" : "Sign In"}
+              {isLogin ? "Create Account" : "Sign In"}
             </button>
           </div>
         </motion.div>
@@ -194,10 +205,10 @@ export default function Login() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="text-center mt-8"
+          className="text-center mt-6"
         >
-          <p className="text-sm text-gray-500">
-            By continuing, you agree to QiwiQ's Terms of Service and Privacy Policy
+          <p className="text-xs text-gray-400">
+            By {isLogin ? "signing in" : "creating an account"}, you agree to our Terms & Privacy Policy
           </p>
         </motion.div>
       </motion.div>
