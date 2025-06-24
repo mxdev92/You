@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Wallet, ShoppingBag, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 interface LeftSidebarProps {
   isOpen: boolean;
@@ -8,12 +9,19 @@ interface LeftSidebarProps {
 }
 
 export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
+  const { signOut, user } = useAuth();
+  
   const menuItems = [
     { icon: User, label: "Account", href: "#" },
     { icon: Wallet, label: "Wallet", href: "#" },
     { icon: ShoppingBag, label: "My Orders", href: "#" },
     { icon: Settings, label: "Settings", href: "#" },
   ];
+
+  const handleLogout = async () => {
+    await signOut();
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -45,8 +53,11 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
             {/* Top Section */}
             <div className="flex-1 pt-8 pb-4">
               <div className="px-6 mb-8">
-                <h2 className="text-2xl font-bold text-gray-800">FreshCart</h2>
+                <h2 className="text-2xl font-bold text-gray-800">QiwiQ</h2>
                 <p className="text-gray-500 text-sm mt-1">Welcome back!</p>
+                {user?.email && (
+                  <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
+                )}
               </div>
 
               <nav className="space-y-2 px-4">
@@ -74,6 +85,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
               className="px-6 pb-8"
             >
               <Button
+                onClick={handleLogout}
                 variant="destructive"
                 className="w-full bg-red-50 text-red-600 hover:bg-red-100 border-0 touch-action-manipulation min-h-12"
               >

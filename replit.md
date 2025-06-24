@@ -1,8 +1,8 @@
-# FreshCart - Grocery Shopping Application
+# QiwiQ - Grocery Shopping Application
 
 ## Overview
 
-FreshCart is a modern grocery shopping web application built with a full-stack architecture using React, Express, and PostgreSQL. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates.
+QiwiQ is a modern grocery shopping web application built with a full-stack architecture using React, Express, PostgreSQL, and Firebase Authentication. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates and secure user authentication.
 
 ## System Architecture
 
@@ -104,6 +104,9 @@ June 24, 2025:
 ✓ Implemented touch-friendly interactions for Android/iOS
 ✓ Added safe area support and proper viewport handling
 ✓ Cross-browser compatibility improvements
+✓ Integrated Firebase Authentication with professional login page
+✓ Added user authentication flow with email/password
+✓ Updated app branding to QiwiQ with modern design
 ```
 
 ## User Preferences
