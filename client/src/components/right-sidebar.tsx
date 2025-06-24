@@ -73,7 +73,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                         <h4 className="font-medium text-gray-800">{item.product.name}</h4>
                         <p className="text-sm text-gray-500">{item.quantity} × {item.product.unit}</p>
                         <p className="text-fresh-green font-semibold">
-                          {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
+                          {(parseFloat(item.product.price) * item.quantity).toFixed(0)}
                         </p>
                       </div>
                       <Button
@@ -101,7 +101,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-lg font-semibold text-gray-800">Total:</span>
                   <span className="text-xl font-bold text-fresh-green">
-                    {getCartTotal().toFixed(0)} IQD
+                    {getCartTotal().toFixed(0)}
                   </span>
                 </div>
                 <Button className="w-full bg-fresh-green hover:bg-fresh-green-dark">

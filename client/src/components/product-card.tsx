@@ -66,7 +66,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </h3>
         <p className="text-fresh-green font-bold text-sm mb-2">
-          {product.price} IQD/{product.unit}
+          {product.price}/{product.unit}
         </p>
         
         <motion.div whileTap={{ scale: 0.95 }}>
