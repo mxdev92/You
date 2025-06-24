@@ -1,0 +1,98 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/use-cart";
+import type { Product } from "@shared/schema";
+
+interface ProductCardProps {
+  product: Product;
+}
+
+export default function ProductCard({ product }: ProductCardProps) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [showShimmer, setShowShimmer] = useState(false);
+  const { addToCart } = useCart();
+
+  const handleAddToCart = async () => {
+    setIsAdding(true);
+    setShowShimmer(true);
+
+    try {
+      await addToCart({ productId: product.id, quantity: 1 });
+      
+      // Keep the "Added!" state for a moment
+      setTimeout(() => {
+        setIsAdding(false);
+      }, 1000);
+      
+      // Hide shimmer effect
+      setTimeout(() => {
+        setShowShimmer(false);
+      }, 1500);
+    } catch (error) {
+      setIsAdding(false);
+      setShowShimmer(false);
+    }
+  };
+
+  return (
+    <motion.div
+      whileHover={{ y: -2 }}
+      className="product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative"
+    >
+      {/* Product Image */}
+      <div className="relative h-32 md:h-40 overflow-hidden">
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          className="w-full h-full object-cover"
+        />
+        
+        {/* Shimmer Effect Overlay */}
+        {showShimmer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 shimmer-effect"
+          />
+        )}
+      </div>
+      
+      {/* Product Content */}
+      <div className="p-3">
+        <h3 className="font-medium text-gray-800 text-sm mb-1 line-clamp-2">
+          {product.name}
+        </h3>
+        <p className="text-fresh-green font-bold text-sm mb-2">
+          ${product.price}/{product.unit}
+        </p>
+        
+        <motion.div whileTap={{ scale: 0.95 }}>
+          <Button
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 ${
+              isAdding
+                ? "bg-green-500 hover:bg-green-500"
+                : "bg-fresh-green hover:bg-fresh-green-dark"
+            }`}
+          >
+            {isAdding ? (
+              <>
+                <Check className="h-3 w-3 mr-1" />
+                Added!
+              </>
+            ) : (
+              <>
+                <Plus className="h-3 w-3 mr-1" />
+                Add to Cart
+              </>
+            )}
+          </Button>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
