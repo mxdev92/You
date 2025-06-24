@@ -64,7 +64,7 @@ export default function CategoriesSection() {
   if (isLoading) {
     return (
       <section className="px-4 py-6 bg-white">
-        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
+        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 touch-action-pan-x">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex-shrink-0 text-center min-w-16">
               <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mb-2" />
@@ -78,7 +78,7 @@ export default function CategoriesSection() {
 
   return (
     <section className="px-4 py-6 bg-white">
-      <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
+      <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 touch-action-pan-x">
         {categories?.map((category, index) => (
           <motion.div
             key={category.id}
@@ -91,10 +91,10 @@ export default function CategoriesSection() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-all duration-200 relative ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 ${
                 category.isSelected
                   ? "bg-fresh-green text-white shadow-lg"
-                  : "bg-gray-100 hover:bg-gray-200"
+                  : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
               }`}
             >
               {(() => {

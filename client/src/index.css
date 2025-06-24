@@ -226,3 +226,18 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* Scrollbar hiding for cross-browser compatibility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scrolling for better UX */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}

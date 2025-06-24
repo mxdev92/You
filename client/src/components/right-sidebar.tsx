@@ -21,7 +21,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
+            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm touch-action-manipulation"
             onClick={onClose}
           />
           
@@ -36,7 +36,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
               stiffness: 300,
               duration: 0.3 
             }}
-            className="absolute right-0 w-80 bg-white h-full shadow-2xl rounded-l-3xl flex flex-col"
+            className="absolute right-0 w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-l-3xl flex flex-col safe-area-inset"
           >
             {/* Header */}
             <div className="px-6 py-6 border-b border-gray-100">

@@ -25,7 +25,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
+            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm touch-action-manipulation"
             onClick={onClose}
           />
           
