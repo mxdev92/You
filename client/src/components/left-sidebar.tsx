@@ -66,21 +66,27 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
                 )}
               </div>
 
-              <nav className="space-y-2 px-4">
+              <nav className="px-6 space-y-2">
                 {menuItems.map((item, index) => (
-                  <motion.a
+                  <Button
                     key={item.label}
-                    href={item.href}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center space-x-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors duration-200 touch-action-manipulation min-h-12"
+                    variant="ghost"
+                    className="w-full justify-start text-gray-600 hover:text-gray-800 hover:bg-gray-50"
                   >
-                    <item.icon className="h-5 w-5 text-gray-600" />
-                    <span className="font-medium text-gray-700">{item.label}</span>
-                  </motion.a>
+                    <item.icon className="mr-3 h-4 w-4" />
+                    {item.label}
+                  </Button>
                 ))}
               </nav>
+              
+              {/* Settings Section */}
+              <div className="px-6 py-4 border-t border-gray-100 mt-4">
+                <div className="flex items-center space-x-2 mb-4 text-gray-700">
+                  <Settings className="h-4 w-4" />
+                  <span className="text-sm font-medium">{t('settings')}</span>
+                </div>
+                <LanguageSelector />
+              </div>
             </div>
 
             {/* Bottom Section */}

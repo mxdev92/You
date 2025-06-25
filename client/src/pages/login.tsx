@@ -17,6 +17,7 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   
   const { login, register, loading, error } = useAuth();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {

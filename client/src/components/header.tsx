@@ -2,6 +2,7 @@ import { Search, Menu, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -31,7 +32,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input
               type="text"
-              placeholder="Search groceries..."
+              placeholder={t('search')}
               className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200"
             />
           </div>
