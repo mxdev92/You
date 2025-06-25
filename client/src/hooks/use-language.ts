@@ -12,9 +12,9 @@ export const useLanguage = create<LanguageStore>()(
       language: 'en',
       setLanguage: (language) => {
         set({ language });
-        // Update document language and direction
+        // Update document language but keep UI direction as LTR
         document.documentElement.lang = language;
-        document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+        // Don't change document direction - keep UI as LTR
       },
     }),
     {
@@ -27,5 +27,6 @@ export const useLanguage = create<LanguageStore>()(
 export const initializeLanguage = () => {
   const { language } = useLanguage.getState();
   document.documentElement.lang = language;
-  document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+  // Keep UI direction as LTR regardless of language
+  document.documentElement.dir = 'ltr';
 };

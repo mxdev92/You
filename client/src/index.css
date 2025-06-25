@@ -9,17 +9,11 @@
   font-family: 'Cairo', Inter, system-ui, sans-serif;
 }
 
-/* RTL text direction support */
-[dir="rtl"] {
-  text-align: right;
-}
-
-/* Arabic text rendering optimization */
+/* Arabic text rendering optimization - keep UI LTR */
 html[lang="ar"], 
 html[lang="ar"] * {
   font-family: 'Cairo', sans-serif;
-  direction: rtl;
-  text-align: right;
+  /* Keep UI direction as LTR, only font changes for Arabic */
 }
 
 /* Ensure proper Arabic text shaping */
