@@ -2,7 +2,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, Wallet, ShoppingBag, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
+import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface LeftSidebarProps {
   isOpen: boolean;
@@ -56,9 +58,9 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
               <div className="px-6 mb-8">
                 <div className="flex items-center space-x-3 mb-3">
                   <KiwiLogo size={36} />
-                  <h2 className="text-2xl font-bold text-gray-800">KiwiQ</h2>
+                  <h2 className="text-2xl font-bold text-gray-800">{t('appName')}</h2>
                 </div>
-                <p className="text-gray-500 text-sm mt-1">Welcome back!</p>
+                <p className="text-gray-500 text-sm mt-1">{t('welcomeBackSidebar')}</p>
                 {user?.email && (
                   <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
                 )}

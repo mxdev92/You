@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "@/hooks/use-translation";
 import { useLocation } from "wouter";
 
 export default function Login() {
@@ -55,12 +56,12 @@ export default function Login() {
           >
             <KiwiLogo size={72} className="drop-shadow-xl" />
           </motion.div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">KiwiQ</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">{t('appName')}</h1>
           <p className="text-gray-600 text-lg">
-            {isLogin ? "Welcome back!" : "Create your account"}
+            {isLogin ? t('welcomeBack') : t('createAccount')}
           </p>
           <p className="text-gray-500 text-sm mt-1">
-            {isLogin ? "Sign in to continue shopping" : "Join us for fresh groceries"}
+            {isLogin ? t('signInToContinue') : t('joinUs')}
           </p>
         </div>
 
