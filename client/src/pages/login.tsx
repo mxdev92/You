@@ -171,11 +171,11 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  {isLogin ? "Signing In..." : "Creating Account..."}
+                  {isLogin ? t('signingIn') : t('creatingAccount')}
                 </>
               ) : (
                 <>
-                  {isLogin ? "Sign In" : "Create Account"}
+                  {isLogin ? t('signIn') : t('createAccountBtn')}
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -185,7 +185,7 @@ export default function Login() {
           {/* Toggle Login/Register */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              {isLogin ? t('dontHaveAccount') : t('alreadyHaveAccount')}
             </p>
             <button
               type="button"
@@ -197,7 +197,7 @@ export default function Login() {
               }}
               className="mt-2 text-fresh-green hover:text-green-600 font-semibold transition-colors text-sm"
             >
-              {isLogin ? "Create Account" : "Sign In"}
+              {isLogin ? t('createAccountBtn') : t('signIn')}
             </button>
           </div>
         </motion.div>
@@ -210,7 +210,7 @@ export default function Login() {
           className="text-center mt-6"
         >
           <p className="text-xs text-gray-400">
-            By {isLogin ? "signing in" : "creating an account"}, you agree to KiwiQ's Terms & Privacy Policy
+            {t('agreeTerms', { action: isLogin ? t('signIn').toLowerCase() : t('createAccountBtn').toLowerCase() })}
           </p>
         </motion.div>
       </motion.div>

@@ -12,17 +12,17 @@ interface LeftSidebarProps {
 }
 
 export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
-  const { signOut, user } = useAuth();
+  const { user, logout } = useAuth();
+  const { t } = useTranslation();
   
   const menuItems = [
-    { icon: User, label: "Account", href: "#" },
-    { icon: Wallet, label: "Wallet", href: "#" },
-    { icon: ShoppingBag, label: "My Orders", href: "#" },
-    { icon: Settings, label: "Settings", href: "#" },
+    { icon: User, label: t('profile'), href: "#" },
+    { icon: Wallet, label: t('wallet'), href: "#" },
+    { icon: ShoppingBag, label: t('orders'), href: "#" },
   ];
 
   const handleLogout = async () => {
-    await signOut();
+    await logout();
     onClose();
   };
 
@@ -84,21 +84,16 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
             </div>
 
             {/* Bottom Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="px-6 pb-8"
-            >
+            <div className="px-6 pb-6">
               <Button
                 onClick={handleLogout}
-                variant="destructive"
-                className="w-full bg-red-50 text-red-600 hover:bg-red-100 border-0 touch-action-manipulation min-h-12"
+                variant="ghost"
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
+                <LogOut className="mr-3 h-4 w-4" />
+                {t('logout')}
               </Button>
-            </motion.div>
+            </div>
           </motion.div>
         </div>
       )}

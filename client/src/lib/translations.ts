@@ -21,6 +21,8 @@ export const translations = {
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: "Already have an account?",
     agreeTerms: "By {action}, you agree to KiwiQ's Terms & Privacy Policy",
+    signInAction: "signing in",
+    createAccountAction: "creating an account",
     passwordMismatch: "Passwords don't match",
     
     // Sidebar
@@ -82,6 +84,8 @@ export const translations = {
     dontHaveAccount: "ليس لديك حساب؟",
     alreadyHaveAccount: "لديك حساب بالفعل؟",
     agreeTerms: "بـ{action}، فإنك توافق على شروط وسياسة خصوصية كيوي كيو",
+    signInAction: "تسجيل الدخول",
+    createAccountAction: "إنشاء حساب",
     passwordMismatch: "كلمات المرور غير متطابقة",
     
     // Sidebar
