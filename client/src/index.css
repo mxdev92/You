@@ -1,6 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Arabic language support */
+* {
+  font-family: 'Cairo', Inter, system-ui, sans-serif;
+}
+
+/* RTL text direction support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Arabic text rendering optimization */
+html[lang="ar"], 
+html[lang="ar"] * {
+  font-family: 'Cairo', sans-serif;
+  direction: rtl;
+  text-align: right;
+}
+
+/* Ensure proper Arabic text shaping */
+.arabic-text {
+  font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+}
 
 :root {
   --background: hsl(0, 0%, 100%);
