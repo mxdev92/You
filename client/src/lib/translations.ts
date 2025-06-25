@@ -138,7 +138,7 @@ export const translations = {
     added: "تمت الإضافة!",
     
     // Product Names (based on actual products in database)
-    organicApples: "تفاح عضوي",
+    organicApples: "تفاح",
     freshSpinach: "سبانخ طازجة",
     bellPeppers: "فلفل حلو",
     freshCarrots: "جزر طازج",
