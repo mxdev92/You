@@ -54,22 +54,19 @@ export const translations = {
     addToCart: "Add to Cart",
     added: "Added!",
     
-    // Product Names
+    // Product Names (based on actual products in database)
     organicApples: "Organic Apples",
-    freshBananas: "Fresh Bananas",
-    oranges: "Oranges",
     freshSpinach: "Fresh Spinach",
-    broccoli: "Broccoli",
-    carrots: "Carrots",
+    bellPeppers: "Bell Peppers",
+    freshCarrots: "Fresh Carrots",
+    strawberries: "Strawberries",
+    russetPotatoes: "Russet Potatoes",
     wholeMilk: "Whole Milk",
-    cheese: "Cheese",
-    yogurt: "Yogurt",
-    wholeGrainBread: "Whole Grain Bread",
-    croissants: "Croissants",
-    cookies: "Cookies",
     salmonFillet: "Salmon Fillet",
-    shrimp: "Shrimp",
-    tuna: "Tuna",
+    greekYogurt: "Greek Yogurt",
+    bananas: "Bananas",
+    wholeGrainBread: "Whole Grain Bread",
+    freshTomatoes: "Fresh Tomatoes",
     
     // Cart
     cart: "Cart",
@@ -140,22 +137,19 @@ export const translations = {
     addToCart: "أضف إلى السلة",
     added: "تمت الإضافة!",
     
-    // Product Names
+    // Product Names (based on actual products in database)
     organicApples: "تفاح عضوي",
-    freshBananas: "موز طازج",
-    oranges: "برتقال",
     freshSpinach: "سبانخ طازجة",
-    broccoli: "بروكلي",
-    carrots: "جزر",
+    bellPeppers: "فلفل حلو",
+    freshCarrots: "جزر طازج",
+    strawberries: "فراولة",
+    russetPotatoes: "بطاطس",
     wholeMilk: "حليب كامل الدسم",
-    cheese: "جبنة",
-    yogurt: "زبادي",
-    wholeGrainBread: "خبز الحبوب الكاملة",
-    croissants: "كرواسان",
-    cookies: "بسكويت",
     salmonFillet: "شرائح السلمون",
-    shrimp: "جمبري",
-    tuna: "تونة",
+    greekYogurt: "زبادي يوناني",
+    bananas: "موز",
+    wholeGrainBread: "خبز الحبوب الكاملة",
+    freshTomatoes: "طماطم طازجة",
     
     // Cart
     cart: "السلة",

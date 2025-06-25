@@ -66,7 +66,15 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Content */}
       <div className="p-3">
         <h3 className="font-medium text-gray-800 text-sm mb-1 truncate">
-          {t(getProductTranslationKey(product.name))}
+          {(() => {
+            const translationKey = getProductTranslationKey(product.name);
+            const translatedName = t(translationKey);
+            // If translation key doesn't exist and we get the fallback, show original name
+            if (translationKey === 'organicApples' && product.name !== 'Organic Apples') {
+              return product.name;
+            }
+            return translatedName;
+          })()}
         </h3>
         <p className="text-fresh-green font-bold text-sm mb-2">
           {product.price}/{product.unit}
