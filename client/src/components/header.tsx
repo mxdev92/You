@@ -10,6 +10,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { cartItemsCount } = useCart();
+  const { t } = useTranslation();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">

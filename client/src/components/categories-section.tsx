@@ -3,9 +3,12 @@ import { motion } from "framer-motion";
 import { Apple, Carrot, Milk, Cookie, Fish, Beef } from "lucide-react";
 import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "@/hooks/use-translation";
+import { getCategoryTranslationKey } from "@/lib/category-mapping";
 
 export default function CategoriesSection() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -110,7 +113,9 @@ export default function CategoriesSection() {
                 );
               })()}
             </motion.div>
-            <span className="text-xs font-medium text-gray-700">{category.name}</span>
+            <span className="text-xs font-medium text-gray-700">
+              {t(getCategoryTranslationKey(category.name))}
+            </span>
           </motion.div>
         ))}
       </div>

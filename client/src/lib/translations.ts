@@ -44,6 +44,11 @@ export const translations = {
     dairy: "Dairy",
     bakery: "Bakery",
     seafood: "Seafood",
+    meat: "Meat",
+    beverages: "Beverages",
+    snacks: "Snacks",
+    frozen: "Frozen",
+    pantry: "Pantry",
     
     // Products
     addToCart: "Add to Cart",
@@ -54,7 +59,7 @@ export const translations = {
     checkout: "Checkout",
     
     // Common
-    search: "Search...",
+    search: "Search groceries...",
     close: "Close",
     cancel: "Cancel",
     save: "Save",
@@ -102,11 +107,16 @@ export const translations = {
     english: "الإنجليزية",
     
     // Categories
-    fruits: "الفواكه",
-    vegetables: "الخضروات",
-    dairy: "الألبان",
-    bakery: "المخبوزات",
-    seafood: "المأكولات البحرية",
+    fruits: "فواكه",
+    vegetables: "خضروات",
+    dairy: "ألبان",
+    bakery: "مخبوزات",
+    seafood: "مأكولات بحرية",
+    meat: "لحوم",
+    beverages: "مشروبات",
+    snacks: "وجبات خفيفة",
+    frozen: "مجمدات",
+    pantry: "بقالة",
     
     // Products
     addToCart: "أضف إلى السلة",
@@ -117,7 +127,7 @@ export const translations = {
     checkout: "الدفع",
     
     // Common
-    search: "البحث...",
+    search: "البحث في البقالة...",
     close: "إغلاق",
     cancel: "إلغاء",
     save: "حفظ",

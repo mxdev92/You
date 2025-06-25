@@ -103,6 +103,9 @@ June 25, 2025:
 ✓ Added authentic kiwi fruit logo with realistic cross-section design
 ✓ Implemented Arabic language support with Cairo font
 ✓ Added RTL text direction support for Arabic content
+✓ Added language selector in settings with English/Arabic options
+✓ Implemented category name translations (فواكه for Fruits, خضروات for Vegetables)
+✓ Added search placeholder translation and full UI text localization
 
 June 24, 2025:
 ✓ Enhanced mobile responsiveness with cross-device compatibility
