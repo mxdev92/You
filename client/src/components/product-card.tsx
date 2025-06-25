@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
+import { useTranslation } from "@/hooks/use-translation";
+import { getProductTranslationKey } from "@/lib/category-mapping";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -13,6 +15,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
   const { addToCart } = useCart();
+  const { t } = useTranslation();
 
   const handleAddToCart = async () => {
     setIsAdding(true);
@@ -63,7 +66,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Content */}
       <div className="p-3">
         <h3 className="font-medium text-gray-800 text-sm mb-1 truncate">
-          {product.name}
+          {t(getProductTranslationKey(product.name))}
         </h3>
         <p className="text-fresh-green font-bold text-sm mb-2">
           {product.price}/{product.unit}
@@ -82,10 +85,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             {isAdding ? (
               <>
                 <Check className="h-3 w-3 mr-1" />
-                Added!
+{t('added')}
               </>
             ) : (
-              "Add to Cart"
+              t('addToCart')
             )}
           </Button>
         </motion.div>
