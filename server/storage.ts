@@ -62,7 +62,7 @@ export class MemStorage implements IStorage {
       { name: "برتقال", price: "2000", unit: "1kg", imageUrl: "/attached_assets/images (8)_1751152300030.jpeg", categoryId: 1 },
       { name: "موز", price: "1500", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "أناناس", price: "4000", unit: "1kg", imageUrl: "/attached_assets/images (9)_1751152602451.jpeg", categoryId: 1 },
-      { name: "بطيخ", price: "1000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1563114773-84221bd62daa?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+      { name: "بطيخ", price: "1000", unit: "1kg", imageUrl: "/attached_assets/images (11)_1751152688549.jpeg", categoryId: 1 },
       { name: "كرز", price: "6000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1528821128474-27f963b062bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "جزر", price: "1250", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1445282768818-728615cc910a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "عرموط مستورد", price: "3000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
