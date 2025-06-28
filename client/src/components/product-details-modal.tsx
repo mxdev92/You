@@ -80,7 +80,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
         </button>
 
         {/* Product Image - 60% of modal */}
-        <div className="relative h-56 bg-gray-100 dark:bg-gray-800">
+        <div className="relative h-56 bg-gray-100 dark:bg-gray-800 rounded-b-2xl overflow-hidden">
           <img
             src={product.imageUrl}
             alt={displayName}
