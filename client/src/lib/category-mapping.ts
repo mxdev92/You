@@ -24,7 +24,7 @@ export const productNameToKey: Record<string, TranslationKey> = {
   'بطيخ': 'batikh',
   'كرز': 'karaz',
   'جزر': 'jazar',
-  'عرموط مستورد': 'armootMustawrad',
+  'عرموط': 'armoot',
   'عنجاص': 'anjas',
   'مانغا': 'manga',
   'رمان سوري': 'rummanSuri',
