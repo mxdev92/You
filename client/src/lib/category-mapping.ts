@@ -28,7 +28,7 @@ export const productNameToKey: Record<string, TranslationKey> = {
   'عنجاص': 'anjas',
   'مانغا': 'manga',
   'رمان سوري': 'rummanSuri',
-  'عنب أسود عراقي': 'inabAswadIraqi',
+  'عنب أسود': 'inabAswad',
   'خوخ مسطح': 'khawkhMusattah',
   'تفاح أبيض صغير': 'tuffahAbyadSaghir',
   'فاكهة التنين (قطعة)': 'fakhatAlTinnin',
