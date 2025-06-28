@@ -126,7 +126,7 @@ export const translations = {
     vegetables: "خضروات",
     dairy: "ألبان",
     bakery: "مخبوزات",
-    seafood: "مأكولات بحرية",
+    seafood: "أسماك",
     meat: "لحوم",
     beverages: "مشروبات",
     snacks: "وجبات خفيفة",
