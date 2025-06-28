@@ -67,7 +67,7 @@ export class MemStorage implements IStorage {
       { name: "جزر", price: "1250", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1445282768818-728615cc910a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "عرموط مستورد", price: "3000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "عنجاص", price: "2500", unit: "1kg", imageUrl: "/attached_assets/images (14)_1751153041747.jpeg", categoryId: 1 },
-      { name: "مانغا", price: "6500", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1553279768-865429fa0078?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+      { name: "مانغا", price: "6500", unit: "1kg", imageUrl: "/attached_assets/images (17)_1751153187591.jpeg", categoryId: 1 },
       { name: "رمان سوري", price: "5000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1553538164-e3b29c571f21?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "عنب أسود عراقي", price: "2000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "خوخ مسطح", price: "3000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1594736797933-d0b22ba2c9c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
