@@ -17,7 +17,7 @@ export const categoryNameToKey: Record<string, TranslationKey> = {
 // Map product names to translation keys (based on actual products in database)
 export const productNameToKey: Record<string, TranslationKey> = {
   // Arabic fruit names (already in Arabic, will display as-is)
-  'خوخ مسكي': 'khawkhMaski',
+  'خوخ': 'khawkh',
   'برتقال': 'burtuqal',
   'موز': 'mawz',
   'أناناس': 'ananas',

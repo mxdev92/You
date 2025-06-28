@@ -56,7 +56,7 @@ export const translations = {
     
     // Product Names (based on actual products in database)
     // Arabic fruits in English
-    khawkhMaski: "Muscat Peach",
+    khawkh: "Peach",
     burtuqal: "Orange",
     mawz: "Banana",
     ananas: "Pineapple",
@@ -156,7 +156,7 @@ export const translations = {
     
     // Product Names (based on actual products in database)
     // Arabic fruits (already in Arabic, keep as-is)
-    khawkhMaski: "خوخ مسكي",
+    khawkh: "خوخ",
     burtuqal: "برتقال",
     mawz: "موز",
     ananas: "أناناس",

@@ -58,7 +58,7 @@ export class MemStorage implements IStorage {
     // Products
     const productsData: InsertProduct[] = [
       // Fruits (categoryId: 1)
-      { name: "خوخ مسكي", price: "3000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1629828874514-d6091eecc7b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+      { name: "خوخ", price: "3000", unit: "1kg", imageUrl: "/attached_assets/images (15)_1751152986097.jpeg", categoryId: 1 },
       { name: "برتقال", price: "2000", unit: "1kg", imageUrl: "/attached_assets/images (8)_1751152300030.jpeg", categoryId: 1 },
       { name: "موز", price: "1500", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "أناناس", price: "4000", unit: "1kg", imageUrl: "/attached_assets/images (9)_1751152602451.jpeg", categoryId: 1 },
