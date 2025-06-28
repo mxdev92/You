@@ -73,7 +73,7 @@ export class MemStorage implements IStorage {
       { name: "خوخ مسطح", price: "3000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1594736797933-d0b22ba2c9c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "تفاح أبيض صغير", price: "2000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       { name: "فاكهة التنين (قطعة)", price: "4000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1558818498-28c1e002b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
-      { name: "ركي شرط", price: "1000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1571052952467-dd155efcf40c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+      { name: "ركي", price: "1000", unit: "1kg", imageUrl: "/attached_assets/images (12)_1751153524180.jpeg", categoryId: 1 },
       { name: "تفاح أخضر", price: "2500", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
       
       // Other categories (keeping existing products)

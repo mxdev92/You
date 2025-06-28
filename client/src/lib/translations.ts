@@ -71,7 +71,7 @@ export const translations = {
     khawkhMusattah: "Flat Peach",
     tuffahAbyadSaghir: "Small White Apple",
     fakhatAlTinnin: "Dragon Fruit (piece)",
-    rakiShart: "Persimmon",
+    raki: "Persimmon",
     tuffahAkhdar: "Green Apple",
     
     // English products
@@ -171,7 +171,7 @@ export const translations = {
     khawkhMusattah: "خوخ مسطح",
     tuffahAbyadSaghir: "تفاح أبيض صغير",
     fakhatAlTinnin: "فاكهة التنين (قطعة)",
-    rakiShart: "ركي شرط",
+    raki: "ركي",
     tuffahAkhdar: "تفاح أخضر",
     
     // English products

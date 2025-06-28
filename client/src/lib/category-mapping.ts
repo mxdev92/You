@@ -32,7 +32,7 @@ export const productNameToKey: Record<string, TranslationKey> = {
   'خوخ مسطح': 'khawkhMusattah',
   'تفاح أبيض صغير': 'tuffahAbyadSaghir',
   'فاكهة التنين (قطعة)': 'fakhatAlTinnin',
-  'ركي شرط': 'rakiShart',
+  'ركي': 'raki',
   'تفاح أخضر': 'tuffahAkhdar',
   
   // English products
