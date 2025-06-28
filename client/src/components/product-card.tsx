@@ -42,10 +42,12 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      className="product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative"
-    >
+    <>
+      <motion.div
+        whileHover={{ y: -2 }}
+        className="product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative cursor-pointer"
+        onClick={() => setIsModalOpen(true)}
+      >
       {/* Product Image */}
       <div className="relative h-40 md:h-44 overflow-hidden">
         <img
@@ -84,7 +86,10 @@ export default function ProductCard({ product }: ProductCardProps) {
         
         <motion.div whileTap={{ scale: 0.95 }}>
           <Button
-            onClick={handleAddToCart}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart();
+            }}
             disabled={isAdding}
             className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 touch-action-manipulation min-h-9 ${
               isAdding
@@ -95,7 +100,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {isAdding ? (
               <>
                 <Check className="h-3 w-3 mr-1" />
-{t('added')}
+                {t('added')}
               </>
             ) : (
               t('addToCart')
@@ -103,6 +108,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           </Button>
         </motion.div>
       </div>
-    </motion.div>
+      </motion.div>
+
+      {/* Product Details Modal */}
+      <ProductDetailsModal
+        product={product}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   );
 }
