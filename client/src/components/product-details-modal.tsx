@@ -95,6 +95,9 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               {displayName}
             </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {t('freshAndHighQuality')} {displayName.toLowerCase()}
+            </p>
           </div>
 
           {/* Quantity Selector */}
