@@ -67,7 +67,7 @@ export default function CategoriesSection() {
   if (isLoading) {
     return (
       <section className="px-4 py-0.5">
-        <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
+        <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex-shrink-0 text-center min-w-14">
               <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse mb-0.5" />
@@ -81,7 +81,7 @@ export default function CategoriesSection() {
 
   return (
     <section className="px-4 py-0.5">
-      <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
+      <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
         {categories?.map((category, index) => (
           <motion.div
             key={category.id}
