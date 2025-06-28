@@ -12,7 +12,7 @@ interface ProductDetailsModalProps {
   onClose: () => void;
 }
 
-const quantityOptions = [0.5, 1, 1.5, 2, 3, 4, 5];
+// Removed quantityOptions array as we now use +/- buttons
 
 export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetailsModalProps) {
   const { t } = useTranslation();
@@ -79,20 +79,28 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
               {t('selectQuantity')} ({t('kg')})
             </label>
             
-            <div className="grid grid-cols-4 gap-2">
-              {quantityOptions.map((qty) => (
-                <button
-                  key={qty}
-                  onClick={() => setSelectedQuantity(qty)}
-                  className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                    selectedQuantity === qty
-                      ? 'bg-green-500 text-white shadow-md'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {qty}
-                </button>
-              ))}
+            <div className="flex items-center justify-center space-x-4">
+              <button
+                onClick={() => setSelectedQuantity(Math.max(0.5, selectedQuantity - 0.5))}
+                className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
+                disabled={selectedQuantity <= 0.5}
+              >
+                <Minus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              </button>
+              
+              <div className="bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg min-w-[80px] text-center">
+                <span className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  {selectedQuantity}
+                </span>
+              </div>
+              
+              <button
+                onClick={() => setSelectedQuantity(Math.min(5, selectedQuantity + 0.5))}
+                className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
+                disabled={selectedQuantity >= 5}
+              >
+                <Plus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              </button>
             </div>
           </div>
 
