@@ -55,16 +55,33 @@ export const translations = {
     added: "Added!",
     
     // Product Names (based on actual products in database)
-    organicApples: "Organic Apples",
+    // Arabic fruits in English
+    khawkhMaski: "Muscat Peach",
+    burtuqal: "Orange",
+    mawz: "Banana",
+    ananas: "Pineapple",
+    batikh: "Watermelon",
+    karaz: "Cherry",
+    jazar: "Carrot",
+    armootMustawrad: "Imported Pear",
+    anjasAhmar: "Red Plum",
+    manga: "Mango",
+    rummanSuri: "Syrian Pomegranate",
+    inabAswadIraqi: "Iraqi Black Grapes",
+    khawkhMusattah: "Flat Peach",
+    tuffahAbyadSaghir: "Small White Apple",
+    fakhatAlTinnin: "Dragon Fruit (piece)",
+    rakiShart: "Persimmon",
+    tuffahAkhdar: "Green Apple",
+    
+    // English products
     freshSpinach: "Fresh Spinach",
     bellPeppers: "Bell Peppers",
     freshCarrots: "Fresh Carrots",
-    strawberries: "Strawberries",
     russetPotatoes: "Russet Potatoes",
     wholeMilk: "Whole Milk",
     salmonFillet: "Salmon Fillet",
     greekYogurt: "Greek Yogurt",
-    bananas: "Bananas",
     wholeGrainBread: "Whole Grain Bread",
     freshTomatoes: "Fresh Tomatoes",
     
@@ -138,16 +155,33 @@ export const translations = {
     added: "تمت الإضافة!",
     
     // Product Names (based on actual products in database)
-    organicApples: "تفاح",
+    // Arabic fruits (already in Arabic, keep as-is)
+    khawkhMaski: "خوخ مسكي",
+    burtuqal: "برتقال",
+    mawz: "موز",
+    ananas: "أناناس",
+    batikh: "بطيخ",
+    karaz: "كرز",
+    jazar: "جزر",
+    armootMustawrad: "عرموط مستورد",
+    anjasAhmar: "عنجاص أحمر",
+    manga: "مانغا",
+    rummanSuri: "رمان سوري",
+    inabAswadIraqi: "عنب أسود عراقي",
+    khawkhMusattah: "خوخ مسطح",
+    tuffahAbyadSaghir: "تفاح أبيض صغير",
+    fakhatAlTinnin: "فاكهة التنين (قطعة)",
+    rakiShart: "ركي شرط",
+    tuffahAkhdar: "تفاح أخضر",
+    
+    // English products
     freshSpinach: "سبانخ طازجة",
     bellPeppers: "فلفل حلو",
     freshCarrots: "جزر طازج",
-    strawberries: "فراولة",
     russetPotatoes: "بطاطس",
     wholeMilk: "حليب كامل الدسم",
     salmonFillet: "شرائح السلمون",
     greekYogurt: "زبادي يوناني",
-    bananas: "موز",
     wholeGrainBread: "خبز الحبوب الكاملة",
     freshTomatoes: "طماطم طازجة",
     

@@ -16,16 +16,33 @@ export const categoryNameToKey: Record<string, TranslationKey> = {
 
 // Map product names to translation keys (based on actual products in database)
 export const productNameToKey: Record<string, TranslationKey> = {
-  'Organic Apples': 'organicApples',
+  // Arabic fruit names (already in Arabic, will display as-is)
+  'خوخ مسكي': 'khawkhMaski',
+  'برتقال': 'burtuqal',
+  'موز': 'mawz',
+  'أناناس': 'ananas',
+  'بطيخ': 'batikh',
+  'كرز': 'karaz',
+  'جزر': 'jazar',
+  'عرموط مستورد': 'armootMustawrad',
+  'عنجاص أحمر': 'anjasAhmar',
+  'مانغا': 'manga',
+  'رمان سوري': 'rummanSuri',
+  'عنب أسود عراقي': 'inabAswadIraqi',
+  'خوخ مسطح': 'khawkhMusattah',
+  'تفاح أبيض صغير': 'tuffahAbyadSaghir',
+  'فاكهة التنين (قطعة)': 'fakhatAlTinnin',
+  'ركي شرط': 'rakiShart',
+  'تفاح أخضر': 'tuffahAkhdar',
+  
+  // English products
   'Fresh Spinach': 'freshSpinach',
   'Bell Peppers': 'bellPeppers',
   'Fresh Carrots': 'freshCarrots',
-  'Strawberries': 'strawberries',
   'Russet Potatoes': 'russetPotatoes',
   'Whole Milk': 'wholeMilk',
   'Salmon Fillet': 'salmonFillet',
   'Greek Yogurt': 'greekYogurt',
-  'Bananas': 'bananas',
   'Whole Grain Bread': 'wholeGrainBread',
   'Fresh Tomatoes': 'freshTomatoes',
 };
