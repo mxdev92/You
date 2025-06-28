@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Minus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
@@ -49,15 +50,27 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const totalPrice = (parseFloat(product.price) * selectedQuantity).toLocaleString();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop with blur */}
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal Content */}
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-[80%] max-w-xs mx-auto overflow-hidden">
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop with blur */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          
+          {/* Modal Content */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-[85%] max-w-sm mx-auto overflow-hidden"
+          >
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -141,7 +154,9 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
             {t('addToCart')}
           </Button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
