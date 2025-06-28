@@ -2,7 +2,6 @@ import { useState } from "react";
 import Header from "@/components/header";
 import LeftSidebar from "@/components/left-sidebar";
 import RightSidebar from "@/components/right-sidebar";
-import CategoriesSection from "@/components/categories-section";
 import ProductsGrid from "@/components/products-grid";
 
 export default function Home() {
@@ -27,7 +26,6 @@ export default function Home() {
       />
 
       <main className="pb-8">
-        <CategoriesSection />
         <ProductsGrid />
       </main>
     </div>
