@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,20 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const { addToCart } = useCart();
   const [selectedQuantity, setSelectedQuantity] = useState(1);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount or when modal closes
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen || !product) return null;
 
   const translationKey = getProductTranslationKey(product.name);
@@ -35,89 +49,103 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const totalPrice = (parseFloat(product.price) * selectedQuantity).toLocaleString();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop with blur */}
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
         onClick={onClose}
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-[75%] max-w-md mx-4 max-h-[90vh] overflow-hidden">
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-[85%] max-w-sm mx-auto max-h-[85vh] overflow-hidden border border-gray-200/20 dark:border-gray-700/20">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-white/80 dark:bg-gray-800/80 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors"
+          className="absolute top-3 right-3 z-10 p-2 bg-white/90 dark:bg-gray-800/90 rounded-full shadow-xl hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 hover:scale-105"
         >
-          <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          <X className="w-4 h-4 text-gray-700 dark:text-gray-300" />
         </button>
 
-        {/* Product Image - 60% of modal height */}
-        <div className="relative h-[60%] min-h-[200px] bg-gray-100 dark:bg-gray-800">
+        {/* Product Image - 50% of modal height for better proportions */}
+        <div className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
           <img
             src={product.imageUrl}
             alt={displayName}
             className="w-full h-full object-cover"
           />
+          {/* Subtle gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
         </div>
 
-        {/* Product Details - 40% of modal height */}
-        <div className="p-6 space-y-4">
+        {/* Product Details */}
+        <div className="p-5 space-y-4 flex-1">
           {/* Product Name */}
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {displayName}
-          </h2>
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+              {displayName}
+            </h2>
 
-          {/* Short Description */}
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {t('freshAndHighQuality')} {displayName.toLowerCase()}
-          </p>
+            {/* Short Description */}
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('freshAndHighQuality')} {displayName.toLowerCase()}
+            </p>
+          </div>
 
           {/* Quantity Selector */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-center text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('selectQuantity')} ({t('kg')})
             </label>
             
             <div className="flex items-center justify-center space-x-4">
               <button
                 onClick={() => setSelectedQuantity(Math.max(0.5, selectedQuantity - 0.5))}
-                className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ${
+                  selectedQuantity <= 0.5 
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' 
+                    : 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 hover:scale-105 shadow-sm'
+                }`}
                 disabled={selectedQuantity <= 0.5}
               >
-                <Minus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                <Minus className="w-5 h-5" />
               </button>
               
-              <div className="bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg min-w-[80px] text-center">
-                <span className="text-lg font-semibold text-green-600 dark:text-green-400">
+              <div className="bg-green-50 dark:bg-green-900/20 px-6 py-3 rounded-xl min-w-[100px] text-center border border-green-200/50 dark:border-green-700/50">
+                <span className="text-xl font-bold text-green-600 dark:text-green-400">
                   {selectedQuantity}
                 </span>
               </div>
               
               <button
                 onClick={() => setSelectedQuantity(Math.min(5, selectedQuantity + 0.5))}
-                className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ${
+                  selectedQuantity >= 5 
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed' 
+                    : 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 hover:scale-105 shadow-sm'
+                }`}
                 disabled={selectedQuantity >= 5}
               >
-                <Plus className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                <Plus className="w-5 h-5" />
               </button>
             </div>
           </div>
 
           {/* Price and Add to Cart */}
-          <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="text-right">
-              <p className="text-lg font-bold text-green-600 dark:text-green-400">
+          <div className="space-y-4 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+            {/* Price Display */}
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
                 {totalPrice} {t('iqd')}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {product.price} {t('iqd')}/{t('kg')}
               </p>
             </div>
             
+            {/* Add to Cart Button */}
             <Button
               onClick={handleAddToCart}
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium"
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-3 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02]"
             >
               {t('addToCart')}
             </Button>
