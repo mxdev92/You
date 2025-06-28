@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
+import { ProductDetailsModal } from "./product-details-modal";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -14,6 +15,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToCart } = useCart();
   const { t } = useTranslation();
 

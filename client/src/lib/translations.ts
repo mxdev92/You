@@ -54,6 +54,12 @@ export const translations = {
     addToCart: "Add to Cart",
     added: "Added!",
     
+    // Product Details
+    selectQuantity: "Select Quantity",
+    kg: "kg",
+    iqd: "IQD",
+    freshAndHighQuality: "Fresh and high quality",
+    
     // Product Names (based on actual products in database)
     // Arabic fruits in English
     khawkh: "Peach",
@@ -153,6 +159,12 @@ export const translations = {
     // Products
     addToCart: "أضف إلى السلة",
     added: "تمت الإضافة!",
+    
+    // Product Details
+    selectQuantity: "اختر الكمية",
+    kg: "كغ",
+    iqd: "دينار",
+    freshAndHighQuality: "طازج وعالي الجودة",
     
     // Product Names (based on actual products in database)
     // Arabic fruits (already in Arabic, keep as-is)
