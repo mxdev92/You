@@ -113,7 +113,7 @@ export default function CategoriesSection() {
                 );
               })()}
             </motion.div>
-            <span className="text-[10px] font-medium text-gray-700">
+            <span className="text-[10px] font-medium text-gray-700 text-center block">
               {t(getCategoryTranslationKey(category.name))}
             </span>
           </motion.div>
