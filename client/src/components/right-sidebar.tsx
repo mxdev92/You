@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
 import { useState, useRef, useEffect } from "react";
+import { createOrder } from "@/lib/firebase";
+import { useAuth } from "@/hooks/use-auth";
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -87,10 +89,12 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 }
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
-  const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount, clearCart } = useCart();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [addressData, setAddressData] = useState({
     fullName: '',
     phoneNumber: '',
@@ -112,6 +116,50 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowAddressForm(false);
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!hasAddress || !user) return;
+    
+    setIsPlacingOrder(true);
+    try {
+      const orderData = {
+        customerName: addressData.fullName,
+        customerEmail: user.email || '',
+        customerPhone: addressData.phoneNumber,
+        address: {
+          governorate: addressData.government,
+          district: '',
+          neighborhood: '',
+          street: addressData.fullAddress,
+          houseNumber: '',
+          floorNumber: '',
+          notes: ''
+        },
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          productName: item.product.name,
+          quantity: item.quantity,
+          price: item.product.price,
+          unit: item.product.unit
+        })),
+        totalAmount: totalWithShipping,
+        status: 'pending' as const,
+        orderDate: new Date().toISOString(),
+        notes: ''
+      };
+
+      await createOrder(orderData);
+      clearCart();
+      alert('Order placed successfully! Check the admin panel to view orders.');
+      setShowCheckout(false);
+      onClose();
+    } catch (error) {
+      console.error('Error placing order:', error);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   const AddressForm = () => (
@@ -360,20 +408,11 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         </div>
 
         <Button 
-          onClick={() => {
-            if (hasAddress) {
-              // Place order logic here
-              console.log('Order placed with address:', addressData);
-              alert('Order placed successfully!');
-              setShowCheckout(false);
-            } else {
-              setShowAddressForm(true);
-            }
-          }}
+          onClick={hasAddress ? handlePlaceOrder : () => setShowAddressForm(true)}
           className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark"
-          disabled={!hasAddress}
+          disabled={!hasAddress || isPlacingOrder}
         >
-{hasAddress ? t('placeOrder') : t('addShippingAddress')}
+          {isPlacingOrder ? 'Placing Order...' : (hasAddress ? t('placeOrder') : t('addShippingAddress'))}
         </Button>
       </div>
     </div>

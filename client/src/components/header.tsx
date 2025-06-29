@@ -1,9 +1,10 @@
-import { Search, Menu, ShoppingCart } from "lucide-react";
+import { Search, Menu, ShoppingCart, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
 import CategoriesSection from "@/components/categories-section";
+import { useLocation } from "wouter";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -13,6 +14,7 @@ interface HeaderProps {
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { cartItemsCount } = useCart();
   const { t } = useTranslation();
+  const [location, navigate] = useLocation();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
