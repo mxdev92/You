@@ -18,6 +18,189 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const shippingFee = 1500; // Fixed shipping fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
 
+  const CheckoutScreen = () => (
+    <div className="h-full flex flex-col">
+      {/* Checkout Header */}
+      <div className="flex items-center justify-between px-6 py-6 border-b border-gray-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowCheckout(false)}
+          className="hover:bg-gray-100 touch-action-manipulation"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h2 className="text-xl font-bold text-gray-800">Checkout</h2>
+        <div className="w-10" /> {/* Spacer */}
+      </div>
+
+      {/* Items List - 40% of screen */}
+      <div className="flex-2 overflow-y-auto px-6 py-4 bg-gray-50" style={{ minHeight: '40%' }}>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h3>
+        <div className="space-y-3">
+          {cartItems.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm"
+            >
+              <div className="flex items-center space-x-3">
+                <img
+                  src={item.product.imageUrl}
+                  alt={item.product.name}
+                  className="w-12 h-12 object-cover rounded-lg"
+                />
+                <div>
+                  <h4 className="font-medium text-gray-800 text-sm">{item.product.name}</h4>
+                  <p className="text-xs text-gray-500">{item.product.unit}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-medium text-gray-800">{item.quantity}x</p>
+                <p className="text-fresh-green font-semibold text-sm">
+                  {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Order Summary */}
+      <div className="px-6 py-6 border-t border-gray-100 bg-white">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Subtotal:</span>
+            <span className="font-medium">{getCartTotal().toFixed(0)} IQD</span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Shipping Fee:</span>
+            <span className="font-medium">{shippingFee.toFixed(0)} IQD</span>
+          </div>
+          
+          <div className="border-t border-gray-200 pt-3">
+            <div className="flex justify-between items-center">
+              <span className="text-lg font-semibold text-gray-800">Total to Pay:</span>
+              <span className="text-xl font-bold text-fresh-green">
+                {totalWithShipping.toFixed(0)} IQD
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <Button className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark">
+          Place Order
+        </Button>
+      </div>
+    </div>
+  );
+
+  const CartScreen = () => (
+    <>
+      {/* Header */}
+      <div className="px-6 py-6 border-b border-gray-100">
+        <h2 className="text-xl font-bold text-gray-800">{t('shoppingCart')}</h2>
+        <p className="text-gray-500 text-sm mt-1">{cartItemsCount} {t('items')}</p>
+      </div>
+
+      {/* Cart Items */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        {cartItems.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-8"
+          >
+            <p className="text-gray-500">{t('yourCartIsEmpty')}</p>
+          </motion.div>
+        ) : (
+          <div className="space-y-4">
+            {cartItems.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-center space-x-4 py-4 border-b border-gray-100"
+              >
+                <img
+                  src={item.product.imageUrl}
+                  alt={item.product.name}
+                  className="w-16 h-16 object-cover rounded-lg"
+                />
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-800">{item.product.name}</h4>
+                  <p className="text-sm text-gray-500">{item.product.unit}</p>
+                  <p className="text-fresh-green font-semibold">
+                    {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
+                  </p>
+                </div>
+                
+                {/* Quantity Controls */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                    className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="min-w-8 text-center font-medium">{item.quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeFromCart(item.id)}
+                  className="hover:bg-red-50 hover:text-red-500 touch-action-manipulation min-h-8 min-w-8"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      {cartItems.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="px-6 py-6 border-t border-gray-100 bg-gray-50"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-lg font-semibold text-gray-800">Total:</span>
+            <span className="text-xl font-bold text-fresh-green">
+              {getCartTotal().toFixed(0)} IQD
+            </span>
+          </div>
+          <Button 
+            onClick={() => setShowCheckout(true)}
+            className="w-full bg-fresh-green hover:bg-fresh-green-dark"
+          >
+            Proceed to Checkout
+          </Button>
+        </motion.div>
+      )}
+    </>
+  );
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -45,102 +228,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
             }}
             className="absolute right-0 w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-l-3xl flex flex-col safe-area-inset"
           >
-            {/* Header */}
-            <div className="px-6 py-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800">{t('shoppingCart')}</h2>
-              <p className="text-gray-500 text-sm mt-1">{cartItemsCount} {t('items')}</p>
-            </div>
-
-            {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {cartItems.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-8"
-                >
-                  <p className="text-gray-500">{t('yourCartIsEmpty')}</p>
-                </motion.div>
-              ) : (
-                <div className="space-y-4">
-                  {cartItems.map((item, index) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-center space-x-4 py-4 border-b border-gray-100"
-                    >
-                      <img
-                        src={item.product.imageUrl}
-                        alt={item.product.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-800">{item.product.name}</h4>
-                        <p className="text-sm text-gray-500">{item.product.unit}</p>
-                        <p className="text-fresh-green font-semibold">
-                          {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
-                        </p>
-                      </div>
-                      
-                      {/* Quantity Controls */}
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                          className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="min-w-8 text-center font-medium">{item.quantity}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeFromCart(item.id)}
-                        className="hover:bg-red-50 hover:text-red-500 touch-action-manipulation min-h-8 min-w-8"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            {cartItems.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="px-6 py-6 border-t border-gray-100 bg-gray-50"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-semibold text-gray-800">Total:</span>
-                  <span className="text-xl font-bold text-fresh-green">
-                    {getCartTotal().toFixed(0)}
-                  </span>
-                </div>
-                <Button 
-                  onClick={() => setShowCheckout(true)}
-                  className="w-full bg-fresh-green hover:bg-fresh-green-dark"
-                >
-                  {t('proceedToCheckout')}
-                </Button>
-              </motion.div>
-            )}
+            {showCheckout ? <CheckoutScreen /> : <CartScreen />}
           </motion.div>
         </div>
       )}

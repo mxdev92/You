@@ -101,6 +101,15 @@ export const translations = {
     shoppingCart: "Shopping Cart",
     yourCartIsEmpty: "Your cart is empty",
     items: "items",
+    proceedToCheckout: "Proceed to Checkout",
+    
+    // Checkout
+    orderItems: "Order Items",
+    orderSummary: "Order Summary",
+    subtotal: "Subtotal",
+    shippingFee: "Shipping Fee",
+    totalToPay: "Total to Pay",
+    placeOrder: "Place Order",
     
     // Common
     search: "Search groceries...",
@@ -209,6 +218,15 @@ export const translations = {
     shoppingCart: "سلة الطلبات",
     yourCartIsEmpty: "السلة فارغة",
     items: "عنصر",
+    proceedToCheckout: "إتمام الطلب",
+    
+    // Checkout
+    orderItems: "عناصر الطلب",
+    orderSummary: "ملخص الطلب",
+    subtotal: "المجموع الفرعي",
+    shippingFee: "رسوم التوصيل",
+    totalToPay: "المجموع الإجمالي",
+    placeOrder: "تأكيد الطلب",
     total: "المجموع",
     checkout: "الدفع",
     
