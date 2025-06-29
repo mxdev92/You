@@ -97,6 +97,11 @@ export const translations = {
     total: "Total",
     checkout: "Checkout",
     
+    // Cart
+    shoppingCart: "Shopping Cart",
+    yourCartIsEmpty: "Your cart is empty",
+    items: "items",
+    
     // Common
     search: "Search groceries...",
     close: "Close",
@@ -201,6 +206,9 @@ export const translations = {
     
     // Cart
     cart: "السلة",
+    shoppingCart: "سلة الطلبات",
+    yourCartIsEmpty: "السلة فارغة",
+    items: "عنصر",
     total: "المجموع",
     checkout: "الدفع",
     

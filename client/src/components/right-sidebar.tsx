@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface RightSidebarProps {
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const { cartItems, removeFromCart, getCartTotal, cartItemsCount } = useCart();
+  const { t } = useTranslation();
 
   return (
     <AnimatePresence>
@@ -40,8 +42,8 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
           >
             {/* Header */}
             <div className="px-6 py-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800">Shopping Cart</h2>
-              <p className="text-gray-500 text-sm mt-1">{cartItemsCount} items</p>
+              <h2 className="text-xl font-bold text-gray-800">{t('shoppingCart')}</h2>
+              <p className="text-gray-500 text-sm mt-1">{cartItemsCount} {t('items')}</p>
             </div>
 
             {/* Cart Items */}
@@ -52,7 +54,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-center py-8"
                 >
-                  <p className="text-gray-500">Your cart is empty</p>
+                  <p className="text-gray-500">{t('yourCartIsEmpty')}</p>
                 </motion.div>
               ) : (
                 <div className="space-y-4">
