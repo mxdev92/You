@@ -117,7 +117,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const AddressForm = () => (
     <AnimatePresence mode="wait">
       {showAddressForm && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-[60]">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
