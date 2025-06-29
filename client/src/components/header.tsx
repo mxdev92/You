@@ -41,20 +41,33 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
           </div>
         </div>
 
-        {/* Cart Icon */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onCartClick}
-          className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
-        >
-          <ShoppingCart className="h-6 w-6 text-gray-700" />
-          {cartItemsCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-fresh-green text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {cartItemsCount}
-            </span>
-          )}
-        </Button>
+        {/* Admin & Cart Icons */}
+        <div className="flex items-center space-x-2">
+          {/* Admin Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(location === '/admin' ? '/' : '/admin')}
+            className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+          >
+            <Settings className="h-6 w-6 text-gray-700" />
+          </Button>
+
+          {/* Cart Icon */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCartClick}
+            className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+          >
+            <ShoppingCart className="h-6 w-6 text-gray-700" />
+            {cartItemsCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-fresh-green text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {cartItemsCount}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
       
       {/* Categories Section */}
