@@ -1,22 +1,239 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, Plus, Minus, ArrowLeft } from "lucide-react";
+import { Trash2, Plus, Minus, ArrowLeft, MapPin, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface RightSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface CustomDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+}
+
+function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white flex items-center justify-between"
+        style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+      >
+        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+          {value || placeholder}
+        </span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </motion.div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto"
+          >
+            {options.map((option, index) => (
+              <motion.button
+                key={option}
+                type="button"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.02 }}
+                onClick={() => {
+                  onChange(option);
+                  setIsOpen(false);
+                }}
+                className="w-full px-3 py-2 text-sm text-right hover:bg-green-50 hover:text-green-600 transition-colors text-gray-700"
+                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+              >
+                {option}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount } = useCart();
   const { t } = useTranslation();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressData, setAddressData] = useState({
+    fullName: '',
+    phoneNumber: '',
+    government: '',
+    fullAddress: ''
+  });
 
   const shippingFee = 1500; // Fixed shipping fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
+
+  const iraqiGovernorates = [
+    'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
+    'ديالى', 'واسط', 'ميسان', 'ذي قار', 'المثنى', 'بابل', 'كربلاء', 'النجف', 
+    'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
+  ];
+
+  const hasAddress = addressData.fullName && addressData.phoneNumber && addressData.government && addressData.fullAddress;
+
+  const handleAddressSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowAddressForm(false);
+  };
+
+  const AddressForm = () => (
+    <AnimatePresence mode="wait">
+      {showAddressForm && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+            onClick={() => setShowAddressForm(false)}
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">{t('myAddress')}</h2>
+                <button
+                  onClick={() => setShowAddressForm(false)}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <span className="text-gray-500 text-lg">×</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Form */}
+            <div className="flex-1 p-4">
+              <form onSubmit={handleAddressSubmit} className="space-y-3">
+                {/* Full Name */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={addressData.fullName}
+                    onChange={(e) => setAddressData({...addressData, fullName: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={addressData.phoneNumber}
+                    onChange={(e) => setAddressData({...addressData, phoneNumber: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Enter your phone number"
+                    required
+                  />
+                </div>
+
+                {/* Government */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Governorate
+                  </label>
+                  <CustomDropdown
+                    value={addressData.government}
+                    onChange={(value) => setAddressData({...addressData, government: value})}
+                    options={iraqiGovernorates}
+                    placeholder="Select governorate"
+                  />
+                </div>
+
+                {/* Full Address */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Full Address
+                  </label>
+                  <textarea
+                    value={addressData.fullAddress}
+                    onChange={(e) => setAddressData({...addressData, fullAddress: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                    placeholder="Enter your full address"
+                    rows={3}
+                    required
+                  />
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddressForm(false)}
+                    className="flex-1 text-xs py-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1 bg-fresh-green hover:bg-fresh-green-dark text-xs py-2"
+                  >
+                    Save Address
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
 
   const CheckoutScreen = () => (
     <div className="h-full flex flex-col">
@@ -68,6 +285,55 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         </div>
       </div>
 
+      {/* Shipping Information */}
+      <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-800">Shipping Information</h3>
+          {hasAddress && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAddressForm(true)}
+              className="text-fresh-green hover:text-fresh-green-dark hover:bg-green-50 p-1"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
+        {hasAddress ? (
+          <div className="bg-white p-3 rounded-lg border border-gray-200">
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-700">Name:</span>
+                <span className="text-gray-900">{addressData.fullName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-700">Phone:</span>
+                <span className="text-gray-900">{addressData.phoneNumber}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-gray-700">State:</span>
+                <span className="text-gray-900">{addressData.government}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-gray-700">Address:</span>
+                <span className="text-gray-900">{addressData.fullAddress}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <Button
+            onClick={() => setShowAddressForm(true)}
+            variant="outline"
+            className="w-full border-dashed border-fresh-green text-fresh-green hover:bg-green-50"
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Add Shipping Address
+          </Button>
+        )}
+      </div>
+
       {/* Order Summary */}
       <div className="px-6 py-6 border-t border-gray-100 bg-white">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('orderSummary')}</h3>
@@ -93,8 +359,21 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
           </div>
         </div>
 
-        <Button className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark">
-{t('placeOrder')}
+        <Button 
+          onClick={() => {
+            if (hasAddress) {
+              // Place order logic here
+              console.log('Order placed with address:', addressData);
+              alert('Order placed successfully!');
+              setShowCheckout(false);
+            } else {
+              setShowAddressForm(true);
+            }
+          }}
+          className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark"
+          disabled={!hasAddress}
+        >
+          {hasAddress ? t('placeOrder') : 'Add Address to Continue'}
         </Button>
       </div>
     </div>
@@ -202,36 +481,39 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   );
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50">
-          {/* Blur Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm touch-action-manipulation"
-            onClick={onClose}
-          />
-          
-          {/* Sidebar Content */}
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ 
-              type: "spring",
-              damping: 25,
-              stiffness: 300,
-              duration: 0.3 
-            }}
-            className="absolute right-0 w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-l-3xl flex flex-col safe-area-inset"
-          >
-            {showCheckout ? <CheckoutScreen /> : <CartScreen />}
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+    <>
+      <AddressForm />
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-50">
+            {/* Blur Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm touch-action-manipulation"
+              onClick={onClose}
+            />
+            
+            {/* Sidebar Content */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ 
+                type: "spring",
+                damping: 25,
+                stiffness: 300,
+                duration: 0.3 
+              }}
+              className="absolute right-0 w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-l-3xl flex flex-col safe-area-inset"
+            >
+              {showCheckout ? <CheckoutScreen /> : <CartScreen />}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
