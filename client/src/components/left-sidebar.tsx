@@ -126,27 +126,27 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
           >
             {/* Header */}
-            <div className="p-6 border-b border-gray-100">
+            <div className="p-4 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">My Address</h2>
+                <h2 className="text-lg font-semibold text-gray-900">My Address</h2>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <span className="text-gray-500 text-xl">×</span>
+                  <span className="text-gray-500 text-lg">×</span>
                 </button>
               </div>
             </div>
 
             {/* Form */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex-1 p-4">
+              <form onSubmit={handleSubmit} className="space-y-3">
                 {/* Full Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Full Name
                   </label>
                   <input
@@ -161,7 +161,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
 
                 {/* Phone Number */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Phone Number
                   </label>
                   <input
@@ -176,7 +176,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
 
                 {/* Government */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Government (State)
                   </label>
                   <CustomDropdown
@@ -189,7 +189,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
 
                 {/* Full Address */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Full Address
                   </label>
                   <textarea
@@ -203,7 +203,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                 </div>
 
                 {/* Submit Button */}
-                <div className="pt-2">
+                <div className="pt-1">
                   <Button 
                     type="submit" 
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-2 text-sm rounded-lg font-semibold transition-colors"
