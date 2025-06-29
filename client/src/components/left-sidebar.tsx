@@ -131,7 +131,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
             {/* Header */}
             <div className="p-4 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">My Address</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('myAddress')}</h2>
                 <button
                   onClick={onClose}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -227,7 +227,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
   
   const menuItems = [
     { icon: User, label: t('profile'), href: "#" },
-    { icon: MapPin, label: 'My Address', href: "#", onClick: () => setShowShippingForm(true) },
+    { icon: MapPin, label: t('myAddress'), href: "#", onClick: () => setShowShippingForm(true) },
     { icon: Wallet, label: t('wallet'), href: "#" },
     { icon: ShoppingBag, label: t('orders'), href: "#" },
   ];

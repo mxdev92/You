@@ -28,6 +28,7 @@ export const translations = {
     // Sidebar
     welcomeBackSidebar: "Welcome back!",
     profile: "Profile",
+    myAddress: "My Address",
     wallet: "Wallet",
     orders: "My Orders",
     settings: "Settings",
@@ -134,6 +135,7 @@ export const translations = {
     // Sidebar
     welcomeBackSidebar: "أهلاً بعودتك!",
     profile: "الملف الشخصي",
+    myAddress: "عنوان التوصيل",
     wallet: "المحفظة",
     orders: "طلباتي",
     settings: "الإعدادات",
