@@ -20,10 +20,6 @@ export function useCart() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({
-        title: "Added to cart",
-        description: "Item has been added to your cart.",
-      });
     },
     onError: () => {
       toast({
@@ -40,10 +36,6 @@ export function useCart() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({
-        title: "Removed from cart",
-        description: "Item has been removed from your cart.",
-      });
     },
     onError: () => {
       toast({
