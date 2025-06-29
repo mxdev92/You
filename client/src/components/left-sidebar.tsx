@@ -40,7 +40,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <div className="fixed inset-0 z-50">
           {/* Backdrop */}
@@ -115,12 +115,15 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   <select
                     value={formData.government}
                     onChange={(e) => setFormData({...formData, government: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     required
                   >
                     <option value="">Select your government</option>
                     {iraqiGovernorates.map((gov) => (
-                      <option key={gov} value={gov}>{gov}</option>
+                      <option key={gov} value={gov} style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                        {gov}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -176,8 +179,9 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
+    <>
+      <AnimatePresence mode="wait">
+        {isOpen && (
         <div className="fixed inset-0 z-50">
           {/* Blur Overlay */}
           <motion.div
@@ -251,14 +255,15 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
               </Button>
             </div>
           </motion.div>
-        </div>
-      )}
+          </div>
+        )}
+      </AnimatePresence>
       
       {/* Shipping Form Modal */}
       <ShippingForm 
         isOpen={showShippingForm} 
         onClose={() => setShowShippingForm(false)} 
       />
-    </AnimatePresence>
+    </>
   );
 }
