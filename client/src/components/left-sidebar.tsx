@@ -253,6 +253,12 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
           </motion.div>
         </div>
       )}
+      
+      {/* Shipping Form Modal */}
+      <ShippingForm 
+        isOpen={showShippingForm} 
+        onClose={() => setShowShippingForm(false)} 
+      />
     </AnimatePresence>
   );
 }
