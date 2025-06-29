@@ -115,13 +115,29 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   <select
                     value={formData.government}
                     onChange={(e) => setFormData({...formData, government: e.target.value})}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white cairo-font"
+                    style={{ 
+                      fontFamily: 'Cairo, system-ui, sans-serif',
+                      fontSize: '10px',
+                      lineHeight: '1.1',
+                      height: '28px'
+                    }}
                     required
                   >
-                    <option value="">Select your government</option>
+                    <option value="" style={{ fontFamily: 'Cairo, system-ui, sans-serif', fontSize: '10px' }}>
+                      Select your government
+                    </option>
                     {iraqiGovernorates.map((gov) => (
-                      <option key={gov} value={gov} style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      <option 
+                        key={gov} 
+                        value={gov} 
+                        style={{ 
+                          fontFamily: 'Cairo, system-ui, sans-serif',
+                          fontSize: '10px',
+                          padding: '1px 2px',
+                          lineHeight: '1.1'
+                        }}
+                      >
                         {gov}
                       </option>
                     ))}

@@ -22,6 +22,19 @@ html[lang="ar"] * {
   text-rendering: optimizeLegibility;
 }
 
+/* Compact dropdown styling for government select */
+.cairo-font select {
+  font-family: 'Cairo', sans-serif !important;
+}
+
+.cairo-font option {
+  font-family: 'Cairo', sans-serif !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  padding: 0px 2px !important;
+  height: 20px !important;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(20, 14.3%, 4.1%);
