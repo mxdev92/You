@@ -1,28 +1,177 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Wallet, ShoppingBag, Settings, LogOut } from "lucide-react";
+import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
+import { useState } from "react";
 
 interface LeftSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
-  const { user, logout } = useAuth();
+interface ShippingFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
   const { t } = useTranslation();
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phoneNumber: '',
+    government: '',
+    fullAddress: ''
+  });
+
+  const iraqiGovernorates = [
+    'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
+    'ديالى', 'واسط', 'ميسان', 'ذي قار', 'المثنى', 'بابل', 'كربلاء', 'النجف', 
+    'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
+  ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle form submission
+    console.log('Form submitted:', formData);
+    onClose();
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          >
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">My Address</h2>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <span className="text-gray-500 text-xl">×</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Form */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Enter your phone number"
+                    required
+                  />
+                </div>
+
+                {/* Government */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Government (State)
+                  </label>
+                  <select
+                    value={formData.government}
+                    onChange={(e) => setFormData({...formData, government: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white"
+                    required
+                  >
+                    <option value="">Select your government</option>
+                    {iraqiGovernorates.map((gov) => (
+                      <option key={gov} value={gov}>{gov}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Full Address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Address
+                  </label>
+                  <textarea
+                    value={formData.fullAddress}
+                    onChange={(e) => setFormData({...formData, fullAddress: e.target.value})}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                    placeholder="Enter your complete address"
+                    required
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition-colors"
+                  >
+                    Save Address
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
+  const { user, signOut } = useAuth();
+  const { t } = useTranslation();
+  const [showShippingForm, setShowShippingForm] = useState(false);
   
   const menuItems = [
     { icon: User, label: t('profile'), href: "#" },
+    { icon: MapPin, label: 'My Address', href: "#", onClick: () => setShowShippingForm(true) },
     { icon: Wallet, label: t('wallet'), href: "#" },
     { icon: ShoppingBag, label: t('orders'), href: "#" },
   ];
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     onClose();
   };
 
@@ -72,6 +221,7 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
                     key={item.label}
                     variant="ghost"
                     className="w-full justify-start text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                    onClick={item.onClick}
                   >
                     <item.icon className="mr-3 h-4 w-4" />
                     {item.label}
