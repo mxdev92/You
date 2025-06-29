@@ -30,13 +30,13 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="text-xl font-bold text-gray-800">Checkout</h2>
+        <h2 className="text-xl font-bold text-gray-800">{t('checkout')}</h2>
         <div className="w-10" /> {/* Spacer */}
       </div>
 
       {/* Items List - 40% of screen */}
       <div className="flex-2 overflow-y-auto px-6 py-4 bg-gray-50" style={{ minHeight: '40%' }}>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Items</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('orderItems')}</h3>
         <div className="space-y-3">
           {cartItems.map((item, index) => (
             <motion.div
@@ -70,22 +70,22 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
 
       {/* Order Summary */}
       <div className="px-6 py-6 border-t border-gray-100 bg-white">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('orderSummary')}</h3>
         
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Subtotal:</span>
+            <span className="text-gray-600">{t('subtotal')}:</span>
             <span className="font-medium">{getCartTotal().toFixed(0)} IQD</span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Shipping Fee:</span>
+            <span className="text-gray-600">{t('shippingFee')}:</span>
             <span className="font-medium">{shippingFee.toFixed(0)} IQD</span>
           </div>
           
           <div className="border-t border-gray-200 pt-3">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-800">Total to Pay:</span>
+              <span className="text-lg font-semibold text-gray-800">{t('totalToPay')}:</span>
               <span className="text-xl font-bold text-fresh-green">
                 {totalWithShipping.toFixed(0)} IQD
               </span>
@@ -94,7 +94,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         </div>
 
         <Button className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark">
-          Place Order
+{t('placeOrder')}
         </Button>
       </div>
     </div>
@@ -194,7 +194,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
             onClick={() => setShowCheckout(true)}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
           >
-            Proceed to Checkout
+{t('proceedToCheckout')}
           </Button>
         </motion.div>
       )}
