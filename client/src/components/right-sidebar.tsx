@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus, Minus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
+import { useState } from "react";
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -10,8 +11,12 @@ interface RightSidebarProps {
 }
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
-  const { cartItems, removeFromCart, getCartTotal, cartItemsCount } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount } = useCart();
   const { t } = useTranslation();
+  const [showCheckout, setShowCheckout] = useState(false);
+
+  const shippingFee = 1500; // Fixed shipping fee in IQD
+  const totalWithShipping = getCartTotal() + shippingFee;
 
   return (
     <AnimatePresence>
@@ -73,11 +78,33 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                       />
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-800">{item.product.name}</h4>
-                        <p className="text-sm text-gray-500">{item.quantity} × {item.product.unit}</p>
+                        <p className="text-sm text-gray-500">{item.product.unit}</p>
                         <p className="text-fresh-green font-semibold">
-                          {(parseFloat(item.product.price) * item.quantity).toFixed(0)}
+                          {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
                         </p>
                       </div>
+                      
+                      {/* Quantity Controls */}
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                          className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="min-w-8 text-center font-medium">{item.quantity}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      
                       <Button
                         variant="ghost"
                         size="icon"
@@ -106,8 +133,11 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                     {getCartTotal().toFixed(0)}
                   </span>
                 </div>
-                <Button className="w-full bg-fresh-green hover:bg-fresh-green-dark">
-                  Proceed to Checkout
+                <Button 
+                  onClick={() => setShowCheckout(true)}
+                  className="w-full bg-fresh-green hover:bg-fresh-green-dark"
+                >
+                  {t('proceedToCheckout')}
                 </Button>
               </motion.div>
             )}
