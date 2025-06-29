@@ -224,7 +224,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                     type="submit"
                     className="flex-1 bg-fresh-green hover:bg-fresh-green-dark text-xs py-2"
                   >
-                    Save Address
+{t('saveAddress')}
                   </Button>
                 </div>
               </form>
@@ -288,7 +288,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
       {/* Shipping Information */}
       <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-800">Shipping Information</h3>
+          <h3 className="text-lg font-semibold text-gray-800">{t('shippingInformation')}</h3>
           {hasAddress && (
             <Button
               variant="ghost"
@@ -329,7 +329,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
             className="w-full border-dashed border-fresh-green text-fresh-green hover:bg-green-50"
           >
             <MapPin className="h-4 w-4 mr-2" />
-            Add Shipping Address
+            {t('addShippingAddress')}
           </Button>
         )}
       </div>
@@ -373,7 +373,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
           className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark"
           disabled={!hasAddress}
         >
-          {hasAddress ? t('placeOrder') : 'Add Address to Continue'}
+{hasAddress ? t('placeOrder') : t('addShippingAddress')}
         </Button>
       </div>
     </div>

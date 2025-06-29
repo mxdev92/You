@@ -111,6 +111,11 @@ export const translations = {
     totalToPay: "Total to Pay",
     placeOrder: "Place Order",
     
+    // Shipping
+    shippingInformation: "Shipping Information",
+    addShippingAddress: "Add Shipping Address",
+    saveAddress: "Save Address",
+    
     // Common
     search: "Search groceries...",
     close: "Close",
@@ -227,6 +232,11 @@ export const translations = {
     shippingFee: "رسوم التوصيل",
     totalToPay: "المجموع الإجمالي",
     placeOrder: "تأكيد الطلب",
+    
+    // Shipping
+    shippingInformation: "معلومات التوصيل",
+    addShippingAddress: "اضافة عنوان توصيل",
+    saveAddress: "تسجيل العنوان",
     total: "المجموع",
     checkout: "الدفع",
     
