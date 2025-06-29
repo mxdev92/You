@@ -216,9 +216,9 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                     type="button"
                     variant="outline"
                     onClick={() => setShowAddressForm(false)}
-                    className="flex-1 text-xs py-2"
+                    className="flex-1 text-xs py-2 border-red-500 text-red-500 hover:bg-red-50 hover:border-red-600 hover:text-red-600"
                   >
-                    Cancel
+                    {t('cancel')}
                   </Button>
                   <Button
                     type="submit"
