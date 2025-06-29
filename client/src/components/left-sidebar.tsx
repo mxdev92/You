@@ -1,11 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin } from "lucide-react";
+import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface LeftSidebarProps {
   isOpen: boolean;
@@ -15,6 +15,73 @@ interface LeftSidebarProps {
 interface ShippingFormProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface CustomDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+}
+
+function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white flex items-center justify-between"
+        style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+      >
+        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+          {value || placeholder}
+        </span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+          >
+            {options.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  onChange(option);
+                  setIsOpen(false);
+                }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-green-50 transition-colors border-b border-gray-100 last:border-b-0"
+                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+              >
+                {option}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
@@ -112,36 +179,12 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Government (State)
                   </label>
-                  <select
+                  <CustomDropdown
                     value={formData.government}
-                    onChange={(e) => setFormData({...formData, government: e.target.value})}
-                    className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white cairo-font"
-                    style={{ 
-                      fontFamily: 'Cairo, system-ui, sans-serif',
-                      fontSize: '10px',
-                      lineHeight: '1.1',
-                      height: '28px'
-                    }}
-                    required
-                  >
-                    <option value="" style={{ fontFamily: 'Cairo, system-ui, sans-serif', fontSize: '10px' }}>
-                      Select your government
-                    </option>
-                    {iraqiGovernorates.map((gov) => (
-                      <option 
-                        key={gov} 
-                        value={gov} 
-                        style={{ 
-                          fontFamily: 'Cairo, system-ui, sans-serif',
-                          fontSize: '10px',
-                          padding: '1px 2px',
-                          lineHeight: '1.1'
-                        }}
-                      >
-                        {gov}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFormData({...formData, government: value})}
+                    options={iraqiGovernorates}
+                    placeholder="Select your government"
+                  />
                 </div>
 
                 {/* Full Address */}
