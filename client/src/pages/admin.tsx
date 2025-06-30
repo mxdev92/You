@@ -264,9 +264,11 @@ function OrderStats({ orders }: { orders: Order[] }) {
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['orders'],
     queryFn: getOrders,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const filteredOrders = statusFilter === 'all' 
@@ -283,6 +285,40 @@ export default function AdminPanel() {
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="h-24 bg-gray-300 rounded"></div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h1 className="text-2xl font-bold text-red-600 mb-4">Firebase Connection Error</h1>
+            <p className="text-gray-600 mb-4">
+              Unable to connect to Firebase. This could be due to:
+            </p>
+            <ul className="list-disc list-inside text-gray-600 mb-6 space-y-2">
+              <li>Network connectivity issues</li>
+              <li>Firebase configuration problems</li>
+              <li>Authentication requirements</li>
+            </ul>
+            <div className="space-y-4">
+              <Button
+                onClick={async () => {
+                  await createSampleOrders();
+                  window.location.reload();
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Create Sample Data & Retry
+              </Button>
+              <div className="text-sm text-gray-500">
+                Error: {error?.message || 'Unknown error'}
+              </div>
             </div>
           </div>
         </div>

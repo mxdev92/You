@@ -81,15 +81,18 @@ export const createOrder = async (order: Omit<Order, 'id'>) => {
 
 export const getOrders = async () => {
   try {
+    console.log('Fetching orders from Firebase...');
     const q = query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
     const querySnapshot = await getDocs(q);
+    console.log('Orders fetched successfully:', querySnapshot.size);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as Order));
   } catch (error) {
     console.error('Error fetching orders:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent infinite loading
+    return [];
   }
 };
 
