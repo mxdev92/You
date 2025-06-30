@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List } from 'lucide-react';
 import { format } from 'date-fns';
 
 const mockOrders = [
@@ -204,13 +204,9 @@ export default function AdminFast() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">KiwiQ Admin Panel</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              {format(new Date(), 'EEEE, MMMM dd, yyyy')}
-            </div>
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="flex items-center">
+            <List className="h-5 w-5 text-gray-700" />
           </div>
         </div>
       </div>
