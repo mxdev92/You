@@ -1175,21 +1175,11 @@ export default function AdminPanel() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge 
-                            variant={
-                              order.status === 'delivered' ? 'default' :
-                              order.status === 'cancelled' ? 'destructive' :
-                              order.status === 'pending' ? 'secondary' : 'outline'
-                            }
-                            className="text-xs"
-                          >
-                            {order.status}
-                          </Badge>
                           <Select 
                             value={order.status} 
                             onValueChange={(newStatus) => handleStatusChange(order.id, newStatus)}
                           >
-                            <SelectTrigger className="w-32 text-xs">
+                            <SelectTrigger className="w-32 text-xs border-none shadow-none bg-transparent">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
