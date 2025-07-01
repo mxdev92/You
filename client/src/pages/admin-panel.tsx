@@ -8,6 +8,7 @@ import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
+import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
 const mockOrders = [
@@ -368,12 +369,27 @@ function ItemsManagement() {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Load products from Firebase on component mount
+  // Load products from backend API
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const firebaseProducts = await getProducts();
-        setProducts(firebaseProducts);
+        const response = await fetch('/api/products', { credentials: 'include' });
+        if (response.ok) {
+          const backendProducts = await response.json();
+          // Convert backend products to Firebase-compatible format
+          const convertedProducts = backendProducts.map((product: any) => ({
+            id: product.id.toString(),
+            name: product.name,
+            description: product.name, // Use name as description for now
+            price: parseFloat(product.price),
+            category: getCategoryName(product.categoryId),
+            unit: product.unit,
+            available: true,
+            imageUrl: product.imageUrl,
+            createdAt: new Date().toISOString()
+          }));
+          setProducts(convertedProducts);
+        }
       } catch (error) {
         console.error('Failed to load products:', error);
       }
@@ -381,6 +397,12 @@ function ItemsManagement() {
 
     loadProducts();
   }, []);
+
+  const getCategoryName = (categoryId: number | null) => {
+    if (categoryId === 1) return 'Fruits';
+    if (categoryId === 2) return 'Vegetables';
+    return 'Other';
+  };
 
   const categories = [
     { id: 1, name: 'Fruits', icon: Apple, count: 3 },
@@ -418,19 +440,40 @@ function ItemsManagement() {
 
   const handleAddItem = async (newItem: any) => {
     try {
-      // Create product in Firebase
-      const createdProduct = await createProduct({
+      // Create product via backend API
+      const backendProduct = {
         name: newItem.name,
-        description: newItem.description,
-        price: parseFloat(newItem.price),
-        category: newItem.category,
+        price: newItem.price,
         unit: newItem.unit,
-        available: newItem.available,
-        imageUrl: newItem.imageUrl
+        imageUrl: newItem.imageUrl,
+        categoryId: newItem.category === 'Fruits' ? 1 : newItem.category === 'Vegetables' ? 2 : null
+      };
+
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        body: JSON.stringify(backendProduct),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
 
+      if (!response.ok) throw new Error('Failed to create product');
+      const createdProduct = await response.json();
+
+      // Convert to Firebase-compatible format for local state
+      const convertedProduct = {
+        id: createdProduct.id.toString(),
+        name: createdProduct.name,
+        description: createdProduct.name,
+        price: parseFloat(createdProduct.price),
+        category: getCategoryName(createdProduct.categoryId),
+        unit: createdProduct.unit,
+        available: true,
+        imageUrl: createdProduct.imageUrl,
+        createdAt: new Date().toISOString()
+      };
+
       // Add to local state for immediate update
-      setProducts(prev => [...prev, createdProduct]);
+      setProducts(prev => [...prev, convertedProduct]);
     } catch (error) {
       console.error('Failed to create product:', error);
     }
