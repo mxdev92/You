@@ -259,14 +259,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             .totals-section {
-              text-align: left;
-              direction: ltr;
+              text-align: right;
+              direction: rtl;
               font-size: 11px;
               margin-bottom: 10px;
             }
             
             .totals-table {
-              margin-left: auto;
+              margin-right: auto;
               min-width: 200px;
             }
             
@@ -275,6 +275,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               justify-content: space-between;
               padding: 3px 0;
               border-bottom: 1px solid #e5e7eb;
+            }
+            
+            .totals-row .label {
+              text-align: right;
+            }
+            
+            .totals-row .amount {
+              text-align: left;
             }
             
             .totals-row.final {
@@ -352,16 +360,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <div class="totals-section">
             <div class="totals-table">
               <div class="totals-row">
-                <span>المجموع الفرعي:</span>
-                <span>${orderData.totalAmount.toFixed(2)} دينار</span>
+                <span class="label">المجموع الفرعي:</span>
+                <span class="amount">${orderData.totalAmount.toFixed(2)} دينار</span>
               </div>
               <div class="totals-row">
-                <span>رسوم التوصيل:</span>
-                <span>5.00 دينار</span>
+                <span class="label">رسوم التوصيل:</span>
+                <span class="amount">5.00 دينار</span>
               </div>
               <div class="totals-row final">
-                <span>المجموع الكلي:</span>
-                <span>${(orderData.totalAmount + 5).toFixed(2)} دينار</span>
+                <span class="label">المجموع الكلي:</span>
+                <span class="amount">${(orderData.totalAmount + 5).toFixed(2)} دينار</span>
               </div>
             </div>
           </div>
