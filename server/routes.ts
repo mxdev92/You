@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const page = await browser.newPage();
 
-      // Create HTML content for the invoice with RTL support
+      // Create HTML content for the invoice with compact RTL design
       const htmlContent = `
         <!DOCTYPE html>
         <html dir="rtl" lang="ar">
@@ -169,174 +169,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
             body {
               font-family: 'Cairo', Arial, sans-serif;
               direction: rtl;
-              text-align: right;
               background: white;
               color: #333;
-              line-height: 1.6;
-              padding: 40px;
+              line-height: 1.3;
+              padding: 15px;
+              font-size: 12px;
             }
             
-            .invoice-header {
-              text-align: center;
-              margin-bottom: 40px;
-              border-bottom: 3px solid #10b981;
-              padding-bottom: 20px;
+            .header-section {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 15px;
+              border-bottom: 2px solid #10b981;
+              padding-bottom: 10px;
+            }
+            
+            .customer-info {
+              text-align: right;
+              font-size: 11px;
+              line-height: 1.4;
+            }
+            
+            .customer-info div {
+              margin-bottom: 3px;
+            }
+            
+            .left-section {
+              text-align: left;
+              direction: ltr;
             }
             
             .company-name {
-              font-size: 32px;
+              font-size: 24px;
               font-weight: 700;
               color: #10b981;
-              margin-bottom: 10px;
+              margin-bottom: 5px;
             }
             
-            .invoice-title {
-              font-size: 24px;
-              font-weight: 600;
-              color: #333;
-              margin-bottom: 10px;
-            }
-            
-            .order-info {
-              font-size: 14px;
-              color: #666;
-            }
-            
-            .customer-section {
-              margin-bottom: 30px;
-              background: #f9fafb;
-              padding: 20px;
-              border-radius: 8px;
-            }
-            
-            .section-title {
-              font-size: 18px;
-              font-weight: 600;
-              color: #374151;
-              margin-bottom: 15px;
-              border-bottom: 2px solid #e5e7eb;
-              padding-bottom: 5px;
-            }
-            
-            .customer-details {
-              display: grid;
-              gap: 8px;
-            }
-            
-            .detail-item {
+            .qr-placeholder {
+              width: 60px;
+              height: 60px;
+              border: 2px solid #10b981;
               display: flex;
-              justify-content: space-between;
-              padding: 5px 0;
-            }
-            
-            .detail-label {
-              font-weight: 600;
-              color: #4b5563;
-              min-width: 100px;
-            }
-            
-            .detail-value {
-              color: #111827;
+              align-items: center;
+              justify-content: center;
+              font-size: 8px;
+              text-align: center;
+              margin-top: 5px;
             }
             
             .items-table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 30px;
-              background: white;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              margin-bottom: 15px;
+              font-size: 10px;
             }
             
             .items-table th {
               background: #10b981;
               color: white;
-              padding: 15px 10px;
+              padding: 6px 4px;
               font-weight: 600;
               border: 1px solid #059669;
+              font-size: 10px;
             }
             
             .items-table td {
-              padding: 12px 10px;
+              padding: 4px;
               border: 1px solid #e5e7eb;
               vertical-align: middle;
+              text-align: center;
+              font-size: 9px;
             }
             
             .items-table tr:nth-child(even) {
               background: #f9fafb;
             }
             
-            .items-table tr:hover {
-              background: #f3f4f6;
+            .separator-line {
+              width: 100%;
+              height: 1px;
+              background: #10b981;
+              margin: 10px 0;
             }
             
             .totals-section {
-              margin-top: 30px;
               text-align: left;
               direction: ltr;
+              font-size: 11px;
+              margin-bottom: 10px;
             }
             
             .totals-table {
               margin-left: auto;
-              min-width: 300px;
+              min-width: 200px;
             }
             
             .totals-row {
               display: flex;
               justify-content: space-between;
-              padding: 8px 0;
+              padding: 3px 0;
               border-bottom: 1px solid #e5e7eb;
             }
             
             .totals-row.final {
-              font-size: 18px;
+              font-size: 13px;
               font-weight: 700;
               color: #10b981;
-              border-bottom: 3px solid #10b981;
+              border-bottom: 2px solid #10b981;
+              margin-top: 5px;
+            }
+            
+            .notes-section {
               margin-top: 10px;
+              font-size: 10px;
+              border-top: 1px solid #e5e7eb;
+              padding-top: 8px;
             }
             
             .footer {
-              margin-top: 40px;
+              margin-top: 15px;
               text-align: center;
-              padding-top: 20px;
-              border-top: 2px solid #e5e7eb;
+              font-size: 10px;
               color: #6b7280;
-            }
-            
-            .footer-message {
-              font-size: 16px;
-              margin-bottom: 10px;
-            }
-            
-            .company-footer {
-              font-weight: 600;
-              color: #10b981;
+              border-top: 1px solid #e5e7eb;
+              padding-top: 8px;
             }
           </style>
         </head>
         <body>
-          <div class="invoice-header">
-            <div class="company-name">يلا جيتك</div>
-            <div class="invoice-title">فاتورة</div>
-            <div class="order-info">
-              رقم الطلب: ${orderData.id} | التاريخ: ${new Date(orderData.orderDate).toLocaleDateString('ar-EG')}
+          <div class="header-section">
+            <div class="customer-info">
+              <div><strong>الاسم:</strong> ${orderData.customerName}</div>
+              <div><strong>الرقم:</strong> ${orderData.customerPhone}</div>
+              <div><strong>العنوان:</strong> ${orderData.address.governorate} ${orderData.address.district}</div>
+              <div><strong>التاريخ:</strong> ${new Date(orderData.orderDate).toLocaleDateString('ar-EG')}</div>
             </div>
-          </div>
-
-          <div class="customer-section">
-            <div class="section-title">معلومات العميل</div>
-            <div class="customer-details">
-              <div class="detail-item">
-                <span class="detail-label">الاسم:</span>
-                <span class="detail-value">${orderData.customerName}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">الهاتف:</span>
-                <span class="detail-value">${orderData.customerPhone}</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">العنوان:</span>
-                <span class="detail-value">${orderData.address.governorate}، ${orderData.address.district}، ${orderData.address.neighborhood}، ${orderData.address.street}، منزل رقم ${orderData.address.houseNumber}</span>
+            
+            <div class="left-section">
+              <div class="company-name">ORDERY</div>
+              <div class="qr-placeholder">
+                QR<br/>${orderData.id}
               </div>
             </div>
           </div>
@@ -344,10 +318,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <table class="items-table">
             <thead>
               <tr>
-                <th>اسم المنتج</th>
-                <th>السعر للوحدة</th>
-                <th>الكمية</th>
-                <th>المجموع</th>
+                <th style="width: 45%">اسم المنتج</th>
+                <th style="width: 20%">السعر</th>
+                <th style="width: 15%">الكمية</th>
+                <th style="width: 20%">المجموع</th>
               </tr>
             </thead>
             <tbody>
@@ -356,15 +330,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const unitText = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
                 return `
                   <tr>
-                    <td>${item.productName}</td>
-                    <td>${item.price} دينار</td>
+                    <td style="text-align: right">${item.productName}</td>
+                    <td>${item.price}</td>
                     <td>${item.quantity} ${unitText}</td>
-                    <td>${total} دينار</td>
+                    <td>${total}</td>
                   </tr>
                 `;
               }).join('')}
             </tbody>
           </table>
+
+          <div class="separator-line"></div>
 
           <div class="totals-section">
             <div class="totals-table">
@@ -384,15 +360,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </div>
 
           ${orderData.notes ? `
-            <div class="customer-section">
-              <div class="section-title">ملاحظات</div>
-              <div style="padding: 10px 0;">${orderData.notes}</div>
+            <div class="notes-section">
+              <strong>ملاحظات:</strong> ${orderData.notes}
             </div>
           ` : ''}
 
           <div class="footer">
-            <div class="footer-message">شكراً لك على اختيارك يلا جيتك</div>
-            <div class="company-footer">Yalla Jeetek</div>
+            <div>شكراً لك على اختيارك Ordery</div>
           </div>
         </body>
         </html>
