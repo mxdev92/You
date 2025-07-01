@@ -1220,7 +1220,7 @@ export default function AdminPanel() {
               </div>
 
               {/* Customer Details */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="mb-6">
                 <h3 className="font-semibold text-gray-900 mb-3">معلومات العميل</h3>
                 <div className="space-y-2 text-sm">
                   <div><span className="font-medium">الاسم:</span> {selectedOrder.customerName}</div>
