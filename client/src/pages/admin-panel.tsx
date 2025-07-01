@@ -1164,7 +1164,7 @@ export default function AdminPanel() {
                   <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     {/* Customer Info - Horizontal Mobile-Friendly Layout */}
                     <div className="mb-4">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2">
                         <div className="flex items-center text-sm text-gray-900 font-medium overflow-hidden">
                           <span className="truncate">{order.customerName}</span>
                           <span className="mx-2 text-gray-400">-</span>
@@ -1173,24 +1173,6 @@ export default function AdminPanel() {
                           <span className="truncate text-gray-600">
                             {order.address.governorate} {order.address.district}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Select 
-                            value={order.status} 
-                            onValueChange={(newStatus) => handleStatusChange(order.id, newStatus)}
-                          >
-                            <SelectTrigger className="w-32 text-xs border-none shadow-none bg-transparent">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="preparing">Preparing</SelectItem>
-                              <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
                         </div>
                       </div>
                     </div>
