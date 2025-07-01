@@ -211,9 +211,10 @@ export default function Login() {
           <p className="text-xs text-gray-400 px-2">
             بالمتابعة، أنت توافق على شروط الخدمة وسياسة الخصوصية
           </p>
-          <p className="text-xs text-gray-300 font-medium">
-            This app built by MX 2025©
-          </p>
+          <div className="text-xs text-gray-300 font-medium space-y-1">
+            <p>This app was built by MX 2025</p>
+            <p>For more information mxdev92@gmail.com</p>
+          </div>
         </motion.div>
       </motion.div>
     </div>
