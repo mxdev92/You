@@ -237,7 +237,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter product name"
-              className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
+              className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500"
               required
             />
           </div>
@@ -250,7 +250,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Brief description of the product"
-              className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
+              className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500"
             />
           </div>
 
@@ -264,7 +264,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
               onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
               placeholder="0.00"
               step="0.25"
-              className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
+              className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500"
               required
             />
           </div>
@@ -275,7 +275,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
             <div className="space-y-2">
               <Label htmlFor="category" className="text-sm font-medium text-gray-700">Category</Label>
               <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-                <SelectTrigger className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500">
+                <SelectTrigger className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -291,7 +291,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
             <div className="space-y-2">
               <Label htmlFor="unit" className="text-sm font-medium text-gray-700">Unit</Label>
               <Select value={formData.unit} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
-                <SelectTrigger className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500">
+                <SelectTrigger className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -429,7 +429,7 @@ function ItemsManagement() {
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-9 text-sm border-gray-300 focus:border-blue-500"
+              className="pl-10 h-9 text-sm border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -512,7 +512,7 @@ function ItemsManagement() {
                     type="number"
                     value={product.price}
                     onChange={(e) => updateProductPrice(product.id, e.target.value)}
-                    className="w-14 h-6 text-xs text-center border-gray-300 focus:border-blue-500"
+                    className="w-14 h-6 text-xs text-center border-0 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-blue-500"
                     step="0.25"
                   />
                 </div>
@@ -521,7 +521,7 @@ function ItemsManagement() {
                 <select
                   value={product.available ? 'Available' : 'Unavailable'}
                   onChange={(e) => updateProductAvailability(product.id, e.target.value === 'Available')}
-                  className="text-xs border border-gray-300 rounded px-1.5 py-1 focus:border-blue-500 focus:outline-none"
+                  className="text-xs border-0 bg-gray-50 rounded px-1.5 py-1 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
                   <option value="Available">Available</option>
                   <option value="Unavailable">Unavailable</option>
