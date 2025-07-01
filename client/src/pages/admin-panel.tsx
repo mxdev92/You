@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -1115,38 +1116,96 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Generating PDF using server-side Puppeteer...');
+      console.log('Generating high-quality PDF with HTML2Canvas...');
       
-      // Call the server endpoint to generate PDF
-      const response = await fetch('/api/generate-invoice-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          order: selectedOrder
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to generate PDF');
+      // Get the invoice element
+      const invoiceElement = document.getElementById('invoice-content');
+      if (!invoiceElement) {
+        alert('Invoice element not found. Please try again.');
+        return;
       }
 
-      // Get the PDF blob
-      const pdfBlob = await response.blob();
+      // Temporarily hide buttons
+      const buttonContainer = invoiceElement.querySelector('[data-button-container]') as HTMLElement;
+      if (buttonContainer) {
+        buttonContainer.style.display = 'none';
+      }
+
+      // Wait for fonts to load
+      await document.fonts.ready;
       
-      // Create download link
-      const url = window.URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Create high-quality canvas
+      const canvas = await html2canvas(invoiceElement, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: invoiceElement.scrollWidth,
+        height: invoiceElement.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Ensure fonts are loaded in cloned document
+          const clonedElement = clonedDoc.getElementById('invoice-content');
+          if (clonedElement) {
+            clonedElement.style.fontFamily = 'Cairo, Arial, sans-serif';
+            clonedElement.style.direction = 'rtl';
+            clonedElement.style.textAlign = 'right';
+          }
+        }
+      });
+
+      // Show buttons again
+      if (buttonContainer) {
+        buttonContainer.style.display = 'flex';
+      }
+
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const maxWidth = pdfWidth - (margin * 2);
+      const maxHeight = pdfHeight - (margin * 2);
+
+      // Calculate scaling
+      const canvasAspectRatio = canvas.height / canvas.width;
+      let imgWidth = maxWidth;
+      let imgHeight = maxWidth * canvasAspectRatio;
+
+      if (imgHeight > maxHeight) {
+        imgHeight = maxHeight;
+        imgWidth = maxHeight / canvasAspectRatio;
+      }
+
+      // Center the image
+      const x = (pdfWidth - imgWidth) / 2;
+      const y = (pdfHeight - imgHeight) / 2;
+
+      // Convert to image and add to PDF
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+
+      // Handle multi-page if needed
+      let remainingHeight = imgHeight - maxHeight;
+      let currentY = -maxHeight;
       
-      console.log('Arabic PDF with Cairo font generated successfully');
+      while (remainingHeight > 0) {
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', x, currentY, imgWidth, imgHeight);
+        remainingHeight -= maxHeight;
+        currentY -= maxHeight;
+      }
+
+      // Download
+      const filename = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
+      pdf.save(filename);
+      
+      console.log('High-quality PDF with proper Arabic fonts generated successfully');
       
     } catch (error) {
       console.error('Error generating PDF:', error);
