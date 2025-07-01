@@ -247,9 +247,10 @@ function ItemsManagement() {
       <div className="p-4">
         <div className="space-y-2">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+            <div key={product.id} className="bg-white rounded-lg border border-gray-200 p-2 hover:shadow-sm transition-shadow">
+              <div className="flex items-center gap-2">
+                {/* Product Image */}
+                <div className="w-10 h-10 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden">
                   <img 
                     src={product.image} 
                     alt={product.name}
@@ -257,37 +258,32 @@ function ItemsManagement() {
                   />
                 </div>
                 
+                {/* Product Name */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-gray-900 text-sm truncate">{product.name}</h3>
-                  <p className="text-xs text-gray-500">{product.category}</p>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">IQD</span>
-                    <Input
-                      type="number"
-                      value={product.price}
-                      onChange={(e) => updateProductPrice(product.id, e.target.value)}
-                      className="w-16 h-7 text-xs text-center border-gray-300 focus:border-blue-500"
-                      step="0.25"
-                    />
-                    <span className="text-xs text-gray-500">/{product.unit}</span>
-                  </div>
-                  
-                  <select
-                    value={product.available ? 'Available' : 'Unavailable'}
-                    onChange={(e) => updateProductAvailability(product.id, e.target.value === 'Available')}
-                    className="text-xs border border-gray-300 rounded px-2 py-1 focus:border-blue-500 focus:outline-none"
-                  >
-                    <option value="Available">Available</option>
-                    <option value="Unavailable">Unavailable</option>
-                  </select>
-                  
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    product.available ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
+                {/* Price */}
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">IQD</span>
+                  <Input
+                    type="number"
+                    value={product.price}
+                    onChange={(e) => updateProductPrice(product.id, e.target.value)}
+                    className="w-14 h-6 text-xs text-center border-gray-300 focus:border-blue-500"
+                    step="0.25"
+                  />
                 </div>
+                
+                {/* Availability */}
+                <select
+                  value={product.available ? 'Available' : 'Unavailable'}
+                  onChange={(e) => updateProductAvailability(product.id, e.target.value === 'Available')}
+                  className="text-xs border border-gray-300 rounded px-1.5 py-1 focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="Available">Available</option>
+                  <option value="Unavailable">Unavailable</option>
+                </select>
               </div>
             </div>
           ))}
