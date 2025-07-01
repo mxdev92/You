@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
@@ -1032,6 +1032,12 @@ export default function AdminPanel() {
     ));
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuthenticated');
+    localStorage.removeItem('adminEmail');
+    window.location.href = '/admin';
+  };
+
   const filteredOrders = statusFilter === 'all' 
     ? orders 
     : orders.filter(order => order.status === statusFilter);
@@ -1048,10 +1054,18 @@ export default function AdminPanel() {
             >
               <List className="h-5 w-5 text-gray-700" />
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Badge variant="default" className="text-xs">
                 {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
               </Badge>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Sign Out"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </button>
             </div>
           </div>
         </div>
