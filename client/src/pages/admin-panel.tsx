@@ -8,6 +8,8 @@ import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -1110,6 +1112,50 @@ export default function AdminPanel() {
     setSelectedOrder(null);
   };
 
+  const downloadInvoicePDF = async () => {
+    if (!selectedOrder) return;
+    
+    try {
+      // Get the invoice element
+      const invoiceElement = document.getElementById('invoice-content');
+      if (!invoiceElement) return;
+
+      // Convert to canvas
+      const canvas = await html2canvas(invoiceElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
+      });
+
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Download the PDF
+      pdf.save(`فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('حدث خطأ في تحميل الفاتورة');
+    }
+  };
+
   const handleStatusChange = (orderId: string, newStatus: string) => {
     setOrders(prev => prev.map(order => 
       order.id === orderId ? { ...order, status: newStatus as any } : order
@@ -1207,16 +1253,13 @@ export default function AdminPanel() {
       {showInvoice && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" dir="rtl">
-            <div className="p-6" style={{ fontFamily: 'Cairo, sans-serif' }}>
+            <div id="invoice-content" className="p-6" style={{ fontFamily: 'Cairo, sans-serif' }}>
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">فاتورة الطلب</h2>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => {
-                      // Generate and download PDF
-                      console.log('Downloading invoice PDF...');
-                    }}
+                    onClick={downloadInvoicePDF}
                     className="p-2 hover:bg-gray-100 rounded-full"
                     title="حفظ الفاتورة"
                   >

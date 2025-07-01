@@ -29,7 +29,11 @@ export default function AdminLogin() {
       localStorage.setItem('adminAuthenticated', 'true');
       localStorage.setItem('adminEmail', formData.email);
       console.log('LocalStorage set, redirecting...');
-      setLocation('/admin');
+      
+      // Force redirect with timeout to ensure localStorage is set
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 100);
     } else {
       console.log('Authentication failed');
       setError('Invalid email or password');
