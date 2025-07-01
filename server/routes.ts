@@ -421,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set proper headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="فاتورة-${orderData.customerName}-${orderData.id}.pdf"`);
+      res.setHeader('Content-Disposition', `attachment; filename="invoice-${orderData.id}.pdf"`);
       res.send(pdf);
 
     } catch (error) {
