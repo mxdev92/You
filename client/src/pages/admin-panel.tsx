@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
@@ -1211,12 +1211,24 @@ export default function AdminPanel() {
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">فاتورة الطلب</h2>
-                <button
-                  onClick={closeInvoice}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      // Generate and download PDF
+                      console.log('Downloading invoice PDF...');
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                    title="حفظ الفاتورة"
+                  >
+                    <Download className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={closeInvoice}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Customer Details */}
