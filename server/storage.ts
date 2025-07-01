@@ -11,6 +11,7 @@ export interface IStorage {
   getProductsByCategory(categoryId: number): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
 
   // Cart
   getCartItems(): Promise<(CartItem & { product: Product })[]>;
@@ -144,6 +145,23 @@ export class MemStorage implements IStorage {
     };
     this.products.set(id, product);
     return product;
+  }
+
+  async updateProduct(id: number, updateData: Partial<InsertProduct>): Promise<Product> {
+    const existingProduct = this.products.get(id);
+    if (!existingProduct) {
+      throw new Error("Product not found");
+    }
+
+    const updatedProduct: Product = {
+      ...existingProduct,
+      ...updateData,
+      id, // Ensure ID stays the same
+      categoryId: updateData.categoryId ?? existingProduct.categoryId
+    };
+    
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
   }
 
   async getCartItems(): Promise<(CartItem & { product: Product })[]> {

@@ -415,10 +415,13 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
 
     setIsLoading(true);
     try {
-      // Upload new image if selected, otherwise keep existing
+      // For now, keep existing image URL or use placeholder if image was changed
+      // Note: Image upload functionality can be enhanced later with backend storage
       let imageUrl = product?.imageUrl || '/api/placeholder/60/60';
-      if (formData.image) {
-        imageUrl = await uploadProductImage(formData.image);
+      if (formData.image && imagePreview && imagePreview !== product?.imageUrl) {
+        // If a new image was selected, use a placeholder for now
+        // TODO: Implement proper image upload to backend
+        imageUrl = '/api/placeholder/60/60';
       }
       
       const updatedProduct = {
