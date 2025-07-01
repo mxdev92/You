@@ -1115,7 +1115,7 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Creating PDF with jsPDF...');
+      console.log('Creating PDF with Arabic support...');
       
       // Create PDF document
       const pdf = new jsPDF({
@@ -1128,7 +1128,14 @@ export default function AdminPanel() {
       const margin = 20;
       let yPos = 30;
 
-      // Helper function to add text (English/Numbers work fine)
+      // Load Arabic font (we'll use a simplified approach with Unicode support)
+      // Note: For proper Arabic rendering, we need to reverse the text for RTL
+      const reverseArabicText = (text: string) => {
+        // Simple reversal for basic Arabic display
+        return text.split('').reverse().join('');
+      };
+
+      // Helper function to add text with Arabic support
       const addText = (text: string, x: number, y: number, options: any = {}) => {
         pdf.setFontSize(options.fontSize || 12);
         if (options.bold) {
@@ -1136,90 +1143,136 @@ export default function AdminPanel() {
         } else {
           pdf.setFont('helvetica', 'normal');
         }
-        pdf.text(text, x, y, { align: options.align || 'left' });
+        
+        // Check if text contains Arabic characters
+        const hasArabic = /[\u0600-\u06FF]/.test(text);
+        if (hasArabic && options.reverseArabic !== false) {
+          // For Arabic text, we need to handle RTL
+          const processedText = reverseArabicText(text);
+          pdf.text(processedText, x, y, { align: options.align || 'right' });
+        } else {
+          pdf.text(text, x, y, { align: options.align || 'left' });
+        }
       };
 
-      // Header
-      addText('Invoice / فاتورة', pageWidth/2, yPos, { fontSize: 20, bold: true, align: 'center' });
+      // Header with both English and Arabic
+      addText('Invoice', pageWidth/2 - 30, yPos, { fontSize: 20, bold: true, align: 'center' });
+      addText('فاتورة الطلب', pageWidth/2 + 30, yPos, { fontSize: 20, bold: true, align: 'center' });
       yPos += 15;
 
       // Order ID
-      addText(`Order ID: ${selectedOrder.id}`, pageWidth/2, yPos, { fontSize: 12, align: 'center' });
+      addText(`Order ID: ${selectedOrder.id}`, pageWidth/2, yPos, { fontSize: 12, align: 'center', reverseArabic: false });
       yPos += 20;
 
-      // Customer Information
-      addText('Customer Information:', margin, yPos, { fontSize: 14, bold: true });
+      // Customer Information (Bilingual)
+      addText('Customer Information', margin, yPos, { fontSize: 14, bold: true, reverseArabic: false });
+      addText('معلومات العميل', pageWidth - margin, yPos, { fontSize: 14, bold: true, align: 'right' });
       yPos += 10;
 
-      addText(`Name: ${selectedOrder.customerName}`, margin, yPos, { fontSize: 11 });
+      addText(`Name: ${selectedOrder.customerName}`, margin, yPos, { fontSize: 11, reverseArabic: false });
+      addText(`الاسم: ${selectedOrder.customerName}`, pageWidth - margin, yPos, { fontSize: 11, align: 'right' });
       yPos += 7;
       
-      addText(`Phone: ${selectedOrder.customerPhone}`, margin, yPos, { fontSize: 11 });
+      addText(`Phone: ${selectedOrder.customerPhone}`, margin, yPos, { fontSize: 11, reverseArabic: false });
+      addText(`الهاتف: ${selectedOrder.customerPhone}`, pageWidth - margin, yPos, { fontSize: 11, align: 'right' });
       yPos += 7;
       
-      const address = `Address: ${selectedOrder.address.governorate}, ${selectedOrder.address.district}, ${selectedOrder.address.neighborhood}, ${selectedOrder.address.street}, House #${selectedOrder.address.houseNumber}`;
-      const addressLines = pdf.splitTextToSize(address, pageWidth - 2 * margin);
-      pdf.text(addressLines, margin, yPos);
-      yPos += addressLines.length * 5 + 5;
+      const addressEn = `Address: ${selectedOrder.address.governorate}, ${selectedOrder.address.district}, ${selectedOrder.address.neighborhood}, ${selectedOrder.address.street}, House #${selectedOrder.address.houseNumber}`;
+      const addressAr = `العنوان: ${selectedOrder.address.governorate} - ${selectedOrder.address.district} - ${selectedOrder.address.neighborhood} - ${selectedOrder.address.street} - منزل رقم ${selectedOrder.address.houseNumber}`;
       
-      addText(`Order Date: ${new Date(selectedOrder.orderDate).toLocaleDateString()}`, margin, yPos, { fontSize: 11 });
+      const addressLinesEn = pdf.splitTextToSize(addressEn, (pageWidth - 2 * margin) / 2);
+      pdf.text(addressLinesEn, margin, yPos);
+      
+      const addressLinesAr = pdf.splitTextToSize(addressAr, (pageWidth - 2 * margin) / 2);
+      pdf.text(addressLinesAr, pageWidth - margin, yPos, { align: 'right' });
+      yPos += Math.max(addressLinesEn.length, addressLinesAr.length) * 5 + 5;
+      
+      addText(`Order Date: ${new Date(selectedOrder.orderDate).toLocaleDateString()}`, margin, yPos, { fontSize: 11, reverseArabic: false });
+      addText(`تاريخ الطلب: ${new Date(selectedOrder.orderDate).toLocaleDateString('ar-EG')}`, pageWidth - margin, yPos, { fontSize: 11, align: 'right' });
       yPos += 15;
 
-      // Items Table Header
-      addText('Order Items:', margin, yPos, { fontSize: 14, bold: true });
+      // Items Table Header (Bilingual)
+      addText('Order Items', margin, yPos, { fontSize: 14, bold: true, reverseArabic: false });
+      addText('قائمة الطلبات', pageWidth - margin, yPos, { fontSize: 14, bold: true, align: 'right' });
       yPos += 10;
 
-      // Table headers
+      // Table headers (English and Arabic)
       const col1 = margin;
-      const col2 = margin + 80;
-      const col3 = margin + 130;
-      const col4 = margin + 160;
+      const col2 = margin + 60;
+      const col3 = margin + 110;
+      const col4 = margin + 150;
 
-      addText('Product', col1, yPos, { fontSize: 10, bold: true });
-      addText('Price', col2, yPos, { fontSize: 10, bold: true });
-      addText('Qty', col3, yPos, { fontSize: 10, bold: true });
-      addText('Total', col4, yPos, { fontSize: 10, bold: true });
+      // English headers
+      addText('Product', col1, yPos, { fontSize: 10, bold: true, reverseArabic: false });
+      addText('Price', col2, yPos, { fontSize: 10, bold: true, reverseArabic: false });
+      addText('Qty', col3, yPos, { fontSize: 10, bold: true, reverseArabic: false });
+      addText('Total', col4, yPos, { fontSize: 10, bold: true, reverseArabic: false });
+
+      // Arabic headers (right side)
+      const rightCol1 = pageWidth - margin - 10;
+      const rightCol2 = pageWidth - margin - 60;
+      const rightCol3 = pageWidth - margin - 110;
+      const rightCol4 = pageWidth - margin - 150;
+
+      addText('الاسم', rightCol1, yPos, { fontSize: 10, bold: true, align: 'right' });
+      addText('السعر', rightCol2, yPos, { fontSize: 10, bold: true, align: 'right' });
+      addText('الكمية', rightCol3, yPos, { fontSize: 10, bold: true, align: 'right' });
+      addText('المجموع', rightCol4, yPos, { fontSize: 10, bold: true, align: 'right' });
       yPos += 5;
 
       // Line under header
       pdf.line(margin, yPos, pageWidth - margin, yPos);
       yPos += 8;
 
-      // Items
+      // Items (Bilingual)
       selectedOrder.items.forEach((item: any) => {
-        const unit = item.unit === 'kg' ? 'kg' : item.unit === 'bunch' ? 'bunch' : item.unit;
+        const unitEn = item.unit === 'kg' ? 'kg' : item.unit === 'bunch' ? 'bunch' : item.unit;
+        const unitAr = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
         const total = (parseFloat(item.price) * item.quantity).toFixed(2);
         
-        addText(item.productName, col1, yPos, { fontSize: 9 });
-        addText(`${item.price} IQD`, col2, yPos, { fontSize: 9 });
-        addText(`${item.quantity} ${unit}`, col3, yPos, { fontSize: 9 });
-        addText(`${total} IQD`, col4, yPos, { fontSize: 9 });
+        // English side
+        addText(item.productName, col1, yPos, { fontSize: 9, reverseArabic: false });
+        addText(`${item.price} IQD`, col2, yPos, { fontSize: 9, reverseArabic: false });
+        addText(`${item.quantity} ${unitEn}`, col3, yPos, { fontSize: 9, reverseArabic: false });
+        addText(`${total} IQD`, col4, yPos, { fontSize: 9, reverseArabic: false });
+
+        // Arabic side
+        addText(item.productName, rightCol1, yPos, { fontSize: 9, align: 'right' });
+        addText(`${item.price} د.ع`, rightCol2, yPos, { fontSize: 9, align: 'right' });
+        addText(`${item.quantity} ${unitAr}`, rightCol3, yPos, { fontSize: 9, align: 'right' });
+        addText(`${total} د.ع`, rightCol4, yPos, { fontSize: 9, align: 'right' });
         yPos += 6;
       });
 
       yPos += 10;
 
-      // Totals
-      const totalX = pageWidth - margin - 60;
-      addText(`Subtotal: ${selectedOrder.totalAmount.toFixed(2)} IQD`, totalX, yPos, { fontSize: 11, align: 'left' });
-      yPos += 7;
-      
-      addText('Delivery: 5.00 IQD', totalX, yPos, { fontSize: 11, align: 'left' });
-      yPos += 7;
-      
-      addText(`TOTAL: ${(selectedOrder.totalAmount + 5).toFixed(2)} IQD`, totalX, yPos, { fontSize: 12, bold: true, align: 'left' });
+      // Totals (Bilingual)
+      const totalX = pageWidth/2 - 80;
+      const totalXAr = pageWidth/2 + 80;
 
-      // Notes
+      addText(`Subtotal: ${selectedOrder.totalAmount.toFixed(2)} IQD`, totalX, yPos, { fontSize: 11, reverseArabic: false });
+      addText(`المجموع الفرعي: ${selectedOrder.totalAmount.toFixed(2)} د.ع`, totalXAr, yPos, { fontSize: 11, align: 'right' });
+      yPos += 7;
+      
+      addText('Delivery: 5.00 IQD', totalX, yPos, { fontSize: 11, reverseArabic: false });
+      addText('رسوم التوصيل: 5.00 د.ع', totalXAr, yPos, { fontSize: 11, align: 'right' });
+      yPos += 7;
+      
+      addText(`TOTAL: ${(selectedOrder.totalAmount + 5).toFixed(2)} IQD`, totalX, yPos, { fontSize: 12, bold: true, reverseArabic: false });
+      addText(`المجموع الكلي: ${(selectedOrder.totalAmount + 5).toFixed(2)} د.ع`, totalXAr, yPos, { fontSize: 12, bold: true, align: 'right' });
+
+      // Notes (if any)
       if (selectedOrder.notes) {
         yPos += 15;
-        addText(`Notes: ${selectedOrder.notes}`, margin, yPos, { fontSize: 10 });
+        addText(`Notes: ${selectedOrder.notes}`, margin, yPos, { fontSize: 10, reverseArabic: false });
+        addText(`ملاحظات: ${selectedOrder.notes}`, pageWidth - margin, yPos, { fontSize: 10, align: 'right' });
       }
 
       // Save PDF
       const filename = `Invoice-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
       pdf.save(filename);
       
-      console.log('PDF generated successfully');
+      console.log('Bilingual PDF generated successfully');
       
     } catch (error) {
       console.error('Error generating PDF:', error);
