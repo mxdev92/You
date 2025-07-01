@@ -1116,44 +1116,106 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Starting PDF generation...');
+      console.log('Creating native PDF...');
       
-      // Get the invoice element
-      const invoiceElement = document.getElementById('invoice-content');
-      if (!invoiceElement) {
-        console.error('Invoice element not found');
-        return;
-      }
-
-      console.log('Converting to canvas...');
-      // Convert to canvas with better options
-      const canvas = await html2canvas(invoiceElement, {
-        scale: 1,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: true
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
 
-      console.log('Canvas created, generating PDF...');
+      // Set up RTL text direction and Arabic font support
+      pdf.setR2L(true);
       
-      // Create PDF
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const imgWidth = 190; // A4 width minus margins
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Add the image to PDF
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      let yPos = 20;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 20;
+      const rightMargin = pageWidth - margin;
 
-      // Use English filename to avoid potential issues
-      const filename = `Invoice-${selectedOrder.id}-${selectedOrder.customerName.replace(/\s+/g, '-')}.pdf`;
+      // Header
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('فاتورة الطلب', rightMargin, yPos, { align: 'right' });
+      yPos += 15;
+
+      // Customer Information
+      pdf.setFontSize(16);
+      pdf.text('معلومات العميل', rightMargin, yPos, { align: 'right' });
+      yPos += 10;
+
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
       
-      console.log('Saving PDF as:', filename);
+      pdf.text(`الاسم: ${selectedOrder.customerName}`, rightMargin, yPos, { align: 'right' });
+      yPos += 7;
+      
+      pdf.text(`الهاتف: ${selectedOrder.customerPhone}`, rightMargin, yPos, { align: 'right' });
+      yPos += 7;
+      
+      const address = `العنوان: ${selectedOrder.address.governorate} - ${selectedOrder.address.district} - ${selectedOrder.address.neighborhood} - ${selectedOrder.address.street} - منزل رقم ${selectedOrder.address.houseNumber}`;
+      const addressLines = pdf.splitTextToSize(address, pageWidth - 2 * margin);
+      pdf.text(addressLines, rightMargin, yPos, { align: 'right' });
+      yPos += addressLines.length * 7;
+      
+      pdf.text(`تاريخ الطلب: ${new Date(selectedOrder.orderDate).toLocaleDateString('en-US')}`, rightMargin, yPos, { align: 'right' });
+      yPos += 15;
+
+      // Items Header
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('قائمة الطلبات', rightMargin, yPos, { align: 'right' });
+      yPos += 10;
+
+      // Table headers
+      pdf.setFontSize(10);
+      pdf.text('الاسم', rightMargin - 10, yPos, { align: 'right' });
+      pdf.text('السعر للكيلو', rightMargin - 60, yPos, { align: 'right' });
+      pdf.text('الكمية', rightMargin - 100, yPos, { align: 'right' });
+      pdf.text('السعر الكلي', rightMargin - 140, yPos, { align: 'right' });
+      yPos += 5;
+
+      // Draw line under headers
+      pdf.line(margin, yPos, rightMargin, yPos);
+      yPos += 5;
+
+      // Items
+      pdf.setFont('helvetica', 'normal');
+      selectedOrder.items.forEach((item) => {
+        const unit = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
+        const total = (parseFloat(item.price) * item.quantity).toFixed(2);
+        
+        pdf.text(item.productName, rightMargin - 10, yPos, { align: 'right' });
+        pdf.text(item.price, rightMargin - 60, yPos, { align: 'right' });
+        pdf.text(`${item.quantity} ${unit}`, rightMargin - 100, yPos, { align: 'right' });
+        pdf.text(total, rightMargin - 140, yPos, { align: 'right' });
+        yPos += 7;
+      });
+
+      yPos += 10;
+
+      // Totals
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`المجموع الفرعي: ${selectedOrder.totalAmount.toFixed(2)} د.ع`, rightMargin, yPos, { align: 'right' });
+      yPos += 7;
+      
+      pdf.text(`رسوم التوصيل: 5.00 د.ع`, rightMargin, yPos, { align: 'right' });
+      yPos += 7;
+      
+      pdf.setFontSize(14);
+      pdf.text(`المجموع الكلي: ${(selectedOrder.totalAmount + 5).toFixed(2)} د.ع`, rightMargin, yPos, { align: 'right' });
+
+      // Notes if any
+      if (selectedOrder.notes) {
+        yPos += 15;
+        pdf.setFontSize(12);
+        pdf.text(`ملاحظات: ${selectedOrder.notes}`, rightMargin, yPos, { align: 'right' });
+      }
+
+      // Save PDF
+      const filename = `Invoice-${selectedOrder.id}-${selectedOrder.customerName.replace(/\s+/g, '-')}.pdf`;
       pdf.save(filename);
       
-      console.log('PDF download completed');
+      console.log('Native PDF generated successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Error downloading invoice / حدث خطأ في تحميل الفاتورة');
