@@ -1116,121 +1116,72 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Creating native PDF...');
+      console.log('Starting PDF generation with HTML2Canvas...');
       
+      // Get the invoice element
+      const invoiceElement = document.getElementById('invoice-content');
+      if (!invoiceElement) {
+        console.error('Invoice element not found');
+        return;
+      }
+
+      // Hide the buttons during capture
+      const buttons = invoiceElement.querySelector('.flex.items-center.gap-2');
+      if (buttons) {
+        buttons.style.display = 'none';
+      }
+
+      console.log('Converting to canvas...');
+      // Convert to canvas with optimized settings for Arabic text
+      const canvas = await html2canvas(invoiceElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        letterRendering: true,
+        foreignObjectRendering: true
+      });
+
+      // Show buttons again
+      if (buttons) {
+        buttons.style.display = 'flex';
+      }
+
+      console.log('Canvas created, generating PDF...');
+      
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
-
-      let yPos = 20;
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 20;
-
-      // Header
-      pdf.setFontSize(20);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('INVOICE / FATORAH', pageWidth/2, yPos, { align: 'center' });
-      yPos += 15;
-
-      // Customer Information
-      pdf.setFontSize(14);
-      pdf.text('Customer Information:', margin, yPos);
-      yPos += 10;
-
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
       
-      pdf.text(`Name: ${selectedOrder.customerName}`, margin, yPos);
-      yPos += 7;
+      const imgWidth = 190; // A4 width minus margins
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      pdf.text(`Phone: ${selectedOrder.customerPhone}`, margin, yPos);
-      yPos += 7;
-      
-      pdf.text(`Address: ${selectedOrder.address.governorate}, ${selectedOrder.address.district}`, margin, yPos);
-      yPos += 7;
-      
-      pdf.text(`${selectedOrder.address.neighborhood}, ${selectedOrder.address.street}`, margin, yPos);
-      yPos += 7;
-      
-      pdf.text(`House No: ${selectedOrder.address.houseNumber}${selectedOrder.address.floorNumber ? `, Floor: ${selectedOrder.address.floorNumber}` : ''}`, margin, yPos);
-      yPos += 7;
-      
-      if (selectedOrder.address.notes) {
-        pdf.text(`Notes: ${selectedOrder.address.notes}`, margin, yPos);
-        yPos += 7;
-      }
-      
-      pdf.text(`Order Date: ${new Date(selectedOrder.orderDate).toLocaleDateString('en-US')}`, margin, yPos);
-      yPos += 15;
+      // Add the image to PDF
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
 
-      // Items Table
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Order Items:', margin, yPos);
-      yPos += 10;
-
-      // Table headers
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Item Name', margin, yPos);
-      pdf.text('Price/kg', margin + 60, yPos);
-      pdf.text('Quantity', margin + 100, yPos);
-      pdf.text('Total', margin + 140, yPos);
-      yPos += 5;
-
-      // Draw line under headers
-      pdf.line(margin, yPos, pageWidth - margin, yPos);
-      yPos += 5;
-
-      // Items
-      pdf.setFont('helvetica', 'normal');
-      selectedOrder.items.forEach((item) => {
-        const unit = item.unit === 'kg' ? 'kg' : item.unit === 'bunch' ? 'bunch' : item.unit;
-        const total = (parseFloat(item.price) * item.quantity).toFixed(2);
-        
-        // Use English transliterations for Arabic products
-        let itemName = item.productName;
-        if (item.productName === 'تفاح عضوي') itemName = 'Organic Apples';
-        if (item.productName === 'سبانخ طازجة') itemName = 'Fresh Spinach';
-        if (item.productName === 'موز') itemName = 'Bananas';
-        
-        pdf.text(itemName, margin, yPos);
-        pdf.text(`${item.price} IQD`, margin + 60, yPos);
-        pdf.text(`${item.quantity} ${unit}`, margin + 100, yPos);
-        pdf.text(`${total} IQD`, margin + 140, yPos);
-        yPos += 7;
-      });
-
-      yPos += 10;
-
-      // Totals
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`Subtotal: ${selectedOrder.totalAmount.toFixed(2)} IQD`, margin + 100, yPos);
-      yPos += 7;
-      
-      pdf.text(`Delivery Fee: 5.00 IQD`, margin + 100, yPos);
-      yPos += 7;
-      
-      pdf.setFontSize(14);
-      pdf.text(`TOTAL: ${(selectedOrder.totalAmount + 5).toFixed(2)} IQD`, margin + 100, yPos);
-
-      // Notes if any
-      if (selectedOrder.notes) {
-        yPos += 15;
-        pdf.setFontSize(12);
-        pdf.text(`Notes: ${selectedOrder.notes}`, margin, yPos);
+      // Handle multi-page content if needed
+      if (imgHeight > 270) { // A4 height minus margins
+        let position = -270;
+        while (position > -imgHeight) {
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 10, position + 10, imgWidth, imgHeight);
+          position -= 270;
+        }
       }
 
-      // Save PDF
-      const filename = `Invoice-${selectedOrder.id}-${selectedOrder.customerName.replace(/\s+/g, '-')}.pdf`;
+      // Save with Arabic filename
+      const filename = `فاتورة-${selectedOrder.id}.pdf`;
       pdf.save(filename);
       
-      console.log('Native PDF generated successfully');
+      console.log('PDF download completed successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Error downloading invoice / حدث خطأ في تحميل الفاتورة');
+      alert('حدث خطأ في تحميل الفاتورة');
     }
   };
 
