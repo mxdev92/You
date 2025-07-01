@@ -143,10 +143,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Order data is required" });
       }
 
-      // Launch browser with system Chromium
+      // Launch browser with production-safe settings
       const browser = await chromium.launch({
-        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
       });
       const page = await browser.newPage();
 

@@ -97,6 +97,15 @@ Yalla JEETEK (يلا جيتك) is a modern grocery shopping web application buil
 ## Recent Changes
 
 ```
+July 2, 2025:
+✓ Implemented Playwright server-side PDF generation with Arabic RTL support
+✓ Created professional invoice layout with proper Arabic text rendering
+✓ Added compact PDF design to support 20+ items per page
+✓ Positioned company name "ORDERY" at top center with QR code placeholder
+✓ Fixed Arabic totals alignment (labels right, prices left)
+✓ Optimized space usage with smaller fonts and reduced margins
+✓ Added real selectable Arabic text (not screenshots)
+
 July 1, 2025:
 ✓ Rebranded application from KiwiQ to "Yalla JEETEK" (يلا جيتك)
 ✓ Updated login page to be completely in Arabic using Cairo font
