@@ -372,10 +372,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         </html>
       `;
 
-      // Launch Puppeteer
+      // Launch Puppeteer with optimized settings for Replit
       const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: 'new',
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--single-process',
+          '--no-zygote'
+        ]
       });
       
       const page = await browser.newPage();
