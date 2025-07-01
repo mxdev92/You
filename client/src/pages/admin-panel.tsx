@@ -1116,43 +1116,47 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
+      console.log('Starting PDF generation...');
+      
       // Get the invoice element
       const invoiceElement = document.getElementById('invoice-content');
-      if (!invoiceElement) return;
+      if (!invoiceElement) {
+        console.error('Invoice element not found');
+        return;
+      }
 
-      // Convert to canvas
+      console.log('Converting to canvas...');
+      // Convert to canvas with better options
       const canvas = await html2canvas(invoiceElement, {
-        scale: 2,
+        scale: 1,
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: true
       });
 
+      console.log('Canvas created, generating PDF...');
+      
       // Create PDF
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
-      const imgWidth = 210;
-      const pageHeight = 295;
+      const imgWidth = 190; // A4 width minus margins
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      
+      // Add the image to PDF
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
 
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Download the PDF
-      pdf.save(`فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`);
+      // Use English filename to avoid potential issues
+      const filename = `Invoice-${selectedOrder.id}-${selectedOrder.customerName.replace(/\s+/g, '-')}.pdf`;
+      
+      console.log('Saving PDF as:', filename);
+      pdf.save(filename);
+      
+      console.log('PDF download completed');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('حدث خطأ في تحميل الفاتورة');
+      alert('Error downloading invoice / حدث خطأ في تحميل الفاتورة');
     }
   };
 
