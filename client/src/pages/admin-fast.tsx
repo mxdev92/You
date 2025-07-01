@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List, ShoppingCart, Edit3, Save, X, Search, Tag, Package2 } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List, ShoppingCart, Edit3, Save, X, Search, Tag, Package2, ArrowLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 
 // Mock data for categories and products
@@ -325,12 +326,19 @@ function ItemsManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header with Search - matching main app */}
+      {/* Header exactly like main app */}
       <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="w-11"></div> {/* Spacer */}
-          
-          {/* Search Bar - same as main app */}
+        <div className="flex items-center justify-between px-4 py-3 touch-action-manipulation">
+          {/* Back & Save Buttons */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+          >
+            <ArrowLeft className="h-6 w-6 text-gray-700" />
+          </Button>
+
+          {/* Search Bar - identical to main app */}
           <div className="flex-1 mx-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -343,19 +351,31 @@ function ItemsManagement() {
               />
             </div>
           </div>
-          
-          <div className="w-11"></div> {/* Spacer */}
+
+          {/* Save Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+          >
+            <Save className="h-6 w-6 text-gray-700" />
+          </Button>
         </div>
 
-        {/* Categories Section - same as main app */}
+        {/* Categories Section - copied exactly from main app */}
         <section className="px-4 py-0.5">
           <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
-            {categories.map((category) => (
-              <div
+            {categories.map((category, index) => (
+              <motion.div
                 key={category.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
                 className="flex-shrink-0 flex flex-col items-center min-w-14"
               >
-                <div
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleCategorySelect(category.id)}
                   className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
                     selectedCategory === category.id
@@ -364,33 +384,39 @@ function ItemsManagement() {
                   }`}
                 >
                   <span className="text-lg">{category.icon}</span>
-                </div>
+                </motion.div>
                 <span className="text-xs text-gray-600 font-medium text-center leading-tight px-1">
                   {category.name}
                 </span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
       </header>
 
-      {/* Products List - Horizontal Layout */}
+      {/* Products List - Very small elements, professional design */}
       <main className="pb-8">
         {selectedCategory ? (
           <section className="px-4 py-6">
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredProducts.length === 0 ? (
                 <div className="text-center py-12">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                  <p className="text-gray-600">Try adjusting your search criteria</p>
+                  <Package className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-gray-900 mb-1">No products found</h3>
+                  <p className="text-xs text-gray-600">Try adjusting your search criteria</p>
                 </div>
               ) : (
-                filteredProducts.map(product => (
-                  <div key={product.id} className="bg-white rounded-2xl shadow-sm p-4">
-                    <div className="flex items-center gap-4">
-                      {/* Product Image */}
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                filteredProducts.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white rounded-xl shadow-sm p-3 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Very small product image */}
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                         <img 
                           src={product.image} 
                           alt={product.name}
@@ -398,67 +424,70 @@ function ItemsManagement() {
                         />
                       </div>
 
-                      {/* Product Info */}
+                      {/* Product name - compact */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm truncate">{product.name}</h3>
-                        <p className="text-xs text-gray-600 truncate">{product.nameEn}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {product.categoryName}
-                          </Badge>
-                          <div className={`w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                        </div>
+                        <h3 className="font-medium text-xs truncate">{product.name}</h3>
+                        <p className="text-xs text-gray-500 truncate">{product.nameEn}</p>
                       </div>
 
-                      {/* Price Input */}
-                      <div className="flex-shrink-0 w-24">
+                      {/* Price input - very small */}
+                      <div className="flex-shrink-0 w-16">
                         <Input
                           type="number"
                           value={product.price}
                           onChange={(e) => handlePriceChange(product.id, e.target.value)}
-                          className="h-8 text-xs text-center"
-                          placeholder="Price"
+                          className="h-7 text-xs text-center border-gray-200"
+                          placeholder="0"
                         />
-                        <span className="text-xs text-gray-500 text-center block">IQD</span>
                       </div>
 
-                      {/* Availability Dropdown */}
+                      {/* Availability dropdown - compact */}
                       <div className="flex-shrink-0">
                         <Select 
                           value={product.inStock ? "available" : "out-of-stock"}
                           onValueChange={(value) => handleStockToggle(product.id, value === "available")}
                         >
-                          <SelectTrigger className="w-28 h-8 text-xs">
+                          <SelectTrigger className="w-20 h-7 text-xs border-gray-200">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="available">Available</SelectItem>
-                            <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                            <SelectItem value="available" className="text-xs">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                Available
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="out-of-stock" className="text-xs">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                Out
+                              </div>
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
-                      {/* Save Icon */}
+                      {/* Save icon - small */}
                       <div className="flex-shrink-0">
                         <Button 
                           size="sm" 
                           variant="ghost"
-                          className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
+                          className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
                         >
-                          <Save className="h-4 w-4" />
+                          <Save className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))
               )}
             </div>
           </section>
         ) : (
           <div className="text-center py-12">
-            <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Category</h3>
-            <p className="text-gray-600">Choose a category above to manage its products</p>
+            <Tag className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-gray-900 mb-1">Select a Category</h3>
+            <p className="text-xs text-gray-600">Choose a category above to manage its products</p>
           </div>
         )}
       </main>
