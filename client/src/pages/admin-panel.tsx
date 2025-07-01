@@ -1236,23 +1236,32 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Order Items */}
+              {/* Order Items Table */}
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-900 mb-3">قائمة الطلبات</h3>
-                <div className="space-y-2">
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm">
-                      <div className="flex-1">
-                        <div className="font-medium">{item.productName}</div>
-                        <div className="text-gray-600 text-xs">
-                          سعر الكيلو: {item.price} د.ع × الكمية: {item.quantity} {item.unit}
-                        </div>
-                      </div>
-                      <div className="text-right font-medium">
-                        {(parseFloat(item.price) * item.quantity).toFixed(2)} د.ع
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-300 px-3 py-2 text-right font-semibold">الاسم</th>
+                        <th className="border border-gray-300 px-3 py-2 text-right font-semibold">السعر لكل كيلو</th>
+                        <th className="border border-gray-300 px-3 py-2 text-right font-semibold">الكمية</th>
+                        <th className="border border-gray-300 px-3 py-2 text-right font-semibold">السعر الكلي</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedOrder.items.map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2 font-medium">{item.productName}</td>
+                          <td className="border border-gray-300 px-3 py-2">{item.price} د.ع</td>
+                          <td className="border border-gray-300 px-3 py-2">{item.quantity} {item.unit}</td>
+                          <td className="border border-gray-300 px-3 py-2 font-medium">
+                            {(parseFloat(item.price) * item.quantity).toFixed(2)} د.ع
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
