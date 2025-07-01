@@ -376,10 +376,12 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
     category: 'Fruits',
     unit: 'kg',
     available: true,
-    image: null as File | null
+    image: null as File | null,
+    imageUrl: '' // Store the uploaded image URL
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Initialize form with product data when product changes
   useEffect(() => {
@@ -391,22 +393,50 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
         category: product.category,
         unit: product.unit,
         available: product.available,
-        image: null
+        image: null,
+        imageUrl: product.imageUrl
       });
       setImagePreview(product.imageUrl);
     }
   }, [product]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFormData(prev => ({ ...prev, image: file }));
+      setIsUploadingImage(true);
+      try {
+        // Create preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+
+        // Upload image and get URL for storage across entire app
+        const uploadedImageUrl = await uploadImage(file);
+        setFormData(prev => ({ 
+          ...prev, 
+          image: file,
+          imageUrl: uploadedImageUrl 
+        }));
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    // Convert image to base64 data URL which works across the entire app
+    // In production, this would upload to cloud storage (AWS S3, Cloudinary, etc.)
+    return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+        resolve(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-    }
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -415,14 +445,8 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
 
     setIsLoading(true);
     try {
-      // For now, keep existing image URL or use placeholder if image was changed
-      // Note: Image upload functionality can be enhanced later with backend storage
-      let imageUrl = product?.imageUrl || '/api/placeholder/60/60';
-      if (formData.image && imagePreview && imagePreview !== product?.imageUrl) {
-        // If a new image was selected, use a placeholder for now
-        // TODO: Implement proper image upload to backend
-        imageUrl = '/api/placeholder/60/60';
-      }
+      // Use the uploaded image URL if available, otherwise keep existing image URL
+      const imageUrl = formData.imageUrl || product?.imageUrl || '/api/placeholder/60/60';
       
       const updatedProduct = {
         name: formData.name,
@@ -538,11 +562,16 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
               <Button
                 type="button"
                 variant="outline"
+                disabled={isUploadingImage}
                 onClick={() => document.getElementById('edit-image-upload')?.click()}
-                className="flex items-center gap-2 rounded-xl border-gray-200 hover:border-blue-300"
+                className="flex items-center gap-2 rounded-xl border-gray-200 hover:border-blue-300 disabled:opacity-50"
               >
-                <Upload className="h-4 w-4" />
-                Change Image
+                {isUploadingImage ? (
+                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {isUploadingImage ? 'Uploading...' : 'Change Image'}
               </Button>
               <input
                 id="edit-image-upload"
@@ -557,6 +586,9 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
                 </div>
               )}
             </div>
+            {isUploadingImage && (
+              <p className="text-xs text-blue-600">Uploading image... Preview will update automatically.</p>
+            )}
           </div>
 
           {/* Submit Buttons */}
