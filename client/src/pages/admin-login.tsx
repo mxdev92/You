@@ -20,8 +20,8 @@ export default function AdminLogin() {
     setIsLoading(true);
     setError('');
 
-    // Simple hardcoded authentication
-    if (formData.email === 'Mustafa@yalla.com' && formData.password === 'Password1000') {
+    // Simple hardcoded authentication (case-insensitive email)
+    if (formData.email.toLowerCase() === 'mustafa@yalla.com' && formData.password === 'Password1000') {
       // Set admin session
       localStorage.setItem('adminAuthenticated', 'true');
       localStorage.setItem('adminEmail', formData.email);
