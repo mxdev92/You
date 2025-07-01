@@ -176,13 +176,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               font-size: 12px;
             }
             
+            .company-header {
+              text-align: center;
+              margin-bottom: 15px;
+              border-bottom: 2px solid #10b981;
+              padding-bottom: 10px;
+            }
+            
+            .company-name {
+              font-size: 28px;
+              font-weight: 700;
+              color: #10b981;
+              margin-bottom: 10px;
+            }
+            
             .header-section {
               display: flex;
               justify-content: space-between;
               align-items: flex-start;
               margin-bottom: 15px;
-              border-bottom: 2px solid #10b981;
-              padding-bottom: 10px;
             }
             
             .customer-info {
@@ -200,13 +212,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               direction: ltr;
             }
             
-            .company-name {
-              font-size: 24px;
-              font-weight: 700;
-              color: #10b981;
-              margin-bottom: 5px;
-            }
-            
             .qr-placeholder {
               width: 60px;
               height: 60px;
@@ -216,7 +221,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               justify-content: center;
               font-size: 8px;
               text-align: center;
-              margin-top: 5px;
             }
             
             .items-table {
@@ -299,6 +303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </style>
         </head>
         <body>
+          <div class="company-header">
+            <div class="company-name">ORDERY</div>
+          </div>
+          
           <div class="header-section">
             <div class="customer-info">
               <div><strong>الاسم:</strong> ${orderData.customerName}</div>
@@ -308,7 +316,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             </div>
             
             <div class="left-section">
-              <div class="company-name">ORDERY</div>
               <div class="qr-placeholder">
                 QR<br/>${orderData.id}
               </div>
