@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2 } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { createProduct, uploadProductImage } from '@/lib/firebase';
 
 // Mock orders data
 const mockOrders = [
@@ -142,10 +145,196 @@ function OrderCard({ order, onStatusChange }: any) {
   );
 }
 
+// Add Item Popup Component
+function AddItemPopup({ isOpen, onClose, onAddItem }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onAddItem: (item: any) => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: '',
+    price: '',
+    category: 'Fruits',
+    unit: 'kg',
+    available: true,
+    image: null as File | null
+  });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, image: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.price) return;
+
+    setIsLoading(true);
+    try {
+      // Upload image and create product
+      const imageUrl = formData.image ? await uploadProductImage(formData.image) : '/api/placeholder/60/60';
+      
+      const newProduct = {
+        name: formData.name,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        unit: formData.unit,
+        available: formData.available,
+        imageUrl
+      };
+
+      const savedProduct = await createProduct(newProduct);
+      onAddItem(savedProduct);
+      
+      // Reset form
+      setFormData({
+        name: '',
+        price: '',
+        category: 'Fruits',
+        unit: 'kg',
+        available: true,
+        image: null
+      });
+      setImagePreview(null);
+      onClose();
+    } catch (error) {
+      console.error('Error adding product:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Add New Item
+          </DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Product Name */}
+          <div>
+            <Label htmlFor="name">Product Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter product name"
+              required
+            />
+          </div>
+
+          {/* Price */}
+          <div>
+            <Label htmlFor="price">Price (IQD)</Label>
+            <Input
+              id="price"
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+              placeholder="0.00"
+              step="0.25"
+              required
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Fruits">Fruits</SelectItem>
+                <SelectItem value="Vegetables">Vegetables</SelectItem>
+                <SelectItem value="Dairy">Dairy</SelectItem>
+                <SelectItem value="Meat">Meat</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Unit */}
+          <div>
+            <Label htmlFor="unit">Unit</Label>
+            <Select value={formData.unit} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                <SelectItem value="piece">Piece</SelectItem>
+                <SelectItem value="bunch">Bunch</SelectItem>
+                <SelectItem value="liter">Liter</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <Label htmlFor="image">Product Image</Label>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById('image-upload')?.click()}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Upload Image
+              </Button>
+              <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              {imagePreview && (
+                <div className="w-12 h-12 bg-gray-100 rounded-md overflow-hidden">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading} className="flex items-center gap-2">
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {isLoading ? 'Adding...' : 'Add Item'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Items Management Component
 function ItemsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [products, setProducts] = useState([
     { id: 1, name: 'Organic Apples', category: 'Fruits', price: '12.50', unit: 'kg', available: true, image: '/api/placeholder/60/60' },
     { id: 2, name: 'Fresh Spinach', category: 'Vegetables', price: '8.00', unit: 'bunch', available: true, image: '/api/placeholder/60/60' },
@@ -182,9 +371,21 @@ function ItemsManagement() {
     ));
   };
 
+  const handleAddItem = (newItem: any) => {
+    setProducts(prev => [...prev, {
+      id: Date.now(), // Temporary ID
+      name: newItem.name,
+      category: newItem.category,
+      price: newItem.price.toString(),
+      unit: newItem.unit,
+      available: newItem.available,
+      image: newItem.imageUrl
+    }]);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Single App Bar - Back + Search only */}
+      {/* Single App Bar - Back + Search + Add Item */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-3">
           <button className="p-2 hover:bg-gray-100 rounded-lg">
@@ -200,6 +401,16 @@ function ItemsManagement() {
               className="pl-10 h-9 text-sm border-gray-300 focus:border-blue-500"
             />
           </div>
+
+          {/* Add Item Button */}
+          <Button
+            onClick={() => setIsAddItemOpen(true)}
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 h-auto text-xs rounded-full"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Add Item
+          </Button>
         </div>
       </div>
 
@@ -303,6 +514,13 @@ function ItemsManagement() {
           This app was built by MX 2025 • mxdev92@gmail.com
         </p>
       </div>
+
+      {/* Add Item Popup */}
+      <AddItemPopup 
+        isOpen={isAddItemOpen}
+        onClose={() => setIsAddItemOpen(false)}
+        onAddItem={handleAddItem}
+      />
     </div>
   );
 }

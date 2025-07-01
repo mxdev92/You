@@ -114,3 +114,53 @@ export const deleteOrder = async (orderId: string) => {
     throw error;
   }
 };
+
+// Product management functions
+export interface Product {
+  id?: string;
+  name: string;
+  price: number;
+  category: string;
+  unit: string;
+  available: boolean;
+  imageUrl: string;
+  createdAt: string;
+}
+
+export const createProduct = async (product: Omit<Product, 'id' | 'createdAt'>) => {
+  try {
+    const productData = {
+      ...product,
+      createdAt: new Date().toISOString()
+    };
+    const docRef = await addDoc(collection(db, 'products'), productData);
+    return { id: docRef.id, ...productData };
+  } catch (error) {
+    console.error('Error creating product:', error);
+    throw error;
+  }
+};
+
+export const getProducts = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'products'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Product[];
+  } catch (error) {
+    console.error('Error getting products:', error);
+    throw error;
+  }
+};
+
+export const uploadProductImage = async (file: File): Promise<string> => {
+  try {
+    // For now, return a placeholder URL
+    // In a real implementation, you would upload to Firebase Storage
+    return '/api/placeholder/60/60';
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+};
