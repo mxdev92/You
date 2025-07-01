@@ -14,17 +14,17 @@ import { apiRequest } from '@/lib/queryClient';
 const mockOrders = [
   {
     id: '1',
-    customerName: 'Ahmed Hassan',
+    customerName: 'محمد علي',
     customerEmail: 'ahmed@example.com',
-    customerPhone: '+964 770 123 4567',
+    customerPhone: '07708080080',
     address: {
-      governorate: 'Baghdad',
-      district: 'Karrada',
-      neighborhood: 'Al-Jadriya',
-      street: 'Main Street',
+      governorate: 'كركوك',
+      district: 'طريق بغداد',
+      neighborhood: 'الحي الصناعي',
+      street: 'شارع الرئيسي',
       houseNumber: '15',
       floorNumber: '2',
-      notes: 'Near the main mosque'
+      notes: 'قرب المسجد الكبير'
     },
     items: [
       { productId: 1, productName: 'Organic Apples', quantity: 2, price: '12.50', unit: 'kg' },
@@ -37,9 +37,9 @@ const mockOrders = [
   },
   {
     id: '2',
-    customerName: 'Fatima Ali',
+    customerName: 'فاطمة أحمد',
     customerEmail: 'fatima@example.com',
-    customerPhone: '+964 771 234 5678',
+    customerPhone: '07717654321',
     address: {
       governorate: 'Baghdad',
       district: 'Mansour',
@@ -1162,45 +1162,46 @@ export default function AdminPanel() {
               <>
                 {filteredOrders.map((order) => (
                   <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    {/* Customer Info */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{order.customerName}</h3>
-                        <p className="text-gray-600">{order.customerPhone}</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {order.address.governorate}, {order.address.district}, {order.address.neighborhood}
-                          <br />
-                          {order.address.street}, {order.address.houseNumber}
-                          {order.address.floorNumber && `, Floor ${order.address.floorNumber}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={
-                            order.status === 'delivered' ? 'default' :
-                            order.status === 'cancelled' ? 'destructive' :
-                            order.status === 'pending' ? 'secondary' : 'outline'
-                          }
-                          className="text-xs"
-                        >
-                          {order.status}
-                        </Badge>
-                        <Select 
-                          value={order.status} 
-                          onValueChange={(newStatus) => handleStatusChange(order.id, newStatus)}
-                        >
-                          <SelectTrigger className="w-40">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="preparing">Preparing</SelectItem>
-                            <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
-                            <SelectItem value="delivered">Delivered</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
+                    {/* Customer Info - Horizontal Mobile-Friendly Layout */}
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center text-sm text-gray-900 font-medium overflow-hidden">
+                          <span className="truncate">{order.customerName}</span>
+                          <span className="mx-2 text-gray-400">-</span>
+                          <span className="truncate">{order.customerPhone}</span>
+                          <span className="mx-2 text-gray-400">-</span>
+                          <span className="truncate text-gray-600">
+                            {order.address.governorate} {order.address.district}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge 
+                            variant={
+                              order.status === 'delivered' ? 'default' :
+                              order.status === 'cancelled' ? 'destructive' :
+                              order.status === 'pending' ? 'secondary' : 'outline'
+                            }
+                            className="text-xs"
+                          >
+                            {order.status}
+                          </Badge>
+                          <Select 
+                            value={order.status} 
+                            onValueChange={(newStatus) => handleStatusChange(order.id, newStatus)}
+                          >
+                            <SelectTrigger className="w-32 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                              <SelectItem value="preparing">Preparing</SelectItem>
+                              <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
+                              <SelectItem value="delivered">Delivered</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
 
