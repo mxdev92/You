@@ -215,30 +215,33 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
+      <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl bg-white p-6">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <Plus className="h-4 w-4 text-green-600" />
+            </div>
             Add New Item
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Product Name */}
-          <div>
-            <Label htmlFor="name">Product Name</Label>
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-sm font-medium text-gray-700">Product Name</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter product name"
+              className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
 
           {/* Price */}
-          <div>
-            <Label htmlFor="price">Price (IQD)</Label>
+          <div className="space-y-2">
+            <Label htmlFor="price" className="text-sm font-medium text-gray-700">Price (IQD)</Label>
             <Input
               id="price"
               type="number"
@@ -246,51 +249,55 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
               onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
               placeholder="0.00"
               step="0.25"
+              className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
               required
             />
           </div>
 
-          {/* Category */}
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Fruits">Fruits</SelectItem>
-                <SelectItem value="Vegetables">Vegetables</SelectItem>
-                <SelectItem value="Dairy">Dairy</SelectItem>
-                <SelectItem value="Meat">Meat</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Category and Unit Row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor="category" className="text-sm font-medium text-gray-700">Category</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="Fruits">Fruits</SelectItem>
+                  <SelectItem value="Vegetables">Vegetables</SelectItem>
+                  <SelectItem value="Dairy">Dairy</SelectItem>
+                  <SelectItem value="Meat">Meat</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Unit */}
-          <div>
-            <Label htmlFor="unit">Unit</Label>
-            <Select value={formData.unit} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="kg">Kilogram (kg)</SelectItem>
-                <SelectItem value="piece">Piece</SelectItem>
-                <SelectItem value="bunch">Bunch</SelectItem>
-                <SelectItem value="liter">Liter</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Unit */}
+            <div className="space-y-2">
+              <Label htmlFor="unit" className="text-sm font-medium text-gray-700">Unit</Label>
+              <Select value={formData.unit} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
+                <SelectTrigger className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                  <SelectItem value="piece">Piece</SelectItem>
+                  <SelectItem value="bunch">Bunch</SelectItem>
+                  <SelectItem value="liter">Liter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Image Upload */}
-          <div>
-            <Label htmlFor="image">Product Image</Label>
-            <div className="flex items-center gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="image" className="text-sm font-medium text-gray-700">Product Image</Label>
+            <div className="flex items-center gap-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => document.getElementById('image-upload')?.click()}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 rounded-xl border-gray-200 hover:border-green-300"
               >
                 <Upload className="h-4 w-4" />
                 Upload Image
@@ -303,19 +310,28 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
                 className="hidden"
               />
               {imagePreview && (
-                <div className="w-12 h-12 bg-gray-100 rounded-md overflow-hidden">
+                <div className="w-14 h-14 bg-gray-100 rounded-xl overflow-hidden border-2 border-green-200">
                   <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          {/* Submit Buttons */}
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              className="rounded-xl border-gray-200 hover:border-gray-300"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className="flex items-center gap-2">
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 rounded-xl"
+            >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
