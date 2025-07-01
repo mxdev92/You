@@ -56,6 +56,78 @@ const mockOrders = [
     status: 'confirmed' as const,
     orderDate: '2025-01-01T14:15:00Z',
     notes: ''
+  },
+  {
+    id: '3',
+    customerName: 'Omar Khalil',
+    customerEmail: 'omar@example.com',
+    customerPhone: '+964 772 345 6789',
+    address: {
+      governorate: 'Baghdad',
+      district: 'Sadr City',
+      neighborhood: 'Al-Thawra',
+      street: 'Market Street',
+      houseNumber: '8',
+      floorNumber: '3',
+      notes: 'Opposite the pharmacy'
+    },
+    items: [
+      { productId: 1, productName: 'Banana', quantity: 3, price: '4.50', unit: 'kg' },
+      { productId: 2, productName: 'Tomatoes', quantity: 2, price: '6.00', unit: 'kg' },
+      { productId: 3, productName: 'Onions', quantity: 1, price: '3.00', unit: 'kg' }
+    ],
+    totalAmount: 13.50,
+    status: 'preparing' as const,
+    orderDate: '2025-01-01T16:45:00Z',
+    notes: 'Fresh vegetables only'
+  },
+  {
+    id: '4',
+    customerName: 'Sara Mohammed',
+    customerEmail: 'sara@example.com',
+    customerPhone: '+964 773 456 7890',
+    address: {
+      governorate: 'Baghdad',
+      district: 'Karkh',
+      neighborhood: 'Al-Adhamiya',
+      street: 'University Street',
+      houseNumber: '25',
+      floorNumber: '1',
+      notes: 'Green door, ground floor'
+    },
+    items: [
+      { productId: 1, productName: 'Oranges', quantity: 2, price: '5.00', unit: 'kg' },
+      { productId: 2, productName: 'Carrots', quantity: 1, price: '2.50', unit: 'kg' },
+      { productId: 3, productName: 'Cucumber', quantity: 3, price: '4.50', unit: 'kg' }
+    ],
+    totalAmount: 12.00,
+    status: 'out-for-delivery' as const,
+    orderDate: '2025-01-01T12:20:00Z',
+    notes: 'Delivery between 2-4 PM'
+  },
+  {
+    id: '5',
+    customerName: 'Ali Rashid',
+    customerEmail: 'ali@example.com',
+    customerPhone: '+964 774 567 8901',
+    address: {
+      governorate: 'Baghdad',
+      district: 'Rusafa',
+      neighborhood: 'Bab Al-Sharqi',
+      street: 'Commercial Street',
+      houseNumber: '12',
+      floorNumber: '2',
+      notes: 'Above the grocery store'
+    },
+    items: [
+      { productId: 1, productName: 'Apples', quantity: 1, price: '4.00', unit: 'kg' },
+      { productId: 2, productName: 'Potatoes', quantity: 2, price: '3.00', unit: 'kg' },
+      { productId: 3, productName: 'Bell Peppers', quantity: 1, price: '5.00', unit: 'kg' }
+    ],
+    totalAmount: 12.00,
+    status: 'delivered' as const,
+    orderDate: '2025-01-01T09:30:00Z',
+    notes: 'Thank you for the quick service!'
   }
 ];
 
@@ -1074,59 +1146,97 @@ export default function AdminPanel() {
       {/* Content Area */}
       {currentView === 'orders' ? (
         <div className="max-w-7xl mx-auto p-6">
-          <OrderStats orders={orders} />
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Orders</h1>
+            <p className="text-gray-600">Manage customer orders and deliveries</p>
+          </div>
           
-          <div className="bg-white rounded-lg shadow-sm">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Orders Management</h2>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="bg-green-50 text-green-700">
-                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Fast Loading Demo
-                  </Badge>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Orders</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="preparing">Preparing</SelectItem>
-                      <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          <div className="space-y-4">
+            {filteredOrders.length === 0 ? (
+              <div className="bg-white rounded-lg p-12 text-center">
+                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+                <p className="text-gray-600">No orders available at the moment.</p>
               </div>
-            </div>
+            ) : (
+              <>
+                {filteredOrders.map((order) => (
+                  <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    {/* Customer Info */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{order.customerName}</h3>
+                        <p className="text-gray-600">{order.customerPhone}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {order.address.governorate}, {order.address.district}, {order.address.neighborhood}
+                          <br />
+                          {order.address.street}, {order.address.houseNumber}
+                          {order.address.floorNumber && `, Floor ${order.address.floorNumber}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={
+                            order.status === 'delivered' ? 'default' :
+                            order.status === 'cancelled' ? 'destructive' :
+                            order.status === 'pending' ? 'secondary' : 'outline'
+                          }
+                          className="text-xs"
+                        >
+                          {order.status}
+                        </Badge>
+                        <Select 
+                          value={order.status} 
+                          onValueChange={(newStatus) => handleStatusChange(order.id, newStatus)}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="preparing">Preparing</SelectItem>
+                            <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-            <div className="p-6">
-              {filteredOrders.length === 0 ? (
-                <div className="text-center py-12">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-                  <p className="text-gray-600">
-                    {statusFilter === 'all' 
-                      ? 'No orders available.'
-                      : `No orders with status "${statusFilter}" found.`
-                    }
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {filteredOrders.map((order) => (
-                    <OrderCard 
-                      key={order.id} 
-                      order={order} 
-                      onStatusChange={handleStatusChange}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+                    {/* Order Items */}
+                    <div className="border-t border-gray-100 pt-4 mb-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">Order Items:</h4>
+                      <div className="space-y-2">
+                        {order.items.map((item, index) => (
+                          <div key={index} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-900">{item.productName}</span>
+                              <span className="text-gray-600 ml-2">× {item.quantity} {item.unit}</span>
+                            </div>
+                            <span className="font-medium text-gray-900">{item.price} IQD</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Total Price */}
+                    <div className="border-t border-gray-100 pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-gray-900">Total:</span>
+                        <span className="text-xl font-bold text-green-600">{order.totalAmount.toFixed(2)} IQD</span>
+                      </div>
+                    </div>
+
+                    {/* Order Date and Notes */}
+                    <div className="mt-4 text-sm text-gray-500">
+                      <p>Order Date: {new Date(order.orderDate).toLocaleDateString()}</p>
+                      {order.notes && <p className="mt-1">Notes: {order.notes}</p>}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
       ) : (
