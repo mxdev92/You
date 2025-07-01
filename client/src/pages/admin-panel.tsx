@@ -8,8 +8,7 @@ import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { Document, Page, Text, View, StyleSheet, pdf, Font } from '@react-pdf/renderer';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -1112,125 +1111,169 @@ export default function AdminPanel() {
     setSelectedOrder(null);
   };
 
+  // Create PDF document component with Arabic support
+  const InvoicePDF = ({ order }: { order: any }) => {
+    const styles = StyleSheet.create({
+      page: {
+        backgroundColor: '#ffffff',
+        padding: 20,
+        fontFamily: 'Helvetica',
+        direction: 'rtl'
+      },
+      header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20,
+        color: '#333'
+      },
+      section: {
+        marginBottom: 15
+      },
+      sectionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        textAlign: 'right',
+        color: '#333'
+      },
+      text: {
+        fontSize: 12,
+        marginBottom: 4,
+        textAlign: 'right',
+        color: '#555'
+      },
+      tableContainer: {
+        marginTop: 15,
+        marginBottom: 15
+      },
+      tableHeader: {
+        flexDirection: 'row-reverse',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+        paddingBottom: 5,
+        marginBottom: 10
+      },
+      tableHeaderCell: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        flex: 1,
+        textAlign: 'center',
+        color: '#333'
+      },
+      tableRow: {
+        flexDirection: 'row-reverse',
+        paddingBottom: 5,
+        marginBottom: 5
+      },
+      tableCell: {
+        fontSize: 9,
+        flex: 1,
+        textAlign: 'center',
+        color: '#555'
+      },
+      totalsSection: {
+        marginTop: 20,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#ccc'
+      },
+      totalText: {
+        fontSize: 12,
+        marginBottom: 5,
+        textAlign: 'right',
+        color: '#333'
+      },
+      grandTotal: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        textAlign: 'right',
+        color: '#000'
+      }
+    });
+
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          {/* Header */}
+          <Text style={styles.header}>فاتورة الطلب</Text>
+          
+          {/* Customer Information */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>معلومات العميل</Text>
+            <Text style={styles.text}>الاسم: {order.customerName}</Text>
+            <Text style={styles.text}>الهاتف: {order.customerPhone}</Text>
+            <Text style={styles.text}>
+              العنوان: {order.address.governorate} - {order.address.district} - {order.address.neighborhood} - {order.address.street} - منزل رقم {order.address.houseNumber}
+            </Text>
+            <Text style={styles.text}>تاريخ الطلب: {new Date(order.orderDate).toLocaleDateString('ar-EG')}</Text>
+          </View>
+
+          {/* Items Table */}
+          <View style={styles.tableContainer}>
+            <Text style={styles.sectionTitle}>قائمة الطلبات</Text>
+            
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderCell}>الاسم</Text>
+              <Text style={styles.tableHeaderCell}>السعر للكيلو</Text>
+              <Text style={styles.tableHeaderCell}>الكمية</Text>
+              <Text style={styles.tableHeaderCell}>السعر الكلي</Text>
+            </View>
+            
+            {/* Table Rows */}
+            {order.items.map((item: any, index: number) => {
+              const unit = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
+              const total = (parseFloat(item.price) * item.quantity).toFixed(2);
+              
+              return (
+                <View key={index} style={styles.tableRow}>
+                  <Text style={styles.tableCell}>{item.productName}</Text>
+                  <Text style={styles.tableCell}>{item.price} د.ع</Text>
+                  <Text style={styles.tableCell}>{item.quantity} {unit}</Text>
+                  <Text style={styles.tableCell}>{total} د.ع</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Totals */}
+          <View style={styles.totalsSection}>
+            <Text style={styles.totalText}>المجموع الفرعي: {order.totalAmount.toFixed(2)} د.ع</Text>
+            <Text style={styles.totalText}>رسوم التوصيل: 5.00 د.ع</Text>
+            <Text style={styles.grandTotal}>المجموع الكلي: {(order.totalAmount + 5).toFixed(2)} د.ع</Text>
+            
+            {order.notes && (
+              <Text style={[styles.text, { marginTop: 15 }]}>ملاحظات: {order.notes}</Text>
+            )}
+          </View>
+        </Page>
+      </Document>
+    );
+  };
+
   const downloadInvoicePDF = async () => {
     if (!selectedOrder) return;
     
     try {
-      console.log('Creating text-based Arabic PDF...');
+      console.log('Creating Arabic PDF with React-PDF...');
       
-      // Create PDF with proper settings
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
+      // Generate PDF blob
+      const blob = await pdf(<InvoicePDF order={selectedOrder} />).toBlob();
       
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 15;
-      const rightMargin = pageWidth - margin;
-      let yPos = 30;
-
-      // Helper function to add RTL text
-      const addRTLText = (text: string, x: number, y: number, options: any = {}) => {
-        // Reverse the text for RTL display
-        const reversedText = text.split('').reverse().join('');
-        pdf.setFontSize(options.fontSize || 12);
-        pdf.text(reversedText, x, y, { align: options.align || 'right', ...options });
-      };
-
-      // Header
-      pdf.setFontSize(20);
-      pdf.setFont('helvetica', 'bold');
-      addRTLText('ةروتاف بلطلا', pageWidth/2, yPos, { align: 'center' });
-      yPos += 20;
-
-      // Customer Information Section
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      addRTLText('ليمعلا تامولعم', rightMargin, yPos);
-      yPos += 15;
-
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       
-      // Customer details
-      addRTLText(`مسالا: ${selectedOrder.customerName}`, rightMargin, yPos);
-      yPos += 8;
-      
-      addRTLText(`فتاهلا: ${selectedOrder.customerPhone}`, rightMargin, yPos);
-      yPos += 8;
-      
-      const address = `ناونعلا: ${selectedOrder.address.governorate} - ${selectedOrder.address.district} - ${selectedOrder.address.neighborhood} - ${selectedOrder.address.street} - لزنم مقر ${selectedOrder.address.houseNumber}`;
-      addRTLText(address, rightMargin, yPos);
-      yPos += 8;
-      
-      addRTLText(`بلطلا خيرات: ${new Date(selectedOrder.orderDate).toLocaleDateString('ar')}`, rightMargin, yPos);
-      yPos += 20;
-
-      // Items table header
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'bold');
-      addRTLText('تابلطلا ةمئاق', rightMargin, yPos);
-      yPos += 12;
-
-      // Table headers
-      pdf.setFontSize(9);
-      const col1 = rightMargin - 10;
-      const col2 = rightMargin - 70;
-      const col3 = rightMargin - 120;
-      const col4 = rightMargin - 170;
-
-      addRTLText('مسالا', col1, yPos);
-      addRTLText('وليكلل رعسلا', col2, yPos);
-      addRTLText('ةيمكلا', col3, yPos);
-      addRTLText('يلكلا رعسلا', col4, yPos);
-      yPos += 5;
-
-      // Draw line
-      pdf.line(margin, yPos, rightMargin, yPos);
-      yPos += 10;
-
-      // Items
-      pdf.setFont('helvetica', 'normal');
-      selectedOrder.items.forEach((item) => {
-        const unit = item.unit === 'kg' ? 'وليك' : item.unit === 'bunch' ? 'ةمزح' : item.unit;
-        const total = (parseFloat(item.price) * item.quantity).toFixed(2);
-        
-        addRTLText(item.productName, col1, yPos);
-        pdf.text(item.price, col2, yPos, { align: 'center' });
-        addRTLText(`${item.quantity} ${unit}`, col3, yPos);
-        pdf.text(total, col4, yPos, { align: 'center' });
-        yPos += 8;
-      });
-
-      yPos += 10;
-
-      // Totals section
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      addRTLText(`يعرفلا عومجملا: ${selectedOrder.totalAmount.toFixed(2)} ع.د`, rightMargin, yPos);
-      yPos += 8;
-      
-      addRTLText(`ليصوتلا موسر: 5.00 ع.د`, rightMargin, yPos);
-      yPos += 8;
-      
-      pdf.setFontSize(12);
-      addRTLText(`يلكلا عومجملا: ${(selectedOrder.totalAmount + 5).toFixed(2)} ع.د`, rightMargin, yPos);
-
-      // Notes if any
-      if (selectedOrder.notes) {
-        yPos += 15;
-        pdf.setFontSize(10);
-        addRTLText(`تاظحالم: ${selectedOrder.notes}`, rightMargin, yPos);
-      }
-
-      // Save the PDF
-      const filename = `Invoice-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
-      pdf.save(filename);
-      
-      console.log('Text-based Arabic PDF generated successfully');
+      console.log('Arabic PDF generated and downloaded successfully');
     } catch (error) {
-      console.error('Error generating text PDF:', error);
+      console.error('Error generating Arabic PDF:', error);
       if (error instanceof Error) {
         alert(`PDF Error: ${error.message}`);
       } else {
