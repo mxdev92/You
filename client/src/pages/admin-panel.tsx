@@ -1097,6 +1097,18 @@ export default function AdminPanel() {
   const [orders, setOrders] = useState(mockOrders);
   const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<typeof mockOrders[0] | null>(null);
+  const [showInvoice, setShowInvoice] = useState(false);
+
+  const handleOrderClick = (order: typeof mockOrders[0]) => {
+    setSelectedOrder(order);
+    setShowInvoice(true);
+  };
+
+  const closeInvoice = () => {
+    setShowInvoice(false);
+    setSelectedOrder(null);
+  };
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
     setOrders(prev => prev.map(order => 
@@ -1161,50 +1173,18 @@ export default function AdminPanel() {
             ) : (
               <>
                 {filteredOrders.map((order) => (
-                  <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    {/* Customer Info - Horizontal Mobile-Friendly Layout */}
-                    <div className="mb-4">
-                      <div className="mb-2">
-                        <div className="flex items-center text-sm text-gray-900 font-medium overflow-hidden">
-                          <span className="truncate">{order.customerName}</span>
-                          <span className="mx-2 text-gray-400">-</span>
-                          <span className="truncate">{order.customerPhone}</span>
-                          <span className="mx-2 text-gray-400">-</span>
-                          <span className="truncate text-gray-600">
-                            {order.address.governorate} {order.address.district}
-                          </span>
-                        </div>
+                  <div 
+                    key={order.id} 
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => handleOrderClick(order)}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-900">{order.customerName}</span>
                       </div>
-                    </div>
-
-                    {/* Order Items */}
-                    <div className="border-t border-gray-100 pt-4 mb-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">Order Items:</h4>
-                      <div className="space-y-2">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                            <div className="flex-1">
-                              <span className="font-medium text-gray-900">{item.productName}</span>
-                              <span className="text-gray-600 ml-2">× {item.quantity} {item.unit}</span>
-                            </div>
-                            <span className="font-medium text-gray-900">{item.price} IQD</span>
-                          </div>
-                        ))}
+                      <div className="text-right">
+                        <span className="text-sm font-semibold text-green-600">{order.totalAmount}.00 د.ع</span>
                       </div>
-                    </div>
-
-                    {/* Total Price */}
-                    <div className="border-t border-gray-100 pt-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-semibold text-gray-900">Total:</span>
-                        <span className="text-xl font-bold text-green-600">{order.totalAmount.toFixed(2)} IQD</span>
-                      </div>
-                    </div>
-
-                    {/* Order Date and Notes */}
-                    <div className="mt-4 text-sm text-gray-500">
-                      <p>Order Date: {new Date(order.orderDate).toLocaleDateString()}</p>
-                      {order.notes && <p className="mt-1">Notes: {order.notes}</p>}
                     </div>
                   </div>
                 ))}
@@ -1222,6 +1202,94 @@ export default function AdminPanel() {
         onClose={() => setIsSidebarOpen(false)}
         setCurrentView={setCurrentView}
       />
+
+      {/* Arabic Invoice Popup */}
+      {showInvoice && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">فاتورة الطلب</h2>
+                <button
+                  onClick={closeInvoice}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Customer Details */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-gray-900 mb-3">معلومات العميل</h3>
+                <div className="space-y-2 text-sm">
+                  <div><span className="font-medium">الاسم:</span> {selectedOrder.customerName}</div>
+                  <div><span className="font-medium">الهاتف:</span> {selectedOrder.customerPhone}</div>
+                  <div className="text-xs">
+                    <span className="font-medium">العنوان:</span><br />
+                    {selectedOrder.address.governorate} - {selectedOrder.address.district}<br />
+                    {selectedOrder.address.neighborhood} - {selectedOrder.address.street}<br />
+                    منزل رقم {selectedOrder.address.houseNumber}
+                    {selectedOrder.address.floorNumber && ` - الطابق ${selectedOrder.address.floorNumber}`}
+                    {selectedOrder.address.notes && <><br /><span className="text-gray-600">{selectedOrder.address.notes}</span></>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">قائمة الطلبات</h3>
+                <div className="space-y-2">
+                  {selectedOrder.items.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg text-sm">
+                      <div className="flex-1">
+                        <div className="font-medium">{item.productName}</div>
+                        <div className="text-gray-600 text-xs">
+                          سعر الكيلو: {item.price} د.ع × الكمية: {item.quantity} {item.unit}
+                        </div>
+                      </div>
+                      <div className="text-right font-medium">
+                        {(parseFloat(item.price) * item.quantity).toFixed(2)} د.ع
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>المجموع الفرعي:</span>
+                  <span>{selectedOrder.totalAmount.toFixed(2)} د.ع</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>رسوم التوصيل:</span>
+                  <span>5.00 د.ع</span>
+                </div>
+                <div className="border-t border-gray-300 pt-3">
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>المجموع الكلي:</span>
+                    <span className="text-green-600">{(selectedOrder.totalAmount + 5).toFixed(2)} د.ع</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Date */}
+              <div className="mt-4 text-sm text-gray-600 text-center">
+                تاريخ الطلب: {new Date(selectedOrder.orderDate).toLocaleDateString('ar-EG')}
+              </div>
+
+              {/* Notes */}
+              {selectedOrder.notes && (
+                <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+                  <span className="font-medium text-sm">ملاحظات:</span>
+                  <p className="text-sm text-gray-700 mt-1">{selectedOrder.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
