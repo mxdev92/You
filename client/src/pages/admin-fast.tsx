@@ -332,26 +332,27 @@ function ItemsManagement() {
     <div className="space-y-6">
       {/* Categories Overview */}
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Tag className="h-5 w-5" />
+        <div className="p-4 border-b bg-gray-50">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Tag className="h-4 w-4" />
             Categories Overview
           </h2>
         </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {categories.map(category => (
-              <Card key={category.id} className="cursor-pointer hover:shadow-md transition-shadow"
+              <Card key={category.id} 
+                    className={`cursor-pointer hover:shadow-md transition-all duration-200 border-2 ${
+                      selectedCategory === category.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                    }`}
                     onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}>
-                <CardContent className="p-4 text-center">
-                  <div className="text-3xl mb-2">{category.icon}</div>
-                  <h3 className="font-medium text-sm mb-1">{category.name}</h3>
-                  <p className="text-xs text-gray-600">{category.nameEn}</p>
-                  <div className="mt-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {category.productsCount} products
-                    </Badge>
-                  </div>
+                <CardContent className="p-3 text-center">
+                  <div className="text-xl mb-1">{category.icon}</div>
+                  <h3 className="font-medium text-xs mb-1 truncate">{category.name}</h3>
+                  <p className="text-xs text-gray-500 truncate">{category.nameEn}</p>
+                  <Badge variant="secondary" className="text-xs mt-1 px-2 py-0">
+                    {category.productsCount}
+                  </Badge>
                 </CardContent>
               </Card>
             ))}
@@ -361,20 +362,20 @@ function ItemsManagement() {
 
       {/* Products Management */}
       <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6 border-b">
+        <div className="p-4 border-b bg-gray-50">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Package2 className="h-5 w-5" />
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Package2 className="h-4 w-4" />
               Products Management
             </h2>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Search products..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-7 h-8 w-48 text-xs"
                 />
               </div>
               {selectedCategory && (
@@ -382,105 +383,103 @@ function ItemsManagement() {
                   variant="outline" 
                   size="sm"
                   onClick={() => setSelectedCategory(null)}
+                  className="h-8 px-2 text-xs"
                 >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear Filter
+                  <X className="h-3 w-3 mr-1" />
+                  Clear
                 </Button>
               )}
             </div>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4">
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+            <div className="text-center py-8">
+              <Package className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-sm font-medium text-gray-900 mb-1">No products found</h3>
+              <p className="text-xs text-gray-600">Try adjusting your search or filter criteria</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {filteredProducts.map(product => (
-                <Card key={product.id} className="overflow-hidden">
-                  <div className="aspect-square bg-gray-100">
+                <Card key={product.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="aspect-square bg-gray-100 relative">
                     <img 
                       src={product.image} 
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-medium text-sm">{product.name}</h3>
-                        <p className="text-xs text-gray-600">{product.nameEn}</p>
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {product.categoryName}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className={`w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                        <span className={`text-xs ${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
-                          {product.inStock ? 'In Stock' : 'Out of Stock'}
-                        </span>
-                      </div>
+                    <div className="absolute top-2 right-2">
+                      <div className={`w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
                     </div>
+                  </div>
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
+                      <div>
+                        <h3 className="font-medium text-xs truncate">{product.name}</h3>
+                        <p className="text-xs text-gray-500 truncate">{product.nameEn}</p>
+                      </div>
 
-                    {editingProduct === product.id ? (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs font-medium text-gray-700">Price (IQD)</label>
+                      {editingProduct === product.id ? (
+                        <div className="space-y-2">
                           <Input
                             type="number"
                             value={editValues.price}
                             onChange={(e) => setEditValues(prev => ({...prev, price: e.target.value}))}
-                            className="mt-1"
+                            className="h-8 text-xs"
+                            placeholder="Price"
                           />
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600">Available</span>
+                            <Switch
+                              checked={editValues.inStock}
+                              onCheckedChange={(checked) => setEditValues(prev => ({...prev, inStock: checked}))}
+                              className="scale-75"
+                            />
+                          </div>
+                          <div className="flex gap-1">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleSaveProduct(product.id)}
+                              className="flex-1 h-7 text-xs"
+                            >
+                              <Save className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={handleCancelEdit}
+                              className="h-7"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-medium text-gray-700">Available</label>
-                          <Switch
-                            checked={editValues.inStock}
-                            onCheckedChange={(checked) => setEditValues(prev => ({...prev, inStock: checked}))}
-                          />
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-green-600">
+                              {product.price.toLocaleString()} IQD
+                            </span>
+                            <span className="text-xs text-gray-500">/{product.unit}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-xs px-1 py-0 truncate flex-1">
+                              {product.categoryName}
+                            </Badge>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleEditProduct(product)}
+                              className="h-6 px-2"
+                            >
+                              <Edit3 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleSaveProduct(product.id)}
-                            className="flex-1"
-                          >
-                            <Save className="h-3 w-3 mr-1" />
-                            Save
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={handleCancelEdit}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-green-600">
-                            {product.price.toLocaleString()} IQD
-                          </span>
-                          <span className="text-xs text-gray-600">per {product.unit}</span>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleEditProduct(product)}
-                          className="w-full"
-                        >
-                          <Edit3 className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
