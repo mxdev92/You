@@ -8,8 +8,7 @@ import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
-import pdfMake from 'pdfmake/build/pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
+import jsPDF from 'jspdf';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -1116,183 +1115,114 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Creating real PDF with PDFMake and Arabic support...');
+      console.log('Creating PDF with jsPDF...');
       
-      // Initialize PDFMake with fonts
-      pdfMake.vfs = pdfFonts.pdfMake.vfs;
-      
-      // Create document definition with Arabic content
-      const docDefinition = {
-        pageSize: 'A4',
-        pageMargins: [40, 60, 40, 60],
-        content: [
-          // Header
-          {
-            text: 'فاتورة الطلب',
-            style: 'header',
-            alignment: 'center',
-            margin: [0, 0, 0, 20]
-          },
-          
-          // Customer Information Section
-          {
-            text: 'معلومات العميل',
-            style: 'sectionHeader',
-            margin: [0, 0, 0, 10]
-          },
-          {
-            columns: [
-              {
-                width: '*',
-                stack: [
-                  { text: `الاسم: ${selectedOrder.customerName}`, style: 'customerInfo' },
-                  { text: `الهاتف: ${selectedOrder.customerPhone}`, style: 'customerInfo' },
-                  { 
-                    text: `العنوان: ${selectedOrder.address.governorate} - ${selectedOrder.address.district} - ${selectedOrder.address.neighborhood} - ${selectedOrder.address.street} - منزل رقم ${selectedOrder.address.houseNumber}`, 
-                    style: 'customerInfo' 
-                  },
-                  { text: `تاريخ الطلب: ${new Date(selectedOrder.orderDate).toLocaleDateString('ar-EG')}`, style: 'customerInfo' }
-                ]
-              }
-            ],
-            margin: [0, 0, 0, 20]
-          },
-          
-          // Items Table
-          {
-            text: 'قائمة الطلبات',
-            style: 'sectionHeader',
-            margin: [0, 0, 0, 10]
-          },
-          {
-            table: {
-              headerRows: 1,
-              widths: ['*', 'auto', 'auto', 'auto'],
-              body: [
-                // Table header
-                [
-                  { text: 'الاسم', style: 'tableHeader' },
-                  { text: 'السعر للكيلو', style: 'tableHeader' },
-                  { text: 'الكمية', style: 'tableHeader' },
-                  { text: 'السعر الكلي', style: 'tableHeader' }
-                ],
-                // Table rows
-                ...selectedOrder.items.map((item: any) => {
-                  const unit = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
-                  const total = (parseFloat(item.price) * item.quantity).toFixed(2);
-                  
-                  return [
-                    { text: item.productName, style: 'tableCell' },
-                    { text: `${item.price} د.ع`, style: 'tableCell', alignment: 'center' },
-                    { text: `${item.quantity} ${unit}`, style: 'tableCell', alignment: 'center' },
-                    { text: `${total} د.ع`, style: 'tableCell', alignment: 'center' }
-                  ];
-                })
-              ]
-            },
-            layout: {
-              fillColor: function (rowIndex: number) {
-                return (rowIndex === 0) ? '#f0f0f0' : null;
-              }
-            },
-            margin: [0, 0, 0, 20]
-          },
-          
-          // Totals Section
-          {
-            columns: [
-              { width: '*', text: '' },
-              {
-                width: 200,
-                stack: [
-                  { 
-                    text: `المجموع الفرعي: ${selectedOrder.totalAmount.toFixed(2)} د.ع`, 
-                    style: 'totalText',
-                    alignment: 'right'
-                  },
-                  { 
-                    text: 'رسوم التوصيل: 5.00 د.ع', 
-                    style: 'totalText',
-                    alignment: 'right'
-                  },
-                  { 
-                    text: `المجموع الكلي: ${(selectedOrder.totalAmount + 5).toFixed(2)} د.ع`, 
-                    style: 'grandTotal',
-                    alignment: 'right'
-                  }
-                ]
-              }
-            ]
-          },
-          
-          // Notes if any
-          ...(selectedOrder.notes ? [{
-            text: `ملاحظات: ${selectedOrder.notes}`,
-            style: 'notes',
-            margin: [0, 20, 0, 0]
-          }] : [])
-        ],
-        
-        styles: {
-          header: {
-            fontSize: 22,
-            bold: true,
-            color: '#333333'
-          },
-          sectionHeader: {
-            fontSize: 16,
-            bold: true,
-            color: '#333333',
-            alignment: 'right'
-          },
-          customerInfo: {
-            fontSize: 12,
-            margin: [0, 2, 0, 2],
-            alignment: 'right'
-          },
-          tableHeader: {
-            fontSize: 11,
-            bold: true,
-            fillColor: '#f0f0f0',
-            alignment: 'center'
-          },
-          tableCell: {
-            fontSize: 10,
-            margin: [0, 2, 0, 2]
-          },
-          totalText: {
-            fontSize: 12,
-            margin: [0, 2, 0, 2]
-          },
-          grandTotal: {
-            fontSize: 14,
-            bold: true,
-            margin: [0, 5, 0, 0]
-          },
-          notes: {
-            fontSize: 10,
-            italics: true,
-            alignment: 'right'
-          }
-        },
-        
-        defaultStyle: {
-          font: 'Helvetica',
-          direction: 'rtl'
+      // Create PDF document
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 20;
+      let yPos = 30;
+
+      // Helper function to add text (English/Numbers work fine)
+      const addText = (text: string, x: number, y: number, options: any = {}) => {
+        pdf.setFontSize(options.fontSize || 12);
+        if (options.bold) {
+          pdf.setFont('helvetica', 'bold');
+        } else {
+          pdf.setFont('helvetica', 'normal');
         }
+        pdf.text(text, x, y, { align: options.align || 'left' });
       };
 
-      // Generate and download PDF
-      console.log('Generating PDF document...');
-      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+      // Header
+      addText('Invoice / فاتورة', pageWidth/2, yPos, { fontSize: 20, bold: true, align: 'center' });
+      yPos += 15;
+
+      // Order ID
+      addText(`Order ID: ${selectedOrder.id}`, pageWidth/2, yPos, { fontSize: 12, align: 'center' });
+      yPos += 20;
+
+      // Customer Information
+      addText('Customer Information:', margin, yPos, { fontSize: 14, bold: true });
+      yPos += 10;
+
+      addText(`Name: ${selectedOrder.customerName}`, margin, yPos, { fontSize: 11 });
+      yPos += 7;
       
-      const filename = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
-      pdfDocGenerator.download(filename);
+      addText(`Phone: ${selectedOrder.customerPhone}`, margin, yPos, { fontSize: 11 });
+      yPos += 7;
       
-      console.log('Real text-based Arabic PDF generated successfully');
+      const address = `Address: ${selectedOrder.address.governorate}, ${selectedOrder.address.district}, ${selectedOrder.address.neighborhood}, ${selectedOrder.address.street}, House #${selectedOrder.address.houseNumber}`;
+      const addressLines = pdf.splitTextToSize(address, pageWidth - 2 * margin);
+      pdf.text(addressLines, margin, yPos);
+      yPos += addressLines.length * 5 + 5;
+      
+      addText(`Order Date: ${new Date(selectedOrder.orderDate).toLocaleDateString()}`, margin, yPos, { fontSize: 11 });
+      yPos += 15;
+
+      // Items Table Header
+      addText('Order Items:', margin, yPos, { fontSize: 14, bold: true });
+      yPos += 10;
+
+      // Table headers
+      const col1 = margin;
+      const col2 = margin + 80;
+      const col3 = margin + 130;
+      const col4 = margin + 160;
+
+      addText('Product', col1, yPos, { fontSize: 10, bold: true });
+      addText('Price', col2, yPos, { fontSize: 10, bold: true });
+      addText('Qty', col3, yPos, { fontSize: 10, bold: true });
+      addText('Total', col4, yPos, { fontSize: 10, bold: true });
+      yPos += 5;
+
+      // Line under header
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 8;
+
+      // Items
+      selectedOrder.items.forEach((item: any) => {
+        const unit = item.unit === 'kg' ? 'kg' : item.unit === 'bunch' ? 'bunch' : item.unit;
+        const total = (parseFloat(item.price) * item.quantity).toFixed(2);
+        
+        addText(item.productName, col1, yPos, { fontSize: 9 });
+        addText(`${item.price} IQD`, col2, yPos, { fontSize: 9 });
+        addText(`${item.quantity} ${unit}`, col3, yPos, { fontSize: 9 });
+        addText(`${total} IQD`, col4, yPos, { fontSize: 9 });
+        yPos += 6;
+      });
+
+      yPos += 10;
+
+      // Totals
+      const totalX = pageWidth - margin - 60;
+      addText(`Subtotal: ${selectedOrder.totalAmount.toFixed(2)} IQD`, totalX, yPos, { fontSize: 11, align: 'left' });
+      yPos += 7;
+      
+      addText('Delivery: 5.00 IQD', totalX, yPos, { fontSize: 11, align: 'left' });
+      yPos += 7;
+      
+      addText(`TOTAL: ${(selectedOrder.totalAmount + 5).toFixed(2)} IQD`, totalX, yPos, { fontSize: 12, bold: true, align: 'left' });
+
+      // Notes
+      if (selectedOrder.notes) {
+        yPos += 15;
+        addText(`Notes: ${selectedOrder.notes}`, margin, yPos, { fontSize: 10 });
+      }
+
+      // Save PDF
+      const filename = `Invoice-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
+      pdf.save(filename);
+      
+      console.log('PDF generated successfully');
       
     } catch (error) {
-      console.error('Error generating real PDF:', error);
+      console.error('Error generating PDF:', error);
       if (error instanceof Error) {
         alert(`PDF Error: ${error.message}`);
       } else {
