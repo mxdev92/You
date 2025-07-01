@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
@@ -362,11 +362,236 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
   );
 }
 
+// Edit Item Popup Component
+function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdateItem: (item: any) => void;
+  product: Product | null;
+}) {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: 'Fruits',
+    unit: 'kg',
+    available: true,
+    image: null as File | null
+  });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Initialize form with product data when product changes
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name,
+        description: product.description || '',
+        price: product.price.toString(),
+        category: product.category,
+        unit: product.unit,
+        available: product.available,
+        image: null
+      });
+      setImagePreview(product.imageUrl);
+    }
+  }, [product]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, image: file }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.price) return;
+
+    setIsLoading(true);
+    try {
+      // Upload new image if selected, otherwise keep existing
+      let imageUrl = product?.imageUrl || '/api/placeholder/60/60';
+      if (formData.image) {
+        imageUrl = await uploadProductImage(formData.image);
+      }
+      
+      const updatedProduct = {
+        name: formData.name,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        unit: formData.unit,
+        available: formData.available,
+        imageUrl
+      };
+
+      onUpdateItem(updatedProduct);
+      onClose();
+    } catch (error) {
+      console.error('Error updating product:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md rounded-2xl border-0 shadow-2xl bg-white p-6">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <Edit className="h-4 w-4 text-blue-600" />
+            </div>
+            Edit Item
+          </DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Product Name */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-name" className="text-sm font-medium text-gray-700">Product Name</Label>
+            <Input
+              id="edit-name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter product name"
+              className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {/* Short Description */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-description" className="text-sm font-medium text-gray-700">Short Description</Label>
+            <Input
+              id="edit-description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Brief description of the product"
+              className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Price */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-price" className="text-sm font-medium text-gray-700">Price (IQD)</Label>
+            <Input
+              id="edit-price"
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+              placeholder="0.00"
+              step="0.25"
+              className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {/* Category and Unit Row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-category" className="text-sm font-medium text-gray-700">Category</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="Fruits">Fruits</SelectItem>
+                  <SelectItem value="Vegetables">Vegetables</SelectItem>
+                  <SelectItem value="Dairy">Dairy</SelectItem>
+                  <SelectItem value="Meat">Meat</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Unit */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-unit" className="text-sm font-medium text-gray-700">Unit</Label>
+              <Select value={formData.unit} onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}>
+                <SelectTrigger className="rounded-xl border-0 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                  <SelectItem value="piece">Piece</SelectItem>
+                  <SelectItem value="bunch">Bunch</SelectItem>
+                  <SelectItem value="liter">Liter</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-image" className="text-sm font-medium text-gray-700">Product Image</Label>
+            <div className="flex items-center gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById('edit-image-upload')?.click()}
+                className="flex items-center gap-2 rounded-xl border-gray-200 hover:border-blue-300"
+              >
+                <Upload className="h-4 w-4" />
+                Change Image
+              </Button>
+              <input
+                id="edit-image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              {imagePreview && (
+                <div className="w-14 h-14 bg-gray-100 rounded-xl overflow-hidden border-2 border-blue-200">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Submit Buttons */}
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              className="rounded-xl border-gray-200 hover:border-gray-300"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 rounded-xl"
+            >
+              {isLoading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {isLoading ? 'Updating...' : 'Update Item'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Items Management Component
 function ItemsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [isEditItemOpen, setIsEditItemOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
 
   // Load products from backend API
@@ -436,6 +661,60 @@ function ItemsManagement() {
     ));
     
     // TODO: Update in Firebase (will implement if needed)
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setIsEditItemOpen(true);
+  };
+
+  const handleUpdateItem = async (updatedItem: any) => {
+    try {
+      if (!editingProduct?.id) return;
+
+      // Update product via backend API
+      const backendProduct = {
+        name: updatedItem.name,
+        price: updatedItem.price,
+        unit: updatedItem.unit,
+        imageUrl: updatedItem.imageUrl,
+        categoryId: updatedItem.category === 'Fruits' ? 1 : updatedItem.category === 'Vegetables' ? 2 : null
+      };
+
+      const response = await fetch(`/api/products/${editingProduct.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(backendProduct),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to update product');
+      const updatedProduct = await response.json();
+
+      // Convert to Firebase-compatible format for local state
+      const convertedProduct = {
+        id: updatedProduct.id.toString(),
+        name: updatedProduct.name,
+        description: updatedItem.description,
+        price: parseFloat(updatedProduct.price),
+        category: getCategoryName(updatedProduct.categoryId),
+        unit: updatedProduct.unit,
+        available: true,
+        imageUrl: updatedProduct.imageUrl,
+        createdAt: editingProduct.createdAt
+      };
+
+      // Update local state
+      setProducts(prev => prev.map(product => 
+        product.id === editingProduct.id ? convertedProduct : product
+      ));
+
+      // Close edit modal
+      setIsEditItemOpen(false);
+      setEditingProduct(null);
+    } catch (error) {
+      console.error('Failed to update product:', error);
+    }
   };
 
   const handleAddItem = async (newItem: any) => {
@@ -591,6 +870,14 @@ function ItemsManagement() {
                   <option value="Available">Available</option>
                   <option value="Unavailable">Unavailable</option>
                 </select>
+
+                {/* Edit Button */}
+                <button
+                  onClick={() => handleEditProduct(product)}
+                  className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                >
+                  <Edit className="h-3 w-3" />
+                </button>
               </div>
             </div>
           ))}
@@ -616,6 +903,17 @@ function ItemsManagement() {
         isOpen={isAddItemOpen}
         onClose={() => setIsAddItemOpen(false)}
         onAddItem={handleAddItem}
+      />
+
+      {/* Edit Item Popup */}
+      <EditItemPopup 
+        isOpen={isEditItemOpen}
+        onClose={() => {
+          setIsEditItemOpen(false);
+          setEditingProduct(null);
+        }}
+        onUpdateItem={handleUpdateItem}
+        product={editingProduct}
       />
     </div>
   );
