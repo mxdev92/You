@@ -326,10 +326,10 @@ function ItemsManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header exactly like main app */}
-      <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
+      {/* App Bar - Back + Search + Save */}
+      <div className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
         <div className="flex items-center justify-between px-4 py-3 touch-action-manipulation">
-          {/* Back & Save Buttons */}
+          {/* Back Button */}
           <Button
             variant="ghost"
             size="icon"
@@ -361,9 +361,10 @@ function ItemsManagement() {
             <Save className="h-6 w-6 text-gray-700" />
           </Button>
         </div>
+      </div>
 
-        {/* Categories Section - copied exactly from main app */}
-        <section className="px-4 py-0.5">
+      {/* Categories Section */}
+      <section className="bg-white px-4 py-0.5 border-b">
           <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
             {categories.map((category, index) => (
               <motion.div
@@ -392,7 +393,6 @@ function ItemsManagement() {
             ))}
           </div>
         </section>
-      </header>
 
       {/* Products List - Very small elements, professional design */}
       <main className="pb-8">
