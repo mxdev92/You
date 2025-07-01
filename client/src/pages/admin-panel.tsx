@@ -1116,7 +1116,7 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Starting PDF generation with HTML2Canvas...');
+      console.log('Generating PDF with HTML2Canvas...');
       
       // Get the invoice element
       const invoiceElement = document.getElementById('invoice-content');
@@ -1126,29 +1126,27 @@ export default function AdminPanel() {
       }
 
       // Hide the buttons during capture
-      const buttons = invoiceElement.querySelector('.flex.items-center.gap-2');
-      if (buttons) {
-        buttons.style.display = 'none';
+      const buttonsDiv = invoiceElement.querySelector('div[class*="flex"][class*="items-center"][class*="gap-2"]') as HTMLElement;
+      if (buttonsDiv) {
+        buttonsDiv.style.display = 'none';
       }
 
       console.log('Converting to canvas...');
-      // Convert to canvas with optimized settings for Arabic text
+      // Convert to canvas with high quality settings
       const canvas = await html2canvas(invoiceElement, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        logging: false,
-        letterRendering: true,
-        foreignObjectRendering: true
+        logging: false
       });
 
       // Show buttons again
-      if (buttons) {
-        buttons.style.display = 'flex';
+      if (buttonsDiv) {
+        buttonsDiv.style.display = 'flex';
       }
 
-      console.log('Canvas created, generating PDF...');
+      console.log('Creating PDF...');
       
       // Create PDF
       const imgData = canvas.toDataURL('image/png', 1.0);
@@ -1158,27 +1156,32 @@ export default function AdminPanel() {
         format: 'a4'
       });
       
-      const imgWidth = 190; // A4 width minus margins
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 20; // 10mm margin on each side
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
-      // Add the image to PDF
+      // Add the image to PDF with margins
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
 
       // Handle multi-page content if needed
-      if (imgHeight > 270) { // A4 height minus margins
-        let position = -270;
-        while (position > -imgHeight) {
+      if (imgHeight > pageHeight - 20) {
+        let heightLeft = imgHeight - (pageHeight - 20);
+        let position = -(pageHeight - 20);
+        
+        while (heightLeft > 0) {
           pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 10, position + 10, imgWidth, imgHeight);
-          position -= 270;
+          pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight - 20;
+          position -= pageHeight - 20;
         }
       }
 
       // Save with Arabic filename
-      const filename = `فاتورة-${selectedOrder.id}.pdf`;
+      const filename = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
       pdf.save(filename);
       
-      console.log('PDF download completed successfully');
+      console.log('PDF generated and downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('حدث خطأ في تحميل الفاتورة');
