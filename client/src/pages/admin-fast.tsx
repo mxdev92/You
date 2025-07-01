@@ -296,8 +296,6 @@ function ItemsManagement() {
   const [products, setProducts] = useState(mockProducts);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingProduct, setEditingProduct] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{price: string, inStock: boolean}>({price: '', inStock: false});
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === null || product.categoryId === selectedCategory;
@@ -306,187 +304,164 @@ function ItemsManagement() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleEditProduct = (product: any) => {
-    setEditingProduct(product.id);
-    setEditValues({
-      price: product.price.toString(),
-      inStock: product.inStock
-    });
+  const handleCategorySelect = (categoryId: number) => {
+    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
   };
 
-  const handleSaveProduct = (productId: number) => {
+  const handlePriceChange = (productId: number, newPrice: string) => {
+    const price = parseInt(newPrice);
+    if (!isNaN(price) && price > 0) {
+      setProducts(prev => prev.map(product => 
+        product.id === productId ? { ...product, price } : product
+      ));
+    }
+  };
+
+  const handleStockToggle = (productId: number, inStock: boolean) => {
     setProducts(prev => prev.map(product => 
-      product.id === productId 
-        ? { ...product, price: parseInt(editValues.price), inStock: editValues.inStock }
-        : product
+      product.id === productId ? { ...product, inStock } : product
     ));
-    setEditingProduct(null);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingProduct(null);
-    setEditValues({price: '', inStock: false});
   };
 
   return (
-    <div className="space-y-6">
-      {/* Categories Overview */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-4 border-b bg-gray-50">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Tag className="h-4 w-4" />
-            Categories Overview
-          </h2>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with Search - matching main app */}
+      <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="w-11"></div> {/* Spacer */}
+          
+          {/* Search Bar - same as main app */}
+          <div className="flex-1 mx-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200"
+              />
+            </div>
+          </div>
+          
+          <div className="w-11"></div> {/* Spacer */}
         </div>
-        <div className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {categories.map(category => (
-              <Card key={category.id} 
-                    className={`cursor-pointer hover:shadow-md transition-all duration-200 border-2 ${
-                      selectedCategory === category.id ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                    }`}
-                    onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}>
-                <CardContent className="p-3 text-center">
-                  <div className="text-xl mb-1">{category.icon}</div>
-                  <h3 className="font-medium text-xs mb-1 truncate">{category.name}</h3>
-                  <p className="text-xs text-gray-500 truncate">{category.nameEn}</p>
-                  <Badge variant="secondary" className="text-xs mt-1 px-2 py-0">
-                    {category.productsCount}
-                  </Badge>
-                </CardContent>
-              </Card>
+
+        {/* Categories Section - same as main app */}
+        <section className="px-4 py-0.5">
+          <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
+            {categories.map((category) => (
+              <div
+                key={category.id}
+                className="flex-shrink-0 flex flex-col items-center min-w-14"
+              >
+                <div
+                  onClick={() => handleCategorySelect(category.id)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
+                    selectedCategory === category.id
+                      ? "bg-fresh-green text-white shadow-lg"
+                      : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
+                  }`}
+                >
+                  <span className="text-lg">{category.icon}</span>
+                </div>
+                <span className="text-xs text-gray-600 font-medium text-center leading-tight px-1">
+                  {category.name}
+                </span>
+              </div>
             ))}
           </div>
-        </div>
-      </div>
+        </section>
+      </header>
 
-      {/* Products Management */}
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-4 border-b bg-gray-50">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Package2 className="h-4 w-4" />
-              Products Management
-            </h2>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Search className="h-3 w-3 absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-7 h-8 w-48 text-xs"
-                />
-              </div>
-              {selectedCategory && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setSelectedCategory(null)}
-                  className="h-8 px-2 text-xs"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Clear
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4">
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-8">
-              <Package className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-              <h3 className="text-sm font-medium text-gray-900 mb-1">No products found</h3>
-              <p className="text-xs text-gray-600">Try adjusting your search or filter criteria</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {filteredProducts.map(product => (
-                <Card key={product.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="aspect-square bg-gray-100 relative">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <div className={`w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    </div>
-                  </div>
-                  <CardContent className="p-3">
-                    <div className="space-y-2">
-                      <div>
-                        <h3 className="font-medium text-xs truncate">{product.name}</h3>
-                        <p className="text-xs text-gray-500 truncate">{product.nameEn}</p>
+      {/* Products List - Horizontal Layout */}
+      <main className="pb-8">
+        {selectedCategory ? (
+          <section className="px-4 py-6">
+            <div className="space-y-3">
+              {filteredProducts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                  <p className="text-gray-600">Try adjusting your search criteria</p>
+                </div>
+              ) : (
+                filteredProducts.map(product => (
+                  <div key={product.id} className="bg-white rounded-2xl shadow-sm p-4">
+                    <div className="flex items-center gap-4">
+                      {/* Product Image */}
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
 
-                      {editingProduct === product.id ? (
-                        <div className="space-y-2">
-                          <Input
-                            type="number"
-                            value={editValues.price}
-                            onChange={(e) => setEditValues(prev => ({...prev, price: e.target.value}))}
-                            className="h-8 text-xs"
-                            placeholder="Price"
-                          />
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600">Available</span>
-                            <Switch
-                              checked={editValues.inStock}
-                              onCheckedChange={(checked) => setEditValues(prev => ({...prev, inStock: checked}))}
-                              className="scale-75"
-                            />
-                          </div>
-                          <div className="flex gap-1">
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleSaveProduct(product.id)}
-                              className="flex-1 h-7 text-xs"
-                            >
-                              <Save className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={handleCancelEdit}
-                              className="h-7"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
+                      {/* Product Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm truncate">{product.name}</h3>
+                        <p className="text-xs text-gray-600 truncate">{product.nameEn}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {product.categoryName}
+                          </Badge>
+                          <div className={`w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
                         </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-green-600">
-                              {product.price.toLocaleString()} IQD
-                            </span>
-                            <span className="text-xs text-gray-500">/{product.unit}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs px-1 py-0 truncate flex-1">
-                              {product.categoryName}
-                            </Badge>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleEditProduct(product)}
-                              className="h-6 px-2"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+                      </div>
+
+                      {/* Price Input */}
+                      <div className="flex-shrink-0 w-24">
+                        <Input
+                          type="number"
+                          value={product.price}
+                          onChange={(e) => handlePriceChange(product.id, e.target.value)}
+                          className="h-8 text-xs text-center"
+                          placeholder="Price"
+                        />
+                        <span className="text-xs text-gray-500 text-center block">IQD</span>
+                      </div>
+
+                      {/* Availability Dropdown */}
+                      <div className="flex-shrink-0">
+                        <Select 
+                          value={product.inStock ? "available" : "out-of-stock"}
+                          onValueChange={(value) => handleStockToggle(product.id, value === "available")}
+                        >
+                          <SelectTrigger className="w-28 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="available">Available</SelectItem>
+                            <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Save Icon */}
+                      <div className="flex-shrink-0">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                ))
+              )}
             </div>
-          )}
-        </div>
-      </div>
+          </section>
+        ) : (
+          <div className="text-center py-12">
+            <Tag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Category</h3>
+            <p className="text-gray-600">Choose a category above to manage its products</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
