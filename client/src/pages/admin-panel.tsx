@@ -8,8 +8,6 @@ import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -1116,140 +1114,44 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Creating real text-based PDF...');
+      console.log('Generating PDF with Playwright server-side rendering...');
       
-      // Create PDF with proper text content
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+      // Send order data to server for PDF generation
+      const response = await fetch('/api/generate-invoice-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderData: selectedOrder
+        })
       });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 20;
-      let yPos = 30;
-
-      // Set default font
-      pdf.setFont('helvetica', 'normal');
-
-      // Invoice Header (English + Arabic)
-      pdf.setFontSize(20);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('INVOICE', pageWidth/2, yPos, { align: 'center' });
-      yPos += 8;
-      pdf.text('فاتورة', pageWidth/2, yPos, { align: 'center' });
-      yPos += 15;
-
-      // Order Information
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Order ID: ${selectedOrder.id}`, margin, yPos);
-      yPos += 7;
-      pdf.text(`Date: ${new Date(selectedOrder.orderDate).toLocaleDateString()}`, margin, yPos);
-      yPos += 15;
-
-      // Customer Information Section
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Customer Information', margin, yPos);
-      yPos += 10;
-
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Name: ${selectedOrder.customerName}`, margin, yPos);
-      yPos += 6;
-      pdf.text(`Phone: ${selectedOrder.customerPhone}`, margin, yPos);
-      yPos += 6;
-      
-      const address = `Address: ${selectedOrder.address.governorate}, ${selectedOrder.address.district}, ${selectedOrder.address.neighborhood}, ${selectedOrder.address.street}, House #${selectedOrder.address.houseNumber}`;
-      const addressLines = pdf.splitTextToSize(address, pageWidth - 2 * margin);
-      pdf.text(addressLines, margin, yPos);
-      yPos += addressLines.length * 5 + 10;
-
-      // Items Table using AutoTable
-      const tableColumns = [
-        { header: 'Product Name', dataKey: 'name' },
-        { header: 'Price (IQD)', dataKey: 'price' },
-        { header: 'Quantity', dataKey: 'quantity' },
-        { header: 'Total (IQD)', dataKey: 'total' }
-      ];
-
-      const tableData = selectedOrder.items.map((item: any) => {
-        const unit = item.unit === 'kg' ? 'kg' : item.unit === 'bunch' ? 'bunch' : item.unit;
-        const total = (parseFloat(item.price) * item.quantity).toFixed(2);
-        
-        return {
-          name: `${item.productName}`,
-          price: `${item.price}`,
-          quantity: `${item.quantity} ${unit}`,
-          total: `${total}`
-        };
-      });
-
-      // Add table
-      (pdf as any).autoTable({
-        columns: tableColumns,
-        body: tableData,
-        startY: yPos,
-        margin: { left: margin, right: margin },
-        styles: {
-          fontSize: 10,
-          cellPadding: 5
-        },
-        headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          textColor: [0, 0, 0]
-        },
-        alternateRowStyles: {
-          fillColor: [249, 249, 249]
-        }
-      });
-
-      // Get final Y position after table
-      yPos = (pdf as any).lastAutoTable.finalY + 15;
-
-      // Totals Section
-      const totalsX = pageWidth - margin - 60;
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Subtotal: ${selectedOrder.totalAmount.toFixed(2)} IQD`, totalsX, yPos, { align: 'left' });
-      yPos += 7;
-      pdf.text('Delivery: 5.00 IQD', totalsX, yPos, { align: 'left' });
-      yPos += 7;
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`TOTAL: ${(selectedOrder.totalAmount + 5).toFixed(2)} IQD`, totalsX, yPos, { align: 'left' });
-
-      // Notes
-      if (selectedOrder.notes) {
-        yPos += 15;
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`Notes: ${selectedOrder.notes}`, margin, yPos);
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
       }
 
-      // Footer
-      yPos += 20;
-      pdf.setFontSize(9);
-      pdf.text('Thank you for your business!', pageWidth/2, yPos, { align: 'center' });
-      yPos += 5;
-      pdf.text('Yalla Jeetek', pageWidth/2, yPos, { align: 'center' });
-
-      // Save PDF
-      const filename = `Invoice-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
-      pdf.save(filename);
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
       
-      console.log('Real text-based PDF generated successfully with selectable text');
+      // Create download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('Professional Arabic RTL PDF with selectable text generated successfully');
       
     } catch (error) {
       console.error('Error generating PDF:', error);
       if (error instanceof Error) {
         alert(`PDF Error: ${error.message}`);
       } else {
-        alert('Error generating PDF');
+        alert('Error generating PDF. Please try again.');
       }
     }
   };
