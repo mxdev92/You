@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { createProduct, uploadProductImage } from '@/lib/firebase';
+import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
 
 // Mock orders data
 const mockOrders = [
@@ -366,14 +366,21 @@ function ItemsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Organic Apples', category: 'Fruits', price: '12.50', unit: 'kg', available: true, image: '/api/placeholder/60/60' },
-    { id: 2, name: 'Fresh Spinach', category: 'Vegetables', price: '8.00', unit: 'bunch', available: true, image: '/api/placeholder/60/60' },
-    { id: 3, name: 'Bananas', category: 'Fruits', price: '6.75', unit: 'kg', available: false, image: '/api/placeholder/60/60' },
-    { id: 4, name: 'Carrots', category: 'Vegetables', price: '4.25', unit: 'kg', available: true, image: '/api/placeholder/60/60' },
-    { id: 5, name: 'Oranges', category: 'Fruits', price: '15.00', unit: 'kg', available: true, image: '/api/placeholder/60/60' },
-    { id: 6, name: 'Broccoli', category: 'Vegetables', price: '9.50', unit: 'piece', available: true, image: '/api/placeholder/60/60' }
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  // Load products from Firebase on component mount
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const firebaseProducts = await getProducts();
+        setProducts(firebaseProducts);
+      } catch (error) {
+        console.error('Failed to load products:', error);
+      }
+    };
+
+    loadProducts();
+  }, []);
 
   const categories = [
     { id: 1, name: 'Fruits', icon: Apple, count: 3 },
@@ -390,28 +397,43 @@ function ItemsManagement() {
     return matchesSearch && matchesCategory;
   });
 
-  const updateProductPrice = (id: number, newPrice: string) => {
+  const updateProductPrice = async (id: string, newPrice: string) => {
+    const numericPrice = parseFloat(newPrice);
+    if (isNaN(numericPrice)) return;
+    
     setProducts(prev => prev.map(product => 
-      product.id === id ? { ...product, price: newPrice } : product
+      product.id === id ? { ...product, price: numericPrice } : product
     ));
+    
+    // TODO: Update in Firebase (will implement if needed)
   };
 
-  const updateProductAvailability = (id: number, available: boolean) => {
+  const updateProductAvailability = async (id: string, available: boolean) => {
     setProducts(prev => prev.map(product => 
       product.id === id ? { ...product, available } : product
     ));
+    
+    // TODO: Update in Firebase (will implement if needed)
   };
 
-  const handleAddItem = (newItem: any) => {
-    setProducts(prev => [...prev, {
-      id: Date.now(), // Temporary ID
-      name: newItem.name,
-      category: newItem.category,
-      price: newItem.price.toString(),
-      unit: newItem.unit,
-      available: newItem.available,
-      image: newItem.imageUrl
-    }]);
+  const handleAddItem = async (newItem: any) => {
+    try {
+      // Create product in Firebase
+      const createdProduct = await createProduct({
+        name: newItem.name,
+        description: newItem.description,
+        price: parseFloat(newItem.price),
+        category: newItem.category,
+        unit: newItem.unit,
+        available: newItem.available,
+        imageUrl: newItem.imageUrl
+      });
+
+      // Add to local state for immediate update
+      setProducts(prev => [...prev, createdProduct]);
+    } catch (error) {
+      console.error('Failed to create product:', error);
+    }
   };
 
   return (
@@ -494,7 +516,7 @@ function ItemsManagement() {
                 {/* Product Image */}
                 <div className="w-10 h-10 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden">
                   <img 
-                    src={product.image} 
+                    src={product.imageUrl} 
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
@@ -511,7 +533,7 @@ function ItemsManagement() {
                   <Input
                     type="number"
                     value={product.price}
-                    onChange={(e) => updateProductPrice(product.id, e.target.value)}
+                    onChange={(e) => product.id && updateProductPrice(product.id, e.target.value)}
                     className="w-14 h-6 text-xs text-center border-0 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-blue-500"
                     step="0.25"
                   />
@@ -520,7 +542,7 @@ function ItemsManagement() {
                 {/* Availability */}
                 <select
                   value={product.available ? 'Available' : 'Unavailable'}
-                  onChange={(e) => updateProductAvailability(product.id, e.target.value === 'Available')}
+                  onChange={(e) => product.id && updateProductAvailability(product.id, e.target.value === 'Available')}
                   className="text-xs border-0 bg-gray-50 rounded px-1.5 py-1 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
                   <option value="Available">Available</option>
