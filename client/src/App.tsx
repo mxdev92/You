@@ -5,8 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
-import AdminFast from "@/pages/admin-fast";
-import AdminItems from "@/pages/admin-items";
+import AdminPanel from "@/pages/admin-panel";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -28,8 +27,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/admin" component={AdminFast} />
-      <Route path="/admin/items" component={AdminItems} />
+      <Route path="/admin" component={AdminPanel} />
       <Route path="/login" component={Login} />
       <Route component={NotFound} />
     </Switch>

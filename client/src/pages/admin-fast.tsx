@@ -539,7 +539,7 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 export default function AdminFast() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [orders, setOrders] = useState(mockOrders);
-  const [currentView, setCurrentView] = useState<'orders' | 'items'>('items');
+  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
@@ -558,8 +558,29 @@ export default function AdminFast() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header with List Icon */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <List className="h-5 w-5 text-gray-700" />
+            </button>
+            <div className="flex items-center gap-2">
+              <Badge variant="default" className="text-xs">
+                {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto p-6">
-        <OrderStats orders={orders} />
+        {currentView === 'orders' ? (
+          <>
+            <OrderStats orders={orders} />
 
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b">
