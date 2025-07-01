@@ -8,7 +8,8 @@ import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk,
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
-import { Document, Page, Text, View, StyleSheet, pdf, Font } from '@react-pdf/renderer';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -1111,169 +1112,187 @@ export default function AdminPanel() {
     setSelectedOrder(null);
   };
 
-  // Create PDF document component with Arabic support
-  const InvoicePDF = ({ order }: { order: any }) => {
-    const styles = StyleSheet.create({
-      page: {
-        backgroundColor: '#ffffff',
-        padding: 20,
-        fontFamily: 'Helvetica',
-        direction: 'rtl'
-      },
-      header: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 20,
-        color: '#333'
-      },
-      section: {
-        marginBottom: 15
-      },
-      sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        textAlign: 'right',
-        color: '#333'
-      },
-      text: {
-        fontSize: 12,
-        marginBottom: 4,
-        textAlign: 'right',
-        color: '#555'
-      },
-      tableContainer: {
-        marginTop: 15,
-        marginBottom: 15
-      },
-      tableHeader: {
-        flexDirection: 'row-reverse',
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
-        paddingBottom: 5,
-        marginBottom: 10
-      },
-      tableHeaderCell: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        flex: 1,
-        textAlign: 'center',
-        color: '#333'
-      },
-      tableRow: {
-        flexDirection: 'row-reverse',
-        paddingBottom: 5,
-        marginBottom: 5
-      },
-      tableCell: {
-        fontSize: 9,
-        flex: 1,
-        textAlign: 'center',
-        color: '#555'
-      },
-      totalsSection: {
-        marginTop: 20,
-        paddingTop: 10,
-        borderTopWidth: 1,
-        borderTopColor: '#ccc'
-      },
-      totalText: {
-        fontSize: 12,
-        marginBottom: 5,
-        textAlign: 'right',
-        color: '#333'
-      },
-      grandTotal: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        textAlign: 'right',
-        color: '#000'
-      }
-    });
-
-    return (
-      <Document>
-        <Page size="A4" style={styles.page}>
-          {/* Header */}
-          <Text style={styles.header}>فاتورة الطلب</Text>
-          
-          {/* Customer Information */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>معلومات العميل</Text>
-            <Text style={styles.text}>الاسم: {order.customerName}</Text>
-            <Text style={styles.text}>الهاتف: {order.customerPhone}</Text>
-            <Text style={styles.text}>
-              العنوان: {order.address.governorate} - {order.address.district} - {order.address.neighborhood} - {order.address.street} - منزل رقم {order.address.houseNumber}
-            </Text>
-            <Text style={styles.text}>تاريخ الطلب: {new Date(order.orderDate).toLocaleDateString('ar-EG')}</Text>
-          </View>
-
-          {/* Items Table */}
-          <View style={styles.tableContainer}>
-            <Text style={styles.sectionTitle}>قائمة الطلبات</Text>
-            
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderCell}>الاسم</Text>
-              <Text style={styles.tableHeaderCell}>السعر للكيلو</Text>
-              <Text style={styles.tableHeaderCell}>الكمية</Text>
-              <Text style={styles.tableHeaderCell}>السعر الكلي</Text>
-            </View>
-            
-            {/* Table Rows */}
-            {order.items.map((item: any, index: number) => {
-              const unit = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
-              const total = (parseFloat(item.price) * item.quantity).toFixed(2);
-              
-              return (
-                <View key={index} style={styles.tableRow}>
-                  <Text style={styles.tableCell}>{item.productName}</Text>
-                  <Text style={styles.tableCell}>{item.price} د.ع</Text>
-                  <Text style={styles.tableCell}>{item.quantity} {unit}</Text>
-                  <Text style={styles.tableCell}>{total} د.ع</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Totals */}
-          <View style={styles.totalsSection}>
-            <Text style={styles.totalText}>المجموع الفرعي: {order.totalAmount.toFixed(2)} د.ع</Text>
-            <Text style={styles.totalText}>رسوم التوصيل: 5.00 د.ع</Text>
-            <Text style={styles.grandTotal}>المجموع الكلي: {(order.totalAmount + 5).toFixed(2)} د.ع</Text>
-            
-            {order.notes && (
-              <Text style={[styles.text, { marginTop: 15 }]}>ملاحظات: {order.notes}</Text>
-            )}
-          </View>
-        </Page>
-      </Document>
-    );
-  };
-
   const downloadInvoicePDF = async () => {
     if (!selectedOrder) return;
     
     try {
-      console.log('Creating Arabic PDF with React-PDF...');
+      console.log('Creating real PDF with PDFMake and Arabic support...');
       
-      // Generate PDF blob
-      const blob = await pdf(<InvoicePDF order={selectedOrder} />).toBlob();
+      // Initialize PDFMake with fonts
+      pdfMake.vfs = pdfFonts.pdfMake.vfs;
       
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Create document definition with Arabic content
+      const docDefinition = {
+        pageSize: 'A4',
+        pageMargins: [40, 60, 40, 60],
+        content: [
+          // Header
+          {
+            text: 'فاتورة الطلب',
+            style: 'header',
+            alignment: 'center',
+            margin: [0, 0, 0, 20]
+          },
+          
+          // Customer Information Section
+          {
+            text: 'معلومات العميل',
+            style: 'sectionHeader',
+            margin: [0, 0, 0, 10]
+          },
+          {
+            columns: [
+              {
+                width: '*',
+                stack: [
+                  { text: `الاسم: ${selectedOrder.customerName}`, style: 'customerInfo' },
+                  { text: `الهاتف: ${selectedOrder.customerPhone}`, style: 'customerInfo' },
+                  { 
+                    text: `العنوان: ${selectedOrder.address.governorate} - ${selectedOrder.address.district} - ${selectedOrder.address.neighborhood} - ${selectedOrder.address.street} - منزل رقم ${selectedOrder.address.houseNumber}`, 
+                    style: 'customerInfo' 
+                  },
+                  { text: `تاريخ الطلب: ${new Date(selectedOrder.orderDate).toLocaleDateString('ar-EG')}`, style: 'customerInfo' }
+                ]
+              }
+            ],
+            margin: [0, 0, 0, 20]
+          },
+          
+          // Items Table
+          {
+            text: 'قائمة الطلبات',
+            style: 'sectionHeader',
+            margin: [0, 0, 0, 10]
+          },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto', 'auto'],
+              body: [
+                // Table header
+                [
+                  { text: 'الاسم', style: 'tableHeader' },
+                  { text: 'السعر للكيلو', style: 'tableHeader' },
+                  { text: 'الكمية', style: 'tableHeader' },
+                  { text: 'السعر الكلي', style: 'tableHeader' }
+                ],
+                // Table rows
+                ...selectedOrder.items.map((item: any) => {
+                  const unit = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
+                  const total = (parseFloat(item.price) * item.quantity).toFixed(2);
+                  
+                  return [
+                    { text: item.productName, style: 'tableCell' },
+                    { text: `${item.price} د.ع`, style: 'tableCell', alignment: 'center' },
+                    { text: `${item.quantity} ${unit}`, style: 'tableCell', alignment: 'center' },
+                    { text: `${total} د.ع`, style: 'tableCell', alignment: 'center' }
+                  ];
+                })
+              ]
+            },
+            layout: {
+              fillColor: function (rowIndex: number) {
+                return (rowIndex === 0) ? '#f0f0f0' : null;
+              }
+            },
+            margin: [0, 0, 0, 20]
+          },
+          
+          // Totals Section
+          {
+            columns: [
+              { width: '*', text: '' },
+              {
+                width: 200,
+                stack: [
+                  { 
+                    text: `المجموع الفرعي: ${selectedOrder.totalAmount.toFixed(2)} د.ع`, 
+                    style: 'totalText',
+                    alignment: 'right'
+                  },
+                  { 
+                    text: 'رسوم التوصيل: 5.00 د.ع', 
+                    style: 'totalText',
+                    alignment: 'right'
+                  },
+                  { 
+                    text: `المجموع الكلي: ${(selectedOrder.totalAmount + 5).toFixed(2)} د.ع`, 
+                    style: 'grandTotal',
+                    alignment: 'right'
+                  }
+                ]
+              }
+            ]
+          },
+          
+          // Notes if any
+          ...(selectedOrder.notes ? [{
+            text: `ملاحظات: ${selectedOrder.notes}`,
+            style: 'notes',
+            margin: [0, 20, 0, 0]
+          }] : [])
+        ],
+        
+        styles: {
+          header: {
+            fontSize: 22,
+            bold: true,
+            color: '#333333'
+          },
+          sectionHeader: {
+            fontSize: 16,
+            bold: true,
+            color: '#333333',
+            alignment: 'right'
+          },
+          customerInfo: {
+            fontSize: 12,
+            margin: [0, 2, 0, 2],
+            alignment: 'right'
+          },
+          tableHeader: {
+            fontSize: 11,
+            bold: true,
+            fillColor: '#f0f0f0',
+            alignment: 'center'
+          },
+          tableCell: {
+            fontSize: 10,
+            margin: [0, 2, 0, 2]
+          },
+          totalText: {
+            fontSize: 12,
+            margin: [0, 2, 0, 2]
+          },
+          grandTotal: {
+            fontSize: 14,
+            bold: true,
+            margin: [0, 5, 0, 0]
+          },
+          notes: {
+            fontSize: 10,
+            italics: true,
+            alignment: 'right'
+          }
+        },
+        
+        defaultStyle: {
+          font: 'Helvetica',
+          direction: 'rtl'
+        }
+      };
+
+      // Generate and download PDF
+      console.log('Generating PDF document...');
+      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
       
-      console.log('Arabic PDF generated and downloaded successfully');
+      const filename = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
+      pdfDocGenerator.download(filename);
+      
+      console.log('Real text-based Arabic PDF generated successfully');
+      
     } catch (error) {
-      console.error('Error generating Arabic PDF:', error);
+      console.error('Error generating real PDF:', error);
       if (error instanceof Error) {
         alert(`PDF Error: ${error.message}`);
       } else {
@@ -1383,7 +1402,7 @@ export default function AdminPanel() {
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">فاتورة الطلب</h2>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" data-button-container>
                   <button
                     onClick={downloadInvoicePDF}
                     className="p-2 hover:bg-gray-100 rounded-full"
