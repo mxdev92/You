@@ -14,6 +14,8 @@ import { useAuth } from "@/hooks/use-auth";
 function ProtectedAdminRoute() {
   const isAdminAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
   
+  console.log('Admin auth check:', { isAdminAuthenticated, localStorage: localStorage.getItem('adminAuthenticated') });
+  
   if (!isAdminAuthenticated) {
     return <AdminLogin />;
   }

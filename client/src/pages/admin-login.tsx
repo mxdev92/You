@@ -20,13 +20,18 @@ export default function AdminLogin() {
     setIsLoading(true);
     setError('');
 
+    console.log('Login attempt:', { email: formData.email, password: formData.password });
+
     // Simple hardcoded authentication (case-insensitive email)
     if (formData.email.toLowerCase() === 'mustafa@yalla.com' && formData.password === 'Password1000') {
+      console.log('Authentication successful');
       // Set admin session
       localStorage.setItem('adminAuthenticated', 'true');
       localStorage.setItem('adminEmail', formData.email);
+      console.log('LocalStorage set, redirecting...');
       setLocation('/admin');
     } else {
+      console.log('Authentication failed');
       setError('Invalid email or password');
     }
     
