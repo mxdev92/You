@@ -1233,6 +1233,9 @@ export default function AdminPanel() {
                     {selectedOrder.address.floorNumber && ` - الطابق ${selectedOrder.address.floorNumber}`}
                     {selectedOrder.address.notes && <><br /><span className="text-gray-600">{selectedOrder.address.notes}</span></>}
                   </div>
+                  <div className="mt-3 pt-2 border-t border-gray-300">
+                    <span className="font-medium text-sm">تاريخ الطلب:</span> {new Date(selectedOrder.orderDate).toLocaleDateString('ar-EG')}
+                  </div>
                 </div>
               </div>
 
@@ -1283,10 +1286,7 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Order Date */}
-              <div className="mt-4 text-sm text-gray-600 text-center">
-                تاريخ الطلب: {new Date(selectedOrder.orderDate).toLocaleDateString('ar-EG')}
-              </div>
+
 
               {/* Notes */}
               {selectedOrder.notes && (
