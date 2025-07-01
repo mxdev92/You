@@ -1124,70 +1124,82 @@ export default function AdminPanel() {
         format: 'a4'
       });
 
-      // Set up RTL text direction and Arabic font support
-      pdf.setR2L(true);
-      
       let yPos = 20;
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 20;
-      const rightMargin = pageWidth - margin;
 
       // Header
       pdf.setFontSize(20);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('فاتورة الطلب', rightMargin, yPos, { align: 'right' });
+      pdf.text('INVOICE / FATORAH', pageWidth/2, yPos, { align: 'center' });
       yPos += 15;
 
       // Customer Information
-      pdf.setFontSize(16);
-      pdf.text('معلومات العميل', rightMargin, yPos, { align: 'right' });
+      pdf.setFontSize(14);
+      pdf.text('Customer Information:', margin, yPos);
       yPos += 10;
 
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'normal');
       
-      pdf.text(`الاسم: ${selectedOrder.customerName}`, rightMargin, yPos, { align: 'right' });
+      pdf.text(`Name: ${selectedOrder.customerName}`, margin, yPos);
       yPos += 7;
       
-      pdf.text(`الهاتف: ${selectedOrder.customerPhone}`, rightMargin, yPos, { align: 'right' });
+      pdf.text(`Phone: ${selectedOrder.customerPhone}`, margin, yPos);
       yPos += 7;
       
-      const address = `العنوان: ${selectedOrder.address.governorate} - ${selectedOrder.address.district} - ${selectedOrder.address.neighborhood} - ${selectedOrder.address.street} - منزل رقم ${selectedOrder.address.houseNumber}`;
-      const addressLines = pdf.splitTextToSize(address, pageWidth - 2 * margin);
-      pdf.text(addressLines, rightMargin, yPos, { align: 'right' });
-      yPos += addressLines.length * 7;
+      pdf.text(`Address: ${selectedOrder.address.governorate}, ${selectedOrder.address.district}`, margin, yPos);
+      yPos += 7;
       
-      pdf.text(`تاريخ الطلب: ${new Date(selectedOrder.orderDate).toLocaleDateString('en-US')}`, rightMargin, yPos, { align: 'right' });
+      pdf.text(`${selectedOrder.address.neighborhood}, ${selectedOrder.address.street}`, margin, yPos);
+      yPos += 7;
+      
+      pdf.text(`House No: ${selectedOrder.address.houseNumber}${selectedOrder.address.floorNumber ? `, Floor: ${selectedOrder.address.floorNumber}` : ''}`, margin, yPos);
+      yPos += 7;
+      
+      if (selectedOrder.address.notes) {
+        pdf.text(`Notes: ${selectedOrder.address.notes}`, margin, yPos);
+        yPos += 7;
+      }
+      
+      pdf.text(`Order Date: ${new Date(selectedOrder.orderDate).toLocaleDateString('en-US')}`, margin, yPos);
       yPos += 15;
 
-      // Items Header
-      pdf.setFontSize(16);
+      // Items Table
+      pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('قائمة الطلبات', rightMargin, yPos, { align: 'right' });
+      pdf.text('Order Items:', margin, yPos);
       yPos += 10;
 
       // Table headers
       pdf.setFontSize(10);
-      pdf.text('الاسم', rightMargin - 10, yPos, { align: 'right' });
-      pdf.text('السعر للكيلو', rightMargin - 60, yPos, { align: 'right' });
-      pdf.text('الكمية', rightMargin - 100, yPos, { align: 'right' });
-      pdf.text('السعر الكلي', rightMargin - 140, yPos, { align: 'right' });
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Item Name', margin, yPos);
+      pdf.text('Price/kg', margin + 60, yPos);
+      pdf.text('Quantity', margin + 100, yPos);
+      pdf.text('Total', margin + 140, yPos);
       yPos += 5;
 
       // Draw line under headers
-      pdf.line(margin, yPos, rightMargin, yPos);
+      pdf.line(margin, yPos, pageWidth - margin, yPos);
       yPos += 5;
 
       // Items
       pdf.setFont('helvetica', 'normal');
       selectedOrder.items.forEach((item) => {
-        const unit = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
+        const unit = item.unit === 'kg' ? 'kg' : item.unit === 'bunch' ? 'bunch' : item.unit;
         const total = (parseFloat(item.price) * item.quantity).toFixed(2);
         
-        pdf.text(item.productName, rightMargin - 10, yPos, { align: 'right' });
-        pdf.text(item.price, rightMargin - 60, yPos, { align: 'right' });
-        pdf.text(`${item.quantity} ${unit}`, rightMargin - 100, yPos, { align: 'right' });
-        pdf.text(total, rightMargin - 140, yPos, { align: 'right' });
+        // Use English transliterations for Arabic products
+        let itemName = item.productName;
+        if (item.productName === 'تفاح عضوي') itemName = 'Organic Apples';
+        if (item.productName === 'سبانخ طازجة') itemName = 'Fresh Spinach';
+        if (item.productName === 'موز') itemName = 'Bananas';
+        
+        pdf.text(itemName, margin, yPos);
+        pdf.text(`${item.price} IQD`, margin + 60, yPos);
+        pdf.text(`${item.quantity} ${unit}`, margin + 100, yPos);
+        pdf.text(`${total} IQD`, margin + 140, yPos);
         yPos += 7;
       });
 
@@ -1195,20 +1207,20 @@ export default function AdminPanel() {
 
       // Totals
       pdf.setFont('helvetica', 'bold');
-      pdf.text(`المجموع الفرعي: ${selectedOrder.totalAmount.toFixed(2)} د.ع`, rightMargin, yPos, { align: 'right' });
+      pdf.text(`Subtotal: ${selectedOrder.totalAmount.toFixed(2)} IQD`, margin + 100, yPos);
       yPos += 7;
       
-      pdf.text(`رسوم التوصيل: 5.00 د.ع`, rightMargin, yPos, { align: 'right' });
+      pdf.text(`Delivery Fee: 5.00 IQD`, margin + 100, yPos);
       yPos += 7;
       
       pdf.setFontSize(14);
-      pdf.text(`المجموع الكلي: ${(selectedOrder.totalAmount + 5).toFixed(2)} د.ع`, rightMargin, yPos, { align: 'right' });
+      pdf.text(`TOTAL: ${(selectedOrder.totalAmount + 5).toFixed(2)} IQD`, margin + 100, yPos);
 
       // Notes if any
       if (selectedOrder.notes) {
         yPos += 15;
         pdf.setFontSize(12);
-        pdf.text(`ملاحظات: ${selectedOrder.notes}`, rightMargin, yPos, { align: 'right' });
+        pdf.text(`Notes: ${selectedOrder.notes}`, margin, yPos);
       }
 
       // Save PDF
