@@ -1132,14 +1132,16 @@ export default function AdminPanel() {
       }
 
       console.log('Converting to canvas...');
-      // Convert to canvas with high quality settings
+      // Convert to canvas with conservative settings for better compatibility
       const canvas = await html2canvas(invoiceElement, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        logging: false
+        logging: true
       });
+
+      console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
 
       // Show buttons again
       if (buttonsDiv) {
@@ -1177,14 +1179,20 @@ export default function AdminPanel() {
         }
       }
 
-      // Save with Arabic filename
-      const filename = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
+      // Save with simple filename to avoid encoding issues
+      const filename = `Invoice-${selectedOrder.id}.pdf`;
+      console.log('Saving PDF as:', filename);
       pdf.save(filename);
       
       console.log('PDF generated and downloaded successfully');
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('حدث خطأ في تحميل الفاتورة');
+      console.error('Detailed error generating PDF:', error);
+      if (error instanceof Error) {
+        console.error('Error stack:', error.stack);
+        alert(`PDF Error: ${error.message}`);
+      } else {
+        alert('Unknown error occurred while generating PDF');
+      }
     }
   };
 
