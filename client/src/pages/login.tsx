@@ -4,7 +4,6 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 
@@ -53,9 +52,10 @@ export default function Login() {
             transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
             className="mx-auto mb-6 flex items-center justify-center"
           >
-            <KiwiLogo size={72} className="drop-shadow-xl" />
+            <h1 className="text-6xl font-black text-gray-800 drop-shadow-xl" style={{ fontFamily: 'Cairo, sans-serif' }}>
+              يلا جيتك
+            </h1>
           </motion.div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">JEETEK</h1>
           <p className="text-gray-600 text-lg">
             {isLogin ? 'مرحباً بعودتك' : 'إنشاء حساب جديد'}
           </p>

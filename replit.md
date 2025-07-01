@@ -1,8 +1,8 @@
-# JEETEK - Grocery Shopping Application
+# Yalla JEETEK - Grocery Shopping Application
 
 ## Overview
 
-JEETEK is a modern grocery shopping web application built with a full-stack architecture using React, Express, PostgreSQL, and Firebase Authentication. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates and secure user authentication.
+Yalla JEETEK (يلا جيتك) is a modern grocery shopping web application built with a full-stack architecture using React, Express, PostgreSQL, and Firebase Authentication. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates and secure user authentication.
 
 ## System Architecture
 
@@ -98,10 +98,11 @@ JEETEK is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 1, 2025:
-✓ Rebranded application from KiwiQ to JEETEK
+✓ Rebranded application from KiwiQ to "Yalla JEETEK" (يلا جيتك)
 ✓ Updated login page to be completely in Arabic using Cairo font
-✓ Replaced all English text in login with Arabic translations
-✓ Updated app name throughout translations (English: JEETEK, Arabic: جيتيك)
+✓ Replaced kiwi logo with bold Arabic text "يلا جيتك" in login page
+✓ Updated app name throughout translations (English: "Yalla JEETEK", Arabic: "يلا جيتك")
+✓ Applied bold Cairo font to Arabic branding elements
 ✓ Created fast-loading admin panel with instant load times
 ✓ Simplified admin header with minimal design (only list icon)
 ✓ Removed Firebase loading delays from admin panel for better UX
