@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { useAuth } from "@/hooks/use-auth";
-import { useTranslation } from "@/hooks/use-translation";
 import { useLocation } from "wouter";
 
 export default function Login() {
@@ -17,7 +16,6 @@ export default function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   
   const { login, register, loading, error } = useAuth();
-  const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +38,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fresh-green/20 via-white to-fresh-green/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-fresh-green/20 via-white to-fresh-green/10 flex items-center justify-center p-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -57,12 +55,12 @@ export default function Login() {
           >
             <KiwiLogo size={72} className="drop-shadow-xl" />
           </motion.div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">{t('appName')}</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">JEETEK</h1>
           <p className="text-gray-600 text-lg">
-            {isLogin ? t('welcomeBack') : t('createAccount')}
+            {isLogin ? 'مرحباً بعودتك' : 'إنشاء حساب جديد'}
           </p>
           <p className="text-gray-500 text-sm mt-1">
-            {isLogin ? t('signInToContinue') : t('joinUs')}
+            {isLogin ? 'قم بتسجيل الدخول للمتابعة' : 'انضم إلينا اليوم'}
           </p>
         </div>
 
@@ -77,7 +75,7 @@ export default function Login() {
             {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email
+                البريد الإلكتروني
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -86,7 +84,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder="أدخل بريدك الإلكتروني"
                   className="pl-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green/20"
                   required
                 />
@@ -96,7 +94,7 @@ export default function Login() {
             {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password
+                كلمة المرور
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -105,7 +103,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="أدخل كلمة المرور"
                   className="pl-10 pr-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green/20"
                   required
                 />
@@ -132,7 +130,7 @@ export default function Login() {
                 className="space-y-2"
               >
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
-                  Confirm Password
+                  تأكيد كلمة المرور
                 </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -141,13 +139,13 @@ export default function Login() {
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm your password"
+                    placeholder="أكد كلمة المرور"
                     className="pl-10 h-12 rounded-xl border-gray-200 focus:border-fresh-green focus:ring-fresh-green/20"
                     required
                   />
                 </div>
                 {password !== confirmPassword && confirmPassword && (
-                  <p className="text-sm text-red-500">Passwords do not match</p>
+                  <p className="text-sm text-red-500">كلمات المرور غير متطابقة</p>
                 )}
               </motion.div>
             )}
@@ -172,11 +170,11 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  {isLogin ? t('signingIn') : t('creatingAccount')}
+                  {isLogin ? 'جاري تسجيل الدخول...' : 'جاري إنشاء الحساب...'}
                 </>
               ) : (
                 <>
-                  {isLogin ? t('signIn') : t('createAccountBtn')}
+                  {isLogin ? 'تسجيل الدخول' : 'إنشاء حساب'}
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -186,7 +184,7 @@ export default function Login() {
           {/* Toggle Login/Register */}
           <div className="mt-6 text-center">
             <p className="text-gray-600 text-sm">
-              {isLogin ? t('dontHaveAccount') : t('alreadyHaveAccount')}
+              {isLogin ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟'}
             </p>
             <button
               type="button"
@@ -198,7 +196,7 @@ export default function Login() {
               }}
               className="mt-2 text-fresh-green hover:text-green-600 font-semibold transition-colors text-sm"
             >
-              {isLogin ? t('createAccountBtn') : t('signIn')}
+              {isLogin ? 'إنشاء حساب جديد' : 'تسجيل الدخول'}
             </button>
           </div>
         </motion.div>
@@ -211,7 +209,7 @@ export default function Login() {
           className="text-center mt-6"
         >
           <p className="text-xs text-gray-400">
-            {t('agreeTerms', { action: isLogin ? t('signIn').toLowerCase() : t('createAccountBtn').toLowerCase() })}
+            بالمتابعة، أنت توافق على شروط الخدمة وسياسة الخصوصية
           </p>
         </motion.div>
       </motion.div>

@@ -1,7 +1,7 @@
 export const translations = {
   en: {
     // App Name
-    appName: "KiwiQ",
+    appName: "JEETEK",
     
     // Login Page
     welcomeBack: "Welcome back!",
@@ -20,7 +20,7 @@ export const translations = {
     creatingAccount: "Creating Account...",
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: "Already have an account?",
-    agreeTerms: "By {action}, you agree to KiwiQ's Terms & Privacy Policy",
+    agreeTerms: "By {action}, you agree to JEETEK's Terms & Privacy Policy",
     signInAction: "signing in",
     createAccountAction: "creating an account",
     passwordMismatch: "Passwords don't match",
@@ -127,7 +127,7 @@ export const translations = {
   },
   ar: {
     // App Name
-    appName: "كيوي كيو",
+    appName: "جيتيك",
     
     // Login Page
     welcomeBack: "أهلاً بعودتك!",
@@ -146,7 +146,7 @@ export const translations = {
     creatingAccount: "جاري إنشاء الحساب...",
     dontHaveAccount: "ليس لديك حساب؟",
     alreadyHaveAccount: "لديك حساب بالفعل؟",
-    agreeTerms: "بـ{action}، فإنك توافق على شروط وسياسة خصوصية كيوي كيو",
+    agreeTerms: "بـ{action}، فإنك توافق على شروط وسياسة خصوصية جيتيك",
     signInAction: "تسجيل الدخول",
     createAccountAction: "إنشاء حساب",
     passwordMismatch: "كلمات المرور غير متطابقة",

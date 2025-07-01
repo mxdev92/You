@@ -1,8 +1,8 @@
-# KiwiQ - Grocery Shopping Application
+# JEETEK - Grocery Shopping Application
 
 ## Overview
 
-KiwiQ is a modern grocery shopping web application built with a full-stack architecture using React, Express, PostgreSQL, and Firebase Authentication. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates and secure user authentication.
+JEETEK is a modern grocery shopping web application built with a full-stack architecture using React, Express, PostgreSQL, and Firebase Authentication. The application provides a clean, mobile-first interface for browsing grocery categories, viewing products, and managing a shopping cart with real-time updates and secure user authentication.
 
 ## System Architecture
 
@@ -97,6 +97,15 @@ KiwiQ is a modern grocery shopping web application built with a full-stack archi
 ## Recent Changes
 
 ```
+July 1, 2025:
+✓ Rebranded application from KiwiQ to JEETEK
+✓ Updated login page to be completely in Arabic using Cairo font
+✓ Replaced all English text in login with Arabic translations
+✓ Updated app name throughout translations (English: JEETEK, Arabic: جيتيك)
+✓ Created fast-loading admin panel with instant load times
+✓ Simplified admin header with minimal design (only list icon)
+✓ Removed Firebase loading delays from admin panel for better UX
+
 June 29, 2025:
 ✓ Built professional admin panel with Firebase integration
 ✓ Implemented comprehensive orders management system
