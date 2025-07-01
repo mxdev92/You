@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import 'jspdf-autotable';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -1116,96 +1116,133 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Generating high-quality PDF with HTML2Canvas...');
+      console.log('Creating real text-based PDF...');
       
-      // Get the invoice element
-      const invoiceElement = document.getElementById('invoice-content');
-      if (!invoiceElement) {
-        alert('Invoice element not found. Please try again.');
-        return;
-      }
-
-      // Temporarily hide buttons
-      const buttonContainer = invoiceElement.querySelector('[data-button-container]') as HTMLElement;
-      if (buttonContainer) {
-        buttonContainer.style.display = 'none';
-      }
-
-      // Wait for fonts to load
-      await document.fonts.ready;
-      
-      // Create high-quality canvas
-      const canvas = await html2canvas(invoiceElement, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: invoiceElement.scrollWidth,
-        height: invoiceElement.scrollHeight,
-        onclone: (clonedDoc) => {
-          // Ensure fonts are loaded in cloned document
-          const clonedElement = clonedDoc.getElementById('invoice-content');
-          if (clonedElement) {
-            clonedElement.style.fontFamily = 'Cairo, Arial, sans-serif';
-            clonedElement.style.direction = 'rtl';
-            clonedElement.style.textAlign = 'right';
-          }
-        }
-      });
-
-      // Show buttons again
-      if (buttonContainer) {
-        buttonContainer.style.display = 'flex';
-      }
-
-      // Create PDF
+      // Create PDF with proper text content
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const maxWidth = pdfWidth - (margin * 2);
-      const maxHeight = pdfHeight - (margin * 2);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 20;
+      let yPos = 30;
 
-      // Calculate scaling
-      const canvasAspectRatio = canvas.height / canvas.width;
-      let imgWidth = maxWidth;
-      let imgHeight = maxWidth * canvasAspectRatio;
+      // Set default font
+      pdf.setFont('helvetica', 'normal');
 
-      if (imgHeight > maxHeight) {
-        imgHeight = maxHeight;
-        imgWidth = maxHeight / canvasAspectRatio;
-      }
+      // Invoice Header (English + Arabic)
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('INVOICE', pageWidth/2, yPos, { align: 'center' });
+      yPos += 8;
+      pdf.text('فاتورة', pageWidth/2, yPos, { align: 'center' });
+      yPos += 15;
 
-      // Center the image
-      const x = (pdfWidth - imgWidth) / 2;
-      const y = (pdfHeight - imgHeight) / 2;
+      // Order Information
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Order ID: ${selectedOrder.id}`, margin, yPos);
+      yPos += 7;
+      pdf.text(`Date: ${new Date(selectedOrder.orderDate).toLocaleDateString()}`, margin, yPos);
+      yPos += 15;
 
-      // Convert to image and add to PDF
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+      // Customer Information Section
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Customer Information', margin, yPos);
+      yPos += 10;
 
-      // Handle multi-page if needed
-      let remainingHeight = imgHeight - maxHeight;
-      let currentY = -maxHeight;
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Name: ${selectedOrder.customerName}`, margin, yPos);
+      yPos += 6;
+      pdf.text(`Phone: ${selectedOrder.customerPhone}`, margin, yPos);
+      yPos += 6;
       
-      while (remainingHeight > 0) {
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', x, currentY, imgWidth, imgHeight);
-        remainingHeight -= maxHeight;
-        currentY -= maxHeight;
+      const address = `Address: ${selectedOrder.address.governorate}, ${selectedOrder.address.district}, ${selectedOrder.address.neighborhood}, ${selectedOrder.address.street}, House #${selectedOrder.address.houseNumber}`;
+      const addressLines = pdf.splitTextToSize(address, pageWidth - 2 * margin);
+      pdf.text(addressLines, margin, yPos);
+      yPos += addressLines.length * 5 + 10;
+
+      // Items Table using AutoTable
+      const tableColumns = [
+        { header: 'Product Name', dataKey: 'name' },
+        { header: 'Price (IQD)', dataKey: 'price' },
+        { header: 'Quantity', dataKey: 'quantity' },
+        { header: 'Total (IQD)', dataKey: 'total' }
+      ];
+
+      const tableData = selectedOrder.items.map((item: any) => {
+        const unit = item.unit === 'kg' ? 'kg' : item.unit === 'bunch' ? 'bunch' : item.unit;
+        const total = (parseFloat(item.price) * item.quantity).toFixed(2);
+        
+        return {
+          name: `${item.productName}`,
+          price: `${item.price}`,
+          quantity: `${item.quantity} ${unit}`,
+          total: `${total}`
+        };
+      });
+
+      // Add table
+      (pdf as any).autoTable({
+        columns: tableColumns,
+        body: tableData,
+        startY: yPos,
+        margin: { left: margin, right: margin },
+        styles: {
+          fontSize: 10,
+          cellPadding: 5
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        bodyStyles: {
+          textColor: [0, 0, 0]
+        },
+        alternateRowStyles: {
+          fillColor: [249, 249, 249]
+        }
+      });
+
+      // Get final Y position after table
+      yPos = (pdf as any).lastAutoTable.finalY + 15;
+
+      // Totals Section
+      const totalsX = pageWidth - margin - 60;
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Subtotal: ${selectedOrder.totalAmount.toFixed(2)} IQD`, totalsX, yPos, { align: 'left' });
+      yPos += 7;
+      pdf.text('Delivery: 5.00 IQD', totalsX, yPos, { align: 'left' });
+      yPos += 7;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`TOTAL: ${(selectedOrder.totalAmount + 5).toFixed(2)} IQD`, totalsX, yPos, { align: 'left' });
+
+      // Notes
+      if (selectedOrder.notes) {
+        yPos += 15;
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Notes: ${selectedOrder.notes}`, margin, yPos);
       }
 
-      // Download
-      const filename = `فاتورة-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
+      // Footer
+      yPos += 20;
+      pdf.setFontSize(9);
+      pdf.text('Thank you for your business!', pageWidth/2, yPos, { align: 'center' });
+      yPos += 5;
+      pdf.text('Yalla Jeetek', pageWidth/2, yPos, { align: 'center' });
+
+      // Save PDF
+      const filename = `Invoice-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
       pdf.save(filename);
       
-      console.log('High-quality PDF with proper Arabic fonts generated successfully');
+      console.log('Real text-based PDF generated successfully with selectable text');
       
     } catch (error) {
       console.error('Error generating PDF:', error);
