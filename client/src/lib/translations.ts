@@ -1,7 +1,7 @@
 export const translations = {
   en: {
     // App Name
-    appName: "Yalla JEETEK",
+    appName: "YALLA JEETEK",
     
     // Login Page
     welcomeBack: "Welcome back!",
@@ -20,7 +20,7 @@ export const translations = {
     creatingAccount: "Creating Account...",
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: "Already have an account?",
-    agreeTerms: "By {action}, you agree to Yalla JEETEK's Terms & Privacy Policy",
+    agreeTerms: "By {action}, you agree to YALLA JEETEK's Terms & Privacy Policy",
     signInAction: "signing in",
     createAccountAction: "creating an account",
     passwordMismatch: "Passwords don't match",
@@ -127,7 +127,7 @@ export const translations = {
   },
   ar: {
     // App Name
-    appName: "يلا جيتك",
+    appName: "YALLA JEETEK",
     
     // Login Page
     welcomeBack: "أهلاً بعودتك!",
@@ -146,7 +146,7 @@ export const translations = {
     creatingAccount: "جاري إنشاء الحساب...",
     dontHaveAccount: "ليس لديك حساب؟",
     alreadyHaveAccount: "لديك حساب بالفعل؟",
-    agreeTerms: "بـ{action}، فإنك توافق على شروط وسياسة خصوصية يلا جيتك",
+    agreeTerms: "بـ{action}، فإنك توافق على شروط وسياسة خصوصية YALLA JEETEK",
     signInAction: "تسجيل الدخول",
     createAccountAction: "إنشاء حساب",
     passwordMismatch: "كلمات المرور غير متطابقة",

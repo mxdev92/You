@@ -1,4 +1,4 @@
-# Yalla JEETEK - Grocery Shopping Application
+# YALLA JEETEK - Grocery Shopping Application
 
 ## Overview
 

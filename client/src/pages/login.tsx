@@ -52,8 +52,8 @@ export default function Login() {
             transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
             className="mx-auto mb-6 flex items-center justify-center"
           >
-            <h1 className="text-6xl font-black text-gray-800 drop-shadow-xl" style={{ fontFamily: 'Cairo, sans-serif' }}>
-              يلا جيتك
+            <h1 className="text-4xl font-black text-fresh-green drop-shadow-xl" style={{ fontFamily: 'Cairo, sans-serif' }}>
+              YALLA JEETEK
             </h1>
           </motion.div>
           <p className="text-gray-600 text-lg">
