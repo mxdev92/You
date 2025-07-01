@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List, ShoppingCart, Edit3, Save, X, Search, Tag, Package2, ArrowLeft } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List, ShoppingCart, Edit3, Save, X, Search, Tag, Package2, ArrowLeft, Apple, Carrot, Milk, Cookie, Fish, Beef } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 
@@ -291,37 +292,56 @@ function OrderStats({ orders }: any) {
   );
 }
 
-// Items Management Components
+// Items Management Components  
 function ItemsManagement() {
-  const [categories] = useState(mockCategories);
-  const [products, setProducts] = useState(mockProducts);
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === null || product.categoryId === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.nameEn.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+  // Use real API data
+  const { data: categories } = useQuery<any[]>({
+    queryKey: ["/api/categories"],
   });
+
+  const { data: products } = useQuery<any[]>({
+    queryKey: ["/api/products", selectedCategory],
+    queryFn: async () => {
+      const url = selectedCategory 
+        ? `/api/products?categoryId=${selectedCategory}`
+        : "/api/products";
+      
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch products");
+      return response.json();
+    },
+  });
+
+  // Icon mapping from main app
+  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    Apple,
+    Carrot,
+    Milk,
+    Cookie,
+    Fish,
+    Beef,
+  };
+
+  const filteredProducts = products?.filter((product: any) => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  }) || [];
 
   const handleCategorySelect = (categoryId: number) => {
     setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
   };
 
   const handlePriceChange = (productId: number, newPrice: string) => {
-    const price = parseInt(newPrice);
-    if (!isNaN(price) && price > 0) {
-      setProducts(prev => prev.map(product => 
-        product.id === productId ? { ...product, price } : product
-      ));
-    }
+    // TODO: Implement API call to update price
+    console.log('Price change:', productId, newPrice);
   };
 
   const handleStockToggle = (productId: number, inStock: boolean) => {
-    setProducts(prev => prev.map(product => 
-      product.id === productId ? { ...product, inStock } : product
-    ));
+    // TODO: Implement API call to update stock status
+    console.log('Stock toggle:', productId, inStock);
   };
 
   return (
@@ -366,31 +386,34 @@ function ItemsManagement() {
       {/* Categories Section */}
       <section className="bg-white px-4 py-0.5 border-b">
           <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
-            {categories.map((category, index) => (
-              <motion.div
-                key={category.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex-shrink-0 flex flex-col items-center min-w-14"
-              >
+            {categories?.map((category: any, index: number) => {
+              const IconComponent = iconMap[category.icon];
+              return (
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleCategorySelect(category.id)}
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
-                    selectedCategory === category.id
-                      ? "bg-fresh-green text-white shadow-lg"
-                      : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
-                  }`}
+                  key={category.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex-shrink-0 flex flex-col items-center min-w-14"
                 >
-                  <span className="text-lg">{category.icon}</span>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleCategorySelect(category.id)}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
+                      selectedCategory === category.id
+                        ? "bg-fresh-green text-white shadow-lg"
+                        : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
+                    }`}
+                  >
+                    {IconComponent && <IconComponent className="h-5 w-5" />}
+                  </motion.div>
+                  <span className="text-xs text-gray-600 font-medium text-center leading-tight px-1">
+                    {category.name}
+                  </span>
                 </motion.div>
-                <span className="text-xs text-gray-600 font-medium text-center leading-tight px-1">
-                  {category.name}
-                </span>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
