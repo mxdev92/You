@@ -206,10 +206,13 @@ export default function Login() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="text-center mt-4 sm:mt-6"
+          className="text-center mt-4 sm:mt-6 space-y-2"
         >
           <p className="text-xs text-gray-400 px-2">
             بالمتابعة، أنت توافق على شروط الخدمة وسياسة الخصوصية
+          </p>
+          <p className="text-xs text-gray-300 font-medium">
+            This app built by MX 2025©
           </p>
         </motion.div>
       </motion.div>
