@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List, ShoppingCart, Edit3, Save, X, Search, Tag, Package2, ArrowLeft, Apple, Carrot, Milk, Cookie, Fish, Beef } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List, ShoppingCart, Edit3, Save, X, Search, Tag, Package2, ArrowLeft, Apple, Carrot, Milk, Cookie, Fish, Beef, Grid3X3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 
@@ -292,229 +292,251 @@ function OrderStats({ orders }: any) {
   );
 }
 
-// Items Management Components  
+// Simple Items Management placeholder
 function ItemsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [products, setProducts] = useState([
+    { id: 1, name: 'Organic Apples', category: 'Fruits', price: '12.50', unit: 'kg', available: true, image: '/api/placeholder/60/60' },
+    { id: 2, name: 'Fresh Spinach', category: 'Vegetables', price: '8.00', unit: 'bunch', available: true, image: '/api/placeholder/60/60' },
+    { id: 3, name: 'Bananas', category: 'Fruits', price: '6.75', unit: 'kg', available: false, image: '/api/placeholder/60/60' },
+    { id: 4, name: 'Carrots', category: 'Vegetables', price: '4.25', unit: 'kg', available: true, image: '/api/placeholder/60/60' },
+    { id: 5, name: 'Oranges', category: 'Fruits', price: '15.00', unit: 'kg', available: true, image: '/api/placeholder/60/60' },
+    { id: 6, name: 'Broccoli', category: 'Vegetables', price: '9.50', unit: 'piece', available: true, image: '/api/placeholder/60/60' }
+  ]);
 
-  // Use real API data
-  const { data: categories } = useQuery<any[]>({
-    queryKey: ["/api/categories"],
-  });
+  const categories = [
+    { id: 1, name: 'Fruits', icon: Apple, count: 3 },
+    { id: 2, name: 'Vegetables', icon: Carrot, count: 3 },
+    { id: 3, name: 'Dairy', icon: Milk, count: 0 },
+    { id: 4, name: 'Meat', icon: Beef, count: 0 }
+  ];
 
-  const { data: products } = useQuery<any[]>({
-    queryKey: ["/api/products", selectedCategory],
-    queryFn: async () => {
-      const url = selectedCategory 
-        ? `/api/products?categoryId=${selectedCategory}`
-        : "/api/products";
-      
-      const response = await fetch(url, { credentials: "include" });
-      if (!response.ok) throw new Error("Failed to fetch products");
-      return response.json();
-    },
-  });
-
-  // Icon mapping from main app
-  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    Apple,
-    Carrot,
-    Milk,
-    Cookie,
-    Fish,
-    Beef,
-  };
-
-  const filteredProducts = products?.filter((product: any) => {
+  const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  }) || [];
+    const matchesCategory = selectedCategory === null || 
+      (selectedCategory === 1 && product.category === 'Fruits') ||
+      (selectedCategory === 2 && product.category === 'Vegetables');
+    return matchesSearch && matchesCategory;
+  });
 
-  const handleCategorySelect = (categoryId: number) => {
-    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
+  const updateProductPrice = (id: number, newPrice: string) => {
+    setProducts(prev => prev.map(product => 
+      product.id === id ? { ...product, price: newPrice } : product
+    ));
   };
 
-  const handlePriceChange = (productId: number, newPrice: string) => {
-    // TODO: Implement API call to update price
-    console.log('Price change:', productId, newPrice);
-  };
-
-  const handleStockToggle = (productId: number, inStock: boolean) => {
-    // TODO: Implement API call to update stock status
-    console.log('Stock toggle:', productId, inStock);
+  const updateProductAvailability = (id: number, available: boolean) => {
+    setProducts(prev => prev.map(product => 
+      product.id === id ? { ...product, available } : product
+    ));
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* App Bar - Back + Search + Save */}
-      <div className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
-        <div className="flex items-center justify-between px-4 py-3 touch-action-manipulation">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
-          >
-            <ArrowLeft className="h-6 w-6 text-gray-700" />
-          </Button>
-
-          {/* Search Bar - identical to main app */}
-          <div className="flex-1 mx-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                type="text"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200"
-              />
-            </div>
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* App Bar */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button className="p-2 hover:bg-gray-100 rounded-lg">
+            <ArrowLeft className="h-5 w-5 text-gray-600" />
+          </button>
+          
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-9 text-sm border-gray-300 focus:border-blue-500"
+            />
           </div>
-
-          {/* Save Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
-          >
-            <Save className="h-6 w-6 text-gray-700" />
-          </Button>
+          
+          <button className="p-2 hover:bg-gray-100 rounded-lg">
+            <Save className="h-5 w-5 text-blue-600" />
+          </button>
         </div>
       </div>
 
       {/* Categories Section */}
-      <section className="bg-white px-4 py-0.5 border-b">
-          <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
-            {categories?.map((category: any, index: number) => {
-              const IconComponent = iconMap[category.icon];
-              return (
-                <motion.div
-                  key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex-shrink-0 flex flex-col items-center min-w-14"
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleCategorySelect(category.id)}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
-                      selectedCategory === category.id
-                        ? "bg-fresh-green text-white shadow-lg"
-                        : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
-                    }`}
-                  >
-                    {IconComponent && <IconComponent className="h-5 w-5" />}
-                  </motion.div>
-                  <span className="text-xs text-gray-600 font-medium text-center leading-tight px-1">
-                    {category.name}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </div>
-        </section>
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
+              selectedCategory === null 
+                ? 'bg-blue-100 text-blue-800 border-2 border-blue-300' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Package2 className="h-4 w-4" />
+            All Items
+          </button>
+          
+          {categories.map((category) => {
+            const IconComponent = category.icon;
+            return (
+              <button
+                key={category.id}
+                onClick={() => setSelectedCategory(category.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
+                  selectedCategory === category.id 
+                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <IconComponent className="h-4 w-4" />
+                {category.name}
+                <span className="bg-white text-gray-600 text-xs px-1.5 py-0.5 rounded-full ml-1">
+                  {category.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-      {/* Products List - Very small elements, professional design */}
-      <main className="pb-8">
-        {selectedCategory ? (
-          <section className="px-4 py-6">
-            <div className="space-y-2">
-              {filteredProducts.length === 0 ? (
-                <div className="text-center py-12">
-                  <Package className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-gray-900 mb-1">No products found</h3>
-                  <p className="text-xs text-gray-600">Try adjusting your search criteria</p>
+      {/* Products List */}
+      <div className="flex-1 p-4">
+        <div className="space-y-2">
+          {filteredProducts.map((product) => (
+            <div key={product.id} className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                  <img 
+                    src={product.image} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-              ) : (
-                filteredProducts.map((product, index) => (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-white rounded-xl shadow-sm p-3 hover:shadow-md transition-shadow"
+                
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-gray-900 text-sm truncate">{product.name}</h3>
+                  <p className="text-xs text-gray-500">{product.category}</p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">IQD</span>
+                    <Input
+                      type="number"
+                      value={product.price}
+                      onChange={(e) => updateProductPrice(product.id, e.target.value)}
+                      className="w-16 h-7 text-xs text-center border-gray-300 focus:border-blue-500"
+                      step="0.25"
+                    />
+                    <span className="text-xs text-gray-500">/{product.unit}</span>
+                  </div>
+                  
+                  <select
+                    value={product.available ? 'available' : 'unavailable'}
+                    onChange={(e) => updateProductAvailability(product.id, e.target.value === 'available')}
+                    className="text-xs border border-gray-300 rounded px-2 py-1 focus:border-blue-500 focus:outline-none"
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Very small product image */}
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        <img 
-                          src={product.image} 
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      {/* Product name - compact */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-xs truncate">{product.name}</h3>
-                        <p className="text-xs text-gray-500 truncate">{product.nameEn}</p>
-                      </div>
-
-                      {/* Price input - very small */}
-                      <div className="flex-shrink-0 w-16">
-                        <Input
-                          type="number"
-                          value={product.price}
-                          onChange={(e) => handlePriceChange(product.id, e.target.value)}
-                          className="h-7 text-xs text-center border-gray-200"
-                          placeholder="0"
-                        />
-                      </div>
-
-                      {/* Availability dropdown - compact */}
-                      <div className="flex-shrink-0">
-                        <Select 
-                          value={product.inStock ? "available" : "out-of-stock"}
-                          onValueChange={(value) => handleStockToggle(product.id, value === "available")}
-                        >
-                          <SelectTrigger className="w-20 h-7 text-xs border-gray-200">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="available" className="text-xs">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                Available
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="out-of-stock" className="text-xs">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                Out
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Save icon - small */}
-                      <div className="flex-shrink-0">
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
-                        >
-                          <Save className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
+                    <option value="available">Available</option>
+                    <option value="unavailable">Unavailable</option>
+                  </select>
+                  
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    product.available ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
+                </div>
+              </div>
             </div>
-          </section>
-        ) : (
+          ))}
+        </div>
+        
+        {filteredProducts.length === 0 && (
           <div className="text-center py-12">
-            <Tag className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-sm font-medium text-gray-900 mb-1">Select a Category</h3>
-            <p className="text-xs text-gray-600">Choose a category above to manage its products</p>
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm">No products found</p>
           </div>
         )}
-      </main>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-white border-t border-gray-200 px-4 py-2">
+        <p className="text-center text-xs text-gray-500">
+          This app was built by MX 2025 • mxdev92@gmail.com
+        </p>
+      </div>
     </div>
+  );
+}
+
+// Admin Sidebar Component
+function AdminSidebar({ isOpen, onClose, setCurrentView }: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  setCurrentView: (view: 'orders' | 'items') => void;
+}) {
+  return (
+    <>
+      {/* Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50 rounded-l-2xl ${
+        isOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold">Admin Menu</h2>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          <div className="space-y-3">
+            <Button
+              variant="ghost"
+              className="w-full justify-start p-3 h-auto rounded-xl"
+              onClick={() => {
+                setCurrentView('orders');
+                onClose();
+              }}
+            >
+              <ShoppingCart className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Orders Management</div>
+                <div className="text-sm text-gray-500">View and manage orders</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start p-3 h-auto rounded-xl"
+              onClick={() => {
+                setCurrentView('items');
+                onClose();
+              }}
+            >
+              <Package className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Items Management</div>
+                <div className="text-sm text-gray-500">Manage products and inventory</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start p-3 h-auto rounded-xl"
+              onClick={onClose}
+            >
+              <ShoppingCart className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Orders</div>
+                <div className="text-sm text-gray-500">View and manage orders</div>
+              </div>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -522,6 +544,7 @@ export default function AdminFast() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [orders, setOrders] = useState(mockOrders);
   const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
     setOrders(prev => prev.map(order => 
@@ -539,18 +562,14 @@ export default function AdminFast() {
         <div className="max-w-7xl mx-auto px-6 py-2">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => setCurrentView(currentView === 'orders' ? 'items' : 'orders')}
+              onClick={() => setIsSidebarOpen(true)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              {currentView === 'orders' ? (
-                <List className="h-5 w-5 text-gray-700" />
-              ) : (
-                <ShoppingCart className="h-5 w-5 text-gray-700" />
-              )}
+              <List className="h-5 w-5 text-gray-700" />
             </button>
             <div className="flex items-center gap-2">
-              <Badge variant={currentView === 'orders' ? 'default' : 'secondary'} className="text-xs">
-                {currentView === 'orders' ? 'Orders' : 'Items'}
+              <Badge variant="default" className="text-xs">
+                {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
               </Badge>
             </div>
           </div>
@@ -619,6 +638,13 @@ export default function AdminFast() {
           <ItemsManagement />
         )}
       </div>
+
+      {/* Admin Sidebar */}
+      <AdminSidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+        setCurrentView={setCurrentView}
+      />
     </div>
   );
 }
