@@ -3,8 +3,111 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, List, ShoppingCart, Edit3, Save, X, Search, Tag, Package2 } from 'lucide-react';
 import { format } from 'date-fns';
+
+// Mock data for categories and products
+const mockCategories = [
+  {
+    id: 1,
+    name: 'فواكه',
+    nameEn: 'Fruits',
+    icon: '🍎',
+    productsCount: 12
+  },
+  {
+    id: 2,
+    name: 'خضروات',
+    nameEn: 'Vegetables',
+    icon: '🥬',
+    productsCount: 15
+  },
+  {
+    id: 3,
+    name: 'منتجات الألبان',
+    nameEn: 'Dairy Products',
+    icon: '🥛',
+    productsCount: 8
+  },
+  {
+    id: 4,
+    name: 'اللحوم',
+    nameEn: 'Meat',
+    icon: '🥩',
+    productsCount: 10
+  }
+];
+
+const mockProducts = [
+  {
+    id: 1,
+    name: 'تفاح أحمر عضوي',
+    nameEn: 'Organic Red Apples',
+    categoryId: 1,
+    categoryName: 'فواكه',
+    price: 2500,
+    unit: 'كيلو',
+    inStock: true,
+    image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=200&h=200&fit=crop'
+  },
+  {
+    id: 2,
+    name: 'موز طازج',
+    nameEn: 'Fresh Bananas',
+    categoryId: 1,
+    categoryName: 'فواكه',
+    price: 1800,
+    unit: 'كيلو',
+    inStock: true,
+    image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=200&h=200&fit=crop'
+  },
+  {
+    id: 3,
+    name: 'برتقال طازج',
+    nameEn: 'Fresh Oranges',
+    categoryId: 1,
+    categoryName: 'فواكه',
+    price: 2200,
+    unit: 'كيلو',
+    inStock: false,
+    image: 'https://images.unsplash.com/photo-1580052614034-c55d20bfee3b?w=200&h=200&fit=crop'
+  },
+  {
+    id: 4,
+    name: 'طماطم عضوية',
+    nameEn: 'Organic Tomatoes',
+    categoryId: 2,
+    categoryName: 'خضروات',
+    price: 2800,
+    unit: 'كيلو',
+    inStock: true,
+    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=200&h=200&fit=crop'
+  },
+  {
+    id: 5,
+    name: 'خس طازج',
+    nameEn: 'Fresh Lettuce',
+    categoryId: 2,
+    categoryName: 'خضروات',
+    price: 1500,
+    unit: 'حبة',
+    inStock: true,
+    image: 'https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=200&h=200&fit=crop'
+  },
+  {
+    id: 6,
+    name: 'حليب طازج',
+    nameEn: 'Fresh Milk',
+    categoryId: 3,
+    categoryName: 'منتجات الألبان',
+    price: 3200,
+    unit: 'لتر',
+    inStock: true,
+    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200&h=200&fit=crop'
+  }
+];
 
 const mockOrders = [
   {
@@ -187,9 +290,212 @@ function OrderStats({ orders }: any) {
   );
 }
 
+// Items Management Components
+function ItemsManagement() {
+  const [categories] = useState(mockCategories);
+  const [products, setProducts] = useState(mockProducts);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingProduct, setEditingProduct] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<{price: string, inStock: boolean}>({price: '', inStock: false});
+
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = selectedCategory === null || product.categoryId === selectedCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.nameEn.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleEditProduct = (product: any) => {
+    setEditingProduct(product.id);
+    setEditValues({
+      price: product.price.toString(),
+      inStock: product.inStock
+    });
+  };
+
+  const handleSaveProduct = (productId: number) => {
+    setProducts(prev => prev.map(product => 
+      product.id === productId 
+        ? { ...product, price: parseInt(editValues.price), inStock: editValues.inStock }
+        : product
+    ));
+    setEditingProduct(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+    setEditValues({price: '', inStock: false});
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Categories Overview */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Tag className="h-5 w-5" />
+            Categories Overview
+          </h2>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {categories.map(category => (
+              <Card key={category.id} className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}>
+                <CardContent className="p-4 text-center">
+                  <div className="text-3xl mb-2">{category.icon}</div>
+                  <h3 className="font-medium text-sm mb-1">{category.name}</h3>
+                  <p className="text-xs text-gray-600">{category.nameEn}</p>
+                  <div className="mt-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {category.productsCount} products
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Products Management */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="p-6 border-b">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Package2 className="h-5 w-5" />
+              Products Management
+            </h2>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              {selectedCategory && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setSelectedCategory(null)}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear Filter
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProducts.map(product => (
+                <Card key={product.id} className="overflow-hidden">
+                  <div className="aspect-square bg-gray-100">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-medium text-sm">{product.name}</h3>
+                        <p className="text-xs text-gray-600">{product.nameEn}</p>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {product.categoryName}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className={`w-2 h-2 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className={`text-xs ${product.inStock ? 'text-green-600' : 'text-red-600'}`}>
+                          {product.inStock ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {editingProduct === product.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-medium text-gray-700">Price (IQD)</label>
+                          <Input
+                            type="number"
+                            value={editValues.price}
+                            onChange={(e) => setEditValues(prev => ({...prev, price: e.target.value}))}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-medium text-gray-700">Available</label>
+                          <Switch
+                            checked={editValues.inStock}
+                            onCheckedChange={(checked) => setEditValues(prev => ({...prev, inStock: checked}))}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleSaveProduct(product.id)}
+                            className="flex-1"
+                          >
+                            <Save className="h-3 w-3 mr-1" />
+                            Save
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-bold text-green-600">
+                            {product.price.toLocaleString()} IQD
+                          </span>
+                          <span className="text-xs text-gray-600">per {product.unit}</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleEditProduct(product)}
+                          className="w-full"
+                        >
+                          <Edit3 className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminFast() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [orders, setOrders] = useState(mockOrders);
+  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
     setOrders(prev => prev.map(order => 
@@ -205,67 +511,87 @@ export default function AdminFast() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-6 py-2">
-          <div className="flex items-center">
-            <List className="h-5 w-5 text-gray-700" />
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setCurrentView(currentView === 'orders' ? 'items' : 'orders')}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {currentView === 'orders' ? (
+                <List className="h-5 w-5 text-gray-700" />
+              ) : (
+                <ShoppingCart className="h-5 w-5 text-gray-700" />
+              )}
+            </button>
+            <div className="flex items-center gap-2">
+              <Badge variant={currentView === 'orders' ? 'default' : 'secondary'} className="text-xs">
+                {currentView === 'orders' ? 'Orders' : 'Items'}
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        <OrderStats orders={orders} />
+        {currentView === 'orders' ? (
+          <>
+            <OrderStats orders={orders} />
 
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Orders Management</h2>
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="bg-green-50 text-green-700">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Fast Loading Demo
-                </Badge>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Orders</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="preparing">Preparing</SelectItem>
-                    <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">Orders Management</h2>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                      Fast Loading Demo
+                    </Badge>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Orders</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="preparing">Preparing</SelectItem>
+                        <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
+                        <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {filteredOrders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+                    <p className="text-gray-600">
+                      {statusFilter === 'all' 
+                        ? 'No orders available.'
+                        : `No orders with status "${statusFilter}" found.`
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredOrders.map((order) => (
+                      <OrderCard 
+                        key={order.id} 
+                        order={order} 
+                        onStatusChange={handleStatusChange}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-
-          <div className="p-6">
-            {filteredOrders.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-                <p className="text-gray-600">
-                  {statusFilter === 'all' 
-                    ? 'No orders available.'
-                    : `No orders with status "${statusFilter}" found.`
-                  }
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredOrders.map((order) => (
-                  <OrderCard 
-                    key={order.id} 
-                    order={order} 
-                    onStatusChange={handleStatusChange}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+          </>
+        ) : (
+          <ItemsManagement />
+        )}
       </div>
     </div>
   );
