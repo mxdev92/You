@@ -119,6 +119,7 @@ export const deleteOrder = async (orderId: string) => {
 export interface Product {
   id?: string;
   name: string;
+  description: string;
   price: number;
   category: string;
   unit: string;

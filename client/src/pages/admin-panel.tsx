@@ -153,6 +153,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
 }) {
   const [formData, setFormData] = useState({
     name: '',
+    description: '',
     price: '',
     category: 'Fruits',
     unit: 'kg',
@@ -185,6 +186,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
       
       const newProduct = {
         name: formData.name,
+        description: formData.description,
         price: parseFloat(formData.price),
         category: formData.category,
         unit: formData.unit,
@@ -198,6 +200,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
       // Reset form
       setFormData({
         name: '',
+        description: '',
         price: '',
         category: 'Fruits',
         unit: 'kg',
@@ -236,6 +239,18 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
               placeholder="Enter product name"
               className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
               required
+            />
+          </div>
+
+          {/* Short Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-sm font-medium text-gray-700">Short Description</Label>
+            <Input
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Brief description of the product"
+              className="rounded-xl border-gray-200 focus:border-green-500 focus:ring-green-500"
             />
           </div>
 
