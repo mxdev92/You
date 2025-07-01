@@ -27,8 +27,8 @@ const mockOrders = [
       notes: 'قرب المسجد الكبير'
     },
     items: [
-      { productId: 1, productName: 'Organic Apples', quantity: 2, price: '12.50', unit: 'kg' },
-      { productId: 2, productName: 'Fresh Spinach', quantity: 1, price: '8.00', unit: 'bunch' }
+      { productId: 1, productName: 'تفاح عضوي', quantity: 2, price: '12.50', unit: 'kg' },
+      { productId: 2, productName: 'سبانخ طازجة', quantity: 1, price: '8.00', unit: 'bunch' }
     ],
     totalAmount: 33.00,
     status: 'pending' as const,
@@ -50,7 +50,7 @@ const mockOrders = [
       notes: 'Blue gate'
     },
     items: [
-      { productId: 3, productName: 'Bananas', quantity: 3, price: '6.75', unit: 'kg' }
+      { productId: 3, productName: 'موز', quantity: 3, price: '6.75', unit: 'kg' }
     ],
     totalAmount: 20.25,
     status: 'confirmed' as const,
@@ -1244,7 +1244,7 @@ export default function AdminPanel() {
                     <thead>
                       <tr className="bg-gray-100">
                         <th className="border border-gray-300 px-3 py-2 text-right font-semibold">الاسم</th>
-                        <th className="border border-gray-300 px-3 py-2 text-right font-semibold">السعر لكل كيلو</th>
+                        <th className="border border-gray-300 px-3 py-2 text-right font-semibold">السعر للكيلو</th>
                         <th className="border border-gray-300 px-3 py-2 text-right font-semibold">الكمية</th>
                         <th className="border border-gray-300 px-3 py-2 text-right font-semibold">السعر الكلي</th>
                       </tr>
@@ -1253,10 +1253,10 @@ export default function AdminPanel() {
                       {selectedOrder.items.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="border border-gray-300 px-3 py-2 font-medium">{item.productName}</td>
-                          <td className="border border-gray-300 px-3 py-2">{item.price} د.ع</td>
-                          <td className="border border-gray-300 px-3 py-2">{item.quantity} {item.unit}</td>
+                          <td className="border border-gray-300 px-3 py-2">{item.price}</td>
+                          <td className="border border-gray-300 px-3 py-2">{item.quantity} {item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit}</td>
                           <td className="border border-gray-300 px-3 py-2 font-medium">
-                            {(parseFloat(item.price) * item.quantity).toFixed(2)} د.ع
+                            {(parseFloat(item.price) * item.quantity).toFixed(2)}
                           </td>
                         </tr>
                       ))}
