@@ -218,4 +218,155 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { categories, products, cartItems } from "@shared/schema";
+
+export class DatabaseStorage implements IStorage {
+  async getCategories(): Promise<Category[]> {
+    return await db.select().from(categories);
+  }
+
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const [newCategory] = await db.insert(categories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateCategorySelection(id: number, isSelected: boolean): Promise<Category> {
+    const [updated] = await db.update(categories)
+      .set({ isSelected })
+      .where(eq(categories.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getProducts(): Promise<Product[]> {
+    return await db.select().from(products);
+  }
+
+  async getProductsByCategory(categoryId: number): Promise<Product[]> {
+    return await db.select().from(products).where(eq(products.categoryId, categoryId));
+  }
+
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product || undefined;
+  }
+
+  async createProduct(product: InsertProduct): Promise<Product> {
+    const [newProduct] = await db.insert(products).values(product).returning();
+    return newProduct;
+  }
+
+  async updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product> {
+    const [updated] = await db.update(products)
+      .set(product)
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getCartItems(): Promise<(CartItem & { product: Product })[]> {
+    const items = await db.select({
+      id: cartItems.id,
+      productId: cartItems.productId,
+      quantity: cartItems.quantity,
+      addedAt: cartItems.addedAt,
+      product: products
+    })
+    .from(cartItems)
+    .innerJoin(products, eq(cartItems.productId, products.id));
+    
+    return items.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      quantity: item.quantity,
+      addedAt: item.addedAt,
+      product: item.product
+    }));
+  }
+
+  async addToCart(item: InsertCartItem): Promise<CartItem> {
+    const [newItem] = await db.insert(cartItems).values({
+      ...item,
+      addedAt: new Date().toISOString()
+    }).returning();
+    return newItem;
+  }
+
+  async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem> {
+    const [updated] = await db.update(cartItems)
+      .set({ quantity })
+      .where(eq(cartItems.id, id))
+      .returning();
+    return updated;
+  }
+
+  async removeFromCart(id: number): Promise<void> {
+    await db.delete(cartItems).where(eq(cartItems.id, id));
+  }
+
+  async clearCart(): Promise<void> {
+    await db.delete(cartItems);
+  }
+}
+
+// Initialize database with sample data if empty
+const initializeDatabase = async () => {
+  try {
+    const existingCategories = await db.select().from(categories);
+    if (existingCategories.length === 0) {
+      // Create categories
+      const categoriesData: InsertCategory[] = [
+        { name: "Fruits", icon: "Apple", isSelected: true },
+        { name: "Vegetables", icon: "Carrot", isSelected: false },
+        { name: "Dairy", icon: "Milk", isSelected: false },
+        { name: "Bakery", icon: "Cookie", isSelected: false },
+        { name: "Seafood", icon: "Fish", isSelected: false },
+        { name: "Meat", icon: "Beef", isSelected: false },
+      ];
+
+      for (const cat of categoriesData) {
+        await db.insert(categories).values(cat);
+      }
+
+      // Create products
+      const productsData: InsertProduct[] = [
+        // Fruits (categoryId: 1)
+        { name: "خوخ", price: "3000", unit: "1kg", imageUrl: "/attached_assets/images (15)_1751152986097.jpeg", categoryId: 1 },
+        { name: "برتقال", price: "2000", unit: "1kg", imageUrl: "/attached_assets/images (8)_1751152300030.jpeg", categoryId: 1 },
+        { name: "موز", price: "1500", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+        { name: "أناناس", price: "4000", unit: "1kg", imageUrl: "/attached_assets/images (9)_1751152602451.jpeg", categoryId: 1 },
+        { name: "بطيخ", price: "1000", unit: "1kg", imageUrl: "/attached_assets/images (11)_1751152688549.jpeg", categoryId: 1 },
+        { name: "كرز", price: "6000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1528821128474-27f963b062bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+        { name: "جزر", price: "1250", unit: "1kg", imageUrl: "/attached_assets/images (18)_1751153326735.jpeg", categoryId: 1 },
+        { name: "عرموط", price: "3000", unit: "1kg", imageUrl: "/attached_assets/images (19)_1751153415482.jpeg", categoryId: 1 },
+        { name: "عنجاص", price: "2500", unit: "1kg", imageUrl: "/attached_assets/images (14)_1751153041747.jpeg", categoryId: 1 },
+        { name: "مانغا", price: "6500", unit: "1kg", imageUrl: "/attached_assets/images (17)_1751153187591.jpeg", categoryId: 1 },
+        { name: "رمان سوري", price: "5000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1553538164-e3b29c571f21?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+        { name: "عنب أسود", price: "2000", unit: "1kg", imageUrl: "/attached_assets/images (10)_1751153251420.jpeg", categoryId: 1 },
+        { name: "خوخ مسطح", price: "3000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1594736797933-d0b22ba2c9c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+        { name: "تفاح أبيض صغير", price: "2000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+        { name: "فاكهة التنين (قطعة)", price: "4000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1558818498-28c1e002b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+        { name: "ركي", price: "1000", unit: "1kg", imageUrl: "/attached_assets/images (12)_1751153524180.jpeg", categoryId: 1 },
+        { name: "تفاح أخضر", price: "2500", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 1 },
+        
+        // Vegetables (categoryId: 2)
+        { name: "طماطم", price: "2000", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1546470427-e83cc095d99e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 2 },
+        { name: "خيار", price: "1500", unit: "1kg", imageUrl: "https://images.unsplash.com/photo-1604977042946-2716e8d5dd0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 2 },
+        { name: "خس", price: "1000", unit: "حزمة", imageUrl: "https://images.unsplash.com/photo-1556801410-6ddc6b999b5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=300", categoryId: 2 },
+      ];
+
+      for (const product of productsData) {
+        await db.insert(products).values(product);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+  }
+};
+
+export const storage = new DatabaseStorage();
+
+// Initialize database on startup
+initializeDatabase();
