@@ -333,8 +333,8 @@ function ItemsManagement() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* App Bar */}
+    <div className="min-h-screen bg-gray-50">
+      {/* Single App Bar - Back + Search only */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-3">
           <button className="p-2 hover:bg-gray-100 rounded-lg">
@@ -350,10 +350,6 @@ function ItemsManagement() {
               className="pl-10 h-9 text-sm border-gray-300 focus:border-blue-500"
             />
           </div>
-          
-          <button className="p-2 hover:bg-gray-100 rounded-lg">
-            <Save className="h-5 w-5 text-blue-600" />
-          </button>
         </div>
       </div>
 
@@ -396,7 +392,7 @@ function ItemsManagement() {
       </div>
 
       {/* Products List */}
-      <div className="flex-1 p-4">
+      <div className="p-4">
         <div className="space-y-2">
           {filteredProducts.map((product) => (
             <div key={product.id} className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-sm transition-shadow">
@@ -454,7 +450,7 @@ function ItemsManagement() {
       </div>
 
       {/* Footer */}
-      <div className="bg-white border-t border-gray-200 px-4 py-2">
+      <div className="bg-white border-t border-gray-200 px-4 py-2 mt-auto">
         <p className="text-center text-xs text-gray-500">
           This app was built by MX 2025 • mxdev92@gmail.com
         </p>
@@ -543,7 +539,7 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 export default function AdminFast() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [orders, setOrders] = useState(mockOrders);
-  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
+  const [currentView, setCurrentView] = useState<'orders' | 'items'>('items');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
@@ -556,30 +552,14 @@ export default function AdminFast() {
     ? orders 
     : orders.filter(order => order.status === statusFilter);
 
+  if (currentView === 'items') {
+    return <ItemsManagement />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-2">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <List className="h-5 w-5 text-gray-700" />
-            </button>
-            <div className="flex items-center gap-2">
-              <Badge variant="default" className="text-xs">
-                {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto p-6">
-        {currentView === 'orders' ? (
-          <>
-            <OrderStats orders={orders} />
+        <OrderStats orders={orders} />
 
             <div className="bg-white rounded-lg shadow-sm">
               <div className="p-6 border-b">
@@ -633,18 +613,14 @@ export default function AdminFast() {
                 )}
               </div>
             </div>
-          </>
-        ) : (
-          <ItemsManagement />
-        )}
-      </div>
+        </div>
 
-      {/* Admin Sidebar */}
-      <AdminSidebar 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)}
-        setCurrentView={setCurrentView}
-      />
-    </div>
-  );
-}
+        {/* Admin Sidebar */}
+        <AdminSidebar 
+          isOpen={isSidebarOpen} 
+          onClose={() => setIsSidebarOpen(false)}
+          setCurrentView={setCurrentView}
+        />
+      </div>
+    );
+  }
