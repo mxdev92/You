@@ -1116,42 +1116,9 @@ export default function AdminPanel() {
     if (!selectedOrder) return;
     
     try {
-      console.log('Generating PDF with HTML2Canvas...');
+      console.log('Creating text-based Arabic PDF...');
       
-      // Get the invoice element
-      const invoiceElement = document.getElementById('invoice-content');
-      if (!invoiceElement) {
-        console.error('Invoice element not found');
-        return;
-      }
-
-      // Hide the buttons during capture
-      const buttonsDiv = invoiceElement.querySelector('div[class*="flex"][class*="items-center"][class*="gap-2"]') as HTMLElement;
-      if (buttonsDiv) {
-        buttonsDiv.style.display = 'none';
-      }
-
-      console.log('Converting to canvas...');
-      // Convert to canvas with conservative settings for better compatibility
-      const canvas = await html2canvas(invoiceElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: true
-      });
-
-      console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
-
-      // Show buttons again
-      if (buttonsDiv) {
-        buttonsDiv.style.display = 'flex';
-      }
-
-      console.log('Creating PDF...');
-      
-      // Create PDF
-      const imgData = canvas.toDataURL('image/png', 1.0);
+      // Create PDF with proper settings
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -1159,39 +1126,115 @@ export default function AdminPanel() {
       });
       
       const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth - 20; // 10mm margin on each side
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Add the image to PDF with margins
-      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      const margin = 15;
+      const rightMargin = pageWidth - margin;
+      let yPos = 30;
 
-      // Handle multi-page content if needed
-      if (imgHeight > pageHeight - 20) {
-        let heightLeft = imgHeight - (pageHeight - 20);
-        let position = -(pageHeight - 20);
+      // Helper function to add RTL text
+      const addRTLText = (text: string, x: number, y: number, options: any = {}) => {
+        // Reverse the text for RTL display
+        const reversedText = text.split('').reverse().join('');
+        pdf.setFontSize(options.fontSize || 12);
+        pdf.text(reversedText, x, y, { align: options.align || 'right', ...options });
+      };
+
+      // Header
+      pdf.setFontSize(20);
+      pdf.setFont('helvetica', 'bold');
+      addRTLText('ةروتاف بلطلا', pageWidth/2, yPos, { align: 'center' });
+      yPos += 20;
+
+      // Customer Information Section
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      addRTLText('ليمعلا تامولعم', rightMargin, yPos);
+      yPos += 15;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      
+      // Customer details
+      addRTLText(`مسالا: ${selectedOrder.customerName}`, rightMargin, yPos);
+      yPos += 8;
+      
+      addRTLText(`فتاهلا: ${selectedOrder.customerPhone}`, rightMargin, yPos);
+      yPos += 8;
+      
+      const address = `ناونعلا: ${selectedOrder.address.governorate} - ${selectedOrder.address.district} - ${selectedOrder.address.neighborhood} - ${selectedOrder.address.street} - لزنم مقر ${selectedOrder.address.houseNumber}`;
+      addRTLText(address, rightMargin, yPos);
+      yPos += 8;
+      
+      addRTLText(`بلطلا خيرات: ${new Date(selectedOrder.orderDate).toLocaleDateString('ar')}`, rightMargin, yPos);
+      yPos += 20;
+
+      // Items table header
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      addRTLText('تابلطلا ةمئاق', rightMargin, yPos);
+      yPos += 12;
+
+      // Table headers
+      pdf.setFontSize(9);
+      const col1 = rightMargin - 10;
+      const col2 = rightMargin - 70;
+      const col3 = rightMargin - 120;
+      const col4 = rightMargin - 170;
+
+      addRTLText('مسالا', col1, yPos);
+      addRTLText('وليكلل رعسلا', col2, yPos);
+      addRTLText('ةيمكلا', col3, yPos);
+      addRTLText('يلكلا رعسلا', col4, yPos);
+      yPos += 5;
+
+      // Draw line
+      pdf.line(margin, yPos, rightMargin, yPos);
+      yPos += 10;
+
+      // Items
+      pdf.setFont('helvetica', 'normal');
+      selectedOrder.items.forEach((item) => {
+        const unit = item.unit === 'kg' ? 'وليك' : item.unit === 'bunch' ? 'ةمزح' : item.unit;
+        const total = (parseFloat(item.price) * item.quantity).toFixed(2);
         
-        while (heightLeft > 0) {
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight - 20;
-          position -= pageHeight - 20;
-        }
+        addRTLText(item.productName, col1, yPos);
+        pdf.text(item.price, col2, yPos, { align: 'center' });
+        addRTLText(`${item.quantity} ${unit}`, col3, yPos);
+        pdf.text(total, col4, yPos, { align: 'center' });
+        yPos += 8;
+      });
+
+      yPos += 10;
+
+      // Totals section
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      addRTLText(`يعرفلا عومجملا: ${selectedOrder.totalAmount.toFixed(2)} ع.د`, rightMargin, yPos);
+      yPos += 8;
+      
+      addRTLText(`ليصوتلا موسر: 5.00 ع.د`, rightMargin, yPos);
+      yPos += 8;
+      
+      pdf.setFontSize(12);
+      addRTLText(`يلكلا عومجملا: ${(selectedOrder.totalAmount + 5).toFixed(2)} ع.د`, rightMargin, yPos);
+
+      // Notes if any
+      if (selectedOrder.notes) {
+        yPos += 15;
+        pdf.setFontSize(10);
+        addRTLText(`تاظحالم: ${selectedOrder.notes}`, rightMargin, yPos);
       }
 
-      // Save with simple filename to avoid encoding issues
-      const filename = `Invoice-${selectedOrder.id}.pdf`;
-      console.log('Saving PDF as:', filename);
+      // Save the PDF
+      const filename = `Invoice-${selectedOrder.customerName}-${selectedOrder.id}.pdf`;
       pdf.save(filename);
       
-      console.log('PDF generated and downloaded successfully');
+      console.log('Text-based Arabic PDF generated successfully');
     } catch (error) {
-      console.error('Detailed error generating PDF:', error);
+      console.error('Error generating text PDF:', error);
       if (error instanceof Error) {
-        console.error('Error stack:', error.stack);
         alert(`PDF Error: ${error.message}`);
       } else {
-        alert('Unknown error occurred while generating PDF');
+        alert('Error generating PDF');
       }
     }
   };
