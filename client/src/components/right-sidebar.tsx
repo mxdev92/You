@@ -496,7 +496,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                   variant="ghost"
                   size="icon"
                   onClick={() => removeFromCart(item.id)}
-                  disabled={isRemoving}
+                  disabled={false}
                   className="hover:bg-red-50 text-red-500 hover:text-red-600 disabled:text-red-300 disabled:cursor-not-allowed touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
