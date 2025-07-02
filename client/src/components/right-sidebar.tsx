@@ -453,48 +453,50 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                   className="w-14 h-14 object-cover rounded-lg flex-shrink-0"
                 />
                 
-                {/* Content (Two Lines) */}
+                {/* Content (Three Lines) */}
                 <div className="flex-1 min-w-0">
-                  {/* Line 1: Product Name Only */}
-                  <div className="mb-1">
-                    <h4 className="font-medium text-gray-800 text-sm">{item.product.name}</h4>
+                  {/* Line 1: Product Name */}
+                  <div className="mb-0.5">
+                    <h4 className="font-medium text-gray-800 text-xs">{item.product.name}</h4>
                   </div>
                   
-                  {/* Line 2: Price + Quantity Controls */}
-                  <div className="flex items-center space-x-2">
-                    <p className="text-fresh-green font-semibold text-sm">
+                  {/* Line 2: Price */}
+                  <div className="mb-0.5">
+                    <p className="text-fresh-green font-semibold text-xs">
                       {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
                     </p>
-                    <div className="flex items-center space-x-2 ml-auto">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                        className="h-7 w-7 bg-red-500 hover:bg-red-600 text-white rounded-full touch-action-manipulation"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="min-w-6 text-center font-medium text-sm">{item.quantity}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="h-7 w-7 bg-green-500 hover:bg-green-600 text-white rounded-full touch-action-manipulation"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
+                  </div>
+                  
+                  {/* Line 3: Quantity Controls */}
+                  <div className="flex items-center space-x-1.5">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                      className="h-6 w-6 bg-red-500 hover:bg-red-600 text-white rounded-full touch-action-manipulation"
+                    >
+                      <Minus className="h-2.5 w-2.5" />
+                    </Button>
+                    <span className="min-w-5 text-center font-medium text-xs">{item.quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      className="h-6 w-6 bg-green-500 hover:bg-green-600 text-white rounded-full touch-action-manipulation"
+                    >
+                      <Plus className="h-2.5 w-2.5" />
+                    </Button>
                   </div>
                 </div>
                 
-                {/* Delete Button (Right Side Middle) */}
+                {/* Delete Button (Right Side Middle) - Green Color */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => removeFromCart(item.id)}
-                  className="hover:bg-red-50 hover:text-red-500 touch-action-manipulation h-8 w-8 flex-shrink-0"
+                  className="bg-green-500 hover:bg-green-600 text-white touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </motion.div>
             ))}
