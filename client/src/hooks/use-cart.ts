@@ -18,10 +18,13 @@ export function useCart() {
         const response = await fetch("/api/cart");
         if (response.ok) {
           const items = await response.json();
+          console.log("✅ Cart loaded successfully:", items);
           setCartItems(items);
+        } else {
+          console.error("❌ Cart fetch failed with status:", response.status);
         }
       } catch (error) {
-        console.error("Failed to load cart:", error);
+        console.error("❌ Failed to load cart:", error);
       } finally {
         setIsLoading(false);
       }
@@ -150,6 +153,13 @@ export function useCart() {
   };
 
   const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  
+  // Debug logging
+  console.log("🛒 Cart Debug:", {
+    cartItemsLength: cartItems.length,
+    cartItemsCount,
+    cartItems: cartItems.map(item => ({ id: item.id, productId: item.productId, quantity: item.quantity, productName: item.product?.name }))
+  });
   
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => {
