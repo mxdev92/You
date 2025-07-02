@@ -99,6 +99,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showAddressList, setShowAddressList] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [addressData, setAddressData] = useState({
@@ -122,6 +123,13 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowAddressForm(false);
+    // Return to address list if we came from there
+    if (showAddressList) {
+      // Stay on address list
+    } else {
+      // If called from checkout, return to checkout
+      setShowCheckout(true);
+    }
   };
 
   const handlePlaceOrder = async () => {
@@ -166,6 +174,92 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
     } finally {
       setIsPlacingOrder(false);
     }
+  };
+
+  const AddressList = () => {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAddressList(false)}
+              className="p-1 hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              عناويني
+            </h2>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          {/* Add New Address Button */}
+          <Button
+            onClick={() => setShowAddressForm(true)}
+            variant="outline"
+            className="w-full border-dashed border-fresh-green text-fresh-green hover:bg-green-50 mb-6"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            اضافة عنوان توصيل
+          </Button>
+
+          {/* Existing Addresses */}
+          {addressData.fullName ? (
+            <div className="bg-white p-4 rounded-lg border border-gray-200 mb-6">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">{addressData.fullName}</h3>
+                  <p className="text-sm text-gray-600">{addressData.phoneNumber}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddressForm(true)}
+                  className="text-fresh-green hover:text-fresh-green-dark hover:bg-green-50 p-1"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="space-y-1 text-sm text-gray-700">
+                <p>{addressData.government}</p>
+                <p>{addressData.fullAddress}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500 mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                لا توجد عناوين محفوظة
+              </p>
+              <p className="text-sm text-gray-400" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                اضف عنوان جديد للتوصيل
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer - Continue to Checkout Button */}
+        {addressData.fullName && (
+          <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
+            <Button
+              onClick={() => {
+                setShowAddressList(false);
+                setShowCheckout(true);
+              }}
+              className="w-full bg-fresh-green hover:bg-fresh-green-dark"
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
+              متابعة للدفع
+            </Button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const AddressForm = () => (
@@ -519,10 +613,15 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
             </span>
           </div>
           <Button 
-            onClick={() => setShowCheckout(true)}
+            onClick={() => setShowAddressList(true)}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
+            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
           >
-{t('proceedToCheckout')}
+            <MapPin className="h-4 w-4 ml-2" />
+            <div className="text-center">
+              <div className="text-sm">معلومات التوصيل</div>
+              <div className="text-xs opacity-90">اضافة عنوان توصيل</div>
+            </div>
           </Button>
         </motion.div>
       )}
@@ -558,7 +657,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
               }}
               className="absolute right-0 w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-l-3xl flex flex-col safe-area-inset"
             >
-              {showCheckout ? <CheckoutScreen /> : <CartScreen />}
+              {showCheckout ? <CheckoutScreen /> : showAddressList ? <AddressList /> : <CartScreen />}
             </motion.div>
           </div>
         )}
