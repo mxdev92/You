@@ -1,7 +1,7 @@
 import { Search, Menu, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/hooks/use-cart";
+import { useCart } from "@/contexts/cart-context";
 import { useTranslation } from "@/hooks/use-translation";
 import CategoriesSection from "@/components/categories-section";
 

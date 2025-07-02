@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Plus, Minus, ArrowLeft, MapPin, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/hooks/use-cart";
+import { useCart } from "@/contexts/cart-context";
 import { useTranslation } from "@/hooks/use-translation";
 import { useState, useRef, useEffect } from "react";
 import { createOrder } from "@/lib/firebase";

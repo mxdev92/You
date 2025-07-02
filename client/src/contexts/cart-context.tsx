@@ -1,18 +1,38 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 type CartItemWithProduct = CartItem & { product: Product };
 
-export function useCart() {
+interface CartContextType {
+  cartItems: CartItemWithProduct[];
+  isLoading: boolean;
+  addToCart: (item: InsertCartItem) => Promise<void>;
+  removeFromCart: (itemId: number) => Promise<void>;
+  updateQuantity: (itemId: number, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  cartItemsCount: number;
+  getCartTotal: () => number;
+  isAdding: boolean;
+  isRemoving: boolean;
+  isUpdating: boolean;
+}
+
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const updateInProgress = useRef(false);
+  const cartLoadedRef = useRef(false);
 
-  // Load cart data once on mount
+  // Load cart data once
   const loadCartItems = useCallback(async () => {
+    if (cartLoadedRef.current) return; // Prevent multiple loads
+    cartLoadedRef.current = true; // Set immediately to prevent race conditions
+    
     try {
       setIsLoading(true);
       const response = await fetch("/api/cart");
@@ -22,6 +42,7 @@ export function useCart() {
       }
     } catch (error) {
       console.error("Failed to load cart:", error);
+      cartLoadedRef.current = false; // Reset on error
     } finally {
       setIsLoading(false);
     }
@@ -140,7 +161,7 @@ export function useCart() {
     }, 0);
   };
 
-  return {
+  const value = {
     cartItems,
     isLoading,
     addToCart,
@@ -153,4 +174,18 @@ export function useCart() {
     isRemoving: false,
     isUpdating,
   };
+
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
 }
