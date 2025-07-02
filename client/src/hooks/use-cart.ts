@@ -20,8 +20,12 @@ export function useCart() {
       const response = await apiRequest("POST", "/api/cart", item);
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    onSuccess: (newCartItem) => {
+      // Add the new item to existing cart data without refetch
+      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) => [
+        ...old,
+        newCartItem
+      ]);
     },
     onError: () => {
       toast({
@@ -61,11 +65,7 @@ export function useCart() {
         variant: "destructive",
       });
     },
-    onSettled: (data, error) => {
-      if (error) {
-        queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      }
-    },
+    // No automatic refetch - rely on optimistic updates
   });
 
   const updateQuantityMutation = useMutation({
@@ -101,12 +101,7 @@ export function useCart() {
         variant: "destructive",
       });
     },
-    // Only refetch on error to sync with server state
-    onSettled: (data, error) => {
-      if (error) {
-        queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      }
-    },
+    // No automatic refetch - rely on optimistic updates
   });
 
   const clearCartMutation = useMutation({
@@ -114,7 +109,8 @@ export function useCart() {
       await apiRequest("DELETE", "/api/cart");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      // Clear cart data without refetch
+      queryClient.setQueryData(["/api/cart"], []);
       toast({
         title: "Cart cleared",
         description: "All items have been removed from your cart.",
