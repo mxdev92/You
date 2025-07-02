@@ -444,47 +444,54 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center space-x-4 py-4 border-b border-gray-100"
+                className="flex items-center space-x-3 py-3 border-b border-gray-100"
               >
+                {/* Product Image */}
                 <img
                   src={item.product.imageUrl}
                   alt={item.product.name}
-                  className="w-16 h-16 object-cover rounded-lg"
+                  className="w-14 h-14 object-cover rounded-lg flex-shrink-0"
                 />
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-800">{item.product.name}</h4>
-                  <p className="text-sm text-gray-500">{item.product.unit}</p>
-                  <p className="text-fresh-green font-semibold">
-                    {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
-                  </p>
+                
+                {/* Content (Two Lines) */}
+                <div className="flex-1 min-w-0">
+                  {/* Line 1: Name / Price */}
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="font-medium text-gray-800 text-sm truncate pr-2">{item.product.name}</h4>
+                    <p className="text-fresh-green font-semibold text-sm flex-shrink-0">
+                      {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
+                    </p>
+                  </div>
+                  
+                  {/* Line 2: Quantity Controls */}
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                      className="h-7 w-7 hover:bg-gray-100 touch-action-manipulation"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="min-w-6 text-center font-medium text-sm">{item.quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      className="h-7 w-7 hover:bg-gray-100 touch-action-manipulation"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <span className="text-xs text-gray-500 ml-1">{item.product.unit}</span>
+                  </div>
                 </div>
                 
-                {/* Quantity Controls */}
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                    className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="min-w-8 text-center font-medium">{item.quantity}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="h-8 w-8 hover:bg-gray-100 touch-action-manipulation"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-                
+                {/* Delete Button (Right Side Middle) */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => removeFromCart(item.id)}
-                  className="hover:bg-red-50 hover:text-red-500 touch-action-manipulation min-h-8 min-w-8"
+                  className="hover:bg-red-50 hover:text-red-500 touch-action-manipulation h-8 w-8 flex-shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
