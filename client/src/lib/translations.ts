@@ -54,6 +54,7 @@ export const translations = {
     // Products
     addToCart: "Add to Cart",
     added: "Added!",
+    outOfStock: "Out of Stock",
     
     // Product Details
     selectQuantity: "Select Quantity",
@@ -180,6 +181,7 @@ export const translations = {
     // Products
     addToCart: "أضف إلى السلة",
     added: "تمت الإضافة!",
+    outOfStock: "غير متوفر حاليا",
     
     // Product Details
     selectQuantity: "اختر الكمية",

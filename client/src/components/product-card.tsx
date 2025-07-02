@@ -20,6 +20,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { t } = useTranslation();
 
   const handleAddToCart = async () => {
+    // Don't allow adding if product is not available
+    if (!product.available) return;
+    
     setIsAdding(true);
     setShowShimmer(true);
 
@@ -44,8 +47,10 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <>
       <motion.div
-        whileHover={{ y: -2 }}
-        className="product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative cursor-pointer"
+        whileHover={{ y: product.available ? -2 : 0 }}
+        className={`product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative cursor-pointer ${
+          !product.available ? 'opacity-60' : ''
+        }`}
         onClick={() => setIsModalOpen(true)}
       >
       {/* Product Image */}
@@ -84,20 +89,24 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.price}/{product.unit}
         </p>
         
-        <motion.div whileTap={{ scale: 0.95 }}>
+        <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
           <Button
             onClick={(e) => {
               e.stopPropagation();
               handleAddToCart();
             }}
-            disabled={isAdding}
+            disabled={isAdding || !product.available}
             className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 touch-action-manipulation min-h-9 ${
-              isAdding
+              !product.available
+                ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
+                : isAdding
                 ? "bg-green-500 hover:bg-green-500"
                 : "bg-fresh-green hover:bg-fresh-green-dark"
             }`}
           >
-            {isAdding ? (
+            {!product.available ? (
+              t('outOfStock')
+            ) : isAdding ? (
               <>
                 <Check className="h-3 w-3 mr-1" />
                 {t('added')}

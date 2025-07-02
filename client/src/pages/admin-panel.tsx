@@ -716,7 +716,7 @@ function ItemsManagement() {
             price: parseFloat(product.price),
             category: getCategoryName(product.categoryId),
             unit: product.unit,
-            available: true,
+            available: product.available ?? true, // Use actual availability from database
             imageUrl: product.imageUrl,
             createdAt: new Date().toISOString()
           }));
@@ -763,11 +763,24 @@ function ItemsManagement() {
   };
 
   const updateProductAvailability = async (id: string, available: boolean) => {
-    setProducts(prev => prev.map(product => 
-      product.id === id ? { ...product, available } : product
-    ));
-    
-    // TODO: Update in Firebase (will implement if needed)
+    try {
+      // Update backend first
+      const response = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ available }),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to update product availability');
+
+      // Update local state only after successful backend update
+      setProducts(prev => prev.map(product => 
+        product.id === id ? { ...product, available } : product
+      ));
+    } catch (error) {
+      console.error('Failed to update product availability:', error);
+    }
   };
 
   const handleEditProduct = (product: Product) => {
@@ -785,6 +798,7 @@ function ItemsManagement() {
         price: updatedItem.price,
         unit: updatedItem.unit,
         imageUrl: updatedItem.imageUrl,
+        available: updatedItem.available,
         categoryId: updatedItem.category === 'Fruits' ? 1 : updatedItem.category === 'Vegetables' ? 2 : null
       };
 
@@ -806,7 +820,7 @@ function ItemsManagement() {
         price: parseFloat(updatedProduct.price),
         category: getCategoryName(updatedProduct.categoryId),
         unit: updatedProduct.unit,
-        available: true,
+        available: updatedProduct.available ?? true,
         imageUrl: updatedProduct.imageUrl,
         createdAt: editingProduct.createdAt
       };
@@ -832,6 +846,7 @@ function ItemsManagement() {
         price: newItem.price,
         unit: newItem.unit,
         imageUrl: newItem.imageUrl,
+        available: newItem.available ?? true,
         categoryId: newItem.category === 'Fruits' ? 1 : newItem.category === 'Vegetables' ? 2 : null
       };
 
@@ -853,7 +868,7 @@ function ItemsManagement() {
         price: parseFloat(createdProduct.price),
         category: getCategoryName(createdProduct.categoryId),
         unit: createdProduct.unit,
-        available: true,
+        available: createdProduct.available ?? true,
         imageUrl: createdProduct.imageUrl,
         createdAt: new Date().toISOString()
       };

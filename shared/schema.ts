@@ -16,6 +16,7 @@ export const products = pgTable("products", {
   unit: text("unit").notNull(),
   imageUrl: text("image_url").notNull(),
   categoryId: integer("category_id").references(() => categories.id),
+  available: boolean("available").default(true).notNull(),
 });
 
 export const cartItems = pgTable("cart_items", {
