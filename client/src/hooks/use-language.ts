@@ -9,7 +9,7 @@ interface LanguageStore {
 export const useLanguage = create<LanguageStore>()(
   persist(
     (set) => ({
-      language: 'en',
+      language: 'ar',
       setLanguage: (language) => {
         set({ language });
         // Update document language but keep UI direction as LTR

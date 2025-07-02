@@ -7,7 +7,7 @@ import ProductsGrid from "@/components/products-grid";
 export default function Home() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses'>('menu');
+  const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings'>('menu');
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);

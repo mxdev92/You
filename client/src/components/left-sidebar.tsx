@@ -5,14 +5,15 @@ import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
+import { useLanguage } from "@/hooks/use-language";
 import { useAddressStore } from "@/store/address-store";
 import { useState, useRef, useEffect } from "react";
 
 interface LeftSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentView: 'menu' | 'addresses';
-  setCurrentView: (view: 'menu' | 'addresses') => void;
+  currentView: 'menu' | 'addresses' | 'settings';
+  setCurrentView: (view: 'menu' | 'addresses' | 'settings') => void;
 }
 
 interface ShippingFormProps {
@@ -228,6 +229,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => setCurrentView('addresses') },
     { icon: Wallet, label: t('wallet'), href: "#" },
     { icon: ShoppingBag, label: t('orders'), href: "#" },
+    { icon: Settings, label: t('settings'), href: "#", onClick: () => setCurrentView('settings') },
   ];
 
   const handleLogout = async () => {
@@ -292,7 +294,48 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
             }}
             className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-r-3xl flex flex-col safe-area-inset"
           >
-            {currentView === 'addresses' ? (
+            {currentView === 'settings' ? (
+              // Settings View
+              <div className="flex-1 pt-8 pb-4">
+                {/* Settings Header */}
+                <div className="px-6 pb-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentView('menu')}
+                      className="hover:bg-gray-100"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      الإعدادات
+                    </h2>
+                    <div className="w-10" />
+                  </div>
+                </div>
+
+                {/* Settings Content */}
+                <div className="px-6 py-6 space-y-6">
+                  {/* App Preferences Section */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      تفضيلات التطبيق
+                    </h3>
+                    
+                    {/* Language Setting */}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                          اللغة
+                        </span>
+                      </div>
+                      <LanguageSelector />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : currentView === 'addresses' ? (
               // Addresses View
               <div className="h-full flex flex-col">
                 {/* Addresses Header */}
