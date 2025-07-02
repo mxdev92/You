@@ -87,17 +87,11 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
   const { t } = useTranslation();
   
-  // Use ref to store form data persistently without causing re-renders
-  const formDataRef = useRef({
-    fullName: '',
-    phoneNumber: '',
-    government: '',
-    fullAddress: ''
-  });
-
-  // Use local state to force re-renders when needed
-  const [, forceUpdate] = useState({});
-  const triggerUpdate = () => forceUpdate({});
+  // Simple controlled inputs without complex state management
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [government, setGovernment] = useState('');
+  const [fullAddress, setFullAddress] = useState('');
 
   const iraqiGovernorates = [
     'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
@@ -105,40 +99,25 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  // Stable input handlers that don't cause re-renders
-  const handleInputChange = useCallback((field: string, value: string) => {
-    formDataRef.current = { ...formDataRef.current, [field]: value };
-    triggerUpdate();
-  }, []);
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formDataRef.current);
+    console.log('Form submitted:', { fullName, phoneNumber, government, fullAddress });
     onClose();
-  }, [onClose]);
+  };
+
+  // Don't render anything if not open
+  if (!isOpen) return null;
 
   return (
-    <AnimatePresence mode="wait">
-      {isOpen && (
-        <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
-          >
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
             {/* Header */}
             <div className="p-4 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -162,8 +141,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="text"
-                    value={formDataRef.current.fullName}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
                     required
@@ -177,8 +156,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="tel"
-                    value={formDataRef.current.phoneNumber}
-                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your phone number"
                     required
@@ -191,8 +170,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Government (State)
                   </label>
                   <CustomDropdown
-                    value={formDataRef.current.government}
-                    onChange={(value) => handleInputChange('government', value)}
+                    value={government}
+                    onChange={(value) => setGovernment(value)}
                     options={iraqiGovernorates}
                     placeholder="Select your government"
                   />
@@ -204,8 +183,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Full Address
                   </label>
                   <textarea
-                    value={formDataRef.current.fullAddress}
-                    onChange={(e) => handleInputChange('fullAddress', e.target.value)}
+                    value={fullAddress}
+                    onChange={(e) => setFullAddress(e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
                     placeholder="Enter your complete address"
@@ -224,10 +203,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                 </div>
               </form>
             </div>
-          </motion.div>
         </div>
-      )}
-    </AnimatePresence>
+      </div>
   );
 }
 
