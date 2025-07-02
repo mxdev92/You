@@ -3,6 +3,7 @@ import { Trash2, Plus, Minus, ArrowLeft, MapPin, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
+import { useAddressStore } from "@/store/address-store";
 import { useState, useRef, useEffect } from "react";
 import { createOrder } from "@/lib/firebase";
 import { useAuth } from "@/hooks/use-auth";
@@ -99,6 +100,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const cartItemsCount = useCartFlow(state => state.getCartItemsCount());
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { addresses } = useAddressStore();
   const [currentView, setCurrentView] = useState<'cart' | 'checkout'>('cart');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -119,46 +121,24 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  const hasAddress = addressData.fullName && addressData.phoneNumber && addressData.government && addressData.fullAddress;
-
-  const handleAddressSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Add new address to saved addresses
-    const newAddress = {
-      id: Date.now(), // Simple ID generation
-      fullName: addressData.fullName,
-      phoneNumber: addressData.phoneNumber,
-      government: addressData.government,
-      fullAddress: addressData.fullAddress
-    };
-    
-    // Address will be saved in left sidebar
-    
-    // Reset form and close
-    setAddressData({
-      fullName: '',
-      phoneNumber: '',
-      government: '',
-      fullAddress: ''
-    });
-    setShowAddressForm(false);
-  };
+  // Use first saved address automatically
+  const primaryAddress = addresses.length > 0 ? addresses[0] : null;
+  const hasAddress = primaryAddress !== null;
 
   const handlePlaceOrder = async () => {
-    if (!hasAddress || !user) return;
+    if (!hasAddress || !user || !primaryAddress) return;
     
     setIsPlacingOrder(true);
     try {
       const orderData = {
-        customerName: addressData.fullName,
+        customerName: primaryAddress.fullName,
         customerEmail: user.email || '',
-        customerPhone: addressData.phoneNumber,
+        customerPhone: primaryAddress.phoneNumber,
         address: {
-          governorate: addressData.government,
-          district: '',
-          neighborhood: '',
-          street: addressData.fullAddress,
+          governorate: primaryAddress.government,
+          district: primaryAddress.district,
+          neighborhood: primaryAddress.nearestLandmark,
+          street: '',
           houseNumber: '',
           floorNumber: '',
           notes: ''
@@ -226,7 +206,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
             {/* Form */}
             <div className="flex-1 p-4">
-              <form onSubmit={handleAddressSubmit} className="space-y-3">
+              <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
                 {/* Full Name */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -495,10 +475,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             </span>
           </div>
           <Button 
-            onClick={() => setCurrentView('checkout')}
+            onClick={hasAddress ? handlePlaceOrder : onNavigateToAddresses}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
+            disabled={isPlacingOrder}
+            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
           >
-{t('proceedToCheckout')}
+            {isPlacingOrder ? 'جاري تنفيذ الطلب...' : hasAddress ? 'تأكيد الطلب' : 'اضافة عنوان توصيل'}
           </Button>
         </motion.div>
       )}
