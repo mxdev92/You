@@ -250,6 +250,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCategorySelection(id: number, isSelected: boolean): Promise<Category> {
+    // First, deselect all categories
+    await db.update(categories)
+      .set({ isSelected: false });
+    
+    // Then select the target category
     const [updated] = await db.update(categories)
       .set({ isSelected })
       .where(eq(categories.id, id))
