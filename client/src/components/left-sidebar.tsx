@@ -5,7 +5,7 @@ import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 interface LeftSidebarProps {
   isOpen: boolean;
@@ -86,12 +86,14 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 
 function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState({
+  
+  // Use persistent state that won't reset on re-renders
+  const [formData, setFormData] = useState(() => ({
     fullName: '',
     phoneNumber: '',
     government: '',
     fullAddress: ''
-  });
+  }));
 
   const iraqiGovernorates = [
     'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
@@ -99,12 +101,17 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Memoize input handlers to prevent re-creation
+  const handleInputChange = useCallback((field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission
     console.log('Form submitted:', formData);
     onClose();
-  };
+  }, [formData, onClose]);
 
   return (
     <AnimatePresence mode="wait">
@@ -152,7 +159,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   <input
                     type="text"
                     value={formData.fullName}
-                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    onChange={(e) => handleInputChange('fullName', e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
                     required
@@ -167,7 +174,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   <input
                     type="tel"
                     value={formData.phoneNumber}
-                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your phone number"
                     required
@@ -181,7 +188,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <CustomDropdown
                     value={formData.government}
-                    onChange={(value) => setFormData({...formData, government: value})}
+                    onChange={(value) => handleInputChange('government', value)}
                     options={iraqiGovernorates}
                     placeholder="Select your government"
                   />
@@ -194,7 +201,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <textarea
                     value={formData.fullAddress}
-                    onChange={(e) => setFormData({...formData, fullAddress: e.target.value})}
+                    onChange={(e) => handleInputChange('fullAddress', e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
                     placeholder="Enter your complete address"
