@@ -101,15 +101,18 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const { t } = useTranslation();
   const { user } = useAuth();
   const { addresses } = useAddressStore();
-  const [currentView, setCurrentView] = useState<'cart' | 'checkout'>('cart');
+  const [currentView, setCurrentView] = useState<'cart' | 'checkout' | 'final'>('cart');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [addressData, setAddressData] = useState({
     fullName: '',
     phoneNumber: '',
     government: '',
-    fullAddress: ''
+    district: '',
+    nearestLandmark: ''
   });
+  const [deliveryTime, setDeliveryTime] = useState('');
+  const [deliveryNotes, setDeliveryNotes] = useState('');
 
 
   const shippingFee = 1500; // Fixed shipping fee in IQD
@@ -250,17 +253,32 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                   />
                 </div>
 
-                {/* Full Address */}
+                {/* District */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Full Address
+                    District
                   </label>
-                  <textarea
-                    value={addressData.fullAddress}
-                    onChange={(e) => setAddressData({...addressData, fullAddress: e.target.value})}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
-                    placeholder="Enter your full address"
-                    rows={3}
+                  <input
+                    type="text"
+                    value={addressData.district}
+                    onChange={(e) => setAddressData({...addressData, district: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Enter your district"
+                    required
+                  />
+                </div>
+
+                {/* Nearest Landmark */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Nearest Landmark
+                  </label>
+                  <input
+                    type="text"
+                    value={addressData.nearestLandmark}
+                    onChange={(e) => setAddressData({...addressData, nearestLandmark: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    placeholder="Enter nearest landmark"
                     required
                   />
                 </div>
@@ -369,12 +387,125 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
 
         <Button 
-          onClick={hasAddress ? handlePlaceOrder : onNavigateToAddresses}
+          onClick={hasAddress ? () => setCurrentView('final') : onNavigateToAddresses}
           className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark"
-          disabled={isPlacingOrder}
           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
         >
-          {isPlacingOrder ? 'جاري تنفيذ الطلب...' : hasAddress ? 'اطلب الان' : 'اضافة عنوان توصيل'}
+          {hasAddress ? 'اكمال عملية الطلب' : 'اضافة عنوان توصيل'}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const FinalScreen = () => (
+    <div className="h-full flex flex-col">
+      {/* Final Header */}
+      <div className="flex items-center justify-between px-6 py-6 border-b border-gray-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentView('checkout')}
+          className="hover:bg-gray-100 touch-action-manipulation"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+          تأكيد الطلب النهائي
+        </h2>
+        <div className="w-10" />
+      </div>
+
+      {/* Final Details */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        {/* Address */}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            العنوان:
+          </h3>
+          {hasAddress && (
+            <div className="space-y-2">
+              <p className="text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                <strong>{addresses[0].fullName}</strong>
+              </p>
+              <p className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                {addresses[0].government}
+              </p>
+              <p className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                {addresses[0].district} - {addresses[0].nearestLandmark}
+              </p>
+              <p className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                {addresses[0].phoneNumber}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Total Payment Due */}
+        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            المبلغ الكلي الواجب دفعه عند التوصيل:
+          </h3>
+          <p className="text-2xl font-bold text-fresh-green">
+            {totalWithShipping.toFixed(0)} IQD
+          </p>
+        </div>
+
+        {/* Time Selection */}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            اختيار وقت التوصيل:
+          </h3>
+          <div className="space-y-3">
+            <button
+              onClick={() => setDeliveryTime('8 - 11 صباحا')}
+              className={`w-full p-3 rounded-lg border text-right transition-all ${
+                deliveryTime === '8 - 11 صباحا' 
+                  ? 'bg-fresh-green text-white border-fresh-green' 
+                  : 'bg-white border-gray-300 hover:border-fresh-green'
+              }`}
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
+              8 - 11 صباحا
+            </button>
+            <button
+              onClick={() => setDeliveryTime('2 - 8 مساءا')}
+              className={`w-full p-3 rounded-lg border text-right transition-all ${
+                deliveryTime === '2 - 8 مساءا' 
+                  ? 'bg-fresh-green text-white border-fresh-green' 
+                  : 'bg-white border-gray-300 hover:border-fresh-green'
+              }`}
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
+              2 - 8 مساءا
+            </button>
+          </div>
+        </div>
+
+        {/* Delivery Notes */}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            ملاحظات للتوصيل:
+          </h3>
+          <textarea
+            value={deliveryNotes}
+            onChange={(e) => setDeliveryNotes(e.target.value)}
+            placeholder="اكتب أي ملاحظات خاصة للتوصيل..."
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fresh-green focus:border-transparent resize-none"
+            rows={3}
+            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+          />
+        </div>
+      </div>
+
+      {/* Final Submit Button */}
+      <div className="px-6 py-6 border-t border-gray-100 bg-white">
+        <Button 
+          onClick={handlePlaceOrder}
+          className="w-full bg-fresh-green hover:bg-fresh-green-dark"
+          disabled={isPlacingOrder || !deliveryTime}
+          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+        >
+          {isPlacingOrder ? 'جاري تنفيذ الطلب...' : 'تأكيد الطلب'}
         </Button>
       </div>
     </div>
@@ -515,7 +646,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               }}
               className="absolute right-0 w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-l-3xl flex flex-col safe-area-inset"
             >
-              {currentView === 'checkout' ? <CheckoutScreen /> : <CartScreen />}
+              {currentView === 'checkout' ? <CheckoutScreen /> : currentView === 'final' ? <FinalScreen /> : <CartScreen />}
             </motion.div>
           </div>
         )}
