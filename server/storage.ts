@@ -319,12 +319,31 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async addToCart(item: InsertCartItem): Promise<CartItem> {
+  async addToCart(item: InsertCartItem): Promise<CartItem & { product: Product }> {
     const [newItem] = await db.insert(cartItems).values({
       ...item,
       addedAt: new Date().toISOString()
     }).returning();
-    return newItem;
+    
+    // Get the cart item with product data
+    const [cartItemWithProduct] = await db.select({
+      id: cartItems.id,
+      productId: cartItems.productId,
+      quantity: cartItems.quantity,
+      addedAt: cartItems.addedAt,
+      product: products
+    })
+    .from(cartItems)
+    .innerJoin(products, eq(cartItems.productId, products.id))
+    .where(eq(cartItems.id, newItem.id));
+    
+    return {
+      id: cartItemWithProduct.id,
+      productId: cartItemWithProduct.productId,
+      quantity: cartItemWithProduct.quantity,
+      addedAt: cartItemWithProduct.addedAt,
+      product: cartItemWithProduct.product
+    };
   }
 
   async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem> {

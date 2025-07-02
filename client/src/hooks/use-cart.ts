@@ -138,6 +138,7 @@ export function useCart() {
 
   const getTotalPrice = useCallback(() => {
     return cartItems.reduce((total, item) => {
+      if (!item.product || !item.product.price) return total;
       const price = parseFloat(item.product.price) || 0;
       return total + (price * item.quantity);
     }, 0);
