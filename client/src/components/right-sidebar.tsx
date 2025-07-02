@@ -448,8 +448,8 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
               >
                 {/* Product Image */}
                 <img
-                  src={item.product.imageUrl}
-                  alt={item.product.name}
+                  src={item.product?.imageUrl || '/placeholder-image.jpg'}
+                  alt={item.product?.name || 'Product'}
                   className="w-14 h-14 object-cover rounded-lg flex-shrink-0"
                 />
                 
@@ -457,13 +457,13 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 <div className="flex-1 min-w-0">
                   {/* Line 1: Product Name */}
                   <div className="mb-1">
-                    <h4 className="font-medium text-gray-800 text-xs">{item.product.name}</h4>
+                    <h4 className="font-medium text-gray-800 text-xs">{item.product?.name || 'Unknown Product'}</h4>
                   </div>
                   
                   {/* Line 2: Price */}
                   <div className="mb-1">
                     <p className="text-fresh-green font-semibold text-xs">
-                      {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
+                      {item.product?.price ? (parseFloat(item.product.price) * item.quantity).toFixed(0) : '0'} IQD
                     </p>
                   </div>
                   
