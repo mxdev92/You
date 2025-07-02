@@ -28,6 +28,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       if (response.ok) {
         const items = await response.json();
         console.log("✅ Global Cart loaded:", items.length, "items");
+        console.log("📦 Cart items data:", items);
         set({ cartItems: items });
       } else {
         console.error("❌ Cart fetch failed with status:", response.status);
