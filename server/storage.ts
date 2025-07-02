@@ -120,7 +120,7 @@ export class MemStorage implements IStorage {
     this.categories.forEach(cat => cat.isSelected = false);
     
     // Set the selected category
-    const updatedCategory = { ...category, isSelected };
+    const updatedCategory = { ...category, isSelected, displayOrder: category.displayOrder || 0 };
     this.categories.set(id, updatedCategory);
     return updatedCategory;
   }
@@ -241,7 +241,7 @@ import { eq } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   async getCategories(): Promise<Category[]> {
-    return await db.select().from(categories);
+    return await db.select().from(categories).orderBy(categories.displayOrder, categories.id);
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
