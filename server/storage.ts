@@ -1,4 +1,6 @@
 import { categories, products, cartItems, type Category, type Product, type CartItem, type InsertCategory, type InsertProduct, type InsertCartItem } from "@shared/schema";
+import { db } from "./db";
+import { eq, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -236,9 +238,6 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { db } from "./db";
-import { eq } from "drizzle-orm";
-
 export class DatabaseStorage implements IStorage {
   async getCategories(): Promise<Category[]> {
     return await db.select().from(categories).orderBy(categories.displayOrder, categories.id);
@@ -263,11 +262,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProducts(): Promise<Product[]> {
-    return await db.select().from(products).orderBy(products.displayOrder, products.id);
+    const result = await db.select().from(products);
+    return result.sort((a, b) => {
+      const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
+      const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.id - b.id;
+    });
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    return await db.select().from(products).where(eq(products.categoryId, categoryId));
+    const result = await db.select().from(products).where(eq(products.categoryId, categoryId));
+    return result.sort((a, b) => {
+      const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
+      const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.id - b.id;
+    });
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
