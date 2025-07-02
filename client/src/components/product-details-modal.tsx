@@ -5,7 +5,7 @@ import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
-import { useCart } from "@/hooks/use-cart";
+import { useCartStore } from "@/store/cart-store";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -17,7 +17,7 @@ interface ProductDetailsModalProps {
 
 export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetailsModalProps) {
   const { t } = useTranslation();
-  const { addToCart } = useCart();
+  const addToCart = useCartStore(state => state.addToCart);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
 
   // Prevent body scroll when modal is open
