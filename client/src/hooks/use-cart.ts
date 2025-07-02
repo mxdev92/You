@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -6,134 +6,104 @@ import { useToast } from "@/hooks/use-toast";
 type CartItemWithProduct = CartItem & { product: Product };
 
 export function useCart() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
-    queryKey: ["/api/cart"],
-    staleTime: Infinity, // Never consider data stale
-    gcTime: Infinity, // Keep in cache forever
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchInterval: false,
-  });
+  // Load cart data once on mount
+  const loadCartItems = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/cart");
+      if (response.ok) {
+        const items = await response.json();
+        setCartItems(items);
+      }
+    } catch (error) {
+      console.error("Failed to load cart:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const addToCartMutation = useMutation({
-    mutationFn: async (item: InsertCartItem) => {
+  useEffect(() => {
+    loadCartItems();
+  }, [loadCartItems]);
+
+  const addToCart = useCallback(async (item: InsertCartItem) => {
+    try {
       const response = await apiRequest("POST", "/api/cart", item);
-      return response.json();
-    },
-    onSuccess: (newCartItem) => {
-      // Add the new item to existing cart data without refetch
-      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) => [
-        ...old,
-        newCartItem
-      ]);
-    },
-    onError: () => {
+      const newCartItem = await response.json();
+      setCartItems(prev => [...prev, newCartItem]);
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to add item to cart.",
         variant: "destructive",
       });
-    },
-  });
+    }
+  }, [toast]);
 
-  const removeFromCartMutation = useMutation({
-    mutationFn: async (itemId: number) => {
+  const removeFromCart = useCallback(async (itemId: number) => {
+    try {
+      // Optimistically remove from UI
+      setCartItems(prev => prev.filter(item => item.id !== itemId));
       await apiRequest("DELETE", `/api/cart/${itemId}`);
-    },
-    onMutate: async (itemId) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["/api/cart"] });
-
-      // Snapshot the previous value
-      const previousCartItems = queryClient.getQueryData(["/api/cart"]);
-
-      // Optimistically remove the item
-      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) =>
-        old.filter(item => item.id !== itemId)
-      );
-
-      return { previousCartItems };
-    },
-    onError: (err, itemId, context) => {
-      // If the mutation fails, restore previous data
-      if (context?.previousCartItems) {
-        queryClient.setQueryData(["/api/cart"], context.previousCartItems);
-      }
+    } catch (error) {
+      // Reload on error
+      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to remove item from cart.",
         variant: "destructive",
       });
-    },
-    // No automatic refetch - rely on optimistic updates
-  });
+    }
+  }, [toast, loadCartItems]);
 
-  const updateQuantityMutation = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: number; quantity: number }) => {
-      const response = await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
-      return response.json();
-    },
-    onMutate: async ({ itemId, quantity }) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: ["/api/cart"] });
-
-      // Snapshot the previous value
-      const previousCartItems = queryClient.getQueryData(["/api/cart"]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) =>
-        old.map(item => 
+  const updateQuantity = useCallback(async (itemId: number, quantity: number) => {
+    if (isUpdating) return; // Prevent multiple concurrent updates
+    
+    try {
+      setIsUpdating(true);
+      // Optimistically update UI
+      setCartItems(prev => 
+        prev.map(item => 
           item.id === itemId ? { ...item, quantity } : item
         )
       );
-
-      // Return a context object with the snapshotted value
-      return { previousCartItems };
-    },
-    onError: (err, newData, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousCartItems) {
-        queryClient.setQueryData(["/api/cart"], context.previousCartItems);
-      }
+      
+      await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
+    } catch (error) {
+      // Reload on error
+      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to update item quantity.",
         variant: "destructive",
       });
-    },
-    // No automatic refetch - rely on optimistic updates
-  });
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [isUpdating, toast, loadCartItems]);
 
-  const clearCartMutation = useMutation({
-    mutationFn: async () => {
+  const clearCart = useCallback(async () => {
+    try {
+      setCartItems([]);
       await apiRequest("DELETE", "/api/cart");
-    },
-    onSuccess: () => {
-      // Clear cart data without refetch
-      queryClient.setQueryData(["/api/cart"], []);
       toast({
         title: "Cart cleared",
         description: "All items have been removed from your cart.",
       });
-    },
-    onError: () => {
+    } catch (error) {
+      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to clear cart.",
         variant: "destructive",
       });
-    },
-  });
-
-  const addToCart = (item: InsertCartItem) => addToCartMutation.mutate(item);
-  const removeFromCart = (itemId: number) => removeFromCartMutation.mutate(itemId);
-  const updateQuantity = (itemId: number, quantity: number) => 
-    updateQuantityMutation.mutate({ itemId, quantity });
-  const clearCart = () => clearCartMutation.mutate();
+    }
+  }, [toast, loadCartItems]);
 
   const cartItemsCount = cartItems.length;
   
@@ -152,8 +122,8 @@ export function useCart() {
     clearCart,
     cartItemsCount,
     getCartTotal,
-    isAdding: addToCartMutation.isPending,
-    isRemoving: removeFromCartMutation.isPending,
-    isUpdating: updateQuantityMutation.isPending,
+    isAdding: false,
+    isRemoving: false,
+    isUpdating,
   };
 }

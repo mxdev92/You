@@ -90,7 +90,6 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount, clearCart, isUpdating, isRemoving } = useCart();
-  const [lastClickTime, setLastClickTime] = useState<{ [key: string]: number }>({});
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
@@ -467,17 +466,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const clickKey = `minus-${item.id}`;
-                        const now = Date.now();
-                        if (lastClickTime[clickKey] && now - lastClickTime[clickKey] < 300) {
-                          return; // Prevent rapid clicks
-                        }
-                        setLastClickTime(prev => ({ ...prev, [clickKey]: now }));
-                        updateQuantity(item.id, Math.max(1, item.quantity - 1));
-                      }}
+                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
                       disabled={isUpdating || item.quantity <= 1}
                       className="h-6 w-6 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
@@ -487,17 +476,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const clickKey = `plus-${item.id}`;
-                        const now = Date.now();
-                        if (lastClickTime[clickKey] && now - lastClickTime[clickKey] < 300) {
-                          return; // Prevent rapid clicks
-                        }
-                        setLastClickTime(prev => ({ ...prev, [clickKey]: now }));
-                        updateQuantity(item.id, item.quantity + 1);
-                      }}
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
                       disabled={isUpdating}
                       className="h-6 w-6 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
@@ -510,11 +489,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    removeFromCart(item.id);
-                  }}
+                  onClick={() => removeFromCart(item.id)}
                   disabled={isRemoving}
                   className="hover:bg-red-50 text-red-500 hover:text-red-600 disabled:text-red-300 disabled:cursor-not-allowed touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >
