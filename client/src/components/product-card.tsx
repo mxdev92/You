@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/contexts/cart-context";
+import { useCart } from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
