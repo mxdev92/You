@@ -399,17 +399,19 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               </div>
             )}
 
-            {/* Bottom Section */}
-            <div className="px-6 pb-6">
-              <Button
-                onClick={handleLogout}
-                variant="ghost"
-                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <LogOut className="mr-3 h-4 w-4" />
-                {t('logout')}
-              </Button>
-            </div>
+            {/* Bottom Section - Only show logout in menu view */}
+            {currentView === 'menu' && (
+              <div className="px-6 pb-6">
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut className="mr-3 h-4 w-4" />
+                  {t('logout')}
+                </Button>
+              </div>
+            )}
           </motion.div>
           </div>
         )}
