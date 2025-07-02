@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown } from "lucide-react";
+import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
@@ -10,11 +10,17 @@ import { useState, useRef, useEffect } from "react";
 interface LeftSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  currentView: 'menu' | 'addresses';
+  setCurrentView: (view: 'menu' | 'addresses') => void;
 }
 
 interface ShippingFormProps {
   isOpen: boolean;
   onClose: () => void;
+  addressData: any;
+  setAddressData: any;
+  onSubmit: (e: React.FormEvent) => void;
+  iraqiGovernorates: string[];
 }
 
 interface CustomDropdownProps {
@@ -84,27 +90,8 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
   );
 }
 
-function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
+function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, iraqiGovernorates }: ShippingFormProps) {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    government: '',
-    fullAddress: ''
-  });
-
-  const iraqiGovernorates = [
-    'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
-    'ديالى', 'واسط', 'ميسان', 'ذي قار', 'المثنى', 'بابل', 'كربلاء', 'النجف', 
-    'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
-    onClose();
-  };
 
   return (
     <AnimatePresence mode="wait">
@@ -143,7 +130,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
 
             {/* Form */}
             <div className="flex-1 p-4">
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={onSubmit} className="space-y-3">
                 {/* Full Name */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -151,8 +138,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="text"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    value={addressData.fullName}
+                    onChange={(e) => setAddressData({...addressData, fullName: e.target.value})}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
                     required
@@ -166,8 +153,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="tel"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                    value={addressData.phoneNumber}
+                    onChange={(e) => setAddressData({...addressData, phoneNumber: e.target.value})}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your phone number"
                     required
@@ -180,8 +167,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Government (State)
                   </label>
                   <CustomDropdown
-                    value={formData.government}
-                    onChange={(value) => setFormData({...formData, government: value})}
+                    value={addressData.government}
+                    onChange={(value) => setAddressData({...addressData, government: value})}
                     options={iraqiGovernorates}
                     placeholder="Select your government"
                   />
@@ -193,8 +180,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Full Address
                   </label>
                   <textarea
-                    value={formData.fullAddress}
-                    onChange={(e) => setFormData({...formData, fullAddress: e.target.value})}
+                    value={addressData.fullAddress}
+                    onChange={(e) => setAddressData({...addressData, fullAddress: e.target.value})}
                     rows={3}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
                     placeholder="Enter your complete address"
@@ -220,14 +207,30 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
   );
 }
 
-export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
+export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
-  const [showShippingForm, setShowShippingForm] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState([
+    // Sample saved address for demonstration
+    {
+      id: 1,
+      fullName: 'أحمد محمد',
+      phoneNumber: '07901234567',
+      government: 'بغداد',
+      fullAddress: 'حي الكرادة، شارع أبو نواس، بناية 15، الطابق الثالث'
+    }
+  ]);
+  const [addressData, setAddressData] = useState({
+    fullName: '',
+    phoneNumber: '',
+    government: '',
+    fullAddress: ''
+  });
   
   const menuItems = [
     { icon: User, label: t('profile'), href: "#" },
-    { icon: MapPin, label: t('myAddress'), href: "#", onClick: () => setShowShippingForm(true) },
+    { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => setCurrentView('addresses') },
     { icon: Wallet, label: t('wallet'), href: "#" },
     { icon: ShoppingBag, label: t('orders'), href: "#" },
   ];
@@ -235,6 +238,36 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
   const handleLogout = async () => {
     await signOut();
     onClose();
+  };
+
+  const iraqiGovernorates = [
+    'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
+    'ديالى', 'واسط', 'ميسان', 'ذي قار', 'المثنى', 'بابل', 'كربلاء', 'النجف', 
+    'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
+  ];
+
+  const handleAddressSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Add new address to saved addresses
+    const newAddress = {
+      id: Date.now(), // Simple ID generation
+      fullName: addressData.fullName,
+      phoneNumber: addressData.phoneNumber,
+      government: addressData.government,
+      fullAddress: addressData.fullAddress
+    };
+    
+    setSavedAddresses(prev => [...prev, newAddress]);
+    
+    // Reset form and close
+    setAddressData({
+      fullName: '',
+      phoneNumber: '',
+      government: '',
+      fullAddress: ''
+    });
+    setShowAddressForm(false);
   };
 
   return (
@@ -265,42 +298,106 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
             }}
             className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-r-3xl flex flex-col safe-area-inset"
           >
-            {/* Top Section */}
-            <div className="flex-1 pt-8 pb-4">
-              <div className="px-6 mb-8">
-                <div className="flex items-center space-x-3 mb-3">
-                  <KiwiLogo size={36} />
-                  <h2 className="text-2xl font-bold text-gray-800">{t('appName')}</h2>
-                </div>
-                <p className="text-gray-500 text-sm mt-1">{t('welcomeBackSidebar')}</p>
-                {user?.email && (
-                  <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
-                )}
-              </div>
-
-              <nav className="px-6 space-y-2">
-                {menuItems.map((item, index) => (
+            {currentView === 'addresses' ? (
+              // Addresses View
+              <div className="h-full flex flex-col">
+                {/* Addresses Header */}
+                <div className="flex items-center justify-between px-6 py-6 border-b border-gray-100">
                   <Button
-                    key={item.label}
                     variant="ghost"
-                    className="w-full justify-start text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                    onClick={item.onClick}
+                    size="icon"
+                    onClick={() => setCurrentView('menu')}
+                    className="hover:bg-gray-100 touch-action-manipulation"
                   >
-                    <item.icon className="mr-3 h-4 w-4" />
-                    {item.label}
+                    <ArrowLeft className="h-5 w-5" />
                   </Button>
-                ))}
-              </nav>
-              
-              {/* Settings Section */}
-              <div className="px-6 py-4 border-t border-gray-100 mt-4">
-                <div className="flex items-center space-x-2 mb-4 text-gray-700">
-                  <Settings className="h-4 w-4" />
-                  <span className="text-sm font-medium">{t('settings')}</span>
+                  <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    عنوان التوصيل
+                  </h2>
+                  <div className="w-10" /> {/* Spacer */}
                 </div>
-                <LanguageSelector />
+
+                {/* Addresses List */}
+                <div className="flex-1 overflow-y-auto px-6 py-4">
+                  <div className="space-y-4">
+                    {savedAddresses.map((address) => (
+                      <div 
+                        key={address.id}
+                        className="p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              {address.fullName}
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              {address.phoneNumber}
+                            </p>
+                            <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              {address.government}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              {address.fullAddress}
+                            </p>
+                          </div>
+                          <MapPin className="h-5 w-5 text-green-600 mt-1" />
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Add New Address Button */}
+                    <button
+                      onClick={() => setShowAddressForm(true)}
+                      className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors group"
+                    >
+                      <div className="flex items-center justify-center space-x-2">
+                        <Plus className="h-5 w-5 text-gray-400 group-hover:text-green-600" />
+                        <span className="text-gray-600 group-hover:text-green-700 font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                          اضافة عنوان توصيل
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              // Menu View
+              <div className="flex-1 pt-8 pb-4">
+                <div className="px-6 mb-8">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <KiwiLogo size={36} />
+                    <h2 className="text-2xl font-bold text-gray-800">{t('appName')}</h2>
+                  </div>
+                  <p className="text-gray-500 text-sm mt-1">{t('welcomeBackSidebar')}</p>
+                  {user?.email && (
+                    <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
+                  )}
+                </div>
+
+                <nav className="px-6 space-y-2">
+                  {menuItems.map((item, index) => (
+                    <Button
+                      key={item.label}
+                      variant="ghost"
+                      className="w-full justify-start text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                      onClick={item.onClick}
+                    >
+                      <item.icon className="mr-3 h-4 w-4" />
+                      {item.label}
+                    </Button>
+                  ))}
+                </nav>
+                
+                {/* Settings Section */}
+                <div className="px-6 py-4 border-t border-gray-100 mt-4">
+                  <div className="flex items-center space-x-2 mb-4 text-gray-700">
+                    <Settings className="h-4 w-4" />
+                    <span className="text-sm font-medium">{t('settings')}</span>
+                  </div>
+                  <LanguageSelector />
+                </div>
+              </div>
+            )}
 
             {/* Bottom Section */}
             <div className="px-6 pb-6">
@@ -318,10 +415,14 @@ export default function LeftSidebar({ isOpen, onClose }: LeftSidebarProps) {
         )}
       </AnimatePresence>
       
-      {/* Shipping Form Modal */}
+      {/* Address Form Modal */}
       <ShippingForm 
-        isOpen={showShippingForm} 
-        onClose={() => setShowShippingForm(false)} 
+        isOpen={showAddressForm} 
+        onClose={() => setShowAddressForm(false)}
+        addressData={addressData}
+        setAddressData={setAddressData}
+        onSubmit={handleAddressSubmit}
+        iraqiGovernorates={iraqiGovernorates}
       />
     </>
   );
