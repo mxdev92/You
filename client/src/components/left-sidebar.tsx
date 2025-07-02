@@ -207,11 +207,19 @@ function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, 
   );
 }
 
+interface SavedAddress {
+  id: number;
+  fullName: string;
+  phoneNumber: string;
+  government: string;
+  fullAddress: string;
+}
+
 export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [addressData, setAddressData] = useState({
     fullName: '',
     phoneNumber: '',

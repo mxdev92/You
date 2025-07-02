@@ -54,13 +54,35 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const handleSignupSuccess = () => {
+  const handleSignupSuccess = async () => {
     // After successful signup/login, add the item to cart
     setShowSignupModal(false);
-    // Trigger add to cart after authentication
-    setTimeout(() => {
-      handleAddToCart();
-    }, 100);
+    
+    // Wait a bit for authentication state to update, then add to cart directly
+    setTimeout(async () => {
+      if (!product.available) return;
+      
+      setIsAdding(true);
+      setShowShimmer(true);
+
+      try {
+        await addToCart({ productId: product.id, quantity: 1 });
+        
+        // Keep the "Added!" state for a moment
+        setTimeout(() => {
+          setIsAdding(false);
+        }, 1000);
+        
+        // Hide shimmer effect
+        setTimeout(() => {
+          setShowShimmer(false);
+        }, 1500);
+      } catch (error) {
+        console.error('Failed to add to cart after signup:', error);
+        setIsAdding(false);
+        setShowShimmer(false);
+      }
+    }, 500);
   };
 
   return (
