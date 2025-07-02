@@ -211,16 +211,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [savedAddresses, setSavedAddresses] = useState([
-    // Sample saved address for demonstration
-    {
-      id: 1,
-      fullName: 'أحمد محمد',
-      phoneNumber: '07901234567',
-      government: 'بغداد',
-      fullAddress: 'حي الكرادة، شارع أبو نواس، بناية 15، الطابق الثالث'
-    }
-  ]);
+  const [savedAddresses, setSavedAddresses] = useState([]);
   const [addressData, setAddressData] = useState({
     fullName: '',
     phoneNumber: '',
