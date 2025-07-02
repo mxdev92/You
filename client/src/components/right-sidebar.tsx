@@ -304,13 +304,14 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h2 className="text-xl font-bold text-gray-800">{t('checkout')}</h2>
+        <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+          تأكيد الطلب
+        </h2>
         <div className="w-10" /> {/* Spacer */}
       </div>
 
-      {/* Items List - 40% of screen */}
-      <div className="flex-2 overflow-y-auto px-6 py-4 bg-gray-50" style={{ minHeight: '40%' }}>
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('orderItems')}</h3>
+      {/* Items List - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="space-y-3">
           {cartItems.map((item, index) => (
             <motion.div
@@ -318,7 +319,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm"
+              className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-gray-100"
             >
               <div className="flex items-center space-x-3">
                 <img
@@ -327,7 +328,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                   className="w-12 h-12 object-cover rounded-lg"
                 />
                 <div>
-                  <h4 className="font-medium text-gray-800 text-sm">{item.product.name}</h4>
+                  <h4 className="font-medium text-gray-800 text-sm" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    {item.product.name}
+                  </h4>
                   <p className="text-xs text-gray-500">{item.product.unit}</p>
                 </div>
               </div>
@@ -342,26 +345,22 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       </div>
 
-
-
-      {/* Order Summary */}
-      <div className="px-6 py-6 border-t border-gray-100 bg-white">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('orderSummary')}</h3>
-        
+      {/* Price Breakdown */}
+      <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">{t('subtotal')}:</span>
+            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>السعر الكلي:</span>
             <span className="font-medium">{getCartTotal().toFixed(0)} IQD</span>
           </div>
           
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">{t('shippingFee')}:</span>
+            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>أجور التوصيل:</span>
             <span className="font-medium">{shippingFee.toFixed(0)} IQD</span>
           </div>
           
           <div className="border-t border-gray-200 pt-3">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-800">{t('totalToPay')}:</span>
+              <span className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الكلي:</span>
               <span className="text-xl font-bold text-fresh-green">
                 {totalWithShipping.toFixed(0)} IQD
               </span>
@@ -370,11 +369,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
 
         <Button 
-          onClick={hasAddress ? handlePlaceOrder : () => setShowAddressForm(true)}
+          onClick={hasAddress ? handlePlaceOrder : onNavigateToAddresses}
           className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark"
-          disabled={!hasAddress || isPlacingOrder}
+          disabled={isPlacingOrder}
+          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
         >
-          {isPlacingOrder ? 'Placing Order...' : (hasAddress ? t('placeOrder') : t('addShippingAddress'))}
+          {isPlacingOrder ? 'جاري تنفيذ الطلب...' : hasAddress ? 'اطلب الان' : 'اضافة عنوان توصيل'}
         </Button>
       </div>
     </div>
@@ -475,12 +475,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             </span>
           </div>
           <Button 
-            onClick={hasAddress ? handlePlaceOrder : onNavigateToAddresses}
+            onClick={() => setCurrentView('checkout')}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
-            disabled={isPlacingOrder}
             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
           >
-            {isPlacingOrder ? 'جاري تنفيذ الطلب...' : hasAddress ? 'تأكيد الطلب' : 'اضافة عنوان توصيل'}
+            اكمال عملية الطلب
           </Button>
         </motion.div>
       )}
