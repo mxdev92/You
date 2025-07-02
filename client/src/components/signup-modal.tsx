@@ -103,6 +103,89 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
+  const iraqiDistricts = [
+    'الأسرى والمفقودين',
+    'الأمن الداخلي',
+    'الماس تبة',
+    'المعارض',
+    'المعلمين',
+    'المندودة',
+    'باروت خانة',
+    'باجوان',
+    'بنجا علي',
+    'بنجة',
+    'حي البعث',
+    'حي بدر',
+    'تل علي',
+    'تقاطع الحجاج',
+    'حي الجامعة',
+    'حي الزهراء',
+    'قرية جيمين',
+    'مجمع مدينتي',
+    'الحجاج',
+    'حي الحسين',
+    'حي الحواسب',
+    'ناحية الرياض',
+    'الحورة',
+    'حي الخضراء',
+    'الدور',
+    'دوميز',
+    'رأس الجسر',
+    'منطقة روانكي',
+    'حي الزهراء',
+    'ناحية الزاب',
+    'الزوراء',
+    'ساحة الاحتفالات',
+    'شارع سليمانية / الجيمه',
+    'سكانيان',
+    'سونه كولي',
+    'شقق حي الحسين',
+    'شارع الجمهورية',
+    'شارع الحواسب',
+    'شارع القدس',
+    'شارع أطلس',
+    'شوراو',
+    'الصالحي',
+    'منطقة الصيادة',
+    'حي الصناعي',
+    'الضباط',
+    'طوزخورماتو',
+    'طريق المطار',
+    'العروبة',
+    'الفيلق',
+    'قصاب خانة',
+    'قرية النبي ياور',
+    'قرية جيمين',
+    'قرة هنجير',
+    'كلية القانون',
+    'كوباني',
+    'الكرامة',
+    'كي وان',
+    'مجمع كركوك سيتي',
+    'قاعدة كيوان الجوية',
+    'ليلان',
+    'منطقة ٥٥',
+    'مجمع مدينتي',
+    'ناحية العباسي',
+    'ناحية الملتقى',
+    'ناحية تازة',
+    'ناحية الرياض',
+    'ناحية الزاب',
+    'ناحية العباسي',
+    'حي الوحدة',
+    'حي النصر',
+    'حي العلماء',
+    'حي الشرطة',
+    'واحد آذار',
+    'واحد حزيران',
+    'حي الشهداء',
+    'حي النور',
+    'حي المنتوجات',
+    'حي الزهراء',
+    'حي العسكري',
+    'حي القدس'
+  ];
+
   const validateAuthForm = () => {
     if (!authData.email || !authData.password) return false;
     if (!isLogin && (!authData.confirmPassword || authData.password !== authData.confirmPassword)) return false;
@@ -372,14 +455,11 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
                     <label className="block text-sm font-medium text-gray-700 mb-1 text-right" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       المنطقة
                     </label>
-                    <input
-                      type="text"
+                    <CustomDropdown
                       value={addressData.district}
-                      onChange={(e) => setAddressData({...addressData, district: e.target.value})}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-right"
-                      placeholder="ادخل المنطقة"
-                      required
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                      onChange={(value) => setAddressData({...addressData, district: value})}
+                      options={iraqiDistricts}
+                      placeholder="اختر منطقتك"
                     />
                   </div>
 
