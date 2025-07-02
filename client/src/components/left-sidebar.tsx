@@ -87,13 +87,17 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
   const { t } = useTranslation();
   
-  // Use persistent state that won't reset on re-renders
-  const [formData, setFormData] = useState(() => ({
+  // Use ref to store form data persistently without causing re-renders
+  const formDataRef = useRef({
     fullName: '',
     phoneNumber: '',
     government: '',
     fullAddress: ''
-  }));
+  });
+
+  // Use local state to force re-renders when needed
+  const [, forceUpdate] = useState({});
+  const triggerUpdate = () => forceUpdate({});
 
   const iraqiGovernorates = [
     'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
@@ -101,17 +105,17 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  // Memoize input handlers to prevent re-creation
-  const handleInputChange = useCallback((field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Stable input handlers that don't cause re-renders
+  const handleInputChange = useCallback((field: string, value: string) => {
+    formDataRef.current = { ...formDataRef.current, [field]: value };
+    triggerUpdate();
   }, []);
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
+    console.log('Form submitted:', formDataRef.current);
     onClose();
-  }, [formData, onClose]);
+  }, [onClose]);
 
   return (
     <AnimatePresence mode="wait">
@@ -158,7 +162,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="text"
-                    value={formData.fullName}
+                    value={formDataRef.current.fullName}
                     onChange={(e) => handleInputChange('fullName', e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
@@ -173,7 +177,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="tel"
-                    value={formData.phoneNumber}
+                    value={formDataRef.current.phoneNumber}
                     onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your phone number"
@@ -187,7 +191,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Government (State)
                   </label>
                   <CustomDropdown
-                    value={formData.government}
+                    value={formDataRef.current.government}
                     onChange={(value) => handleInputChange('government', value)}
                     options={iraqiGovernorates}
                     placeholder="Select your government"
@@ -200,7 +204,7 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Full Address
                   </label>
                   <textarea
-                    value={formData.fullAddress}
+                    value={formDataRef.current.fullAddress}
                     onChange={(e) => handleInputChange('fullAddress', e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
