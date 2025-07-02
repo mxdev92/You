@@ -124,6 +124,7 @@ export interface Product {
   category: string;
   unit: string;
   available: boolean;
+  displayOrder?: number;
   imageUrl: string;
   createdAt: string;
 }

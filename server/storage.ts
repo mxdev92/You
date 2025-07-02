@@ -12,6 +12,7 @@ export interface IStorage {
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
+  updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product>;
 
   // Cart
   getCartItems(): Promise<(CartItem & { product: Product })[]>;
@@ -141,7 +142,9 @@ export class MemStorage implements IStorage {
     const product: Product = { 
       ...insertProduct, 
       id,
-      categoryId: insertProduct.categoryId ?? null
+      categoryId: insertProduct.categoryId ?? null,
+      available: insertProduct.available ?? true,
+      displayOrder: insertProduct.displayOrder ?? 0
     };
     this.products.set(id, product);
     return product;
@@ -216,11 +219,25 @@ export class MemStorage implements IStorage {
   async clearCart(): Promise<void> {
     this.cartItems.clear();
   }
+  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
+    const existingProduct = this.products.get(id);
+    if (!existingProduct) {
+      throw new Error("Product not found");
+    }
+
+    const updatedProduct: Product = {
+      ...existingProduct,
+      displayOrder,
+      id
+    };
+    
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
 }
 
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { categories, products, cartItems } from "@shared/schema";
 
 export class DatabaseStorage implements IStorage {
   async getCategories(): Promise<Category[]> {
@@ -241,7 +258,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProducts(): Promise<Product[]> {
-    return await db.select().from(products);
+    return await db.select().from(products).orderBy(products.displayOrder, products.id);
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
@@ -308,6 +325,14 @@ export class DatabaseStorage implements IStorage {
 
   async clearCart(): Promise<void> {
     await db.delete(cartItems);
+  }
+
+  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
+    const [updated] = await db.update(products)
+      .set({ displayOrder })
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
   }
 }
 
