@@ -456,12 +456,12 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 {/* Content (Three Lines) */}
                 <div className="flex-1 min-w-0">
                   {/* Line 1: Product Name */}
-                  <div className="mb-0.5">
+                  <div className="mb-1">
                     <h4 className="font-medium text-gray-800 text-xs">{item.product.name}</h4>
                   </div>
                   
                   {/* Line 2: Price */}
-                  <div className="mb-0.5">
+                  <div className="mb-1">
                     <p className="text-fresh-green font-semibold text-xs">
                       {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
                     </p>
@@ -489,12 +489,12 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                   </div>
                 </div>
                 
-                {/* Delete Button (Right Side Middle) - Green Color */}
+                {/* Delete Button (Right Side Middle) - Red Icon Only */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => removeFromCart(item.id)}
-                  className="bg-green-500 hover:bg-green-600 text-white touch-action-manipulation h-7 w-7 flex-shrink-0"
+                  className="hover:bg-red-50 text-red-500 hover:text-red-600 touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
