@@ -146,130 +146,13 @@ export const createProduct = async (product: Omit<Product, 'id' | 'createdAt'>) 
 export const getProducts = async () => {
   try {
     const querySnapshot = await getDocs(collection(db, 'products'));
-    const products = querySnapshot.docs.map(doc => ({
+    return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Product[];
-    
-    // Sort by displayOrder locally since compound queries might have issues
-    return products.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
   } catch (error) {
     console.error('Error getting products:', error);
-    // Return empty array instead of throwing to prevent loading stuck
-    return [];
-  }
-};
-
-export const updateProduct = async (productId: string, updates: Partial<Product>) => {
-  try {
-    const productRef = doc(db, 'products', productId);
-    await updateDoc(productRef, updates);
-  } catch (error) {
-    console.error('Error updating product:', error);
     throw error;
-  }
-};
-
-export const updateProductAvailability = async (productId: string, available: boolean) => {
-  try {
-    const productRef = doc(db, 'products', productId);
-    await updateDoc(productRef, { available });
-  } catch (error) {
-    console.error('Error updating product availability:', error);
-    throw error;
-  }
-};
-
-export const updateProductDisplayOrder = async (productId: string, displayOrder: number) => {
-  try {
-    const productRef = doc(db, 'products', productId);
-    await updateDoc(productRef, { displayOrder });
-  } catch (error) {
-    console.error('Error updating product display order:', error);
-    throw error;
-  }
-};
-
-// Initialize sample products if database is empty
-export const initializeSampleProducts = async () => {
-  try {
-    const products = await getProducts();
-    if (products.length > 0) {
-      console.log('Products already exist in database');
-      return;
-    }
-
-    console.log('Initializing sample products...');
-    const sampleProducts = [
-      {
-        name: 'تفاح أحمر طازج',
-        description: 'تفاح أحمر طازج ولذيذ',
-        price: 2500,
-        category: 'فواكه',
-        unit: 'كيلوغرام',
-        available: true,
-        displayOrder: 1,
-        imageUrl: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=400&fit=crop'
-      },
-      {
-        name: 'موز طازج',
-        description: 'موز طازج ولذيذ',
-        price: 1800,
-        category: 'فواكه',
-        unit: 'كيلوغرام',
-        available: true,
-        displayOrder: 2,
-        imageUrl: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&h=400&fit=crop'
-      },
-      {
-        name: 'برتقال طازج',
-        description: 'برتقال طازج ولذيذ',
-        price: 2000,
-        category: 'فواكه',
-        unit: 'كيلوغرام',
-        available: true,
-        displayOrder: 3,
-        imageUrl: 'https://images.unsplash.com/photo-1547514701-42782101795e?w=400&h=400&fit=crop'
-      },
-      {
-        name: 'خس طازج',
-        description: 'خس طازج ولذيذ',
-        price: 1500,
-        category: 'خضروات',
-        unit: 'حبة',
-        available: true,
-        displayOrder: 4,
-        imageUrl: 'https://images.unsplash.com/photo-1556801712-b0b6cd466806?w=400&h=400&fit=crop'
-      },
-      {
-        name: 'طماطم طازجة',
-        description: 'طماطم طازجة ولذيذة',
-        price: 1200,
-        category: 'خضروات',
-        unit: 'كيلوغرام',
-        available: true,
-        displayOrder: 5,
-        imageUrl: 'https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=400&h=400&fit=crop'
-      },
-      {
-        name: 'خيار طازج',
-        description: 'خيار طازج ولذيذ',
-        price: 1000,
-        category: 'خضروات',
-        unit: 'كيلوغرام',
-        available: true,
-        displayOrder: 6,
-        imageUrl: 'https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?w=400&h=400&fit=crop'
-      }
-    ];
-
-    for (const product of sampleProducts) {
-      await createProduct(product);
-    }
-    
-    console.log('Sample products initialized successfully');
-  } catch (error) {
-    console.error('Error initializing sample products:', error);
   }
 };
 

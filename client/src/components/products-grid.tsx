@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import type { Category } from "@shared/schema";
-import { getProducts, Product, initializeSampleProducts } from "@/lib/firebase";
+import type { Product, Category } from "@shared/schema";
 import ProductCard from "./product-card";
 
 export default function ProductsGrid() {
@@ -12,18 +11,15 @@ export default function ProductsGrid() {
   const selectedCategory = categories?.find(cat => cat.isSelected);
 
   const { data: products, isLoading } = useQuery<Product[]>({
-    queryKey: ["firebase-products", selectedCategory?.id],
+    queryKey: ["/api/products", selectedCategory?.id],
     queryFn: async () => {
-      const allProducts = await getProducts();
-      // If no products exist, initialize sample products
-      if (allProducts.length === 0) {
-        await initializeSampleProducts();
-        // Fetch products again after initialization
-        const newProducts = await getProducts();
-        return newProducts.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
-      }
-      // Sort by displayOrder (position) - lower numbers first
-      return allProducts.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
+      const url = selectedCategory 
+        ? `/api/products?categoryId=${selectedCategory.id}`
+        : "/api/products";
+      
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch products");
+      return response.json();
     },
   });
 

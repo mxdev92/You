@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Product } from "@/lib/firebase";
+import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
@@ -40,16 +40,14 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const displayName = translationKey ? t(translationKey) : product.name;
 
   const handleAddToCart = () => {
-    if (!product.id) return;
     addToCart({
       productId: product.id,
       quantity: selectedQuantity,
-      product
     });
     onClose();
   };
 
-  const totalPrice = (product.price * selectedQuantity).toString();
+  const totalPrice = (parseFloat(product.price) * selectedQuantity).toLocaleString();
 
   return (
     <AnimatePresence>
