@@ -5,7 +5,7 @@ import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface LeftSidebarProps {
   isOpen: boolean;
@@ -86,12 +86,12 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 
 function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
   const { t } = useTranslation();
-  
-  // Simple controlled inputs without complex state management
-  const [fullName, setFullName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [government, setGovernment] = useState('');
-  const [fullAddress, setFullAddress] = useState('');
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phoneNumber: '',
+    government: '',
+    fullAddress: ''
+  });
 
   const iraqiGovernorates = [
     'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
@@ -101,23 +101,33 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', { fullName, phoneNumber, government, fullAddress });
+    // Handle form submission
+    console.log('Form submitted:', formData);
     onClose();
   };
 
-  // Don't render anything if not open
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden">
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
+          >
             {/* Header */}
             <div className="p-4 border-b border-gray-100">
               <div className="flex items-center justify-between">
@@ -141,8 +151,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
                     required
@@ -156,8 +166,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                   </label>
                   <input
                     type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your phone number"
                     required
@@ -170,8 +180,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Government (State)
                   </label>
                   <CustomDropdown
-                    value={government}
-                    onChange={(value) => setGovernment(value)}
+                    value={formData.government}
+                    onChange={(value) => setFormData({...formData, government: value})}
                     options={iraqiGovernorates}
                     placeholder="Select your government"
                   />
@@ -183,8 +193,8 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                     Full Address
                   </label>
                   <textarea
-                    value={fullAddress}
-                    onChange={(e) => setFullAddress(e.target.value)}
+                    value={formData.fullAddress}
+                    onChange={(e) => setFormData({...formData, fullAddress: e.target.value})}
                     rows={3}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
                     placeholder="Enter your complete address"
@@ -203,8 +213,10 @@ function ShippingForm({ isOpen, onClose }: ShippingFormProps) {
                 </div>
               </form>
             </div>
+          </motion.div>
         </div>
-      </div>
+      )}
+    </AnimatePresence>
   );
 }
 
