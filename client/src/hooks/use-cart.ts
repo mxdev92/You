@@ -4,32 +4,46 @@ import { useToast } from "@/hooks/use-toast";
 
 type CartItemWithProduct = CartItem & { product: Product };
 
+// Single global state to prevent multiple hook instances
+let globalCartItems: CartItemWithProduct[] = [];
+let globalListeners: Array<(items: CartItemWithProduct[]) => void> = [];
+let isInitialized = false;
+
+const notifyListeners = () => {
+  globalListeners.forEach(listener => listener([...globalCartItems]));
+};
+
+const loadCartFromServer = async () => {
+  if (isInitialized) return;
+  isInitialized = true;
+  
+  try {
+    const response = await fetch("/api/cart");
+    if (response.ok) {
+      globalCartItems = await response.json();
+      notifyListeners();
+    }
+  } catch (error) {
+    console.error("Failed to load cart:", error);
+  }
+};
+
 export function useCart() {
   const { toast } = useToast();
-  const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [cartItems, setCartItems] = useState<CartItemWithProduct[]>(globalCartItems);
 
-  // Load cart items once on mount
   useEffect(() => {
-    let isMounted = true;
-    
-    fetch("/api/cart")
-      .then(res => res.json())
-      .then(items => {
-        if (isMounted) {
-          setCartItems(items);
-          setIsLoading(false);
-        }
-      })
-      .catch(error => {
-        console.error("Failed to load cart:", error);
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      });
+    // Subscribe to global cart changes
+    const listener = (items: CartItemWithProduct[]) => {
+      setCartItems(items);
+    };
+    globalListeners.push(listener);
+
+    // Load cart if not initialized
+    loadCartFromServer();
 
     return () => {
-      isMounted = false;
+      globalListeners = globalListeners.filter(l => l !== listener);
     };
   }, []);
 
@@ -43,7 +57,8 @@ export function useCart() {
       
       if (response.ok) {
         const newCartItem = await response.json();
-        setCartItems(prev => [...prev, newCartItem]);
+        globalCartItems.push(newCartItem);
+        notifyListeners();
         toast({
           title: "Added to cart",
           description: "Item successfully added to cart.",
@@ -68,9 +83,11 @@ export function useCart() {
       
       if (response.ok) {
         const updatedItem = await response.json();
-        setCartItems(prev => 
-          prev.map(item => item.id === id ? updatedItem : item)
-        );
+        const index = globalCartItems.findIndex(item => item.id === id);
+        if (index !== -1) {
+          globalCartItems[index] = updatedItem;
+          notifyListeners();
+        }
       }
     } catch (error) {
       toast({
@@ -88,7 +105,8 @@ export function useCart() {
       });
       
       if (response.ok) {
-        setCartItems(prev => prev.filter(item => item.id !== id));
+        globalCartItems = globalCartItems.filter(item => item.id !== id);
+        notifyListeners();
       }
     } catch (error) {
       toast({
@@ -106,7 +124,8 @@ export function useCart() {
       });
       
       if (response.ok) {
-        setCartItems([]);
+        globalCartItems = [];
+        notifyListeners();
       }
     } catch (error) {
       toast({
@@ -130,7 +149,6 @@ export function useCart() {
 
   return {
     cartItems,
-    isLoading,
     addToCart,
     updateQuantity,
     removeFromCart,
