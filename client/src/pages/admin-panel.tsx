@@ -717,6 +717,7 @@ function ItemsManagement() {
             category: getCategoryName(product.categoryId),
             unit: product.unit,
             available: product.available ?? true, // Use actual availability from database
+            displayOrder: product.displayOrder ?? 0, // Add display order
             imageUrl: product.imageUrl,
             createdAt: new Date().toISOString()
           }));
@@ -780,6 +781,41 @@ function ItemsManagement() {
       ));
     } catch (error) {
       console.error('Failed to update product availability:', error);
+    }
+  };
+
+  const updateProductDisplayOrder = async (id: string, displayOrder: number) => {
+    try {
+      // Update backend first
+      const response = await fetch(`/api/products/${id}/display-order`, {
+        method: 'PATCH',
+        body: JSON.stringify({ displayOrder }),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to update product display order');
+
+      // Update local state and reload products to reflect new ordering
+      const productsResponse = await fetch('/api/products', { credentials: 'include' });
+      if (productsResponse.ok) {
+        const backendProducts = await productsResponse.json();
+        const convertedProducts = backendProducts.map((product: any) => ({
+          id: product.id.toString(),
+          name: product.name,
+          description: product.name,
+          price: parseFloat(product.price),
+          category: getCategoryName(product.categoryId),
+          unit: product.unit,
+          available: product.available ?? true,
+          displayOrder: product.displayOrder ?? 0,
+          imageUrl: product.imageUrl,
+          createdAt: new Date().toISOString()
+        }));
+        setProducts(convertedProducts);
+      }
+    } catch (error) {
+      console.error('Failed to update product display order:', error);
     }
   };
 
@@ -991,6 +1027,25 @@ function ItemsManagement() {
                 >
                   <option value="Available">Available</option>
                   <option value="Unavailable">Unavailable</option>
+                </select>
+
+                {/* Priority Position */}
+                <select
+                  value={product.displayOrder || 0}
+                  onChange={(e) => product.id && updateProductDisplayOrder(product.id, parseInt(e.target.value))}
+                  className="text-xs border-0 bg-gray-50 rounded px-1.5 py-1 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value={1}>1</option>
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                  <option value={4}>4</option>
+                  <option value={5}>5</option>
+                  <option value={6}>6</option>
+                  <option value={7}>7</option>
+                  <option value={8}>8</option>
+                  <option value={9}>9</option>
+                  <option value={10}>10</option>
+                  <option value={0}>Last</option>
                 </select>
 
                 {/* Edit Button */}
