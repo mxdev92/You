@@ -51,15 +51,36 @@ export function useCart() {
       const response = await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    onMutate: async ({ itemId, quantity }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/cart"] });
+      
+      // Snapshot the previous value
+      const previousCartItems = queryClient.getQueryData(["/api/cart"]);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) =>
+        old.map(item => 
+          item.id === itemId ? { ...item, quantity } : item
+        )
+      );
+      
+      // Return a context object with the snapshotted value
+      return { previousCartItems };
     },
-    onError: () => {
+    onError: (err, newData, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousCartItems) {
+        queryClient.setQueryData(["/api/cart"], context.previousCartItems);
+      }
       toast({
         title: "Error",
         description: "Failed to update item quantity.",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     },
   });
 
@@ -89,7 +110,7 @@ export function useCart() {
     updateQuantityMutation.mutate({ itemId, quantity });
   const clearCart = () => clearCartMutation.mutate();
 
-  const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const cartItemsCount = cartItems.length;
   
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => {

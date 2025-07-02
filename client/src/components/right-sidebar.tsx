@@ -89,7 +89,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 }
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
-  const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount, clearCart } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount, clearCart, isUpdating, isRemoving } = useCart();
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
@@ -467,7 +467,8 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                      className="h-6 w-6 bg-red-500 hover:bg-red-600 text-white rounded-full touch-action-manipulation"
+                      disabled={isUpdating || item.quantity <= 1}
+                      className="h-6 w-6 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
                       <Minus className="h-2.5 w-2.5" />
                     </Button>
@@ -476,7 +477,8 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="h-6 w-6 bg-green-500 hover:bg-green-600 text-white rounded-full touch-action-manipulation"
+                      disabled={isUpdating}
+                      className="h-6 w-6 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
                       <Plus className="h-2.5 w-2.5" />
                     </Button>
@@ -488,7 +490,8 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                   variant="ghost"
                   size="icon"
                   onClick={() => removeFromCart(item.id)}
-                  className="hover:bg-red-50 text-red-500 hover:text-red-600 touch-action-manipulation h-7 w-7 flex-shrink-0"
+                  disabled={isRemoving}
+                  className="hover:bg-red-50 text-red-500 hover:text-red-600 disabled:text-red-300 disabled:cursor-not-allowed touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
