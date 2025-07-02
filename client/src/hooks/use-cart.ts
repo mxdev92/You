@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -9,29 +9,28 @@ export function useCart() {
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const updateInProgress = useRef(false);
 
-  // Load cart data once on mount
-  const loadCartItems = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/cart");
-      if (response.ok) {
-        const items = await response.json();
-        setCartItems(items);
-      }
-    } catch (error) {
-      console.error("Failed to load cart:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  // Load cart items on mount - NO CALLBACKS to prevent loops
   useEffect(() => {
-    loadCartItems();
-  }, [loadCartItems]);
+    async function loadCart() {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/cart");
+        if (response.ok) {
+          const items = await response.json();
+          setCartItems(items);
+        }
+      } catch (error) {
+        console.error("Failed to load cart:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadCart();
+  }, []); // Empty dependency array - load once only
 
-  const addToCart = useCallback(async (item: InsertCartItem) => {
+  const addToCart = async (item: InsertCartItem) => {
     try {
       const response = await fetch("/api/cart", {
         method: "POST",
@@ -42,6 +41,12 @@ export function useCart() {
       if (response.ok) {
         const newCartItem = await response.json();
         setCartItems(prev => [...prev, newCartItem]);
+        toast({
+          title: "Added to cart",
+          description: "Item added successfully",
+        });
+      } else {
+        throw new Error("Failed to add item");
       }
     } catch (error) {
       toast({
@@ -50,10 +55,11 @@ export function useCart() {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  };
 
-  const removeFromCart = useCallback(async (itemId: number) => {
+  const removeFromCart = async (itemId: number) => {
     try {
+      // Optimistically update UI
       setCartItems(prev => prev.filter(item => item.id !== itemId));
       
       const response = await fetch(`/api/cart/${itemId}`, {
@@ -61,26 +67,28 @@ export function useCart() {
       });
       
       if (!response.ok) {
-        loadCartItems(); // Reload on error
+        // Revert on error
+        const reloadResponse = await fetch("/api/cart");
+        if (reloadResponse.ok) {
+          const items = await reloadResponse.json();
+          setCartItems(items);
+        }
+        throw new Error("Failed to remove item");
       }
     } catch (error) {
-      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to remove item from cart.",
         variant: "destructive",
       });
     }
-  }, [toast, loadCartItems]);
+  };
 
-  const updateQuantity = useCallback(async (itemId: number, quantity: number) => {
-    if (updateInProgress.current) return;
-    
+  const updateQuantity = async (itemId: number, quantity: number) => {    
     try {
-      updateInProgress.current = true;
       setIsUpdating(true);
       
-      // Update UI immediately
+      // Optimistically update UI
       setCartItems(prev => 
         prev.map(item => 
           item.id === itemId ? { ...item, quantity } : item
@@ -94,10 +102,15 @@ export function useCart() {
       });
       
       if (!response.ok) {
-        loadCartItems(); // Reload on error
+        // Revert on error
+        const reloadResponse = await fetch("/api/cart");
+        if (reloadResponse.ok) {
+          const items = await reloadResponse.json();
+          setCartItems(items);
+        }
+        throw new Error("Failed to update quantity");
       }
     } catch (error) {
-      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to update item quantity.",
@@ -105,11 +118,10 @@ export function useCart() {
       });
     } finally {
       setIsUpdating(false);
-      updateInProgress.current = false;
     }
-  }, [toast, loadCartItems]);
+  };
 
-  const clearCart = useCallback(async () => {
+  const clearCart = async () => {
     try {
       setCartItems([]);
       const response = await fetch("/api/cart", { method: "DELETE" });
@@ -120,22 +132,28 @@ export function useCart() {
           description: "All items have been removed from your cart.",
         });
       } else {
-        loadCartItems();
+        // Revert on error
+        const reloadResponse = await fetch("/api/cart");
+        if (reloadResponse.ok) {
+          const items = await reloadResponse.json();
+          setCartItems(items);
+        }
+        throw new Error("Failed to clear cart");
       }
     } catch (error) {
-      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to clear cart.",
         variant: "destructive",
       });
     }
-  }, [toast, loadCartItems]);
+  };
 
-  const cartItemsCount = cartItems.length;
+  const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => {
+      if (!item.product || !item.product.price) return total;
       return total + (parseFloat(item.product.price) * item.quantity);
     }, 0);
   };

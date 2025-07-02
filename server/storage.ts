@@ -106,7 +106,8 @@ export class MemStorage implements IStorage {
     const category: Category = { 
       ...insertCategory, 
       id,
-      isSelected: insertCategory.isSelected ?? false
+      isSelected: insertCategory.isSelected ?? false,
+      displayOrder: insertCategory.displayOrder ?? 999
     };
     this.categories.set(id, category);
     return category;
