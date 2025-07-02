@@ -21,6 +21,7 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
+    staleTime: 30000, // Cache for 30 seconds for faster switching
   });
 
   return (

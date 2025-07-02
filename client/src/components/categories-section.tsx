@@ -12,6 +12,7 @@ export default function CategoriesSection() {
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+    staleTime: 60000, // Cache categories for 1 minute for faster performance
   });
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -28,10 +29,22 @@ export default function CategoriesSection() {
       const response = await apiRequest("PATCH", `/api/categories/${categoryId}/select`);
       return response.json();
     },
-    onSuccess: () => {
-      // Invalidate and refetch both categories and products
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+    onMutate: async (categoryId: number) => {
+      // Cancel any outgoing queries
+      await queryClient.cancelQueries({ queryKey: ["/api/categories"] });
+      
+      // Optimistically update the UI immediately
+      const previousCategories = queryClient.getQueryData<Category[]>(["/api/categories"]);
+      
+      if (previousCategories) {
+        const updatedCategories = previousCategories.map(cat => ({
+          ...cat,
+          isSelected: cat.id === categoryId
+        }));
+        queryClient.setQueryData(["/api/categories"], updatedCategories);
+      }
+      
+      return { previousCategories };
     },
     onError: (err, categoryId, context) => {
       // Rollback on error
@@ -40,13 +53,15 @@ export default function CategoriesSection() {
       }
     },
     onSettled: () => {
-      // Always refetch after mutation
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     },
   });
 
   const handleCategorySelect = (categoryId: number) => {
+    // Prevent multiple rapid clicks
+    if (selectCategoryMutation.isPending) return;
     selectCategoryMutation.mutate(categoryId);
   };
 
