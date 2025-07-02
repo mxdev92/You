@@ -398,75 +398,77 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   );
 
   const FinalScreen = () => (
-    <div className="h-full flex flex-col" dir="rtl">
-      {/* Final Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-        <div className="w-8" />
-        <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+    <div className="h-full flex flex-col bg-gray-50" dir="rtl">
+      {/* Clean Header */}
+      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+        <div className="w-6" />
+        <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
           تأكيد الطلب النهائي
         </h2>
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={() => setCurrentView('checkout')}
-          className="hover:bg-gray-100 touch-action-manipulation w-8 h-8"
+          className="hover:bg-gray-100 p-2"
         >
-          <ArrowLeft className="h-4 w-4 rotate-180" />
+          <ArrowLeft className="h-5 w-5 rotate-180" />
         </Button>
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {/* Delivery Notes - First */}
-        <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-            ملاحظات للتوصيل:
-          </h3>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Delivery Notes - Clean */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-orange-100">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              ملاحظات للتوصيل:
+            </h3>
+          </div>
           <textarea
             value={deliveryNotes}
             onChange={(e) => setDeliveryNotes(e.target.value)}
             placeholder="اكتب أي ملاحظات خاصة للتوصيل..."
-            className="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-fresh-green focus:border-transparent resize-none text-right"
-            rows={2}
+            className="w-full p-3 text-sm border-0 bg-gray-50 rounded-lg focus:ring-2 focus:ring-fresh-green resize-none text-right"
+            rows={3}
             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
           />
         </div>
 
-        {/* Address - Compact */}
-        <div className="bg-gray-50 p-3 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+        {/* Address - Clean */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
             العنوان:
           </h3>
           {hasAddress && (
-            <div className="space-y-1">
-              <p className="text-sm text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                <strong>{addresses[0].fullName}</strong>
+            <div className="space-y-2">
+              <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                {addresses[0].fullName}
               </p>
-              <p className="text-xs text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addresses[0].government} - {addresses[0].district}
+              <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                {addresses[0].government} - طريق {addresses[0].district}
               </p>
-              <p className="text-xs text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 {addresses[0].nearestLandmark}
               </p>
-              <p className="text-xs text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              <p className="text-sm text-gray-900 font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 {addresses[0].phoneNumber}
               </p>
             </div>
           )}
         </div>
 
-        {/* Time Selection - Compact */}
-        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+        {/* Time Selection - Clean */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
             اختيار وقت التوصيل:
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <button
               onClick={() => setDeliveryTime('8 - 11 صباحا')}
-              className={`w-full p-2 text-sm rounded-lg border text-right transition-all ${
+              className={`w-full p-4 text-sm rounded-xl transition-all ${
                 deliveryTime === '8 - 11 صباحا' 
-                  ? 'bg-fresh-green text-white border-fresh-green' 
-                  : 'bg-white border-gray-300 hover:border-fresh-green'
+                  ? 'bg-blue-500 text-white shadow-md' 
+                  : 'bg-blue-50 text-gray-700 hover:bg-blue-100'
               }`}
               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
             >
@@ -474,10 +476,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             </button>
             <button
               onClick={() => setDeliveryTime('2 - 8 مساءا')}
-              className={`w-full p-2 text-sm rounded-lg border text-right transition-all ${
+              className={`w-full p-4 text-sm rounded-xl transition-all ${
                 deliveryTime === '2 - 8 مساءا' 
-                  ? 'bg-fresh-green text-white border-fresh-green' 
-                  : 'bg-white border-gray-300 hover:border-fresh-green'
+                  ? 'bg-blue-500 text-white shadow-md' 
+                  : 'bg-blue-50 text-gray-700 hover:bg-blue-100'
               }`}
               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
             >
@@ -486,22 +488,24 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           </div>
         </div>
 
-        {/* Total Payment Due - Compact */}
-        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-          <h3 className="text-sm font-semibold text-gray-800 mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+        {/* Total Payment - Clean */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
             المبلغ الكلي الواجب دفعه عند التوصيل:
           </h3>
-          <p className="text-xl font-bold text-fresh-green text-center">
-            {totalWithShipping.toFixed(0)} IQD
-          </p>
+          <div className="bg-green-50 rounded-lg p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">
+              {totalWithShipping.toFixed(0)} IQD
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Final Submit Button - Fixed Bottom */}
-      <div className="px-4 py-3 border-t border-gray-100 bg-white">
+      {/* Submit Button - Clean */}
+      <div className="px-4 py-4 bg-white border-t border-gray-200">
         <Button 
           onClick={handlePlaceOrder}
-          className="w-full bg-fresh-green hover:bg-fresh-green-dark h-12"
+          className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl h-14 text-base font-medium shadow-lg"
           disabled={isPlacingOrder || !deliveryTime}
           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
         >
