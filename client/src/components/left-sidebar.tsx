@@ -358,14 +358,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               // Menu View
               <div className="flex-1 pt-8 pb-4">
                 <div className="px-6 mb-8">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <KiwiLogo size={36} />
-                    <h2 className="text-2xl font-bold text-gray-800">{t('appName')}</h2>
-                  </div>
-                  <p className="text-gray-500 text-sm mt-1">{t('welcomeBackSidebar')}</p>
-                  {user?.email && (
-                    <p className="text-xs text-gray-400 mt-1 truncate">{user.email}</p>
-                  )}
+                  {/* Header section hidden as requested */}
                 </div>
 
                 <nav className="px-6 space-y-2">
