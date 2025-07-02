@@ -99,48 +99,28 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
-  const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [addressData, setAddressData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    government: '',
-    fullAddress: ''
-  });
 
   const shippingFee = 1500; // Fixed shipping fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
 
-  const iraqiGovernorates = [
-    'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
-    'ديالى', 'واسط', 'ميسان', 'ذي قار', 'المثنى', 'بابل', 'كربلاء', 'النجف', 
-    'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
-  ];
-
-  const hasAddress = addressData.fullName && addressData.phoneNumber && addressData.government && addressData.fullAddress;
-
-  const handleAddressSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowAddressForm(false);
-  };
-
   const handlePlaceOrder = async () => {
-    if (!hasAddress || !user) return;
+    if (!user) return;
     
     setIsPlacingOrder(true);
     try {
       const orderData = {
-        customerName: addressData.fullName,
+        customerName: user.email || 'Customer',
         customerEmail: user.email || '',
-        customerPhone: addressData.phoneNumber,
+        customerPhone: '07123456789', // Default phone
         address: {
-          governorate: addressData.government,
-          district: '',
-          neighborhood: '',
-          street: addressData.fullAddress,
-          houseNumber: '',
-          floorNumber: '',
-          notes: ''
+          governorate: 'بغداد',
+          district: 'الكرخ',
+          neighborhood: 'الحارثية',
+          street: 'شارع الرشيد',
+          houseNumber: '123',
+          floorNumber: '1',
+          notes: 'تسليم سريع'
         },
         items: cartItems.map(item => ({
           productId: item.productId,
@@ -168,126 +148,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
     }
   };
 
-  const AddressForm = () => (
-    <AnimatePresence mode="wait">
-      {showAddressForm && (
-        <div className="fixed inset-0 z-[60]">
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-            onClick={() => setShowAddressForm(false)}
-          />
-          
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute inset-4 bg-white rounded-2xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden"
-          >
-            {/* Header */}
-            <div className="p-4 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">{t('myAddress')}</h2>
-                <button
-                  onClick={() => setShowAddressForm(false)}
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <span className="text-gray-500 text-lg">×</span>
-                </button>
-              </div>
-            </div>
 
-            {/* Form */}
-            <div className="flex-1 p-4">
-              <form onSubmit={handleAddressSubmit} className="space-y-3">
-                {/* Full Name */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={addressData.fullName}
-                    onChange={(e) => setAddressData({...addressData, fullName: e.target.value})}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-
-                {/* Phone Number */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={addressData.phoneNumber}
-                    onChange={(e) => setAddressData({...addressData, phoneNumber: e.target.value})}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                    placeholder="Enter your phone number"
-                    required
-                  />
-                </div>
-
-                {/* Government */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Governorate
-                  </label>
-                  <CustomDropdown
-                    value={addressData.government}
-                    onChange={(value) => setAddressData({...addressData, government: value})}
-                    options={iraqiGovernorates}
-                    placeholder="Select governorate"
-                  />
-                </div>
-
-                {/* Full Address */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Full Address
-                  </label>
-                  <textarea
-                    value={addressData.fullAddress}
-                    onChange={(e) => setAddressData({...addressData, fullAddress: e.target.value})}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
-                    placeholder="Enter your full address"
-                    rows={3}
-                    required
-                  />
-                </div>
-
-                {/* Buttons */}
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowAddressForm(false)}
-                    className="flex-1 text-xs py-2 border-red-500 text-red-500 hover:bg-red-50 hover:border-red-600 hover:text-red-600"
-                  >
-                    {t('cancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-fresh-green hover:bg-fresh-green-dark text-xs py-2"
-                  >
-{t('saveAddress')}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-  );
 
   const CheckoutScreen = () => (
     <div className="h-full flex flex-col">
@@ -339,54 +200,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         </div>
       </div>
 
-      {/* Shipping Information */}
-      <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-800">{t('shippingInformation')}</h3>
-          {hasAddress && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAddressForm(true)}
-              className="text-fresh-green hover:text-fresh-green-dark hover:bg-green-50 p-1"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        
-        {hasAddress ? (
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Name:</span>
-                <span className="text-gray-900">{addressData.fullName}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Phone:</span>
-                <span className="text-gray-900">{addressData.phoneNumber}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">State:</span>
-                <span className="text-gray-900">{addressData.government}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="font-medium text-gray-700">Address:</span>
-                <span className="text-gray-900">{addressData.fullAddress}</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <Button
-            onClick={() => setShowAddressForm(true)}
-            variant="outline"
-            className="w-full border-dashed border-fresh-green text-fresh-green hover:bg-green-50"
-          >
-            <MapPin className="h-4 w-4 mr-2" />
-            {t('addShippingAddress')}
-          </Button>
-        )}
-      </div>
+
 
       {/* Order Summary */}
       <div className="px-6 py-6 border-t border-gray-100 bg-white">
@@ -414,11 +228,11 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         </div>
 
         <Button 
-          onClick={hasAddress ? handlePlaceOrder : () => setShowAddressForm(true)}
+          onClick={handlePlaceOrder}
           className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark"
-          disabled={!hasAddress || isPlacingOrder}
+          disabled={isPlacingOrder}
         >
-          {isPlacingOrder ? 'Placing Order...' : (hasAddress ? t('placeOrder') : t('addShippingAddress'))}
+          {isPlacingOrder ? 'Placing Order...' : t('placeOrder')}
         </Button>
       </div>
     </div>
@@ -531,7 +345,6 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
 
   return (
     <>
-      <AddressForm />
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-50">
