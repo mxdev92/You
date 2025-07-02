@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
-  const { getItemCount } = useCart();
+  const { cartItemsCount } = useCart();
   const { t } = useTranslation();
 
   return (
@@ -47,9 +47,9 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
           className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
         >
           <ShoppingCart className="h-6 w-6 text-gray-700" />
-          {getItemCount() > 0 && (
+          {cartItemsCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-fresh-green text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {getItemCount()}
+              {cartItemsCount}
             </span>
           )}
         </Button>
