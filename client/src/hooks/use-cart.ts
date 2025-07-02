@@ -11,8 +11,12 @@ export function useCart() {
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    staleTime: Infinity, // Never consider data stale
+    gcTime: Infinity, // Keep in cache forever
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
   });
 
   const addToCartMutation = useMutation({

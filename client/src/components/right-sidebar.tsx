@@ -90,6 +90,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount, clearCart, isUpdating, isRemoving } = useCart();
+  const [lastClickTime, setLastClickTime] = useState<{ [key: string]: number }>({});
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
@@ -469,6 +470,12 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        const clickKey = `minus-${item.id}`;
+                        const now = Date.now();
+                        if (lastClickTime[clickKey] && now - lastClickTime[clickKey] < 300) {
+                          return; // Prevent rapid clicks
+                        }
+                        setLastClickTime(prev => ({ ...prev, [clickKey]: now }));
                         updateQuantity(item.id, Math.max(1, item.quantity - 1));
                       }}
                       disabled={isUpdating || item.quantity <= 1}
@@ -483,6 +490,12 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        const clickKey = `plus-${item.id}`;
+                        const now = Date.now();
+                        if (lastClickTime[clickKey] && now - lastClickTime[clickKey] < 300) {
+                          return; // Prevent rapid clicks
+                        }
+                        setLastClickTime(prev => ({ ...prev, [clickKey]: now }));
                         updateQuantity(item.id, item.quantity + 1);
                       }}
                       disabled={isUpdating}
