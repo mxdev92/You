@@ -438,12 +438,9 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
           </motion.div>
         ) : (
           <div className="space-y-4">
-            {cartItems.map((item, index) => (
-              <motion.div
+            {cartItems.map((item) => (
+              <div
                 key={item.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
                 className="flex items-center space-x-3 py-3 border-b border-gray-100"
               >
                 {/* Product Image */}
@@ -501,7 +498,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
