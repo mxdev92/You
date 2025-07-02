@@ -362,55 +362,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       </div>
 
-      {/* Shipping Information */}
-      <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-800">{t('shippingInformation')}</h3>
-          {hasAddress && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onNavigateToAddresses}
-              className="text-fresh-green hover:text-fresh-green-dark hover:bg-green-50 p-1"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        
-        {hasAddress ? (
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Name:</span>
-                <span className="text-gray-900">{addressData.fullName}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Phone:</span>
-                <span className="text-gray-900">{addressData.phoneNumber}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">State:</span>
-                <span className="text-gray-900">{addressData.government}</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="font-medium text-gray-700">Address:</span>
-                <span className="text-gray-900">{addressData.fullAddress}</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <Button
-            onClick={onNavigateToAddresses}
-            variant="outline"
-            className="w-full border-dashed border-fresh-green text-fresh-green hover:bg-green-50"
-            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-          >
-            <MapPin className="h-4 w-4 mr-2" />
-            عنوان التوصيل
-          </Button>
-        )}
-      </div>
+
 
       {/* Order Summary */}
       <div className="px-6 py-6 border-t border-gray-100 bg-white">
