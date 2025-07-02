@@ -156,7 +156,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         totalAmount: totalWithShipping,
         status: 'pending' as const,
         orderDate: new Date().toISOString(),
-        notes: ''
+        deliveryTime: deliveryTime,
+        notes: deliveryNotes
       };
 
       await createOrder(orderData);
