@@ -420,14 +420,8 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
 
   const CartScreen = () => (
     <>
-      {/* Header */}
-      <div className="px-6 py-6 border-b border-gray-100">
-        <h2 className="text-xl font-bold text-gray-800">{t('shoppingCart')}</h2>
-        <p className="text-gray-500 text-sm mt-1">{cartItemsCount} {t('items')}</p>
-      </div>
-
       {/* Cart Items */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-6">
         {cartItems.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
