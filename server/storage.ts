@@ -1,6 +1,4 @@
 import { categories, products, cartItems, type Category, type Product, type CartItem, type InsertCategory, type InsertProduct, type InsertCartItem } from "@shared/schema";
-import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -14,7 +12,6 @@ export interface IStorage {
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
-  updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product>;
 
   // Cart
   getCartItems(): Promise<(CartItem & { product: Product })[]>;
@@ -122,7 +119,7 @@ export class MemStorage implements IStorage {
     this.categories.forEach(cat => cat.isSelected = false);
     
     // Set the selected category
-    const updatedCategory = { ...category, isSelected, displayOrder: category.displayOrder || 0 };
+    const updatedCategory = { ...category, isSelected };
     this.categories.set(id, updatedCategory);
     return updatedCategory;
   }
@@ -144,9 +141,7 @@ export class MemStorage implements IStorage {
     const product: Product = { 
       ...insertProduct, 
       id,
-      categoryId: insertProduct.categoryId ?? null,
-      available: insertProduct.available ?? true,
-      displayOrder: insertProduct.displayOrder ?? 0
+      categoryId: insertProduct.categoryId ?? null
     };
     this.products.set(id, product);
     return product;
@@ -221,26 +216,15 @@ export class MemStorage implements IStorage {
   async clearCart(): Promise<void> {
     this.cartItems.clear();
   }
-  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
-    const existingProduct = this.products.get(id);
-    if (!existingProduct) {
-      throw new Error("Product not found");
-    }
-
-    const updatedProduct: Product = {
-      ...existingProduct,
-      displayOrder,
-      id
-    };
-    
-    this.products.set(id, updatedProduct);
-    return updatedProduct;
-  }
 }
+
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { categories, products, cartItems } from "@shared/schema";
 
 export class DatabaseStorage implements IStorage {
   async getCategories(): Promise<Category[]> {
-    return await db.select().from(categories).orderBy(categories.displayOrder, categories.id);
+    return await db.select().from(categories);
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
@@ -249,11 +233,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCategorySelection(id: number, isSelected: boolean): Promise<Category> {
-    // First, deselect all categories
-    await db.update(categories)
-      .set({ isSelected: false });
-    
-    // Then select the target category
     const [updated] = await db.update(categories)
       .set({ isSelected })
       .where(eq(categories.id, id))
@@ -262,23 +241,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProducts(): Promise<Product[]> {
-    const result = await db.select().from(products);
-    return result.sort((a, b) => {
-      const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
-      const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
-      if (orderA !== orderB) return orderA - orderB;
-      return a.id - b.id;
-    });
+    return await db.select().from(products);
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    const result = await db.select().from(products).where(eq(products.categoryId, categoryId));
-    return result.sort((a, b) => {
-      const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
-      const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
-      if (orderA !== orderB) return orderA - orderB;
-      return a.id - b.id;
-    });
+    return await db.select().from(products).where(eq(products.categoryId, categoryId));
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
@@ -341,14 +308,6 @@ export class DatabaseStorage implements IStorage {
 
   async clearCart(): Promise<void> {
     await db.delete(cartItems);
-  }
-
-  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
-    const [updated] = await db.update(products)
-      .set({ displayOrder })
-      .where(eq(products.id, id))
-      .returning();
-    return updated;
   }
 }
 

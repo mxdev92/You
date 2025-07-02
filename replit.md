@@ -98,12 +98,6 @@ Yalla JEETEK (يلا جيتك) is a modern grocery shopping web application buil
 
 ```
 July 2, 2025:
-✓ Fixed critical categories stability issue - categories now maintain stable order
-✓ Added displayOrder column to categories table for consistent positioning
-✓ Set stable category order: خضروات (1), فواكه (2), مخبوزات (3), Dairy (4), Seafood (5), Meat (6)
-✓ Implemented numbered position system (1-10) in admin panel with real-time updates
-✓ Fixed category selection to work with only one selected at a time
-✓ Updated DatabaseStorage to sort categories by displayOrder for consistency
 ✓ Implemented Playwright server-side PDF generation with Arabic RTL support
 ✓ Created professional invoice layout with proper Arabic text rendering
 ✓ Added compact PDF design to support 20+ items per page

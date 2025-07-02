@@ -7,7 +7,6 @@ export const categories = pgTable("categories", {
   name: text("name").notNull(),
   icon: text("icon").notNull(),
   isSelected: boolean("is_selected").default(false),
-  displayOrder: integer("display_order").default(0).notNull(),
 });
 
 export const products = pgTable("products", {
@@ -18,7 +17,6 @@ export const products = pgTable("products", {
   imageUrl: text("image_url").notNull(),
   categoryId: integer("category_id").references(() => categories.id),
   available: boolean("available").default(true).notNull(),
-  displayOrder: integer("display_order").default(0).notNull(),
 });
 
 export const cartItems = pgTable("cart_items", {

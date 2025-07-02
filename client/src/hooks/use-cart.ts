@@ -1,159 +1,113 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 type CartItemWithProduct = CartItem & { product: Product };
 
-// Single global state to prevent multiple hook instances
-let globalCartItems: CartItemWithProduct[] = [];
-let globalListeners: Array<(items: CartItemWithProduct[]) => void> = [];
-let isInitialized = false;
-
-const notifyListeners = () => {
-  globalListeners.forEach(listener => listener([...globalCartItems]));
-};
-
-const loadCartFromServer = async () => {
-  if (isInitialized) return;
-  isInitialized = true;
-  
-  try {
-    const response = await fetch("/api/cart");
-    if (response.ok) {
-      globalCartItems = await response.json();
-      notifyListeners();
-    }
-  } catch (error) {
-    console.error("Failed to load cart:", error);
-  }
-};
-
 export function useCart() {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [cartItems, setCartItems] = useState<CartItemWithProduct[]>(globalCartItems);
 
-  useEffect(() => {
-    // Subscribe to global cart changes
-    const listener = (items: CartItemWithProduct[]) => {
-      setCartItems(items);
-    };
-    globalListeners.push(listener);
+  const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
+    queryKey: ["/api/cart"],
+  });
 
-    // Load cart if not initialized
-    loadCartFromServer();
-
-    return () => {
-      globalListeners = globalListeners.filter(l => l !== listener);
-    };
-  }, []);
-
-  const addToCart = useCallback(async (item: InsertCartItem) => {
-    try {
-      const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(item),
-      });
-      
-      if (response.ok) {
-        const newCartItem = await response.json();
-        globalCartItems.push(newCartItem);
-        notifyListeners();
-        toast({
-          title: "Added to cart",
-          description: "Item successfully added to cart.",
-        });
-      }
-    } catch (error) {
+  const addToCartMutation = useMutation({
+    mutationFn: async (item: InsertCartItem) => {
+      const response = await apiRequest("POST", "/api/cart", item);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    },
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to add item to cart.",
         variant: "destructive",
       });
-    }
-  }, [toast]);
+    },
+  });
 
-  const updateQuantity = useCallback(async (id: number, quantity: number) => {
-    try {
-      const response = await fetch(`/api/cart/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity }),
-      });
-      
-      if (response.ok) {
-        const updatedItem = await response.json();
-        const index = globalCartItems.findIndex(item => item.id === id);
-        if (index !== -1) {
-          globalCartItems[index] = updatedItem;
-          notifyListeners();
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update quantity.",
-        variant: "destructive",
-      });
-    }
-  }, [toast]);
-
-  const removeFromCart = useCallback(async (id: number) => {
-    try {
-      const response = await fetch(`/api/cart/${id}`, {
-        method: "DELETE",
-      });
-      
-      if (response.ok) {
-        globalCartItems = globalCartItems.filter(item => item.id !== id);
-        notifyListeners();
-      }
-    } catch (error) {
+  const removeFromCartMutation = useMutation({
+    mutationFn: async (itemId: number) => {
+      await apiRequest("DELETE", `/api/cart/${itemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    },
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to remove item from cart.",
         variant: "destructive",
       });
-    }
-  }, [toast]);
+    },
+  });
 
-  const clearCart = useCallback(async () => {
-    try {
-      const response = await fetch("/api/cart", {
-        method: "DELETE",
+  const updateQuantityMutation = useMutation({
+    mutationFn: async ({ itemId, quantity }: { itemId: number; quantity: number }) => {
+      const response = await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update item quantity.",
+        variant: "destructive",
       });
-      
-      if (response.ok) {
-        globalCartItems = [];
-        notifyListeners();
-      }
-    } catch (error) {
+    },
+  });
+
+  const clearCartMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/cart");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      toast({
+        title: "Cart cleared",
+        description: "All items have been removed from your cart.",
+      });
+    },
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to clear cart.",
         variant: "destructive",
       });
-    }
-  }, [toast]);
+    },
+  });
 
-  const getTotalPrice = useCallback(() => {
+  const addToCart = (item: InsertCartItem) => addToCartMutation.mutate(item);
+  const removeFromCart = (itemId: number) => removeFromCartMutation.mutate(itemId);
+  const updateQuantity = (itemId: number, quantity: number) => 
+    updateQuantityMutation.mutate({ itemId, quantity });
+  const clearCart = () => clearCartMutation.mutate();
+
+  const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  
+  const getCartTotal = () => {
     return cartItems.reduce((total, item) => {
-      const price = parseFloat(item.product.price) || 0;
-      return total + (price * item.quantity);
+      return total + (parseFloat(item.product.price) * item.quantity);
     }, 0);
-  }, [cartItems]);
-
-  const getItemCount = useCallback(() => {
-    return cartItems.length;
-  }, [cartItems]);
+  };
 
   return {
     cartItems,
+    isLoading,
     addToCart,
-    updateQuantity,
     removeFromCart,
+    updateQuantity,
     clearCart,
-    getTotalPrice,
-    getItemCount,
+    cartItemsCount,
+    getCartTotal,
+    isAdding: addToCartMutation.isPending,
+    isRemoving: removeFromCartMutation.isPending,
+    isUpdating: updateQuantityMutation.isPending,
   };
 }

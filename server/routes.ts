@@ -79,22 +79,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/products/:id/display-order", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const { displayOrder } = req.body;
-      
-      if (typeof displayOrder !== 'number') {
-        return res.status(400).json({ message: "Invalid display order" });
-      }
-      
-      const updatedProduct = await storage.updateProductDisplayOrder(id, displayOrder);
-      res.json(updatedProduct);
-    } catch (error) {
-      res.status(404).json({ message: "Product not found" });
-    }
-  });
-
   // Cart
   app.get("/api/cart", async (req, res) => {
     try {
