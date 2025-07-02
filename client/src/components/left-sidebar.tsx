@@ -223,6 +223,20 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     district: '',
     nearestLandmark: ''
   });
+
+  // Prevent background scrolling when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to reset overflow when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
   
   const menuItems = [
     { icon: User, label: t('profile'), href: "#" },

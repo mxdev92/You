@@ -114,6 +114,19 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const [deliveryTime, setDeliveryTime] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
 
+  // Prevent background scrolling when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to reset overflow when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   const shippingFee = 1500; // Fixed shipping fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
