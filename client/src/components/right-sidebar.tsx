@@ -455,7 +455,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                   <h4 className="font-medium text-gray-800">{item.product.name}</h4>
                   <p className="text-sm text-gray-500">{item.product.unit}</p>
                   <p className="text-fresh-green font-semibold">
-                    {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
+                    {(item.product.price * item.quantity).toFixed(0)} IQD
                   </p>
                 </div>
                 

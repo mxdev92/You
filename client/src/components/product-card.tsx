@@ -6,7 +6,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
-import type { Product } from "@shared/schema";
+import type { Product } from "@/lib/firebase";
 
 interface ProductCardProps {
   product: Product;
@@ -27,7 +27,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     setShowShimmer(true);
 
     try {
-      await addToCart({ productId: product.id, quantity: 1 });
+      if (!product.id) return;
+      await addToCart({ productId: product.id, quantity: 1, product });
       
       // Keep the "Added!" state for a moment
       setTimeout(() => {

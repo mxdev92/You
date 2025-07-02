@@ -145,13 +145,49 @@ export const createProduct = async (product: Omit<Product, 'id' | 'createdAt'>) 
 
 export const getProducts = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'products'));
+    const querySnapshot = await getDocs(
+      query(
+        collection(db, 'products'), 
+        orderBy('displayOrder', 'asc'),
+        orderBy('createdAt', 'asc')
+      )
+    );
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Product[];
   } catch (error) {
     console.error('Error getting products:', error);
+    throw error;
+  }
+};
+
+export const updateProduct = async (productId: string, updates: Partial<Product>) => {
+  try {
+    const productRef = doc(db, 'products', productId);
+    await updateDoc(productRef, updates);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    throw error;
+  }
+};
+
+export const updateProductAvailability = async (productId: string, available: boolean) => {
+  try {
+    const productRef = doc(db, 'products', productId);
+    await updateDoc(productRef, { available });
+  } catch (error) {
+    console.error('Error updating product availability:', error);
+    throw error;
+  }
+};
+
+export const updateProductDisplayOrder = async (productId: string, displayOrder: number) => {
+  try {
+    const productRef = doc(db, 'products', productId);
+    await updateDoc(productRef, { displayOrder });
+  } catch (error) {
+    console.error('Error updating product display order:', error);
     throw error;
   }
 };

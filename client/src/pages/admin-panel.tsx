@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
+import { createProduct, uploadProductImage, getProducts, updateProductAvailability, updateProductDisplayOrder, Product } from '@/lib/firebase';
 import { apiRequest } from '@/lib/queryClient';
 
 // Mock orders data
@@ -701,28 +701,12 @@ function ItemsManagement() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Load products from backend API
+  // Load products from Firebase
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const response = await fetch('/api/products', { credentials: 'include' });
-        if (response.ok) {
-          const backendProducts = await response.json();
-          // Convert backend products to Firebase-compatible format
-          const convertedProducts = backendProducts.map((product: any) => ({
-            id: product.id.toString(),
-            name: product.name,
-            description: product.name, // Use name as description for now
-            price: parseFloat(product.price),
-            category: getCategoryName(product.categoryId),
-            unit: product.unit,
-            available: product.available ?? true, // Use actual availability from database
-            displayOrder: product.displayOrder ?? 0, // Add display order
-            imageUrl: product.imageUrl,
-            createdAt: new Date().toISOString()
-          }));
-          setProducts(convertedProducts);
-        }
+        const firebaseProducts = await getProducts();
+        setProducts(firebaseProducts);
       } catch (error) {
         console.error('Failed to load products:', error);
       }
@@ -735,6 +719,26 @@ function ItemsManagement() {
     if (categoryId === 1) return 'Fruits';
     if (categoryId === 2) return 'Vegetables';
     return 'Other';
+  };
+
+  // Helper functions for position management
+  const getPositionFromDisplayOrder = (displayOrder: number): number => {
+    // displayOrder 999 = Last position
+    // displayOrder 1 = Position 1 (first)
+    // displayOrder 2 = Position 2 (second)
+    // etc.
+    if (displayOrder >= 999) return 0; // Last
+    if (displayOrder >= 1 && displayOrder <= 10) return displayOrder;
+    return 0; // Default to Last
+  };
+
+  const getDisplayOrderFromPosition = (position: number): number => {
+    // Position 0 = Last = displayOrder 999
+    // Position 1 = First = displayOrder 1
+    // Position 2 = Second = displayOrder 2
+    // etc.
+    if (position === 0) return 999; // Last
+    return position;
   };
 
   const categories = [
@@ -763,19 +767,12 @@ function ItemsManagement() {
     // TODO: Update in Firebase (will implement if needed)
   };
 
-  const updateProductAvailability = async (id: string, available: boolean) => {
+  const updateProductAvailabilityLocal = async (id: string, available: boolean) => {
     try {
-      // Update backend first
-      const response = await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ available }),
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
+      // Update Firebase first
+      await updateProductAvailability(id, available);
 
-      if (!response.ok) throw new Error('Failed to update product availability');
-
-      // Update local state only after successful backend update
+      // Update local state only after successful Firebase update
       setProducts(prev => prev.map(product => 
         product.id === id ? { ...product, available } : product
       ));
@@ -784,36 +781,14 @@ function ItemsManagement() {
     }
   };
 
-  const updateProductDisplayOrder = async (id: string, displayOrder: number) => {
+  const updateProductDisplayOrderLocal = async (id: string, displayOrder: number) => {
     try {
-      // Update backend first
-      const response = await fetch(`/api/products/${id}/display-order`, {
-        method: 'PATCH',
-        body: JSON.stringify({ displayOrder }),
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
+      // Update Firebase first
+      await updateProductDisplayOrder(id, displayOrder);
 
-      if (!response.ok) throw new Error('Failed to update product display order');
-
-      // Update local state and reload products to reflect new ordering
-      const productsResponse = await fetch('/api/products', { credentials: 'include' });
-      if (productsResponse.ok) {
-        const backendProducts = await productsResponse.json();
-        const convertedProducts = backendProducts.map((product: any) => ({
-          id: product.id.toString(),
-          name: product.name,
-          description: product.name,
-          price: parseFloat(product.price),
-          category: getCategoryName(product.categoryId),
-          unit: product.unit,
-          available: product.available ?? true,
-          displayOrder: product.displayOrder ?? 0,
-          imageUrl: product.imageUrl,
-          createdAt: new Date().toISOString()
-        }));
-        setProducts(convertedProducts);
-      }
+      // Reload products from Firebase to reflect new ordering
+      const firebaseProducts = await getProducts();
+      setProducts(firebaseProducts);
     } catch (error) {
       console.error('Failed to update product display order:', error);
     }
@@ -1022,7 +997,7 @@ function ItemsManagement() {
                 {/* Availability */}
                 <select
                   value={product.available ? 'Available' : 'Unavailable'}
-                  onChange={(e) => product.id && updateProductAvailability(product.id, e.target.value === 'Available')}
+                  onChange={(e) => product.id && updateProductAvailabilityLocal(product.id, e.target.value === 'Available')}
                   className="text-xs border-0 bg-gray-50 rounded px-1.5 py-1 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
                   <option value="Available">Available</option>
@@ -1031,8 +1006,8 @@ function ItemsManagement() {
 
                 {/* Priority Position */}
                 <select
-                  value={product.displayOrder || 0}
-                  onChange={(e) => product.id && updateProductDisplayOrder(product.id, parseInt(e.target.value))}
+                  value={getPositionFromDisplayOrder(product.displayOrder || 999)}
+                  onChange={(e) => product.id && updateProductDisplayOrderLocal(product.id, getDisplayOrderFromPosition(parseInt(e.target.value)))}
                   className="text-xs border-0 bg-gray-50 rounded px-1.5 py-1 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
                   <option value={1}>1</option>

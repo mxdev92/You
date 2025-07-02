@@ -98,6 +98,7 @@ Yalla JEETEK (يلا جيتك) is a modern grocery shopping web application buil
 
 ```
 July 2, 2025:
+✓ User preference: Use Firebase only for data storage (no PostgreSQL)
 ✓ Implemented Playwright server-side PDF generation with Arabic RTL support
 ✓ Created professional invoice layout with proper Arabic text rendering
 ✓ Added compact PDF design to support 20+ items per page

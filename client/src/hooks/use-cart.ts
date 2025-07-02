@@ -1,99 +1,105 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import type { CartItem, Product, InsertCartItem } from "@shared/schema";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import type { Product } from "@/lib/firebase";
 
-type CartItemWithProduct = CartItem & { product: Product };
+interface CartItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  product: Product;
+}
+
+interface AddToCartItem {
+  productId: string;
+  quantity: number;
+  product: Product;
+}
 
 export function useCart() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
-    queryKey: ["/api/cart"],
-  });
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (error) {
+        console.error('Failed to load cart from localStorage:', error);
+      }
+    }
+  }, []);
 
-  const addToCartMutation = useMutation({
-    mutationFn: async (item: InsertCartItem) => {
-      const response = await apiRequest("POST", "/api/cart", item);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add item to cart.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
-  const removeFromCartMutation = useMutation({
-    mutationFn: async (itemId: number) => {
-      await apiRequest("DELETE", `/api/cart/${itemId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to remove item from cart.",
-        variant: "destructive",
-      });
-    },
-  });
+  const addToCart = (item: AddToCartItem) => {
+    setIsLoading(true);
+    
+    // Check if item already exists in cart
+    const existingItemIndex = cartItems.findIndex(cartItem => cartItem.productId === item.productId);
+    
+    if (existingItemIndex !== -1) {
+      // Update existing item quantity
+      const updatedItems = [...cartItems];
+      updatedItems[existingItemIndex].quantity += item.quantity;
+      setCartItems(updatedItems);
+    } else {
+      // Add new item
+      const newCartItem: CartItem = {
+        id: Date.now().toString(), // Simple ID generation
+        productId: item.productId,
+        quantity: item.quantity,
+        product: item.product
+      };
+      setCartItems(prev => [...prev, newCartItem]);
+    }
+    
+    setIsLoading(false);
+    toast({
+      title: "تم إضافة المنتج",
+      description: "تم إضافة المنتج إلى السلة بنجاح",
+    });
+  };
 
-  const updateQuantityMutation = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: number; quantity: number }) => {
-      const response = await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update item quantity.",
-        variant: "destructive",
-      });
-    },
-  });
+  const removeFromCart = (itemId: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== itemId));
+    toast({
+      title: "تم حذف المنتج",
+      description: "تم حذف المنتج من السلة",
+    });
+  };
 
-  const clearCartMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", "/api/cart");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({
-        title: "Cart cleared",
-        description: "All items have been removed from your cart.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to clear cart.",
-        variant: "destructive",
-      });
-    },
-  });
+  const updateQuantity = (itemId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(itemId);
+      return;
+    }
+    
+    setCartItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, quantity } : item
+      )
+    );
+  };
 
-  const addToCart = (item: InsertCartItem) => addToCartMutation.mutate(item);
-  const removeFromCart = (itemId: number) => removeFromCartMutation.mutate(itemId);
-  const updateQuantity = (itemId: number, quantity: number) => 
-    updateQuantityMutation.mutate({ itemId, quantity });
-  const clearCart = () => clearCartMutation.mutate();
+  const clearCart = () => {
+    setCartItems([]);
+    toast({
+      title: "تم مسح السلة",
+      description: "تم حذف جميع المنتجات من السلة",
+    });
+  };
 
   const cartItemsCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   
   const getCartTotal = () => {
     return cartItems.reduce((total, item) => {
-      return total + (parseFloat(item.product.price) * item.quantity);
+      return total + (item.product.price * item.quantity);
     }, 0);
   };
 
@@ -106,8 +112,8 @@ export function useCart() {
     clearCart,
     cartItemsCount,
     getCartTotal,
-    isAdding: addToCartMutation.isPending,
-    isRemoving: removeFromCartMutation.isPending,
-    isUpdating: updateQuantityMutation.isPending,
+    isAdding: isLoading,
+    isRemoving: false,
+    isUpdating: false,
   };
 }
