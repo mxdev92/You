@@ -135,7 +135,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
 
   getCartItemsCount: () => {
     const { cartItems } = get();
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    return cartItems.length; // Count number of unique items, not total quantity
   },
 
   getCartTotal: () => {
