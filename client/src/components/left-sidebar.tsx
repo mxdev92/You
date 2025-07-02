@@ -417,15 +417,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                     </Button>
                   ))}
                 </nav>
-                
-                {/* Settings Section */}
-                <div className="px-6 py-4 border-t border-gray-100 mt-4">
-                  <div className="flex items-center space-x-2 mb-4 text-gray-700">
-                    <Settings className="h-4 w-4" />
-                    <span className="text-sm font-medium">{t('settings')}</span>
-                  </div>
-                  <LanguageSelector />
-                </div>
+
               </div>
             )}
 
