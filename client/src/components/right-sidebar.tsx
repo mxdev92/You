@@ -466,7 +466,11 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        updateQuantity(item.id, Math.max(1, item.quantity - 1));
+                      }}
                       disabled={isUpdating || item.quantity <= 1}
                       className="h-6 w-6 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
@@ -476,7 +480,11 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        updateQuantity(item.id, item.quantity + 1);
+                      }}
                       disabled={isUpdating}
                       className="h-6 w-6 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
@@ -489,7 +497,11 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeFromCart(item.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeFromCart(item.id);
+                  }}
                   disabled={isRemoving}
                   className="hover:bg-red-50 text-red-500 hover:text-red-600 disabled:text-red-300 disabled:cursor-not-allowed touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >

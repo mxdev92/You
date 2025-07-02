@@ -51,36 +51,15 @@ export function useCart() {
       const response = await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
       return response.json();
     },
-    onMutate: async ({ itemId, quantity }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["/api/cart"] });
-      
-      // Snapshot the previous value
-      const previousCartItems = queryClient.getQueryData(["/api/cart"]);
-      
-      // Optimistically update to the new value
-      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) =>
-        old.map(item => 
-          item.id === itemId ? { ...item, quantity } : item
-        )
-      );
-      
-      // Return a context object with the snapshotted value
-      return { previousCartItems };
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     },
-    onError: (err, newData, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousCartItems) {
-        queryClient.setQueryData(["/api/cart"], context.previousCartItems);
-      }
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to update item quantity.",
         variant: "destructive",
       });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     },
   });
 
