@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import type { Category } from "@shared/schema";
-import { getProducts, Product } from "@/lib/firebase";
+import { getProducts, Product, initializeSampleProducts } from "@/lib/firebase";
 import ProductCard from "./product-card";
 
 export default function ProductsGrid() {
@@ -15,6 +15,13 @@ export default function ProductsGrid() {
     queryKey: ["firebase-products", selectedCategory?.id],
     queryFn: async () => {
       const allProducts = await getProducts();
+      // If no products exist, initialize sample products
+      if (allProducts.length === 0) {
+        await initializeSampleProducts();
+        // Fetch products again after initialization
+        const newProducts = await getProducts();
+        return newProducts.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
+      }
       // Sort by displayOrder (position) - lower numbers first
       return allProducts.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
     },
