@@ -44,10 +44,7 @@ function Router() {
             );
           }
 
-          if (!isAuthenticated) {
-            return <Login />;
-          }
-
+          // Allow anonymous browsing - no authentication required for main app
           return <Home />;
         }}
       </Route>

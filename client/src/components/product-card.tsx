@@ -6,6 +6,8 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
+import { useAuth } from "@/hooks/use-auth";
+import SignupModal from "./signup-modal";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -16,12 +18,20 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
 
   const handleAddToCart = async () => {
     // Don't allow adding if product is not available
     if (!product.available) return;
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      setShowSignupModal(true);
+      return;
+    }
     
     setIsAdding(true);
     setShowShimmer(true);
@@ -42,6 +52,15 @@ export default function ProductCard({ product }: ProductCardProps) {
       setIsAdding(false);
       setShowShimmer(false);
     }
+  };
+
+  const handleSignupSuccess = () => {
+    // After successful signup/login, add the item to cart
+    setShowSignupModal(false);
+    // Trigger add to cart after authentication
+    setTimeout(() => {
+      handleAddToCart();
+    }, 100);
   };
 
   return (
@@ -124,6 +143,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         product={product}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* Signup Modal */}
+      <SignupModal
+        isOpen={showSignupModal}
+        onClose={() => setShowSignupModal(false)}
+        onSuccess={handleSignupSuccess}
       />
     </>
   );
