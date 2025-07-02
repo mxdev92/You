@@ -5,6 +5,7 @@ import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
+import { useAddressStore } from "@/store/address-store";
 import { useState, useRef, useEffect } from "react";
 
 interface LeftSidebarProps {
@@ -207,24 +208,19 @@ function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, 
   );
 }
 
-interface SavedAddress {
-  id: number;
-  fullName: string;
-  phoneNumber: string;
-  government: string;
-  fullAddress: string;
-}
+
 
 export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const { addresses: savedAddresses, addAddress } = useAddressStore();
   const [addressData, setAddressData] = useState({
     fullName: '',
     phoneNumber: '',
     government: '',
-    fullAddress: ''
+    district: '',
+    nearestLandmark: ''
   });
   
   const menuItems = [
@@ -248,23 +244,22 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Add new address to saved addresses
-    const newAddress = {
-      id: Date.now(), // Simple ID generation
+    // Add new address using the store
+    addAddress({
       fullName: addressData.fullName,
       phoneNumber: addressData.phoneNumber,
       government: addressData.government,
-      fullAddress: addressData.fullAddress
-    };
-    
-    setSavedAddresses(prev => [...prev, newAddress]);
+      district: addressData.district,
+      nearestLandmark: addressData.nearestLandmark,
+    });
     
     // Reset form and close
     setAddressData({
       fullName: '',
       phoneNumber: '',
       government: '',
-      fullAddress: ''
+      district: '',
+      nearestLandmark: ''
     });
     setShowAddressForm(false);
   };
@@ -336,7 +331,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               {address.government}
                             </p>
                             <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {address.fullAddress}
+                              {address.district}, {address.nearestLandmark}
                             </p>
                           </div>
                           <MapPin className="h-5 w-5 text-green-600 mt-1" />

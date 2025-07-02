@@ -4,6 +4,7 @@ import { X, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
+import { useAddressStore } from "@/store/address-store";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -83,6 +84,8 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     confirmPassword: ''
   });
 
+  const { addAddress } = useAddressStore();
+
   const [addressData, setAddressData] = useState({
     fullName: '',
     phoneNumber: '',
@@ -139,8 +142,16 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
 
     setIsLoading(true);
     try {
-      // TODO: Save address data to user profile
-      console.log('Address data:', addressData);
+      // Save address to the global store
+      addAddress({
+        fullName: addressData.fullName,
+        phoneNumber: addressData.phoneNumber,
+        government: addressData.government,
+        district: addressData.district,
+        nearestLandmark: addressData.nearestLandmark,
+      });
+      
+      console.log('Address data saved:', addressData);
       onSuccess();
       onClose();
     } catch (error) {
