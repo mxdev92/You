@@ -11,6 +11,8 @@ export function useCart() {
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
   const addToCartMutation = useMutation({
@@ -34,15 +36,35 @@ export function useCart() {
     mutationFn: async (itemId: number) => {
       await apiRequest("DELETE", `/api/cart/${itemId}`);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    onMutate: async (itemId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["/api/cart"] });
+
+      // Snapshot the previous value
+      const previousCartItems = queryClient.getQueryData(["/api/cart"]);
+
+      // Optimistically remove the item
+      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) =>
+        old.filter(item => item.id !== itemId)
+      );
+
+      return { previousCartItems };
     },
-    onError: () => {
+    onError: (err, itemId, context) => {
+      // If the mutation fails, restore previous data
+      if (context?.previousCartItems) {
+        queryClient.setQueryData(["/api/cart"], context.previousCartItems);
+      }
       toast({
         title: "Error",
         description: "Failed to remove item from cart.",
         variant: "destructive",
       });
+    },
+    onSettled: (data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      }
     },
   });
 
@@ -51,15 +73,39 @@ export function useCart() {
       const response = await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    onMutate: async ({ itemId, quantity }) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ["/api/cart"] });
+
+      // Snapshot the previous value
+      const previousCartItems = queryClient.getQueryData(["/api/cart"]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["/api/cart"], (old: CartItemWithProduct[] = []) =>
+        old.map(item => 
+          item.id === itemId ? { ...item, quantity } : item
+        )
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousCartItems };
     },
-    onError: () => {
+    onError: (err, newData, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousCartItems) {
+        queryClient.setQueryData(["/api/cart"], context.previousCartItems);
+      }
       toast({
         title: "Error",
         description: "Failed to update item quantity.",
         variant: "destructive",
       });
+    },
+    // Only refetch on error to sync with server state
+    onSettled: (data, error) => {
+      if (error) {
+        queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      }
     },
   });
 
