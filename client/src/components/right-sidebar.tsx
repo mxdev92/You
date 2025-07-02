@@ -98,7 +98,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   const cartItemsCount = useCartFlow(state => state.getCartItemsCount());
   const { t } = useTranslation();
   const { user } = useAuth();
-  const [showCheckout, setShowCheckout] = useState(false);
+  const [currentView, setCurrentView] = useState<'cart' | 'checkout' | 'addresses'>('cart');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [addressData, setAddressData] = useState({
@@ -107,6 +107,16 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
     government: '',
     fullAddress: ''
   });
+  const [savedAddresses, setSavedAddresses] = useState([
+    // Sample saved address for demonstration
+    {
+      id: 1,
+      fullName: 'أحمد محمد',
+      phoneNumber: '07901234567',
+      government: 'بغداد',
+      fullAddress: 'حي الكرادة، شارع أبو نواس، بناية 15، الطابق الثالث'
+    }
+  ]);
 
   const shippingFee = 1500; // Fixed shipping fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
@@ -121,6 +131,25 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
 
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Add new address to saved addresses
+    const newAddress = {
+      id: Date.now(), // Simple ID generation
+      fullName: addressData.fullName,
+      phoneNumber: addressData.phoneNumber,
+      government: addressData.government,
+      fullAddress: addressData.fullAddress
+    };
+    
+    setSavedAddresses(prev => [...prev, newAddress]);
+    
+    // Reset form and close
+    setAddressData({
+      fullName: '',
+      phoneNumber: '',
+      government: '',
+      fullAddress: ''
+    });
     setShowAddressForm(false);
   };
 
@@ -158,7 +187,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
       await createOrder(orderData);
       clearCart();
       alert('Order placed successfully! Check the admin panel to view orders.');
-      setShowCheckout(false);
+      setCurrentView('cart');
       onClose();
     } catch (error) {
       console.error('Error placing order:', error);
@@ -289,6 +318,73 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
     </AnimatePresence>
   );
 
+  const AddressesScreen = () => (
+    <div className="h-full flex flex-col">
+      {/* Addresses Header */}
+      <div className="flex items-center justify-between px-6 py-6 border-b border-gray-100">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCurrentView('cart')}
+          className="hover:bg-gray-100 touch-action-manipulation"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+          عنوان التوصيل
+        </h2>
+        <div className="w-10" /> {/* Spacer */}
+      </div>
+
+      {/* Addresses List */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="space-y-4">
+          {savedAddresses.map((address) => (
+            <div 
+              key={address.id}
+              className="p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+              onClick={() => {
+                setAddressData(address);
+                setCurrentView('checkout');
+              }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    {address.fullName}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    {address.phoneNumber}
+                  </p>
+                  <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    {address.government}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    {address.fullAddress}
+                  </p>
+                </div>
+                <MapPin className="h-5 w-5 text-green-600 mt-1" />
+              </div>
+            </div>
+          ))}
+          
+          {/* Add New Address Button */}
+          <button
+            onClick={() => setShowAddressForm(true)}
+            className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors group"
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <Plus className="h-5 w-5 text-gray-400 group-hover:text-green-600" />
+              <span className="text-gray-600 group-hover:text-green-700 font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                اضافة عنوان توصيل
+              </span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const CheckoutScreen = () => (
     <div className="h-full flex flex-col">
       {/* Checkout Header */}
@@ -296,7 +392,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setShowCheckout(false)}
+          onClick={() => setCurrentView('cart')}
           className="hover:bg-gray-100 touch-action-manipulation"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -347,7 +443,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowAddressForm(true)}
+              onClick={() => setCurrentView('addresses')}
               className="text-fresh-green hover:text-fresh-green-dark hover:bg-green-50 p-1"
             >
               <Edit className="h-4 w-4" />
@@ -378,12 +474,13 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
           </div>
         ) : (
           <Button
-            onClick={() => setShowAddressForm(true)}
+            onClick={() => setCurrentView('addresses')}
             variant="outline"
             className="w-full border-dashed border-fresh-green text-fresh-green hover:bg-green-50"
+            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
           >
             <MapPin className="h-4 w-4 mr-2" />
-            {t('addShippingAddress')}
+            عنوان التوصيل
           </Button>
         )}
       </div>
@@ -519,7 +616,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
             </span>
           </div>
           <Button 
-            onClick={() => setShowCheckout(true)}
+            onClick={() => setCurrentView('checkout')}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
           >
 {t('proceedToCheckout')}
@@ -558,7 +655,9 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
               }}
               className="absolute right-0 w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-l-3xl flex flex-col safe-area-inset"
             >
-              {showCheckout ? <CheckoutScreen /> : <CartScreen />}
+              {currentView === 'checkout' ? <CheckoutScreen /> : 
+               currentView === 'addresses' ? <AddressesScreen /> : 
+               <CartScreen />}
             </motion.div>
           </div>
         )}
