@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Plus, Minus, ArrowLeft, MapPin, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/store/cart-store";
+import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { useState, useRef, useEffect } from "react";
 import { createOrder } from "@/lib/firebase";
@@ -89,13 +89,13 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 }
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
-  const cartItems = useCartStore(state => state.cartItems);
-  const removeFromCart = useCartStore(state => state.removeFromCart);
-  const updateQuantity = useCartStore(state => state.updateQuantity);
-  const getCartTotal = useCartStore(state => state.getCartTotal);
-  const clearCart = useCartStore(state => state.clearCart);
-  const isUpdating = useCartStore(state => state.isUpdating);
-  const cartItemsCount = useCartStore(state => state.getCartItemsCount());
+  const cartItems = useCartFlow(state => state.cartItems);
+  const removeFromCart = useCartFlow(state => state.removeFromCart);
+  const updateQuantity = useCartFlow(state => state.updateQuantity);
+  const getCartTotal = useCartFlow(state => state.getCartTotal);
+  const clearCart = useCartFlow(state => state.clearCart);
+  const isUpdating = useCartFlow(state => state.isUpdating);
+  const cartItemsCount = useCartFlow(state => state.getCartItemsCount());
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);

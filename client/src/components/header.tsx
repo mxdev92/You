@@ -1,7 +1,7 @@
 import { Search, Menu, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/store/cart-store";
+import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import CategoriesSection from "@/components/categories-section";
 
@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
-  const cartItemsCount = useCartStore(state => state.getCartItemsCount());
+  const cartItemsCount = useCartFlow(state => state.getCartItemsCount());
   const { t } = useTranslation();
 
   return (

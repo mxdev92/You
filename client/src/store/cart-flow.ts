@@ -3,10 +3,13 @@ import type { CartItem, Product, InsertCartItem } from "@shared/schema";
 
 type CartItemWithProduct = CartItem & { product: Product };
 
-interface CartStore {
+interface CartFlowState {
   cartItems: CartItemWithProduct[];
   isLoading: boolean;
   isUpdating: boolean;
+}
+
+interface CartFlowActions {
   loadCart: () => Promise<void>;
   addToCart: (item: InsertCartItem) => Promise<void>;
   removeFromCart: (itemId: number) => Promise<void>;
@@ -16,25 +19,25 @@ interface CartStore {
   getCartTotal: () => number;
 }
 
-export const useCartStore = create<CartStore>((set, get) => ({
+type CartFlowStore = CartFlowState & CartFlowActions;
+
+export const useCartFlow = create<CartFlowStore>((set, get) => ({
+  // State
   cartItems: [],
   isLoading: false,
   isUpdating: false,
 
+  // Actions
   loadCart: async () => {
     set({ isLoading: true });
     try {
       const response = await fetch("/api/cart");
       if (response.ok) {
         const items = await response.json();
-        console.log("✅ Global Cart loaded:", items.length, "items");
-        console.log("📦 Cart items data:", items);
         set({ cartItems: items });
-      } else {
-        console.error("❌ Cart fetch failed with status:", response.status);
       }
     } catch (error) {
-      console.error("❌ Failed to load cart:", error);
+      console.error("CartFlow: Failed to load cart:", error);
     } finally {
       set({ isLoading: false });
     }
@@ -49,16 +52,13 @@ export const useCartStore = create<CartStore>((set, get) => ({
       });
       
       if (response.ok) {
-        const newCartItem = await response.json();
-        set(state => ({ 
-          cartItems: [...state.cartItems, newCartItem] 
-        }));
-        console.log("✅ Item added to cart");
+        // Reload cart to get updated data with product details
+        get().loadCart();
       } else {
         throw new Error("Failed to add item");
       }
     } catch (error) {
-      console.error("❌ Failed to add item to cart:", error);
+      console.error("CartFlow: Failed to add item:", error);
       throw error;
     }
   },
@@ -69,7 +69,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       set(state => ({ 
         cartItems: state.cartItems.filter(item => item.id !== itemId) 
       }));
-      
+
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "DELETE",
       });
@@ -80,12 +80,13 @@ export const useCartStore = create<CartStore>((set, get) => ({
         throw new Error("Failed to remove item");
       }
     } catch (error) {
-      console.error("❌ Failed to remove item from cart:", error);
+      console.error("CartFlow: Failed to remove item:", error);
+      get().loadCart(); // Reload on error
       throw error;
     }
   },
 
-  updateQuantity: async (itemId: number, quantity: number) => {    
+  updateQuantity: async (itemId: number, quantity: number) => {
     try {
       set({ isUpdating: true });
       
@@ -95,7 +96,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
           item.id === itemId ? { ...item, quantity } : item
         )
       }));
-      
+
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -108,7 +109,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
         throw new Error("Failed to update quantity");
       }
     } catch (error) {
-      console.error("❌ Failed to update item quantity:", error);
+      console.error("CartFlow: Failed to update quantity:", error);
+      get().loadCart(); // Reload on error
       throw error;
     } finally {
       set({ isUpdating: false });
@@ -121,12 +123,12 @@ export const useCartStore = create<CartStore>((set, get) => ({
       const response = await fetch("/api/cart", { method: "DELETE" });
       
       if (!response.ok) {
-        // Revert on error
         get().loadCart();
         throw new Error("Failed to clear cart");
       }
     } catch (error) {
-      console.error("❌ Failed to clear cart:", error);
+      console.error("CartFlow: Failed to clear cart:", error);
+      get().loadCart();
       throw error;
     }
   },
@@ -139,11 +141,11 @@ export const useCartStore = create<CartStore>((set, get) => ({
   getCartTotal: () => {
     const { cartItems } = get();
     return cartItems.reduce((total, item) => {
-      if (!item.product || !item.product.price) return total;
+      if (!item.product?.price) return total;
       return total + (parseFloat(item.product.price) * item.quantity);
     }, 0);
   },
 }));
 
-// Initialize cart on app start
-useCartStore.getState().loadCart();
+// Initialize CartFlow on app start
+useCartFlow.getState().loadCart();
