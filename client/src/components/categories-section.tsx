@@ -28,24 +28,10 @@ export default function CategoriesSection() {
       const response = await apiRequest("PATCH", `/api/categories/${categoryId}/select`);
       return response.json();
     },
-    onMutate: async (categoryId: number) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["/api/categories"] });
-      await queryClient.cancelQueries({ queryKey: ["/api/products"] });
-
-      // Snapshot the previous values
-      const previousCategories = queryClient.getQueryData<Category[]>(["/api/categories"]);
-      
-      // Optimistically update categories
-      if (previousCategories) {
-        const updatedCategories = previousCategories.map(cat => ({
-          ...cat,
-          isSelected: cat.id === categoryId
-        }));
-        queryClient.setQueryData(["/api/categories"], updatedCategories);
-      }
-
-      return { previousCategories };
+    onSuccess: () => {
+      // Invalidate and refetch both categories and products
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     },
     onError: (err, categoryId, context) => {
       // Rollback on error
