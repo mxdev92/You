@@ -455,33 +455,35 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                 
                 {/* Content (Two Lines) */}
                 <div className="flex-1 min-w-0">
-                  {/* Line 1: Name / Price */}
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-gray-800 text-sm flex-1">{item.product.name}</h4>
+                  {/* Line 1: Product Name Only */}
+                  <div className="mb-1">
+                    <h4 className="font-medium text-gray-800 text-sm">{item.product.name}</h4>
+                  </div>
+                  
+                  {/* Line 2: Price + Quantity Controls */}
+                  <div className="flex items-center space-x-2">
                     <p className="text-fresh-green font-semibold text-sm">
                       {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
                     </p>
-                  </div>
-                  
-                  {/* Line 2: Quantity Controls */}
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                      className="h-7 w-7 bg-red-500 hover:bg-red-600 text-white rounded-full touch-action-manipulation"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="min-w-6 text-center font-medium text-sm">{item.quantity}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="h-7 w-7 bg-green-500 hover:bg-green-600 text-white rounded-full touch-action-manipulation"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
+                    <div className="flex items-center space-x-2 ml-auto">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                        className="h-7 w-7 bg-red-500 hover:bg-red-600 text-white rounded-full touch-action-manipulation"
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="min-w-6 text-center font-medium text-sm">{item.quantity}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="h-7 w-7 bg-green-500 hover:bg-green-600 text-white rounded-full touch-action-manipulation"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 
