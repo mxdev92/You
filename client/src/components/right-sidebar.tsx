@@ -89,7 +89,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 }
 
 export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
-  const { cartItems, removeFromCart, updateQuantity, getCartTotal, cartItemsCount, clearCart, isUpdating, isRemoving } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, getTotalPrice, getItemCount, clearCart } = useCart();
   const { t } = useTranslation();
   const { user } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
@@ -103,7 +103,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
   });
 
   const shippingFee = 1500; // Fixed shipping fee in IQD
-  const totalWithShipping = getCartTotal() + shippingFee;
+  const totalWithShipping = getTotalPrice() + shippingFee;
 
   const iraqiGovernorates = [
     'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
@@ -389,7 +389,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">{t('subtotal')}:</span>
-            <span className="font-medium">{getCartTotal().toFixed(0)} IQD</span>
+            <span className="font-medium">{getTotalPrice().toFixed(0)} IQD</span>
           </div>
           
           <div className="flex justify-between items-center">
@@ -467,7 +467,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                      disabled={isUpdating || item.quantity <= 1}
+                      disabled={item.quantity <= 1}
                       className="h-6 w-6 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
                       <Minus className="h-2.5 w-2.5" />
@@ -477,7 +477,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      disabled={isUpdating}
+                      disabled={false}
                       className="h-6 w-6 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
                       <Plus className="h-2.5 w-2.5" />
@@ -490,7 +490,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
                   variant="ghost"
                   size="icon"
                   onClick={() => removeFromCart(item.id)}
-                  disabled={isRemoving}
+                  disabled={false}
                   className="hover:bg-red-50 text-red-500 hover:text-red-600 disabled:text-red-300 disabled:cursor-not-allowed touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -512,7 +512,7 @@ export default function RightSidebar({ isOpen, onClose }: RightSidebarProps) {
           <div className="flex justify-between items-center mb-4">
             <span className="text-lg font-semibold text-gray-800">Total:</span>
             <span className="text-xl font-bold text-fresh-green">
-              {getCartTotal().toFixed(0)} IQD
+              {getTotalPrice().toFixed(0)} IQD
             </span>
           </div>
           <Button 

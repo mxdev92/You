@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -8,28 +8,30 @@ export function useCart() {
   const { toast } = useToast();
   const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const updateInProgress = useRef(false);
 
-  // Load cart data once on mount
-  const loadCartItems = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch("/api/cart");
-      if (response.ok) {
-        const items = await response.json();
-        setCartItems(items);
-      }
-    } catch (error) {
-      console.error("Failed to load cart:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  // Load cart items once on mount
   useEffect(() => {
-    loadCartItems();
-  }, [loadCartItems]);
+    let isMounted = true;
+    
+    fetch("/api/cart")
+      .then(res => res.json())
+      .then(items => {
+        if (isMounted) {
+          setCartItems(items);
+          setIsLoading(false);
+        }
+      })
+      .catch(error => {
+        console.error("Failed to load cart:", error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const addToCart = useCallback(async (item: InsertCartItem) => {
     try {
@@ -42,6 +44,10 @@ export function useCart() {
       if (response.ok) {
         const newCartItem = await response.json();
         setCartItems(prev => [...prev, newCartItem]);
+        toast({
+          title: "Added to cart",
+          description: "Item successfully added to cart.",
+        });
       }
     } catch (error) {
       toast({
@@ -52,105 +58,84 @@ export function useCart() {
     }
   }, [toast]);
 
-  const removeFromCart = useCallback(async (itemId: number) => {
+  const updateQuantity = useCallback(async (id: number, quantity: number) => {
     try {
-      setCartItems(prev => prev.filter(item => item.id !== itemId));
+      const response = await fetch(`/api/cart/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity }),
+      });
       
-      const response = await fetch(`/api/cart/${itemId}`, {
+      if (response.ok) {
+        const updatedItem = await response.json();
+        setCartItems(prev => 
+          prev.map(item => item.id === id ? updatedItem : item)
+        );
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update quantity.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const removeFromCart = useCallback(async (id: number) => {
+    try {
+      const response = await fetch(`/api/cart/${id}`, {
         method: "DELETE",
       });
       
-      if (!response.ok) {
-        loadCartItems(); // Reload on error
+      if (response.ok) {
+        setCartItems(prev => prev.filter(item => item.id !== id));
       }
     } catch (error) {
-      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to remove item from cart.",
         variant: "destructive",
       });
     }
-  }, [toast, loadCartItems]);
-
-  const updateQuantity = useCallback(async (itemId: number, quantity: number) => {
-    if (updateInProgress.current) return;
-    
-    try {
-      updateInProgress.current = true;
-      setIsUpdating(true);
-      
-      // Update UI immediately
-      setCartItems(prev => 
-        prev.map(item => 
-          item.id === itemId ? { ...item, quantity } : item
-        )
-      );
-      
-      const response = await fetch(`/api/cart/${itemId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity }),
-      });
-      
-      if (!response.ok) {
-        loadCartItems(); // Reload on error
-      }
-    } catch (error) {
-      loadCartItems();
-      toast({
-        title: "Error",
-        description: "Failed to update item quantity.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
-      updateInProgress.current = false;
-    }
-  }, [toast, loadCartItems]);
+  }, [toast]);
 
   const clearCart = useCallback(async () => {
     try {
-      setCartItems([]);
-      const response = await fetch("/api/cart", { method: "DELETE" });
+      const response = await fetch("/api/cart", {
+        method: "DELETE",
+      });
       
       if (response.ok) {
-        toast({
-          title: "Cart cleared",
-          description: "All items have been removed from your cart.",
-        });
-      } else {
-        loadCartItems();
+        setCartItems([]);
       }
     } catch (error) {
-      loadCartItems();
       toast({
         title: "Error",
         description: "Failed to clear cart.",
         variant: "destructive",
       });
     }
-  }, [toast, loadCartItems]);
+  }, [toast]);
 
-  const cartItemsCount = cartItems.length;
-  
-  const getCartTotal = () => {
+  const getTotalPrice = useCallback(() => {
     return cartItems.reduce((total, item) => {
-      return total + (parseFloat(item.product.price) * item.quantity);
+      const price = parseFloat(item.product.price) || 0;
+      return total + (price * item.quantity);
     }, 0);
-  };
+  }, [cartItems]);
+
+  const getItemCount = useCallback(() => {
+    return cartItems.length;
+  }, [cartItems]);
 
   return {
     cartItems,
     isLoading,
     addToCart,
-    removeFromCart,
     updateQuantity,
+    removeFromCart,
     clearCart,
-    cartItemsCount,
-    getCartTotal,
-    isAdding: false,
-    isRemoving: false,
-    isUpdating,
+    getTotalPrice,
+    getItemCount,
   };
 }
