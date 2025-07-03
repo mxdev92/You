@@ -64,15 +64,30 @@ export interface Order {
 export const createOrder = async (order: Omit<Order, 'id'>) => {
   console.log('Creating order in Firebase:', order);
   
-  const orderData = {
-    ...order,
-    orderDate: new Date().toISOString(),
-    status: 'pending' as const
-  };
-  
-  const docRef = await addDoc(collection(db, 'orders'), orderData);
-  console.log('Order created successfully with ID:', docRef.id);
-  return docRef.id;
+  try {
+    const orderData = {
+      ...order,
+      orderDate: new Date().toISOString(),
+      status: 'pending' as const
+    };
+    
+    const docRef = await addDoc(collection(db, 'orders'), orderData);
+    console.log('Order created successfully with ID:', docRef.id);
+    return docRef.id;
+  } catch (error: any) {
+    console.error('Firebase error details:', error);
+    
+    // Handle specific Firebase errors
+    if (error.code === 'unavailable') {
+      throw new Error('Firebase service temporarily unavailable. Please try again.');
+    } else if (error.code === 'permission-denied') {
+      throw new Error('Permission denied. Please check Firebase configuration.');
+    } else if (error.message?.includes('transport')) {
+      throw new Error('Network connection issue. Please check your internet connection.');
+    }
+    
+    throw new Error(`Order submission failed: ${error.message || 'Unknown error'}`);
+  }
 };
 
 export const getOrders = async () => {
