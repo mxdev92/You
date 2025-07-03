@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { createProduct, uploadProductImage, getProducts, Product } from '@/lib/firebase';
-import { apiRequest } from '@/lib/queryClient';
+import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Mock orders data
 const mockOrders = [
@@ -1164,13 +1164,32 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 // Main Admin Panel Component
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState('all');
-  const [orders, setOrders] = useState(mockOrders);
+  const queryClient = useQueryClient();
+  const { data: orders = [], isLoading, error } = useQuery({
+    queryKey: ['/api/orders'],
+    queryFn: getOrders,
+    refetchInterval: 5000
+  });
+
+  const updateOrderMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number, status: string }) => updateOrderStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    }
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: deleteOrder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    }
+  });
   const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<typeof mockOrders[0] | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
 
-  const handleOrderClick = (order: typeof mockOrders[0]) => {
+  const handleOrderClick = (order: Order) => {
     setSelectedOrder(order);
     setShowInvoice(true);
   };
@@ -1226,10 +1245,8 @@ export default function AdminPanel() {
     }
   };
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status: newStatus as any } : order
-    ));
+  const handleStatusChange = (orderId: number, newStatus: string) => {
+    updateOrderMutation.mutate({ id: orderId, status: newStatus });
   };
 
   const handleLogout = () => {

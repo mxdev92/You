@@ -50,7 +50,7 @@ function OrderCard({ order }: { order: Order }) {
           <div className="flex items-center gap-3">
             <StatusIcon className="h-5 w-5 text-gray-600" />
             <div>
-              <CardTitle className="text-lg">Order #{order.id?.slice(-8)}</CardTitle>
+              <CardTitle className="text-lg">Order #{String(order.id).slice(-8)}</CardTitle>
               <p className="text-sm text-gray-600 mt-1">
                 {format(new Date(order.orderDate), 'MMM dd, yyyy • HH:mm')}
               </p>
@@ -132,7 +132,7 @@ function OrderCard({ order }: { order: Order }) {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[80vh]">
               <DialogHeader>
-                <DialogTitle>Order Details #{order.id?.slice(-8)}</DialogTitle>
+                <DialogTitle>Order Details #{String(order.id).slice(-8)}</DialogTitle>
               </DialogHeader>
               <ScrollArea className="max-h-[60vh]">
                 <div className="space-y-4">
