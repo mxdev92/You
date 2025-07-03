@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
 import { chromium } from 'playwright';
@@ -448,8 +449,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedOrder = insertOrderSchema.parse(req.body);
       const order = await storage.createOrder(validatedOrder);
+      
+      // Broadcast new order to connected store clients for real-time printing
+      if ((global as any).broadcastToStoreClients) {
+        (global as any).broadcastToStoreClients({
+          type: 'NEW_ORDER',
+          order: {
+            id: order.id,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerPhone: order.customerPhone,
+            items: JSON.parse(order.items as string),
+            totalAmount: order.totalAmount,
+            orderDate: order.orderDate,
+            status: order.status,
+            shippingAddress: order.address ? JSON.parse(order.address as string) : null,
+            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
+            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع'
+          },
+          timestamp: new Date().toISOString(),
+          printReady: true
+        });
+      }
+      
       res.status(201).json(order);
     } catch (error) {
+      console.error('Error creating order:', error);
       res.status(400).json({ message: "Invalid order data" });
     }
   });
@@ -475,6 +500,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Store API - Latest Orders for Expo React Native App
+  app.get("/api/store/orders/latest", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const orders = await storage.getOrders();
+      
+      // Sort by order date descending and limit results
+      const latestOrders = orders
+        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
+        .slice(0, limit);
+      
+      res.json({
+        success: true,
+        data: latestOrders,
+        count: latestOrders.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching latest orders:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch latest orders",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Store API - Order Details for Printing
+  app.get("/api/store/orders/:id/print", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orders = await storage.getOrders();
+      const order = orders.find(o => o.id === id);
+      
+      if (!order) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Order not found" 
+        });
+      }
+
+      // Format order for printing
+      const printData = {
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        items: JSON.parse(order.items as string),
+        totalAmount: order.totalAmount,
+        orderDate: order.orderDate,
+        status: order.status,
+        shippingAddress: order.address ? JSON.parse(order.address as string) : null,
+        formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
+        formattedTotal: order.totalAmount.toLocaleString() + ' د.ع'
+      };
+
+      res.json({
+        success: true,
+        data: printData,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching order for printing:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch order details",
+        error: error.message 
+      });
+    }
+  });
+
+  // Store API - Update Order Status (for store workflow)
+  app.patch("/api/store/orders/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status, storeNotes } = req.body;
+      
+      // Valid store statuses
+      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out-for-delivery', 'delivered', 'cancelled'];
+      
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid status",
+          validStatuses 
+        });
+      }
+
+      const order = await storage.updateOrderStatus(id, status);
+      
+      // Broadcast status update to connected WebSocket clients
+      broadcastToClients({
+        type: 'ORDER_STATUS_UPDATE',
+        orderId: id,
+        status: status,
+        storeNotes: storeNotes || null,
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({
+        success: true,
+        data: order,
+        message: `Order status updated to ${status}`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to update order status",
+        error: error.message 
+      });
+    }
+  });
+
+  // Store API - Health Check
+  app.get("/api/store/health", (req, res) => {
+    res.json({
+      success: true,
+      message: "Store API is running",
+      timestamp: new Date().toISOString(),
+      endpoints: {
+        latestOrders: "/api/store/orders/latest",
+        orderPrint: "/api/store/orders/:id/print",
+        updateStatus: "/api/store/orders/:id/status",
+        websocket: "/ws"
+      }
+    });
+  });
+
   const httpServer = createServer(app);
+  
+  // WebSocket Server for Real-time Updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Store connected clients
+  const connectedClients = new Set<WebSocket>();
+
+  wss.on('connection', (ws) => {
+    console.log('Store app connected to WebSocket');
+    connectedClients.add(ws);
+
+    // Send welcome message
+    ws.send(JSON.stringify({
+      type: 'CONNECTED',
+      message: 'Connected to store WebSocket',
+      timestamp: new Date().toISOString()
+    }));
+
+    ws.on('close', () => {
+      console.log('Store app disconnected from WebSocket');
+      connectedClients.delete(ws);
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      connectedClients.delete(ws);
+    });
+  });
+
+  // Function to broadcast messages to all connected clients
+  function broadcastToClients(message: any) {
+    const messageStr = JSON.stringify(message);
+    connectedClients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(messageStr);
+      }
+    });
+  }
+
+  // Make broadcast function available globally for order notifications
+  (global as any).broadcastToStoreClients = broadcastToClients;
+
   return httpServer;
 }
