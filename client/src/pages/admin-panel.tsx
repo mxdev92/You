@@ -1400,22 +1400,42 @@ export default function AdminPanel() {
                                 const blob = await response.blob();
                                 const url = window.URL.createObjectURL(blob);
                                 
-                                // Download PDF for Brother DCP-T520W printer
-                                const link = document.createElement('a');
-                                link.href = url;
-                                link.download = `invoice-order-${order.id}.pdf`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
+                                // Open PDF in new window and trigger print dialog for Brother DCP-T520W
+                                const printWindow = window.open(url, '_blank');
+                                if (printWindow) {
+                                  printWindow.onload = () => {
+                                    // Wait a moment for PDF to load, then trigger print
+                                    setTimeout(() => {
+                                      printWindow.print();
+                                      // Also download as backup
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      link.download = `invoice-order-${order.id}.pdf`;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                    }, 1000);
+                                  };
+                                } else {
+                                  // Fallback: just download if popup blocked
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = `invoice-order-${order.id}.pdf`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }
                                 
-                                // Clean up the URL object
-                                window.URL.revokeObjectURL(url);
+                                // Clean up the URL object after delay
+                                setTimeout(() => {
+                                  window.URL.revokeObjectURL(url);
+                                }, 5000);
                                 
-                                console.log('✅ PDF downloaded successfully for printing');
+                                console.log('✅ PDF opened for printing to Brother DCP-T520W');
                                 
                                 toast({
-                                  title: "✅ تم بنجاح",
-                                  description: `تم تحميل فاتورة الطلب ${order.id} - جاهزة للطباعة`,
+                                  title: "✅ تم فتح الطباعة",
+                                  description: `فاتورة الطلب ${order.id} - اختر طابعة Brother DCP-T520W`,
                                   duration: 3000,
                                 });
                               } else {
