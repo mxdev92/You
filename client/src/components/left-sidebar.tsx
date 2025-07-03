@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, ArrowLeft, Plus, Download } from "lucide-react";
+import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, ArrowLeft, ArrowRight, Plus, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
@@ -411,7 +411,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       onClick={() => setCurrentView('menu')}
                       className="hover:bg-gray-100"
                     >
-                      <ArrowLeft className="h-5 w-5" />
+                      <ArrowRight className="h-5 w-5" />
                     </Button>
                     <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       الإعدادات
@@ -452,7 +452,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       onClick={() => setCurrentView('menu')}
                       className="hover:bg-gray-100"
                     >
-                      <ArrowLeft className="h-5 w-5" />
+                      <ArrowRight className="h-5 w-5" />
                     </Button>
                     <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       الملف الشخصي
@@ -594,7 +594,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                     onClick={() => setCurrentView('menu')}
                     className="hover:bg-gray-100 touch-action-manipulation"
                   >
-                    <ArrowLeft className="h-5 w-5" />
+                    <ArrowRight className="h-5 w-5" />
                   </Button>
                   <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                     عنوان التوصيل
@@ -657,7 +657,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       onClick={() => setCurrentView('menu')}
                       className="hover:bg-gray-100"
                     >
-                      <ArrowLeft className="h-5 w-5" />
+                      <ArrowRight className="h-5 w-5" />
                     </Button>
                     <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       طلباتي
