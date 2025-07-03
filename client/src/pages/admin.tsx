@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-client';
-import { createSampleOrders } from '@/lib/sample-orders';
+// Removed sample orders - using real database orders only
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -321,13 +321,10 @@ export default function AdminPanel() {
             </ul>
             <div className="space-y-4">
               <Button
-                onClick={async () => {
-                  await createSampleOrders();
-                  window.location.reload();
-                }}
+                onClick={() => refetch()}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Create Sample Data & Retry
+                Retry Connection
               </Button>
               <div className="text-sm text-gray-500">
                 Error: {error?.message || 'Unknown error'}
@@ -366,16 +363,6 @@ export default function AdminPanel() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Orders Management</h2>
               <div className="flex items-center gap-3">
-                <Button
-                  onClick={async () => {
-                    await createSampleOrders();
-                    window.location.reload();
-                  }}
-                  variant="outline"
-                  size="sm"
-                >
-                  Create Sample Orders
-                </Button>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Filter by status" />
