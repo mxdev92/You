@@ -415,7 +415,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       onClick={() => setCurrentView('menu')}
                       className="hover:bg-gray-100"
                     >
-                      <ArrowLeft className="h-5 w-5 rotate-180" />
+                      <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -456,7 +456,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       onClick={() => setCurrentView('menu')}
                       className="hover:bg-gray-100"
                     >
-                      <ArrowLeft className="h-5 w-5 rotate-180" />
+                      <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -598,7 +598,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                     onClick={() => setCurrentView('menu')}
                     className="hover:bg-gray-100 touch-action-manipulation"
                   >
-                    <ArrowLeft className="h-5 w-5 rotate-180" />
+                    <ArrowLeft className="h-5 w-5" />
                   </Button>
                 </div>
 
@@ -661,7 +661,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       onClick={() => setCurrentView('menu')}
                       className="hover:bg-gray-100"
                     >
-                      <ArrowLeft className="h-5 w-5 rotate-180" />
+                      <ArrowLeft className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
