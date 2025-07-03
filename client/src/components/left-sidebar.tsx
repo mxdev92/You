@@ -371,60 +371,124 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                 </div>
 
                 {/* Profile Content */}
-                <div className="px-6 py-6 space-y-6">
-                  {/* Personal Information Section */}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      المعلومات الشخصية
+                <div className="px-6 py-4 space-y-4">
+                  {/* User Avatar Section */}
+                  <div className="flex flex-col items-center py-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-3 shadow-md">
+                      <User className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      {user?.displayName || user?.email?.split('@')[0] || 'مستخدم'}
                     </h3>
-                    
-                    {/* Name Field */}
-                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      عضو نشط
+                    </p>
+                  </div>
+
+                  {/* Information Cards */}
+                  <div className="space-y-3">
+                    {/* Name Card */}
+                    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          الاسم
-                        </span>
-                      </div>
-                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        {user?.displayName || user?.email?.split('@')[0] || 'غير محدد'}
+                        <div className="flex items-center space-x-3 space-x-reverse">
+                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                            <User className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-0.5" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              الاسم الكامل
+                            </p>
+                            <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              {user?.displayName || user?.email?.split('@')[0] || 'غير محدد'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Phone Field */}
-                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    {/* Email Card */}
+                    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          الرقم
-                        </span>
-                      </div>
-                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        {user?.phoneNumber || 'غير محدد'}
+                        <div className="flex items-center space-x-3 space-x-reverse">
+                          <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+                            <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-0.5" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              البريد الإلكتروني
+                            </p>
+                            <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              {user?.email || 'غير محدد'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Email Field */}
-                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    {/* Phone Card */}
+                    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          الايميل
-                        </span>
-                      </div>
-                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        {user?.email || 'غير محدد'}
+                        <div className="flex items-center space-x-3 space-x-reverse">
+                          <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+                            <svg className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-0.5" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              رقم الهاتف
+                            </p>
+                            <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              {user?.phoneNumber || 'غير محدد'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Password Field */}
-                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    {/* Password Card */}
+                    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          الباسورد
-                        </span>
-                      </div>
-                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        ••••••••
+                        <div className="flex items-center space-x-3 space-x-reverse">
+                          <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
+                            <svg className="h-4 w-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-0.5" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              كلمة المرور
+                            </p>
+                            <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                              ••••••••••
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-gray-500 hover:text-gray-700 px-2 h-6"
+                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                        >
+                          تغيير
+                        </Button>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Account Actions */}
+                  <div className="pt-4 border-t border-gray-100">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 h-10"
+                      onClick={handleLogout}
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    >
+                      <LogOut className="h-4 w-4 ml-2" />
+                      تسجيل الخروج
+                    </Button>
                   </div>
                 </div>
               </div>
