@@ -404,19 +404,18 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               <div className="flex-1 pt-8 pb-4">
                 {/* Settings Header */}
                 <div className="px-6 pb-4 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setCurrentView('menu')}
-                      className="hover:bg-gray-100"
+                      className="hover:bg-gray-100 ml-4"
                     >
-                      <ArrowRight className="h-5 w-5" />
+                      <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       الإعدادات
                     </h2>
-                    <div className="w-10" />
                   </div>
                 </div>
 
@@ -445,19 +444,18 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               <div className="flex-1 pt-8 pb-4" dir="rtl">
                 {/* Profile Header */}
                 <div className="px-6 pb-4 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setCurrentView('menu')}
-                      className="hover:bg-gray-100"
+                      className="hover:bg-gray-100 ml-4"
                     >
-                      <ArrowRight className="h-5 w-5" />
+                      <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       الملف الشخصي
                     </h2>
-                    <div className="w-10" />
                   </div>
                 </div>
 
@@ -587,19 +585,18 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               // Addresses View
               <div className="h-full flex flex-col">
                 {/* Addresses Header */}
-                <div className="flex items-center justify-between px-6 py-6 border-b border-gray-100">
+                <div className="flex items-center px-6 py-6 border-b border-gray-100">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setCurrentView('menu')}
-                    className="hover:bg-gray-100 touch-action-manipulation"
+                    className="hover:bg-gray-100 touch-action-manipulation ml-4"
                   >
-                    <ArrowRight className="h-5 w-5" />
+                    <ArrowLeft className="h-5 w-5" />
                   </Button>
                   <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                     عنوان التوصيل
                   </h2>
-                  <div className="w-10" /> {/* Spacer */}
                 </div>
 
                 {/* Addresses List */}
@@ -650,19 +647,18 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               <div className="flex-1 pt-8 pb-4" dir="rtl">
                 {/* Orders Header */}
                 <div className="px-6 pb-4 border-b border-gray-100">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setCurrentView('menu')}
-                      className="hover:bg-gray-100"
+                      className="hover:bg-gray-100 ml-4"
                     >
-                      <ArrowRight className="h-5 w-5" />
+                      <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       طلباتي
                     </h2>
-                    <div className="w-10" />
                   </div>
                 </div>
 
