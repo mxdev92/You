@@ -263,6 +263,13 @@ function OrderStats({ orders }: { orders: Order[] }) {
 
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const queryClient = useQueryClient();
+
+  // Force clear cache and fresh fetch
+  React.useEffect(() => {
+    console.log('=== ADMIN PANEL MOUNTED - CLEARING CACHE ===');
+    queryClient.clear();
+  }, [queryClient]);
 
   const { data: orders = [], isLoading, error, refetch } = useQuery({
     queryKey: ['orders'],
@@ -270,19 +277,23 @@ export default function AdminPanel() {
       console.log('=== FETCHING ORDERS FROM API ===');
       const result = await getOrders();
       console.log('=== ORDERS FETCHED ===', result);
+      console.log('=== ORDER COUNT ===', result.length);
       return result;
     },
     retry: 3,
     retryDelay: 1000,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 10000, // Auto-refresh every 10 seconds
+    gcTime: 0, // Don't cache
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
     refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
   });
 
   // Debug logging
   console.log('Admin Panel - Orders:', orders);
   console.log('Admin Panel - Loading:', isLoading);
   console.log('Admin Panel - Error:', error);
+  console.log('Admin Panel - Orders length:', orders.length);
 
   const filteredOrders = statusFilter === 'all' 
     ? orders 
