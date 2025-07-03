@@ -156,7 +156,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { orderData } = req.body;
       
+      console.log('🖨️ PDF generation request received:', JSON.stringify(orderData, null, 2));
+      
       if (!orderData) {
+        console.error('❌ No order data provided');
         return res.status(400).json({ message: "Order data is required" });
       }
 
