@@ -2,7 +2,12 @@ import { initializeApp, getApps } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, connectFirestoreEmulator } from "firebase/firestore";
 
-// Simplified Firebase configuration
+// Simplified Firebase configuration - debug logging
+console.log('Loading Firebase config...');
+console.log('API Key exists:', !!import.meta.env.VITE_FIREBASE_API_KEY);
+console.log('Project ID:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
+console.log('App ID:', import.meta.env.VITE_FIREBASE_APP_ID);
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
