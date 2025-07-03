@@ -9,6 +9,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { useAddressStore } from "@/store/address-store";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
+import SignupModal from "@/components/signup-modal";
 import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 
@@ -308,6 +309,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
   const { addresses: savedAddresses, addAddress } = useAddressStore();
   const [addressData, setAddressData] = useState({
     fullName: '',
@@ -438,23 +440,10 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-medium py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                       onClick={() => {
-                        onClose();
-                        setLocation('/login');
+                        setShowSignupModal(true);
                       }}
                     >
-                      تسجيل الدخول
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="w-full border-2 border-green-500 text-green-600 font-medium py-3 rounded-xl hover:bg-green-50 transition-all duration-200"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                      onClick={() => {
-                        onClose();
-                        setLocation('/login');
-                      }}
-                    >
-                      إنشاء حساب جديد
+                      تسجيل الدخول / إنشاء حساب
                     </Button>
                     
                     <Button
@@ -776,7 +765,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
             {currentView === 'menu' && !user && (
               <div className="px-6 pb-6">
                 <Button
-                  onClick={() => setLocation('/login')}
+                  onClick={() => setShowSignupModal(true)}
                   className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-medium py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                 >
@@ -797,6 +786,16 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
         setAddressData={setAddressData}
         onSubmit={handleAddressSubmit}
         iraqiGovernorates={iraqiGovernorates}
+      />
+      
+      {/* Signup Modal */}
+      <SignupModal
+        isOpen={showSignupModal}
+        onClose={() => setShowSignupModal(false)}
+        onSuccess={() => {
+          setShowSignupModal(false);
+          setCurrentView('menu');
+        }}
       />
     </>
   );
