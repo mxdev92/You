@@ -264,15 +264,25 @@ function OrderStats({ orders }: { orders: Order[] }) {
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const { data: orders = [], isLoading, error } = useQuery({
+  const { data: orders = [], isLoading, error, refetch } = useQuery({
     queryKey: ['orders'],
-    queryFn: getOrders,
+    queryFn: async () => {
+      console.log('=== FETCHING ORDERS FROM API ===');
+      const result = await getOrders();
+      console.log('=== ORDERS FETCHED ===', result);
+      return result;
+    },
     retry: 3,
     retryDelay: 1000,
-    staleTime: 10000,
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
     refetchOnWindowFocus: true,
   });
+
+  // Debug logging
+  console.log('Admin Panel - Orders:', orders);
+  console.log('Admin Panel - Loading:', isLoading);
+  console.log('Admin Panel - Error:', error);
 
   const filteredOrders = statusFilter === 'all' 
     ? orders 
@@ -335,9 +345,14 @@ export default function AdminPanel() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">KiwiQ Admin Panel</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              {format(new Date(), 'EEEE, MMMM dd, yyyy')}
+            <div className="flex items-center gap-4">
+              <Button onClick={() => refetch()} variant="outline" size="sm">
+                Refresh Orders
+              </Button>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Calendar className="h-4 w-4" />
+                {format(new Date(), 'EEEE, MMMM dd, yyyy')}
+              </div>
             </div>
           </div>
         </div>
