@@ -198,7 +198,7 @@ function OrderCard({ order, onStatusChange }: any) {
           <p><strong>Address:</strong> {order.address.street}, {order.address.neighborhood}</p>
           <p><strong>Total:</strong> IQD {order.totalAmount.toLocaleString()}</p>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex gap-2">
           <Select value={order.status} onValueChange={(newStatus) => onStatusChange(order.id, newStatus)}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -212,6 +212,61 @@ function OrderCard({ order, onStatusChange }: any) {
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              console.log('📄 Manual printing invoice for order:', order.id);
+              try {
+                const response = await fetch('/api/generate-invoice-pdf', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    orderData: {
+                      id: order.id,
+                      customerName: order.customerName,
+                      customerEmail: order.customerEmail,
+                      customerPhone: order.customerPhone,
+                      items: order.items,
+                      totalAmount: order.totalAmount,
+                      orderDate: order.orderDate,
+                      status: order.status,
+                      address: order.address,
+                      deliveryTime: order.deliveryTime,
+                      notes: order.notes
+                    }
+                  })
+                });
+
+                if (response.ok) {
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  
+                  // Download PDF for Brother DCP-T520W printer
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `invoice-order-${order.id}.pdf`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  
+                  // Clean up the URL object
+                  window.URL.revokeObjectURL(url);
+                  
+                  console.log('✅ PDF downloaded successfully for printing');
+                } else {
+                  console.error('❌ Print error:', {});
+                }
+              } catch (error) {
+                console.error('❌ Print error:', {});
+              }
+            }}
+          >
+            📄 Print
+          </Button>
         </div>
       </CardContent>
     </Card>
