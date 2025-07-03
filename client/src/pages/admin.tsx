@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, Trash2, Eye } from 'lucide-react';
+import { Package, Clock, CheckCircle, Truck, MapPin, Phone, Mail, User, Calendar, DollarSign, Trash2, Eye, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 
 const statusConfig = {
@@ -195,6 +195,62 @@ function OrderCard({ order }: { order: Order }) {
               </ScrollArea>
             </DialogContent>
           </Dialog>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              console.log('📄 Manual printing invoice for order:', order.id);
+              try {
+                const response = await fetch('/api/generate-invoice-pdf', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    orderData: {
+                      id: order.id,
+                      customerName: order.customerName,
+                      customerEmail: order.customerEmail,
+                      customerPhone: order.customerPhone,
+                      items: order.items,
+                      totalAmount: order.totalAmount,
+                      orderDate: order.orderDate,
+                      status: order.status,
+                      address: order.address,
+                      deliveryTime: order.deliveryTime,
+                      notes: order.notes
+                    }
+                  })
+                });
+
+                if (response.ok) {
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  
+                  // Download PDF for Brother DCP-T520W printer
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `invoice-order-${order.id}.pdf`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  
+                  // Clean up the URL object
+                  window.URL.revokeObjectURL(url);
+                  
+                  console.log('✅ PDF downloaded successfully for printing');
+                } else {
+                  console.error('❌ Print error:', {});
+                }
+              } catch (error) {
+                console.error('❌ Print error:', {});
+              }
+            }}
+          >
+            <Printer className="h-4 w-4 mr-1" />
+            Print
+          </Button>
 
           <Button
             variant="destructive"

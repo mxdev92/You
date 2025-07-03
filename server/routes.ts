@@ -160,9 +160,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Order data is required" });
       }
 
-      // Launch browser with production-safe settings
+      // Set environment variables for Playwright to use system browser
+      process.env.PLAYWRIGHT_BROWSERS_PATH = '/usr';
+      process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1';
+
+      // Launch browser with production-safe settings using system Chromium
       const browser = await chromium.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium-browser',
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox', 
+          '--disable-dev-shm-usage', 
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--headless'
+        ]
       });
       const page = await browser.newPage();
 
