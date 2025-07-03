@@ -63,15 +63,51 @@ export interface Order {
 
 export const createOrder = async (order: Omit<Order, 'id'>) => {
   try {
-    const docRef = await addDoc(collection(db, 'orders'), {
+    console.log('Firebase createOrder called with:', order);
+    
+    // Validate Firebase config
+    const config = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
+    };
+    
+    console.log('Firebase config check:', {
+      hasApiKey: !!config.apiKey,
+      hasProjectId: !!config.projectId,
+      hasAppId: !!config.appId
+    });
+    
+    if (!config.apiKey || !config.projectId || !config.appId) {
+      throw new Error('Firebase configuration is incomplete. Please check environment variables.');
+    }
+    
+    const orderWithDefaults = {
       ...order,
       orderDate: new Date().toISOString(),
-      status: 'pending'
-    });
+      status: 'pending' as const
+    };
+    
+    console.log('Adding document to Firestore...');
+    const docRef = await addDoc(collection(db, 'orders'), orderWithDefaults);
+    console.log('Order successfully created with ID:', docRef.id);
+    
     return docRef.id;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating order:', error);
-    throw error;
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    
+    // Provide more specific error messages
+    if (error.code === 'permission-denied') {
+      throw new Error('Permission denied. Please check Firebase security rules.');
+    } else if (error.code === 'unavailable') {
+      throw new Error('Firebase service is temporarily unavailable. Please try again.');
+    } else if (error.message?.includes('fetch')) {
+      throw new Error('Network connection error. Please check your internet connection.');
+    }
+    
+    throw new Error(error.message || 'Unknown error occurred while creating order.');
   }
 };
 

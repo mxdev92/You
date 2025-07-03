@@ -181,10 +181,22 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const hasAddress = primaryAddress !== null;
 
   const handlePlaceOrder = async () => {
-    if (!hasAddress || !user || !primaryAddress) return;
+    if (!hasAddress || !user || !primaryAddress) {
+      alert('Missing required information. Please ensure you have an address and are logged in.');
+      setIsPlacingOrder(false);
+      return;
+    }
+    
+    if (!deliveryTime) {
+      alert('Please select a delivery time.');
+      setIsPlacingOrder(false);
+      return;
+    }
     
     setIsPlacingOrder(true);
     try {
+      console.log('Starting order submission...');
+      
       const orderData = {
         customerName: primaryAddress.fullName,
         customerEmail: user.email || '',
@@ -209,17 +221,22 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         status: 'pending' as const,
         orderDate: new Date().toISOString(),
         deliveryTime: deliveryTime,
-        notes: globalDeliveryNotesRef.current
+        notes: globalDeliveryNotesRef.current || ''
       };
 
-      await createOrder(orderData);
+      console.log('Order data prepared:', orderData);
+      
+      const orderId = await createOrder(orderData);
+      console.log('Order created successfully with ID:', orderId);
+      
       clearCart();
-      alert('Order placed successfully! Check the admin panel to view orders.');
+      alert('تم تقديم الطلب بنجاح! يمكنك مراجعة الطلب في لوحة الإدارة.');
       setCurrentView('cart');
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error placing order:', error);
-      alert('Failed to place order. Please try again.');
+      console.error('Error details:', error.message);
+      alert(`فشل في تقديم الطلب: ${error.message || 'خطأ غير معروف'}. يرجى المحاولة مرة أخرى.`);
     } finally {
       setIsPlacingOrder(false);
     }
