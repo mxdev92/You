@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, ArrowLeft, Plus } from "lucide-react";
+import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, ArrowLeft, Plus, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
@@ -8,12 +8,103 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useLanguage } from "@/hooks/use-language";
 import { useAddressStore } from "@/store/address-store";
 import { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { Order } from "@shared/schema";
+
+function OrdersHistoryContent() {
+  const { data: orders, isLoading } = useQuery({
+    queryKey: ['/api/orders'],
+    queryFn: async () => {
+      const response = await fetch('/api/orders');
+      if (!response.ok) throw new Error('Failed to fetch orders');
+      return response.json();
+    },
+  });
+
+  const handleDownloadInvoice = async (orderId: number) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/invoice`, {
+        method: 'GET',
+      });
+      
+      if (!response.ok) throw new Error('Failed to download invoice');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="px-6 py-4">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="px-6 py-8 text-center">
+        <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+          لا توجد طلبات حتى الآن
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-6 py-4 space-y-4">
+      {orders.map((order: Order) => (
+        <div key={order.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            {/* Order Info - Right Side */}
+            <div className="flex-1 text-right">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                  رقم الطلبية: #{order.id}
+                </p>
+                <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                  السعر الكلي: {order.totalAmount.toLocaleString()} د.ع
+                </p>
+                <p className="text-xs text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                  التاريخ: {new Date(order.orderDate).toLocaleDateString('ar-IQ')}
+                </p>
+              </div>
+            </div>
+
+            {/* Download Button - Left Side */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDownloadInvoice(order.id)}
+              className="text-green-600 hover:text-green-700 hover:bg-green-50 p-2"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 interface LeftSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentView: 'menu' | 'addresses' | 'settings' | 'profile';
-  setCurrentView: (view: 'menu' | 'addresses' | 'settings' | 'profile') => void;
+  currentView: 'menu' | 'addresses' | 'settings' | 'profile' | 'orders';
+  setCurrentView: (view: 'menu' | 'addresses' | 'settings' | 'profile' | 'orders') => void;
 }
 
 interface ShippingFormProps {
@@ -242,7 +333,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     { icon: User, label: t('profile'), href: "#", onClick: () => setCurrentView('profile') },
     { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => setCurrentView('addresses') },
     { icon: Wallet, label: t('wallet'), href: "#" },
-    { icon: ShoppingBag, label: t('orders'), href: "#" },
+    { icon: ShoppingBag, label: 'طلباتي', href: "#", onClick: () => setCurrentView('orders') },
     { icon: Settings, label: t('settings'), href: "#", onClick: () => setCurrentView('settings') },
   ];
 
@@ -553,6 +644,30 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                     </button>
                   </div>
                 </div>
+              </div>
+            ) : currentView === 'orders' ? (
+              // Orders History View
+              <div className="flex-1 pt-8 pb-4" dir="rtl">
+                {/* Orders Header */}
+                <div className="px-6 pb-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentView('menu')}
+                      className="hover:bg-gray-100"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      طلباتي
+                    </h2>
+                    <div className="w-10" />
+                  </div>
+                </div>
+
+                {/* Orders Content */}
+                <OrdersHistoryContent />
               </div>
             ) : (
               // Menu View
