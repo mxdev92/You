@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-client';
@@ -1220,6 +1221,7 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState('all');
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: getOrders,
@@ -1376,7 +1378,14 @@ export default function AdminPanel() {
                           onClick={async (e) => {
                             e.stopPropagation();
                             console.log('📄 Manual printing invoice for order:', order.id);
+                            
                             try {
+                              toast({
+                                title: "طباعة الفاتورة",
+                                description: "جاري إنشاء الفاتورة...",
+                                duration: 2000,
+                              });
+
                               const response = await fetch('/api/generate-invoice-pdf', {
                                 method: 'POST',
                                 headers: {
@@ -1403,11 +1412,27 @@ export default function AdminPanel() {
                                 window.URL.revokeObjectURL(url);
                                 
                                 console.log('✅ PDF downloaded successfully for printing');
+                                
+                                toast({
+                                  title: "✅ تم بنجاح",
+                                  description: `تم تحميل فاتورة الطلب ${order.id} - جاهزة للطباعة`,
+                                  duration: 3000,
+                                });
                               } else {
-                                console.error('❌ Print error:', {});
+                                toast({
+                                  title: "❌ خطأ في الطباعة",
+                                  description: "فشل في إنشاء الفاتورة. حاول مرة أخرى.",
+                                  variant: "destructive",
+                                  duration: 3000,
+                                });
                               }
                             } catch (error) {
-                              console.error('❌ Print error:', {});
+                              toast({
+                                title: "❌ خطأ في الطباعة",
+                                description: "مشكلة في الاتصال. تحقق من الإنترنت.",
+                                variant: "destructive",
+                                duration: 3000,
+                              });
                             }
                           }}
                         >
