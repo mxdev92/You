@@ -451,14 +451,6 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                     {/* Password Card */}
                     <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-gray-500 hover:text-gray-700 px-2 h-6"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                        >
-                          تغيير
-                        </Button>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
                             <svg className="h-4 w-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -474,6 +466,14 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                             </p>
                           </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-gray-500 hover:text-gray-700 px-2 h-6"
+                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                        >
+                          تغيير
+                        </Button>
                       </div>
                     </div>
                   </div>
