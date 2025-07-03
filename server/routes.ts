@@ -566,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: "Failed to fetch order details",
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
@@ -610,7 +610,309 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: "Failed to update order status",
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Store API - Today's Orders Summary
+  app.get("/api/store/orders/today", async (req, res) => {
+    try {
+      const orders = await storage.getOrders();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const todayOrders = orders.filter(order => {
+        const orderDate = new Date(order.orderDate);
+        orderDate.setHours(0, 0, 0, 0);
+        return orderDate.getTime() === today.getTime();
+      });
+
+      const summary = {
+        totalOrders: todayOrders.length,
+        totalRevenue: todayOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+        ordersByStatus: {
+          pending: todayOrders.filter(o => o.status === 'pending').length,
+          confirmed: todayOrders.filter(o => o.status === 'confirmed').length,
+          preparing: todayOrders.filter(o => o.status === 'preparing').length,
+          ready: todayOrders.filter(o => o.status === 'ready').length,
+          'out-for-delivery': todayOrders.filter(o => o.status === 'out-for-delivery').length,
+          delivered: todayOrders.filter(o => o.status === 'delivered').length,
+          cancelled: todayOrders.filter(o => o.status === 'cancelled').length
+        },
+        averageOrderValue: todayOrders.length > 0 ? todayOrders.reduce((sum, order) => sum + order.totalAmount, 0) / todayOrders.length : 0
+      };
+
+      res.json({
+        success: true,
+        data: summary,
+        orders: todayOrders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching today orders:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch today's orders",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Store API - Orders by Status
+  app.get("/api/store/orders/status/:status", async (req, res) => {
+    try {
+      const { status } = req.params;
+      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out-for-delivery', 'delivered', 'cancelled'];
+      
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid status",
+          validStatuses 
+        });
+      }
+
+      const orders = await storage.getOrders();
+      const filteredOrders = orders
+        .filter(order => order.status === status)
+        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+
+      res.json({
+        success: true,
+        data: filteredOrders,
+        count: filteredOrders.length,
+        status: status,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching orders by status:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch orders by status",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Store API - Order Details with Full Information
+  app.get("/api/store/orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orders = await storage.getOrders();
+      const order = orders.find(o => o.id === id);
+      
+      if (!order) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Order not found" 
+        });
+      }
+
+      const detailedOrder = {
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        items: JSON.parse(order.items as string),
+        totalAmount: order.totalAmount,
+        orderDate: order.orderDate,
+        status: order.status,
+        shippingAddress: order.address ? JSON.parse(order.address as string) : null,
+        deliveryTime: order.deliveryTime,
+        notes: order.notes,
+        formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
+        formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
+        itemsCount: JSON.parse(order.items as string).length,
+        estimatedPreparationTime: Math.max(JSON.parse(order.items as string).length * 5, 15) // 5 mins per item, min 15 mins
+      };
+
+      res.json({
+        success: true,
+        data: detailedOrder,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch order details",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Store API - Mark Order as Printed
+  app.patch("/api/store/orders/:id/printed", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { printerName, printedAt } = req.body;
+      
+      // For now, we'll just log this and broadcast the event
+      // In a real implementation, you might want to store print history
+      console.log(`Order ${id} printed on ${printerName} at ${printedAt}`);
+      
+      // Broadcast print confirmation to connected clients
+      if ((global as any).broadcastToStoreClients) {
+        (global as any).broadcastToStoreClients({
+          type: 'ORDER_PRINTED',
+          orderId: id,
+          printerName: printerName || 'Unknown Printer',
+          printedAt: printedAt || new Date().toISOString(),
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Order marked as printed",
+        orderId: id,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error marking order as printed:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to mark order as printed",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Store API - Bulk Status Update
+  app.patch("/api/store/orders/bulk/status", async (req, res) => {
+    try {
+      const { orderIds, status, notes } = req.body;
+      
+      if (!Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "orderIds must be a non-empty array" 
+        });
+      }
+
+      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out-for-delivery', 'delivered', 'cancelled'];
+      
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid status",
+          validStatuses 
+        });
+      }
+
+      const updatedOrders = [];
+      const errors = [];
+
+      for (const orderId of orderIds) {
+        try {
+          const order = await storage.updateOrderStatus(parseInt(orderId), status);
+          updatedOrders.push(order);
+        } catch (error) {
+          errors.push({ orderId, error: error instanceof Error ? error.message : 'Unknown error' });
+        }
+      }
+
+      // Broadcast bulk update to connected clients
+      if ((global as any).broadcastToStoreClients) {
+        (global as any).broadcastToStoreClients({
+          type: 'BULK_STATUS_UPDATE',
+          orderIds: orderIds,
+          status: status,
+          notes: notes || null,
+          successCount: updatedOrders.length,
+          errorCount: errors.length,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Bulk update completed`,
+        updatedOrders: updatedOrders.length,
+        errors: errors,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error in bulk status update:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to perform bulk status update",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Store API - Statistics Dashboard
+  app.get("/api/store/stats", async (req, res) => {
+    try {
+      const orders = await storage.getOrders();
+      const now = new Date();
+      
+      // Today's stats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayOrders = orders.filter(order => {
+        const orderDate = new Date(order.orderDate);
+        orderDate.setHours(0, 0, 0, 0);
+        return orderDate.getTime() === today.getTime();
+      });
+
+      // This week's stats
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const weekOrders = orders.filter(order => new Date(order.orderDate) >= weekStart);
+
+      // This month's stats
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const monthOrders = orders.filter(order => new Date(order.orderDate) >= monthStart);
+
+      const stats = {
+        today: {
+          orders: todayOrders.length,
+          revenue: todayOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+          averageOrderValue: todayOrders.length > 0 ? todayOrders.reduce((sum, order) => sum + order.totalAmount, 0) / todayOrders.length : 0
+        },
+        week: {
+          orders: weekOrders.length,
+          revenue: weekOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+          averageOrderValue: weekOrders.length > 0 ? weekOrders.reduce((sum, order) => sum + order.totalAmount, 0) / weekOrders.length : 0
+        },
+        month: {
+          orders: monthOrders.length,
+          revenue: monthOrders.reduce((sum, order) => sum + order.totalAmount, 0),
+          averageOrderValue: monthOrders.length > 0 ? monthOrders.reduce((sum, order) => sum + order.totalAmount, 0) / monthOrders.length : 0
+        },
+        total: {
+          orders: orders.length,
+          revenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
+          averageOrderValue: orders.length > 0 ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / orders.length : 0
+        },
+        statusBreakdown: {
+          pending: orders.filter(o => o.status === 'pending').length,
+          confirmed: orders.filter(o => o.status === 'confirmed').length,
+          preparing: orders.filter(o => o.status === 'preparing').length,
+          ready: orders.filter(o => o.status === 'ready').length,
+          'out-for-delivery': orders.filter(o => o.status === 'out-for-delivery').length,
+          delivered: orders.filter(o => o.status === 'delivered').length,
+          cancelled: orders.filter(o => o.status === 'cancelled').length
+        }
+      };
+
+      res.json({
+        success: true,
+        data: stats,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching store stats:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch store statistics",
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });
@@ -621,12 +923,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       success: true,
       message: "Store API is running",
       timestamp: new Date().toISOString(),
+      version: "1.0.0",
       endpoints: {
-        latestOrders: "/api/store/orders/latest",
-        orderPrint: "/api/store/orders/:id/print",
-        updateStatus: "/api/store/orders/:id/status",
-        websocket: "/ws"
-      }
+        latestOrders: "GET /api/store/orders/latest",
+        todayOrders: "GET /api/store/orders/today",
+        ordersByStatus: "GET /api/store/orders/status/:status",
+        orderDetails: "GET /api/store/orders/:id",
+        orderPrint: "GET /api/store/orders/:id/print",
+        updateStatus: "PATCH /api/store/orders/:id/status",
+        markPrinted: "PATCH /api/store/orders/:id/printed",
+        bulkStatusUpdate: "PATCH /api/store/orders/bulk/status",
+        statistics: "GET /api/store/stats",
+        websocket: "WS /ws"
+      },
+      features: [
+        "Real-time order notifications",
+        "Printer integration support",
+        "Order status management",
+        "Sales statistics",
+        "Bulk operations",
+        "Today's orders summary"
+      ]
     });
   });
 
