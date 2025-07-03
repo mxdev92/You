@@ -454,11 +454,11 @@ export default function AdminPanel() {
                   <div><span className="font-medium">الهاتف:</span> {selectedOrder.customerPhone}</div>
                   <div className="text-xs">
                     <span className="font-medium">العنوان:</span><br />
-                    {selectedOrder.address?.governorate} - {selectedOrder.address?.district}<br />
-                    {selectedOrder.address?.neighborhood} - {selectedOrder.address?.street}<br />
-                    منزل رقم {selectedOrder.address?.houseNumber}
-                    {selectedOrder.address?.floorNumber && ` - الطابق ${selectedOrder.address.floorNumber}`}
-                    {selectedOrder.address?.notes && <><br /><span className="text-gray-600">{selectedOrder.address.notes}</span></>}
+                    {(selectedOrder.address as any)?.governorate} - {(selectedOrder.address as any)?.district}<br />
+                    {(selectedOrder.address as any)?.neighborhood} - {(selectedOrder.address as any)?.street}<br />
+                    منزل رقم {(selectedOrder.address as any)?.houseNumber}
+                    {(selectedOrder.address as any)?.floorNumber && ` - الطابق ${(selectedOrder.address as any).floorNumber}`}
+                    {(selectedOrder.address as any)?.notes && <><br /><span className="text-gray-600">{(selectedOrder.address as any).notes}</span></>}
                   </div>
                   <div><span className="font-medium">تاريخ الطلب:</span> {new Date(selectedOrder.orderDate).toLocaleDateString('en-US')}</div>
                 </div>
