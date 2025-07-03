@@ -355,18 +355,18 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                 {/* Profile Header */}
                 <div className="px-6 pb-4 border-b border-gray-100">
                   <div className="flex items-center justify-between">
-                    <div className="w-10" />
-                    <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      الملف الشخصي
-                    </h2>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setCurrentView('menu')}
                       className="hover:bg-gray-100"
                     >
-                      <ArrowLeft className="h-5 w-5 rotate-180" />
+                      <ArrowLeft className="h-5 w-5" />
                     </Button>
+                    <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      الملف الشخصي
+                    </h2>
+                    <div className="w-10" />
                   </div>
                 </div>
 
