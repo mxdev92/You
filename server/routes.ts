@@ -509,7 +509,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sort by order date descending and limit results
       const latestOrders = orders
         .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
-        .slice(0, limit);
+        .slice(0, limit)
+        .map(order => {
+          // Safely parse items
+          let items;
+          try {
+            items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          } catch (e) {
+            items = [];
+          }
+
+          // Safely parse address
+          let shippingAddress = null;
+          if (order.address) {
+            try {
+              shippingAddress = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
+            } catch (e) {
+              shippingAddress = null;
+            }
+          }
+
+          return {
+            id: order.id,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerPhone: order.customerPhone,
+            items: items,
+            totalAmount: order.totalAmount,
+            orderDate: order.orderDate,
+            status: order.status,
+            shippingAddress: shippingAddress,
+            deliveryTime: order.deliveryTime,
+            notes: order.notes,
+            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
+            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
+            itemsCount: items.length,
+            estimatedPreparationTime: Math.max(items.length * 5, 15) // 5 mins per item, min 15 mins
+          };
+        });
       
       res.json({
         success: true,
@@ -643,10 +680,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         averageOrderValue: todayOrders.length > 0 ? todayOrders.reduce((sum, order) => sum + order.totalAmount, 0) / todayOrders.length : 0
       };
 
+      // Format orders with parsed address data
+      const formattedOrders = todayOrders
+        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
+        .map(order => {
+          // Safely parse items
+          let items;
+          try {
+            items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          } catch (e) {
+            items = [];
+          }
+
+          // Safely parse address
+          let shippingAddress = null;
+          if (order.address) {
+            try {
+              shippingAddress = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
+            } catch (e) {
+              shippingAddress = null;
+            }
+          }
+
+          return {
+            id: order.id,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerPhone: order.customerPhone,
+            items: items,
+            totalAmount: order.totalAmount,
+            orderDate: order.orderDate,
+            status: order.status,
+            shippingAddress: shippingAddress,
+            deliveryTime: order.deliveryTime,
+            notes: order.notes,
+            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
+            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
+            itemsCount: items.length,
+            estimatedPreparationTime: Math.max(items.length * 5, 15)
+          };
+        });
+
       res.json({
         success: true,
         data: summary,
-        orders: todayOrders.sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()),
+        orders: formattedOrders,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
@@ -676,7 +754,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getOrders();
       const filteredOrders = orders
         .filter(order => order.status === status)
-        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
+        .map(order => {
+          // Safely parse items
+          let items;
+          try {
+            items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+          } catch (e) {
+            items = [];
+          }
+
+          // Safely parse address
+          let shippingAddress = null;
+          if (order.address) {
+            try {
+              shippingAddress = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
+            } catch (e) {
+              shippingAddress = null;
+            }
+          }
+
+          return {
+            id: order.id,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerPhone: order.customerPhone,
+            items: items,
+            totalAmount: order.totalAmount,
+            orderDate: order.orderDate,
+            status: order.status,
+            shippingAddress: shippingAddress,
+            deliveryTime: order.deliveryTime,
+            notes: order.notes,
+            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
+            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
+            itemsCount: items.length,
+            estimatedPreparationTime: Math.max(items.length * 5, 15)
+          };
+        });
 
       res.json({
         success: true,

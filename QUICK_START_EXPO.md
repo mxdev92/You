@@ -105,37 +105,89 @@ export default function App() {
     }
   };
 
-  // Print order (basic implementation)
+  // Print order with full address support
   const printOrder = async (order: Order) => {
     try {
       const { printToFileAsync } = await import('expo-print');
       const { shareAsync } = await import('expo-sharing');
       
+      // Format address properly
+      const formatAddress = (address: any) => {
+        if (!address) return 'العنوان غير محدد';
+        
+        const parts = [];
+        if (address.governorate) parts.push(`المحافظة: ${address.governorate}`);
+        if (address.district) parts.push(`المنطقة: ${address.district}`);
+        if (address.neighborhood) parts.push(`الحي: ${address.neighborhood}`);
+        if (address.street) parts.push(`الشارع: ${address.street}`);
+        if (address.nearestLandmark) parts.push(`أقرب نقطة دالة: ${address.nearestLandmark}`);
+        if (address.notes && address.notes.trim()) parts.push(`ملاحظات: ${address.notes}`);
+        
+        return parts.length > 0 ? parts.join('<br>') : 'العنوان غير محدد';
+      };
+      
       const html = `
         <html dir="rtl">
-          <body style="font-family: Arial; text-align: center;">
-            <h1>يلا جيتك</h1>
-            <h2>طلبية رقم: ${order.id}</h2>
-            <p><strong>العميل:</strong> ${order.customerName}</p>
-            <p><strong>الهاتف:</strong> ${order.customerPhone}</p>
-            <p><strong>التاريخ:</strong> ${new Date(order.orderDate).toLocaleString('ar-IQ')}</p>
+          <body style="font-family: Arial; text-align: center; margin: 20px; line-height: 1.6;">
+            <div style="border-bottom: 2px solid #10b981; padding-bottom: 20px; margin-bottom: 30px;">
+              <h1 style="color: #10b981; font-size: 32px; margin-bottom: 10px;">يلا جيتك</h1>
+              <div>YALLA JEETEK</div>
+            </div>
             
-            <table style="width: 100%; border-collapse: collapse;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+              <h2>طلبية رقم: #${order.id}</h2>
+              <p><strong>التاريخ:</strong> ${new Date(order.orderDate).toLocaleString('ar-IQ')}</p>
+              <p><strong>الحالة:</strong> ${order.status}</p>
+              ${order.deliveryTime ? `<p><strong>وقت التوصيل:</strong> ${order.deliveryTime}</p>` : ''}
+            </div>
+
+            <div style="text-align: right; margin-bottom: 20px;">
+              <h3 style="color: #333; margin-bottom: 10px;">معلومات العميل</h3>
+              <p><strong>الاسم:</strong> ${order.customerName}</p>
+              <p><strong>الهاتف:</strong> ${order.customerPhone}</p>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
               <tr>
-                <th style="border: 1px solid #000; padding: 8px;">الكمية</th>
-                <th style="border: 1px solid #000; padding: 8px;">السعر</th>
-                <th style="border: 1px solid #000; padding: 8px;">المنتج</th>
+                <th style="background: #10b981; color: white; padding: 12px; border: 1px solid #000;">الكمية</th>
+                <th style="background: #10b981; color: white; padding: 12px; border: 1px solid #000;">السعر</th>
+                <th style="background: #10b981; color: white; padding: 12px; border: 1px solid #000;">المنتج</th>
               </tr>
               ${order.items?.map(item => `
                 <tr>
-                  <td style="border: 1px solid #000; padding: 8px;">${item.quantity} ${item.unit}</td>
-                  <td style="border: 1px solid #000; padding: 8px;">${parseInt(item.price).toLocaleString()} د.ع</td>
-                  <td style="border: 1px solid #000; padding: 8px;">${item.name}</td>
+                  <td style="border: 1px solid #000; padding: 10px; text-align: center;">${item.quantity} ${item.unit}</td>
+                  <td style="border: 1px solid #000; padding: 10px; text-align: right;">${parseInt(item.price).toLocaleString()} د.ع</td>
+                  <td style="border: 1px solid #000; padding: 10px; text-align: right;">${item.name}</td>
                 </tr>
               `).join('') || ''}
             </table>
             
-            <h3>المجموع: ${order.totalAmount?.toLocaleString()} د.ع</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: right;">
+              <div style="font-size: 24px; font-weight: bold; color: #10b981;">
+                المجموع الكلي: ${order.totalAmount?.toLocaleString()} د.ع
+              </div>
+            </div>
+
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: right; border: 1px solid #ffeaa7;">
+              <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+                عنوان التوصيل
+              </div>
+              <div style="font-size: 16px; line-height: 1.8; color: #555;">
+                ${formatAddress(order.shippingAddress)}
+              </div>
+            </div>
+
+            ${order.notes ? `
+              <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: right; border: 1px solid #ffeaa7;">
+                <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px;">ملاحظات الطلبية</div>
+                <div style="font-size: 16px; color: #555;">${order.notes}</div>
+              </div>
+            ` : ''}
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
+              <p>شكراً لاختياركم يلا جيتك</p>
+              <p>طُبعت في: ${new Date().toLocaleString('ar-IQ')}</p>
+            </div>
           </body>
         </html>
       `;
