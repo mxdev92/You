@@ -15,9 +15,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Provider as PaperProvider, Card, Button, Appbar } from 'react-native-paper';
 
-// Your API URL - Replace with your actual domain
-const API_URL = 'https://your-app.replit.app';
-const WS_URL = 'wss://your-app.replit.app/ws';
+// Your API URL - Your actual Replit domain
+const API_URL = 'https://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev';
+const WS_URL = 'wss://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev/ws';
 
 interface Order {
   id: number;
@@ -369,8 +369,10 @@ const styles = StyleSheet.create({
 });
 ```
 
-### 3. Update Your API URL
-Replace `https://your-app.replit.app` with your actual Replit domain.
+### 3. Your API URLs Are Ready
+The app is already configured with your actual Replit domain:
+- **Web API**: `https://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev`
+- **WebSocket**: `wss://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev/ws`
 
 ### 4. Run the App
 ```bash

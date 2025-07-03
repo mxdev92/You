@@ -77,11 +77,11 @@ StoreApp/
 
 **src/utils/constants.ts**
 ```typescript
-// Replace with your actual domain
-export const API_BASE_URL = 'https://your-domain.replit.app';
-export const WS_URL = 'wss://your-domain.replit.app/ws';
+// Your actual Replit domain
+export const API_BASE_URL = 'https://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev';
+export const WS_URL = 'wss://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev/ws';
 
-// For local development
+// For local development (if needed)
 // export const API_BASE_URL = 'http://192.168.1.100:5000';
 // export const WS_URL = 'ws://192.168.1.100:5000/ws';
 
