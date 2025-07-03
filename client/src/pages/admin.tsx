@@ -248,8 +248,7 @@ function OrderCard({ order }: { order: Order }) {
               }
             }}
           >
-            <Printer className="h-4 w-4 mr-1" />
-            Print
+            📄 Print
           </Button>
 
           <Button
