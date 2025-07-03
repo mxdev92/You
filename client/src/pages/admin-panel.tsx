@@ -1363,15 +1363,59 @@ export default function AdminPanel() {
                 {filteredOrders.map((order) => (
                   <div 
                     key={order.id} 
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => handleOrderClick(order)}
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-center">
-                      <div className="flex-1">
+                      <div className="flex-1 cursor-pointer" onClick={() => handleOrderClick(order)}>
                         <span className="text-sm font-medium text-gray-900">{order.customerName}</span>
                       </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold text-green-600">{order.totalAmount}.00 د.ع</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            console.log('📄 Manual printing invoice for order:', order.id);
+                            try {
+                              const response = await fetch('/api/generate-invoice-pdf', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  orderData: order
+                                })
+                              });
+
+                              if (response.ok) {
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                
+                                // Download PDF for Brother DCP-T520W printer
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = `invoice-order-${order.id}.pdf`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                
+                                // Clean up the URL object
+                                window.URL.revokeObjectURL(url);
+                                
+                                console.log('✅ PDF downloaded successfully for printing');
+                              } else {
+                                console.error('❌ Print error:', {});
+                              }
+                            } catch (error) {
+                              console.error('❌ Print error:', {});
+                            }
+                          }}
+                        >
+                          📄
+                        </Button>
+                        <div className="text-right">
+                          <span className="text-sm font-semibold text-green-600">{order.totalAmount}.00 د.ع</span>
+                        </div>
                       </div>
                     </div>
                   </div>
