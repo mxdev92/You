@@ -1,22 +1,18 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, connectFirestoreEmulator, enableNetwork, disableNetwork } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBgQtCBkbmds2LFfFzNu08zFzMX4O0SGCk",
-  authDomain: "qiwiq-3a8a1.firebaseapp.com",
-  projectId: "qiwiq-3a8a1",
-  storageBucket: "qiwiq-3a8a1.firebasestorage.app",
-  messagingSenderId: "332378943784",
-  appId: "1:332378943784:web:ef6d63bfe47c9959f5a01d",
-  measurementId: "G-3PLLV0BRVK"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebasestorage.app`,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (prevent duplicate initialization)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth = getAuth(app);
-export const analytics = getAnalytics(app);
 export const db = getFirestore(app);
 
 // Auth functions
