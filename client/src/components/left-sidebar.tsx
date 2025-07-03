@@ -8,6 +8,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useLanguage } from "@/hooks/use-language";
 import { useAddressStore } from "@/store/address-store";
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 
@@ -103,8 +104,8 @@ function OrdersHistoryContent() {
 interface LeftSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentView: 'menu' | 'addresses' | 'settings' | 'profile' | 'orders';
-  setCurrentView: (view: 'menu' | 'addresses' | 'settings' | 'profile' | 'orders') => void;
+  currentView: 'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt';
+  setCurrentView: (view: 'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt') => void;
 }
 
 interface ShippingFormProps {
@@ -305,6 +306,7 @@ function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, 
 export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
   const { user, signOut } = useAuth();
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
   const [showAddressForm, setShowAddressForm] = useState(false);
   const { addresses: savedAddresses, addAddress } = useAddressStore();
   const [addressData, setAddressData] = useState({
@@ -329,12 +331,24 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     };
   }, [isOpen]);
   
+  const handleMenuItemClick = (targetView: string, action?: () => void) => {
+    if (!user) {
+      // If user is not authenticated, show login prompt
+      setCurrentView('login-prompt');
+      return;
+    }
+    // If authenticated, proceed with the action
+    if (action) {
+      action();
+    }
+  };
+
   const menuItems = [
-    { icon: User, label: t('profile'), href: "#", onClick: () => setCurrentView('profile') },
-    { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => setCurrentView('addresses') },
-    { icon: Wallet, label: t('wallet'), href: "#" },
-    { icon: ShoppingBag, label: 'طلباتي', href: "#", onClick: () => setCurrentView('orders') },
-    { icon: Settings, label: t('settings'), href: "#", onClick: () => setCurrentView('settings') },
+    { icon: User, label: t('profile'), href: "#", onClick: () => handleMenuItemClick('profile', () => setCurrentView('profile')) },
+    { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => handleMenuItemClick('addresses', () => setCurrentView('addresses')) },
+    { icon: Wallet, label: t('wallet'), href: "#", onClick: () => handleMenuItemClick('wallet') },
+    { icon: ShoppingBag, label: 'طلباتي', href: "#", onClick: () => handleMenuItemClick('orders', () => setCurrentView('orders')) },
+    { icon: Settings, label: t('settings'), href: "#", onClick: () => handleMenuItemClick('settings', () => setCurrentView('settings')) },
   ];
 
   const handleLogout = async () => {
@@ -399,7 +413,62 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
             }}
             className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-r-3xl flex flex-col safe-area-inset"
           >
-            {currentView === 'settings' ? (
+            {currentView === 'login-prompt' ? (
+              // Login Prompt View
+              <div className="flex-1 pt-8 pb-4 flex flex-col items-center justify-center text-center">
+                <div className="px-6">
+                  {/* Icon */}
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 mx-auto shadow-lg">
+                    <User className="h-8 w-8 text-white" />
+                  </div>
+                  
+                  {/* Title */}
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    مرحباً بك!
+                  </h2>
+                  
+                  {/* Description */}
+                  <p className="text-gray-600 mb-8 leading-relaxed" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    للوصول إلى ملفك الشخصي وطلباتك وعناوين التوصيل، يرجى تسجيل الدخول أولاً
+                  </p>
+                  
+                  {/* Action Buttons */}
+                  <div className="space-y-3 w-full">
+                    <Button
+                      className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-medium py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                      onClick={() => {
+                        onClose();
+                        setLocation('/login');
+                      }}
+                    >
+                      تسجيل الدخول
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-green-500 text-green-600 font-medium py-3 rounded-xl hover:bg-green-50 transition-all duration-200"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                      onClick={() => {
+                        onClose();
+                        setLocation('/login');
+                      }}
+                    >
+                      إنشاء حساب جديد
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      className="w-full text-gray-500 font-medium py-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                      onClick={() => setCurrentView('menu')}
+                    >
+                      العودة للقائمة
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : currentView === 'settings' ? (
               // Settings View
               <div className="flex-1 pt-8 pb-4">
                 {/* Settings Header */}
@@ -689,8 +758,8 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               </div>
             )}
 
-            {/* Bottom Section - Only show logout in menu view */}
-            {currentView === 'menu' && (
+            {/* Bottom Section - Only show logout in menu view for authenticated users */}
+            {currentView === 'menu' && user && (
               <div className="px-6 pb-6">
                 <Button
                   onClick={handleLogout}
@@ -699,6 +768,19 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                 >
                   <LogOut className="mr-3 h-4 w-4" />
                   {t('logout')}
+                </Button>
+              </div>
+            )}
+            
+            {/* Login Button for Non-Authenticated Users */}
+            {currentView === 'menu' && !user && (
+              <div className="px-6 pb-6">
+                <Button
+                  onClick={() => setLocation('/login')}
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-medium py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                >
+                  تسجيل الدخول
                 </Button>
               </div>
             )}
