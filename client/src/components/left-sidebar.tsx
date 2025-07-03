@@ -12,8 +12,8 @@ import { useState, useRef, useEffect } from "react";
 interface LeftSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  currentView: 'menu' | 'addresses' | 'settings';
-  setCurrentView: (view: 'menu' | 'addresses' | 'settings') => void;
+  currentView: 'menu' | 'addresses' | 'settings' | 'profile';
+  setCurrentView: (view: 'menu' | 'addresses' | 'settings' | 'profile') => void;
 }
 
 interface ShippingFormProps {
@@ -239,7 +239,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   }, [isOpen]);
   
   const menuItems = [
-    { icon: User, label: t('profile'), href: "#" },
+    { icon: User, label: t('profile'), href: "#", onClick: () => setCurrentView('profile') },
     { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => setCurrentView('addresses') },
     { icon: Wallet, label: t('wallet'), href: "#" },
     { icon: ShoppingBag, label: t('orders'), href: "#" },
@@ -345,6 +345,85 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                         </span>
                       </div>
                       <LanguageSelector />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : currentView === 'profile' ? (
+              // Profile View
+              <div className="flex-1 pt-8 pb-4">
+                {/* Profile Header */}
+                <div className="px-6 pb-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setCurrentView('menu')}
+                      className="hover:bg-gray-100"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      الملف الشخصي
+                    </h2>
+                    <div className="w-10" />
+                  </div>
+                </div>
+
+                {/* Profile Content */}
+                <div className="px-6 py-6 space-y-6">
+                  {/* Personal Information Section */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      المعلومات الشخصية
+                    </h3>
+                    
+                    {/* Name Field */}
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                          الاسم
+                        </span>
+                      </div>
+                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                        {user?.displayName || user?.email?.split('@')[0] || 'غير محدد'}
+                      </div>
+                    </div>
+
+                    {/* Phone Field */}
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                          الرقم
+                        </span>
+                      </div>
+                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                        {user?.phoneNumber || 'غير محدد'}
+                      </div>
+                    </div>
+
+                    {/* Email Field */}
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                          الايميل
+                        </span>
+                      </div>
+                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                        {user?.email || 'غير محدد'}
+                      </div>
+                    </div>
+
+                    {/* Password Field */}
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                          الباسورد
+                        </span>
+                      </div>
+                      <div className="mt-2 text-base font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                        ••••••••
+                      </div>
                     </div>
                   </div>
                 </div>
