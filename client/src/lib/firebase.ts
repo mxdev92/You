@@ -89,7 +89,16 @@ export const createOrder = async (order: Omit<Order, 'id'>) => {
     };
     
     console.log('Adding document to Firestore...');
-    const docRef = await addDoc(collection(db, 'orders'), orderWithDefaults);
+    
+    // Add timeout to prevent infinite hanging
+    const addDocWithTimeout = Promise.race([
+      addDoc(collection(db, 'orders'), orderWithDefaults),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
+      )
+    ]);
+    
+    const docRef = await addDocWithTimeout as any;
     console.log('Order successfully created with ID:', docRef.id);
     
     return docRef.id;
