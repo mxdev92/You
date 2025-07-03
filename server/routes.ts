@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertProductSchema } from "@shared/schema";
+import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
 import { chromium } from 'playwright';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -431,6 +431,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('PDF generation error:', error);
       res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
+  // Orders API
+  app.get("/api/orders", async (req, res) => {
+    try {
+      const orders = await storage.getOrders();
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  app.post("/api/orders", async (req, res) => {
+    try {
+      const validatedOrder = insertOrderSchema.parse(req.body);
+      const order = await storage.createOrder(validatedOrder);
+      res.status(201).json(order);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid order data" });
+    }
+  });
+
+  app.patch("/api/orders/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      const order = await storage.updateOrderStatus(id, status);
+      res.json(order);
+    } catch (error) {
+      res.status(404).json({ message: "Order not found" });
+    }
+  });
+
+  app.delete("/api/orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteOrder(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(404).json({ message: "Order not found" });
     }
   });
 

@@ -1,4 +1,4 @@
-import { categories, products, cartItems, type Category, type Product, type CartItem, type InsertCategory, type InsertProduct, type InsertCartItem } from "@shared/schema";
+import { categories, products, cartItems, orders, type Category, type Product, type CartItem, type Order, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 
@@ -22,23 +22,33 @@ export interface IStorage {
   updateCartItemQuantity(id: number, quantity: number): Promise<CartItem>;
   removeFromCart(id: number): Promise<void>;
   clearCart(): Promise<void>;
+
+  // Orders
+  getOrders(): Promise<Order[]>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrderStatus(id: number, status: string): Promise<Order>;
+  deleteOrder(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private categories: Map<number, Category>;
   private products: Map<number, Product>;
   private cartItems: Map<number, CartItem>;
+  private orders: Map<number, Order>;
   private currentCategoryId: number;
   private currentProductId: number;
   private currentCartItemId: number;
+  private currentOrderId: number;
 
   constructor() {
     this.categories = new Map();
     this.products = new Map();
     this.cartItems = new Map();
+    this.orders = new Map();
     this.currentCategoryId = 1;
     this.currentProductId = 1;
     this.currentCartItemId = 1;
+    this.currentOrderId = 1;
 
     // Initialize with sample data
     this.initializeData();
@@ -237,6 +247,41 @@ export class MemStorage implements IStorage {
     this.products.set(id, updatedProduct);
     return updatedProduct;
   }
+
+  // Orders
+  async getOrders(): Promise<Order[]> {
+    return Array.from(this.orders.values()).sort((a, b) => 
+      new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+    );
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const id = this.currentOrderId++;
+    const order: Order = {
+      id,
+      ...insertOrder,
+      status: insertOrder.status || "pending",
+      orderDate: new Date(),
+      deliveryTime: insertOrder.deliveryTime || null,
+      notes: insertOrder.notes || null,
+    };
+    this.orders.set(id, order);
+    return order;
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order> {
+    const order = this.orders.get(id);
+    if (!order) {
+      throw new Error(`Order with id ${id} not found`);
+    }
+    const updatedOrder = { ...order, status };
+    this.orders.set(id, updatedOrder);
+    return updatedOrder;
+  }
+
+  async deleteOrder(id: number): Promise<void> {
+    this.orders.delete(id);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -350,6 +395,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(products.id, id))
       .returning();
     return updated;
+  }
+
+  // Orders
+  async getOrders(): Promise<Order[]> {
+    const result = await db.select().from(orders).orderBy(sql`${orders.orderDate} DESC`);
+    return result;
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const [newOrder] = await db.insert(orders).values(order).returning();
+    return newOrder;
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order> {
+    const [updated] = await db.update(orders)
+      .set({ status })
+      .where(eq(orders.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteOrder(id: number): Promise<void> {
+    await db.delete(orders).where(eq(orders.id, id));
   }
 }
 
