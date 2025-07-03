@@ -91,28 +91,40 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
   );
 }
 
-const DeliveryNotesComponent = React.memo(({ deliveryNotes, setDeliveryNotes }: { 
-  deliveryNotes: string; 
-  setDeliveryNotes: (value: string) => void; 
-}) => (
-  <div className="bg-white rounded-xl p-4 shadow-sm border border-orange-100">
-    <div className="flex items-center justify-between mb-3">
-      <h3 className="text-sm font-medium text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-        ملاحظات للتوصيل:
-      </h3>
+// Global ref to access delivery notes from isolated component
+let globalDeliveryNotesRef: { current: string } = { current: '' };
+
+const DeliveryNotesComponent = React.memo(() => {
+  const [localNotes, setLocalNotes] = React.useState('');
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setLocalNotes(value);
+    globalDeliveryNotesRef.current = value;
+  };
+  
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-orange-100">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-medium text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+          ملاحظات للتوصيل:
+        </h3>
+      </div>
+      <textarea
+        ref={textareaRef}
+        value={localNotes}
+        onChange={handleChange}
+        placeholder="اكتب أي ملاحظات خاصة للتوصيل..."
+        className="w-full p-3 text-sm border-0 bg-gray-50 rounded-lg focus:ring-2 focus:ring-fresh-green resize-none text-right"
+        rows={3}
+        style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+        autoComplete="off"
+        spellCheck="false"
+      />
     </div>
-    <textarea
-      value={deliveryNotes}
-      onChange={(e) => setDeliveryNotes(e.target.value)}
-      placeholder="اكتب أي ملاحظات خاصة للتوصيل..."
-      className="w-full p-3 text-sm border-0 bg-gray-50 rounded-lg focus:ring-2 focus:ring-fresh-green resize-none text-right"
-      rows={3}
-      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-      autoComplete="off"
-      spellCheck="false"
-    />
-  </div>
-));
+  );
+});
 
 DeliveryNotesComponent.displayName = 'DeliveryNotesComponent';
 
@@ -197,7 +209,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         status: 'pending' as const,
         orderDate: new Date().toISOString(),
         deliveryTime: deliveryTime,
-        notes: deliveryNotes
+        notes: globalDeliveryNotesRef.current
       };
 
       await createOrder(orderData);
@@ -459,10 +471,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {/* Delivery Notes - Clean */}
-        <DeliveryNotesComponent 
-          deliveryNotes={deliveryNotes}
-          setDeliveryNotes={setDeliveryNotes}
-        />
+        <DeliveryNotesComponent />
 
         {/* Address - Clean */}
         <div className="bg-white rounded-xl p-4 shadow-sm">
