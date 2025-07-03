@@ -62,62 +62,17 @@ export interface Order {
 }
 
 export const createOrder = async (order: Omit<Order, 'id'>) => {
-  try {
-    console.log('Firebase createOrder called with:', order);
-    
-    // Validate Firebase config
-    const config = {
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-      appId: import.meta.env.VITE_FIREBASE_APP_ID
-    };
-    
-    console.log('Firebase config check:', {
-      hasApiKey: !!config.apiKey,
-      hasProjectId: !!config.projectId,
-      hasAppId: !!config.appId
-    });
-    
-    if (!config.apiKey || !config.projectId || !config.appId) {
-      throw new Error('Firebase configuration is incomplete. Please check environment variables.');
-    }
-    
-    const orderWithDefaults = {
-      ...order,
-      orderDate: new Date().toISOString(),
-      status: 'pending' as const
-    };
-    
-    console.log('Adding document to Firestore...');
-    
-    // Add timeout to prevent infinite hanging
-    const addDocWithTimeout = Promise.race([
-      addDoc(collection(db, 'orders'), orderWithDefaults),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
-      )
-    ]);
-    
-    const docRef = await addDocWithTimeout as any;
-    console.log('Order successfully created with ID:', docRef.id);
-    
-    return docRef.id;
-  } catch (error: any) {
-    console.error('Error creating order:', error);
-    console.error('Error code:', error.code);
-    console.error('Error message:', error.message);
-    
-    // Provide more specific error messages
-    if (error.code === 'permission-denied') {
-      throw new Error('Permission denied. Please check Firebase security rules.');
-    } else if (error.code === 'unavailable') {
-      throw new Error('Firebase service is temporarily unavailable. Please try again.');
-    } else if (error.message?.includes('fetch')) {
-      throw new Error('Network connection error. Please check your internet connection.');
-    }
-    
-    throw new Error(error.message || 'Unknown error occurred while creating order.');
-  }
+  console.log('Creating order in Firebase:', order);
+  
+  const orderData = {
+    ...order,
+    orderDate: new Date().toISOString(),
+    status: 'pending' as const
+  };
+  
+  const docRef = await addDoc(collection(db, 'orders'), orderData);
+  console.log('Order created successfully with ID:', docRef.id);
+  return docRef.id;
 };
 
 export const getOrders = async () => {

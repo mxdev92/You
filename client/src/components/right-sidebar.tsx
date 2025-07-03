@@ -226,30 +226,13 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
       console.log('Order data prepared:', orderData);
       
-      try {
-        const orderId = await createOrder(orderData);
-        console.log('Order created successfully with ID:', orderId);
-        
-        clearCart();
-        alert('تم تقديم الطلب بنجاح! يمكنك مراجعة الطلب في لوحة الإدارة.');
-        setCurrentView('cart');
-        onClose();
-      } catch (firebaseError: any) {
-        console.warn('Firebase submission failed, falling back to local storage:', firebaseError);
-        
-        // Store order locally as backup
-        const localOrderId = `local_${Date.now()}`;
-        const localOrder = { ...orderData, id: localOrderId };
-        
-        const existingOrders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
-        existingOrders.push(localOrder);
-        localStorage.setItem('pendingOrders', JSON.stringify(existingOrders));
-        
-        clearCart();
-        alert('تم حفظ الطلب محلياً! سيتم رفعه للخادم عند توفر الاتصال. رقم الطلب: ' + localOrderId);
-        setCurrentView('cart');
-        onClose();
-      }
+      const orderId = await createOrder(orderData);
+      console.log('Order created successfully with ID:', orderId);
+      
+      clearCart();
+      alert('تم تقديم الطلب بنجاح! يمكنك مراجعة الطلب في لوحة الإدارة.');
+      setCurrentView('cart');
+      onClose();
     } catch (error: any) {
       console.error('Error placing order:', error);
       console.error('Error details:', error.message);

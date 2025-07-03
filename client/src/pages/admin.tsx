@@ -267,10 +267,11 @@ export default function AdminPanel() {
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['orders'],
     queryFn: getOrders,
-    retry: 1,
-    retryDelay: 500,
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 10000,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    refetchOnWindowFocus: true,
   });
 
   const filteredOrders = statusFilter === 'all' 
