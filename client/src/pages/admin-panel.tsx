@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Settings } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -178,7 +179,18 @@ function OrderStats({ orders }: { orders: typeof mockOrders }) {
 }
 
 // Order Card Component
-function OrderCard({ order, onStatusChange }: any) {
+function OrderCard({ order, onStatusChange, onPrintOrder }: any) {
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      await onPrintOrder(order);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   return (
     <Card className="mb-4">
       <CardHeader>
@@ -187,9 +199,21 @@ function OrderCard({ order, onStatusChange }: any) {
             <CardTitle className="text-lg">Order #{order.id}</CardTitle>
             <p className="text-sm text-gray-600">{order.customerName}</p>
           </div>
-          <Badge variant={order.status === 'pending' ? 'destructive' : 'default'}>
-            {order.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="flex items-center gap-1"
+            >
+              <Printer className="h-4 w-4" />
+              {isPrinting ? 'طباعة...' : 'طباعة'}
+            </Button>
+            <Badge variant={order.status === 'pending' ? 'destructive' : 'default'}>
+              {order.status}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -198,7 +222,7 @@ function OrderCard({ order, onStatusChange }: any) {
           <p><strong>Address:</strong> {order.address.street}, {order.address.neighborhood}</p>
           <p><strong>Total:</strong> IQD {order.totalAmount.toLocaleString()}</p>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex items-center gap-3">
           <Select value={order.status} onValueChange={(newStatus) => onStatusChange(order.id, newStatus)}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -1188,6 +1212,16 @@ export default function AdminPanel() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
+  
+  // Auto-print settings
+  const [autoPrintEnabled, setAutoPrintEnabled] = useState(
+    localStorage.getItem('autoPrintEnabled') === 'true'
+  );
+  const [showPrintSettings, setShowPrintSettings] = useState(false);
+  const [printedOrders, setPrintedOrders] = useState<Set<number>>(new Set());
+  const wsRef = useRef<WebSocket | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [newOrderAlert, setNewOrderAlert] = useState<string | null>(null);
 
   const handleOrderClick = (order: Order) => {
     setSelectedOrder(order);
@@ -1198,6 +1232,172 @@ export default function AdminPanel() {
     setShowInvoice(false);
     setSelectedOrder(null);
   };
+
+  // Manual print function (can be called from order card)
+  const printOrderInvoice = async (order: Order, isManual = false) => {
+    try {
+      if (!isManual) {
+        console.log('🖨️ Auto-printing invoice for order:', order.id);
+      } else {
+        console.log('📄 Manual printing invoice for order:', order.id);
+      }
+      
+      // Generate PDF
+      const response = await fetch('/api/generate-invoice-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(order),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate PDF: ${response.statusText}`);
+      }
+
+      const pdfBlob = await response.blob();
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Create hidden iframe for printing
+      const printFrame = document.createElement('iframe');
+      printFrame.style.display = 'none';
+      printFrame.src = pdfUrl;
+      
+      document.body.appendChild(printFrame);
+      
+      return new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          console.error('❌ Print timeout');
+          document.body.removeChild(printFrame);
+          URL.revokeObjectURL(pdfUrl);
+          reject(new Error('Print timeout'));
+        }, 10000); // 10 second timeout
+        
+        printFrame.onload = () => {
+          setTimeout(() => {
+            try {
+              printFrame.contentWindow?.print();
+              console.log('✅ Invoice printed successfully');
+              
+              // Mark as printed only for auto-prints
+              if (!isManual) {
+                setPrintedOrders(prev => new Set(Array.from(prev).concat([order.id])));
+              }
+              
+              clearTimeout(timeout);
+              
+              // Clean up
+              setTimeout(() => {
+                if (document.body.contains(printFrame)) {
+                  document.body.removeChild(printFrame);
+                }
+                URL.revokeObjectURL(pdfUrl);
+                resolve();
+              }, 1000);
+            } catch (error) {
+              console.error('❌ Print failed:', error);
+              clearTimeout(timeout);
+              if (document.body.contains(printFrame)) {
+                document.body.removeChild(printFrame);
+              }
+              URL.revokeObjectURL(pdfUrl);
+              reject(error);
+            }
+          }, 500);
+        };
+        
+        printFrame.onerror = () => {
+          console.error('❌ PDF load failed');
+          clearTimeout(timeout);
+          if (document.body.contains(printFrame)) {
+            document.body.removeChild(printFrame);
+          }
+          URL.revokeObjectURL(pdfUrl);
+          reject(new Error('PDF load failed'));
+        };
+      });
+      
+    } catch (error) {
+      console.error('❌ Print error:', error);
+      throw error;
+    }
+  };
+
+  // Auto-print function (wrapper for new orders)
+  const autoPrintInvoice = async (order: Order) => {
+    if (!autoPrintEnabled || printedOrders.has(order.id)) return;
+    
+    try {
+      await printOrderInvoice(order, false);
+    } catch (error) {
+      console.error('❌ Auto-print failed for order:', order.id, error);
+      // Don't mark as printed if auto-print fails - user can manually retry
+    }
+  };
+
+  // WebSocket connection for real-time orders
+  useEffect(() => {
+    if (!autoPrintEnabled) return;
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    const connectWebSocket = () => {
+      wsRef.current = new WebSocket(wsUrl);
+      
+      wsRef.current.onopen = () => {
+        console.log('🔄 WebSocket connected for auto-print');
+        setWsConnected(true);
+      };
+      
+      wsRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === 'new_order') {
+            console.log('📨 New order received:', data.order);
+            
+            // Show alert
+            setNewOrderAlert(`طلبية جديدة من ${data.order.customerName}`);
+            setTimeout(() => setNewOrderAlert(null), 3000);
+            
+            // Auto-print if enabled
+            if (autoPrintEnabled) {
+              autoPrintInvoice(data.order);
+            }
+            
+            // Refresh orders
+            queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+          }
+        } catch (error) {
+          console.error('❌ WebSocket message error:', error);
+        }
+      };
+      
+      wsRef.current.onclose = () => {
+        console.log('🔌 WebSocket disconnected');
+        setWsConnected(false);
+        
+        // Reconnect after 3 seconds
+        setTimeout(connectWebSocket, 3000);
+      };
+      
+      wsRef.current.onerror = (error) => {
+        console.error('❌ WebSocket error:', error);
+      };
+    };
+    
+    connectWebSocket();
+    
+    return () => {
+      wsRef.current?.close();
+    };
+  }, [autoPrintEnabled, queryClient]);
+
+  // Save auto-print setting to localStorage
+  useEffect(() => {
+    localStorage.setItem('autoPrintEnabled', autoPrintEnabled.toString());
+  }, [autoPrintEnabled]);
 
   const downloadInvoicePDF = async () => {
     if (!selectedOrder) return;
@@ -1261,6 +1461,16 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* New Order Alert */}
+      {newOrderAlert && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <span className="text-sm font-medium">{newOrderAlert}</span>
+          </div>
+        </div>
+      )}
+      
       {/* Header with List Icon */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-6 py-2">
@@ -1275,6 +1485,70 @@ export default function AdminPanel() {
               <Badge variant="default" className="text-xs">
                 {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
               </Badge>
+              
+              {/* Auto-Print Status and Settings */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <span className="text-xs text-gray-600">
+                    {wsConnected ? 'متصل' : 'غير متصل'}
+                  </span>
+                </div>
+                <Dialog open={showPrintSettings} onOpenChange={setShowPrintSettings}>
+                  <DialogTrigger asChild>
+                    <button
+                      className="flex items-center gap-1 px-2 py-1 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Print Settings"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>إعدادات الطباعة</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="auto-print">طباعة تلقائية للطلبيات الجديدة</Label>
+                          <p className="text-sm text-gray-600">
+                            طباعة الفاتورة تلقائياً عند وصول طلبية جديدة
+                          </p>
+                        </div>
+                        <Switch
+                          id="auto-print"
+                          checked={autoPrintEnabled}
+                          onCheckedChange={setAutoPrintEnabled}
+                        />
+                      </div>
+                      
+                      <div className="border-t pt-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>حالة الاتصال:</span>
+                          <Badge variant={wsConnected ? "default" : "destructive"}>
+                            {wsConnected ? 'متصل' : 'غير متصل'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-sm mt-2">
+                          <span>طلبيات مطبوعة:</span>
+                          <span className="text-gray-600">{printedOrders.size}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-4">
+                        <p className="text-xs text-gray-500">
+                          للحصول على أفضل النتائج، استخدم Chrome في وضع الكشك:
+                          <br />
+                          <code className="bg-gray-100 px-1 rounded text-xs">
+                            chrome.exe --kiosk-printing --app=url
+                          </code>
+                        </p>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -1306,20 +1580,12 @@ export default function AdminPanel() {
             ) : (
               <>
                 {filteredOrders.map((order) => (
-                  <div 
+                  <OrderCard 
                     key={order.id} 
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => handleOrderClick(order)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-900">{order.customerName}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold text-green-600">{order.totalAmount}.00 د.ع</span>
-                      </div>
-                    </div>
-                  </div>
+                    order={order} 
+                    onStatusChange={updateOrderMutation.mutate}
+                    onPrintOrder={(order: Order) => printOrderInvoice(order, true)}
+                  />
                 ))}
               </>
             )}
