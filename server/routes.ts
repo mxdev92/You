@@ -154,19 +154,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PDF Generation with Playwright
   app.post("/api/generate-invoice-pdf", async (req, res) => {
     try {
-      console.log('🖨️ PDF generation request received');
-      console.log('Request body keys:', Object.keys(req.body || {}));
-      console.log('Request headers:', req.headers);
-      
       const { orderData } = req.body;
       
       if (!orderData) {
-        console.error('❌ No order data provided in request body');
-        console.log('Full request body:', JSON.stringify(req.body, null, 2));
         return res.status(400).json({ message: "Order data is required" });
       }
-      
-      console.log('📄 Processing order data for PDF generation...');
 
       // Launch browser with production-safe settings
       const browser = await chromium.launch({
