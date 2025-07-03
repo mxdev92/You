@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Plus, Minus, ArrowLeft, MapPin, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import React from "react";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { useAddressStore } from "@/store/address-store";
@@ -90,6 +91,31 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
   );
 }
 
+const DeliveryNotesComponent = React.memo(({ deliveryNotes, setDeliveryNotes }: { 
+  deliveryNotes: string; 
+  setDeliveryNotes: (value: string) => void; 
+}) => (
+  <div className="bg-white rounded-xl p-4 shadow-sm border border-orange-100">
+    <div className="flex items-center justify-between mb-3">
+      <h3 className="text-sm font-medium text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+        ملاحظات للتوصيل:
+      </h3>
+    </div>
+    <textarea
+      value={deliveryNotes}
+      onChange={(e) => setDeliveryNotes(e.target.value)}
+      placeholder="اكتب أي ملاحظات خاصة للتوصيل..."
+      className="w-full p-3 text-sm border-0 bg-gray-50 rounded-lg focus:ring-2 focus:ring-fresh-green resize-none text-right"
+      rows={3}
+      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+      autoComplete="off"
+      spellCheck="false"
+    />
+  </div>
+));
+
+DeliveryNotesComponent.displayName = 'DeliveryNotesComponent';
+
 export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }: RightSidebarProps) {
   const cartItems = useCartFlow(state => state.cartItems);
   const removeFromCart = useCartFlow(state => state.removeFromCart);
@@ -113,6 +139,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   });
   const [deliveryTime, setDeliveryTime] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const deliveryNotesRef = useRef<HTMLTextAreaElement>(null);
 
   // Prevent background scrolling when sidebar is open
   useEffect(() => {
@@ -432,22 +459,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {/* Delivery Notes - Clean */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-orange-100">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              ملاحظات للتوصيل:
-            </h3>
-          </div>
-          <textarea
-            key="delivery-notes-textarea"
-            value={deliveryNotes}
-            onChange={(e) => setDeliveryNotes(e.target.value)}
-            placeholder="اكتب أي ملاحظات خاصة للتوصيل..."
-            className="w-full p-3 text-sm border-0 bg-gray-50 rounded-lg focus:ring-2 focus:ring-fresh-green resize-none text-right"
-            rows={3}
-            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-          />
-        </div>
+        <DeliveryNotesComponent 
+          deliveryNotes={deliveryNotes}
+          setDeliveryNotes={setDeliveryNotes}
+        />
 
         {/* Address - Clean */}
         <div className="bg-white rounded-xl p-4 shadow-sm">
