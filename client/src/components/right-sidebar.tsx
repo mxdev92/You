@@ -439,6 +439,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             </h3>
           </div>
           <textarea
+            key="delivery-notes-textarea"
             value={deliveryNotes}
             onChange={(e) => setDeliveryNotes(e.target.value)}
             placeholder="اكتب أي ملاحظات خاصة للتوصيل..."
