@@ -1,4 +1,4 @@
-import { createOrder, Order } from './firebase';
+import { createOrder, Order } from './firebase-minimal';
 
 export const createSampleOrders = async () => {
   const sampleOrders: Omit<Order, 'id'>[] = [

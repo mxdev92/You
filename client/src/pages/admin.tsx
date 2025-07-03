@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/firebase';
+import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/firebase-minimal';
 import { createSampleOrders } from '@/lib/sample-orders';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

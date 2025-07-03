@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, signInAnonymously } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -14,6 +14,21 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Test database connection
+export const testConnection = async () => {
+  try {
+    console.log('Testing Firebase connection...');
+    const testDoc = doc(db, '_test', 'connection');
+    // This will fail gracefully if there are permission issues
+    await getDocs(query(collection(db, '_test')));
+    console.log('Firebase connection test successful');
+    return true;
+  } catch (error: any) {
+    console.error('Firebase connection test failed:', error);
+    return false;
+  }
+};
 
 // Auth functions
 export const loginWithEmail = (email: string, password: string) => {
@@ -61,37 +76,87 @@ export interface Order {
   notes?: string;
 }
 
+// Ensure anonymous authentication for Firestore access
+const ensureAuth = async () => {
+  if (!auth.currentUser) {
+    console.log('No user authenticated, signing in anonymously...');
+    await signInAnonymously(auth);
+    console.log('Anonymous authentication successful');
+  }
+};
+
 export const createOrder = async (order: Omit<Order, 'id'>) => {
   console.log('Creating order in Firebase:', order);
   
   try {
+    // Check Firebase configuration
+    const config = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
+    };
+    
+    if (!config.apiKey || !config.projectId || !config.appId) {
+      throw new Error('Firebase configuration is incomplete');
+    }
+    
+    // Ensure user is authenticated (anonymous or email)
+    await ensureAuth();
+    
+    // Prepare order data with timestamp
     const orderData = {
       ...order,
       orderDate: new Date().toISOString(),
-      status: 'pending' as const
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      userId: auth.currentUser?.uid || 'anonymous'
     };
     
-    const docRef = await addDoc(collection(db, 'orders'), orderData);
+    console.log('Attempting to add document to Firestore...');
+    console.log('Current user:', auth.currentUser?.uid);
+    
+    // Use a timeout wrapper to prevent infinite hanging
+    const createOrderPromise = addDoc(collection(db, 'orders'), orderData);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000);
+    });
+    
+    const docRef = await Promise.race([createOrderPromise, timeoutPromise]);
     console.log('Order created successfully with ID:', docRef.id);
     return docRef.id;
+    
   } catch (error: any) {
     console.error('Firebase error details:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
-    // Handle specific Firebase errors
+    // Map Firebase errors to user-friendly messages
+    let errorMessage = 'Order submission failed. ';
+    
     if (error.code === 'unavailable') {
-      throw new Error('Firebase service temporarily unavailable. Please try again.');
+      errorMessage += 'Firebase service is temporarily unavailable.';
     } else if (error.code === 'permission-denied') {
-      throw new Error('Permission denied. Please check Firebase configuration.');
+      errorMessage += 'Permission denied. Check Firebase security rules.';
+    } else if (error.code === 'unauthenticated') {
+      errorMessage += 'Authentication failed. Please try again.';
     } else if (error.message?.includes('transport')) {
-      throw new Error('Network connection issue. Please check your internet connection.');
+      errorMessage += 'Network connection issue detected.';
+    } else if (error.message?.includes('timeout')) {
+      errorMessage += 'Request timed out. Please try again.';
+    } else if (error.code === 'network-request-failed') {
+      errorMessage += 'Network request failed. Check your internet connection.';
+    } else {
+      errorMessage += error.message || 'Unknown error occurred.';
     }
     
-    throw new Error(`Order submission failed: ${error.message || 'Unknown error'}`);
+    throw new Error(errorMessage);
   }
 };
 
 export const getOrders = async () => {
   try {
+    await ensureAuth();
     console.log('Fetching orders from Firebase...');
     const q = query(collection(db, 'orders'), orderBy('orderDate', 'desc'));
     const querySnapshot = await getDocs(q);

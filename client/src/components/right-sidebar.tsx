@@ -6,7 +6,7 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { useAddressStore } from "@/store/address-store";
 import { useState, useRef, useEffect } from "react";
-import { createOrder } from "@/lib/firebase";
+import { createOrder } from "@/lib/firebase-minimal";
 import { useAuth } from "@/hooks/use-auth";
 
 interface RightSidebarProps {
