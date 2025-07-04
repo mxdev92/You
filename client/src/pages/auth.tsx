@@ -181,66 +181,124 @@ const AuthPage: React.FC = () => {
           {isLogin ? (
             /* Login Form */
             <div className="p-8 pt-4">
-              {/* Logo */}
-              <div className="flex justify-center mb-6">
-                <img 
+              {/* Logo with Animation */}
+              <motion.div 
+                className="flex justify-center mb-6"
+                initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                transition={{ 
+                  type: "spring", 
+                  stiffness: 260, 
+                  damping: 20, 
+                  delay: 0.2,
+                  duration: 0.8 
+                }}
+              >
+                <motion.img 
                   src={paketyLogo} 
                   alt="PAKETY Logo" 
                   className="w-24 h-24 object-contain"
+                  whileHover={{ 
+                    scale: 1.1, 
+                    rotate: 5,
+                    transition: { duration: 0.3 }
+                  }}
+                  whileTap={{ scale: 0.95 }}
                 />
-              </div>
+              </motion.div>
               
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
+              <motion.form 
+                onSubmit={handleLogin} 
+                className="space-y-4"
+                initial={{ y: 30, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.6 }}
+              >
+                <motion.div
+                  initial={{ x: -50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.7, duration: 0.5 }}
+                >
                   <Input
                     type="email"
                     placeholder="البريد الإلكتروني"
                     value={loginData.email}
                     onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                    className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl transition-all duration-300 hover:shadow-md focus:shadow-lg"
                     style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     dir="rtl"
                   />
-                </div>
+                </motion.div>
                 
-                <div className="relative">
+                <motion.div 
+                  className="relative"
+                  initial={{ x: -50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.9, duration: 0.5 }}
+                >
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="كلمة المرور"
                     value={loginData.password}
                     onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full h-12 text-right pr-10 text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                    className="w-full h-12 text-right pr-10 text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl transition-all duration-300 hover:shadow-md focus:shadow-lg"
                     style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     dir="rtl"
                   />
-                  <button
+                  <motion.button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
                 
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.1, duration: 0.5 }}
                 >
-                  {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
-                </Button>
-              </form>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    >
+                      <motion.span
+                        initial={false}
+                        animate={isLoading ? { opacity: [1, 0.5, 1] } : { opacity: 1 }}
+                        transition={isLoading ? { repeat: Infinity, duration: 1.5 } : {}}
+                      >
+                        {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+                      </motion.span>
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              </motion.form>
               
-              <div className="mt-6 text-center">
-                <button
+              <motion.div 
+                className="mt-6 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.3, duration: 0.5 }}
+              >
+                <motion.button
                   onClick={() => setIsLogin(false)}
-                  className="text-gray-600 hover:text-gray-800 font-medium text-sm"
+                  className="text-gray-600 hover:text-gray-800 font-medium text-sm transition-colors duration-300"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   إنشاء حساب جديد
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             </div>
           ) : (
             /* Signup Form */
