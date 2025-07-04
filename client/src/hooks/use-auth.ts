@@ -9,6 +9,7 @@ export function useAuth() {
 
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
+      console.log('Auth state changed:', user ? `${user.email} (${user.uid})` : 'No user');
       setUser(user);
       setLoading(false);
     });
@@ -20,10 +21,11 @@ export function useAuth() {
     try {
       setError(null);
       setLoading(true);
-      await loginWithEmail(email, password);
+      const result = await loginWithEmail(email, password);
+      console.log('Login successful:', result.user.email);
+      // Don't set loading to false here - let onAuthChange handle it
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -32,10 +34,11 @@ export function useAuth() {
     try {
       setError(null);
       setLoading(true);
-      await registerWithEmail(email, password);
+      const result = await registerWithEmail(email, password);
+      console.log('Registration successful:', result.user.email);
+      // Don't set loading to false here - let onAuthChange handle it
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };

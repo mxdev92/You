@@ -823,25 +823,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.createOrder(validatedOrder);
       
       // Broadcast new order to connected store clients for real-time printing
-      if ((global as any).broadcastToStoreClients) {
-        (global as any).broadcastToStoreClients({
-          type: 'NEW_ORDER',
-          order: {
-            id: order.id,
-            customerName: order.customerName,
-            customerEmail: order.customerEmail,
-            customerPhone: order.customerPhone,
-            items: JSON.parse(order.items as string),
-            totalAmount: order.totalAmount,
-            orderDate: order.orderDate,
-            status: order.status,
-            shippingAddress: order.address ? JSON.parse(order.address as string) : null,
-            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
-            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع'
-          },
-          timestamp: new Date().toISOString(),
-          printReady: true
-        });
+      try {
+        if ((global as any).broadcastToStoreClients) {
+          (global as any).broadcastToStoreClients({
+            type: 'NEW_ORDER',
+            order: {
+              id: order.id,
+              customerName: order.customerName,
+              customerEmail: order.customerEmail,
+              customerPhone: order.customerPhone,
+              items: order.items,
+              totalAmount: order.totalAmount,
+              orderDate: order.orderDate,
+              status: order.status,
+              shippingAddress: order.address,
+              formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
+              formattedTotal: order.totalAmount.toLocaleString() + ' د.ع'
+            },
+            timestamp: new Date().toISOString(),
+            printReady: true
+          });
+        }
+      } catch (broadcastError) {
+        console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
       
       res.status(201).json(order);
@@ -967,11 +971,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerName: order.customerName,
         customerEmail: order.customerEmail,
         customerPhone: order.customerPhone,
-        items: JSON.parse(order.items as string),
+        items: order.items,
         totalAmount: order.totalAmount,
         orderDate: order.orderDate,
         status: order.status,
-        shippingAddress: order.address ? JSON.parse(order.address as string) : null,
+        shippingAddress: order.address,
         formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
         formattedTotal: order.totalAmount.toLocaleString() + ' د.ع'
       };
@@ -1212,17 +1216,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customerName: order.customerName,
         customerEmail: order.customerEmail,
         customerPhone: order.customerPhone,
-        items: JSON.parse(order.items as string),
+        items: order.items,
         totalAmount: order.totalAmount,
         orderDate: order.orderDate,
         status: order.status,
-        shippingAddress: order.address ? JSON.parse(order.address as string) : null,
+        shippingAddress: order.address,
         deliveryTime: order.deliveryTime,
         notes: order.notes,
         formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
         formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
-        itemsCount: JSON.parse(order.items as string).length,
-        estimatedPreparationTime: Math.max(JSON.parse(order.items as string).length * 5, 15) // 5 mins per item, min 15 mins
+        itemsCount: Array.isArray(order.items) ? order.items.length : 0,
+        estimatedPreparationTime: Math.max(Array.isArray(order.items) ? order.items.length * 5 : 15, 15) // 5 mins per item, min 15 mins
       };
 
       res.json({
