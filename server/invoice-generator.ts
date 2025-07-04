@@ -130,7 +130,7 @@ function generateInvoiceHTML(orders: any[]): string {
         }
         
         .customer-section {
-          width: 180px;
+          width: 240px;
           padding: 8px;
           background: #f8f9fa;
           font-size: 9px;
