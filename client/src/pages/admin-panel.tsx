@@ -916,6 +916,14 @@ function ItemsManagement() {
     { id: 5, name: 'لحوم', icon: Beef, count: 0 }
   ];
 
+  // Debug logging before filtering
+  console.log('DEBUG: About to filter products', {
+    selectedCategory,
+    searchQuery,
+    totalProducts: products.length,
+    productsArray: products
+  });
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = product.categoryId === selectedCategory;
@@ -1266,6 +1274,7 @@ export default function AdminPanel() {
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number>(1); // Default to خضروات
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders'); // Add view state
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1405,7 +1414,6 @@ export default function AdminPanel() {
   });
 
 
-  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -1483,6 +1491,11 @@ export default function AdminPanel() {
     ? orders 
     : orders.filter(order => order.status === statusFilter);
 
+  // Return Items Management view if selected
+  if (currentView === 'items') {
+    return <ItemsManagement />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with List Icon */}
@@ -1496,9 +1509,12 @@ export default function AdminPanel() {
               <List className="h-5 w-5 text-gray-700" />
             </button>
             <div className="flex items-center gap-3">
-              <Badge variant="default" className="text-xs">
-                {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
-              </Badge>
+              <button 
+                onClick={() => setCurrentView(currentView === 'orders' ? 'items' : 'orders')}
+                className="px-3 py-1 text-xs bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
+              >
+                {currentView === 'orders' ? 'Items Management' : 'Orders Dashboard'}
+              </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
