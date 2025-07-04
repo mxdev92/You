@@ -360,9 +360,10 @@ function ItemsManagement() {
             onClick={() => setSelectedCategory(null)}
             className={`flex items-center gap-2 px-3 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
               selectedCategory === null 
-                ? 'bg-blue-100 text-blue-800 border-2 border-blue-300' 
+                ? 'text-black border-2 border-gray-300' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
+            style={selectedCategory === null ? { backgroundColor: '#FFC800' } : {}}
           >
             <Package2 className="h-4 w-4" />
             All Items
@@ -376,9 +377,10 @@ function ItemsManagement() {
                 onClick={() => setSelectedCategory(category.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
                   selectedCategory === category.id 
-                    ? 'bg-blue-100 text-blue-800 border-2 border-blue-300' 
+                    ? 'text-black border-2 border-gray-300' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
+                style={selectedCategory === category.id ? { backgroundColor: '#FFC800' } : {}}
               >
                 <IconComponent className="h-4 w-4" />
                 {category.name}

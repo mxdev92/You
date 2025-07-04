@@ -97,19 +97,20 @@ export default function CategoriesSection() {
               onClick={() => handleCategorySelect(category.id)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
                 category.isSelected
-                  ? "bg-fresh-green text-white shadow-lg"
+                  ? "shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
               }`}
+              style={category.isSelected ? { backgroundColor: '#FFC800' } : {}}
             >
               {(() => {
                 const IconComponent = iconMap[category.icon];
                 return IconComponent ? (
                   <IconComponent className={`w-3.5 h-3.5 ${
-                    category.isSelected ? "text-white" : "text-gray-600"
+                    category.isSelected ? "text-black" : "text-gray-600"
                   }`} />
                 ) : (
                   <Apple className={`w-3.5 h-3.5 ${
-                    category.isSelected ? "text-white" : "text-gray-600"
+                    category.isSelected ? "text-black" : "text-gray-600"
                   }`} />
                 );
               })()}
