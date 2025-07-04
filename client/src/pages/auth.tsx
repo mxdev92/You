@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { usePostgresAuth } from '@/hooks/use-postgres-auth';
+import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
 
 interface SignupData {
@@ -39,6 +40,7 @@ const AuthPage: React.FC = () => {
   });
 
   const { user, login, register } = usePostgresAuth();
+  const { addAddress } = usePostgresAddressStore();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -109,11 +111,28 @@ const AuthPage: React.FC = () => {
       const email = `${signupData.phone}@pakety.app`;
       
       // Register user
-      await register(email, signupData.password);
+      const newUser = await register(email, signupData.password);
+      console.log('User registered successfully:', newUser);
       
-      // The user should now be logged in and redirected
+      // Create address record from signup data
+      const addressData = {
+        governorate: signupData.governorate,
+        district: signupData.district,
+        neighborhood: signupData.landmark,
+        notes: `${signupData.name} - ${signupData.phone}`,
+        isDefault: true
+      };
+      
+      console.log('Creating address from signup data:', addressData);
+      
+      // Add the address to the user's profile
+      await addAddress(newUser.id, addressData);
+      console.log('Address created successfully during signup');
+      
+      // Redirect to main app
       setLocation('/');
     } catch (error: any) {
+      console.error('Signup error:', error);
       alert('خطأ في إنشاء الحساب: ' + (error.message || 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
