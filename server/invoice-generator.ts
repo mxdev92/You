@@ -288,19 +288,26 @@ function generateInvoiceHTML(orders: any[]): string {
       <div class="invoice">
         <!-- Logo Header -->
         <div class="logo-header">
-          <svg width="80" height="80" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Main cube top -->
-            <path d="M50 50 L100 30 L150 50 L100 70 Z" stroke="#333" stroke-width="3" fill="none"/>
-            <!-- Main cube front -->
-            <path d="M50 50 L50 100 L100 120 L100 70 Z" stroke="#333" stroke-width="3" fill="none"/>
-            <!-- Main cube right -->
-            <path d="M100 70 L100 120 L150 100 L150 50 Z" stroke="#333" stroke-width="3" fill="none"/>
-            <!-- Bottom cube top -->
-            <path d="M50 100 L100 80 L150 100 L100 120 Z" stroke="#333" stroke-width="3" fill="none"/>
-            <!-- Bottom cube front -->
-            <path d="M50 100 L50 150 L100 170 L100 120 Z" stroke="#333" stroke-width="3" fill="none"/>
-            <!-- Bottom cube right -->
-            <path d="M100 120 L100 170 L150 150 L150 100 Z" stroke="#333" stroke-width="3" fill="none"/>
+          <svg width="60" height="100" viewBox="0 0 120 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Top cube - outline only -->
+            <rect x="30" y="20" width="60" height="60" stroke="#333" stroke-width="2.5" fill="none"/>
+            <!-- Top cube 3D right side -->
+            <polygon points="90,20 105,10 105,70 90,80" stroke="#333" stroke-width="2.5" fill="none"/>
+            <!-- Top cube 3D top -->
+            <polygon points="30,20 45,10 105,10 90,20" stroke="#333" stroke-width="2.5" fill="none"/>
+            
+            <!-- Bottom cube - outline only -->
+            <rect x="30" y="100" width="60" height="60" stroke="#333" stroke-width="2.5" fill="none"/>
+            <!-- Bottom cube 3D right side -->
+            <polygon points="90,100 105,90 105,150 90,160" stroke="#333" stroke-width="2.5" fill="none"/>
+            <!-- Bottom cube 3D top -->
+            <polygon points="30,100 45,90 105,90 90,100" stroke="#333" stroke-width="2.5" fill="none"/>
+            
+            <!-- Connecting vertical lines -->
+            <line x1="30" y1="80" x2="30" y2="100" stroke="#333" stroke-width="2.5"/>
+            <line x1="90" y1="80" x2="90" y2="100" stroke="#333" stroke-width="2.5"/>
+            <line x1="45" y1="70" x2="45" y2="90" stroke="#333" stroke-width="2.5"/>
+            <line x1="105" y1="70" x2="105" y2="90" stroke="#333" stroke-width="2.5"/>
           </svg>
         </div>
         
