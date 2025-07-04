@@ -181,17 +181,17 @@ const AuthPage: React.FC = () => {
           {isLogin ? (
             /* Login Form */
             <div className="p-8 pt-4">
-              {/* Logo with Animation */}
+              {/* Logo with Professional Animation */}
               <motion.div 
                 className="flex justify-center mb-6"
-                initial={{ scale: 0, rotate: -180, opacity: 0 }}
-                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
                 transition={{ 
                   type: "spring", 
-                  stiffness: 260, 
-                  damping: 20, 
-                  delay: 0.2,
-                  duration: 0.8 
+                  stiffness: 120, 
+                  damping: 15, 
+                  delay: 0.1,
+                  duration: 0.6 
                 }}
               >
                 <motion.img 
@@ -199,11 +199,10 @@ const AuthPage: React.FC = () => {
                   alt="PAKETY Logo" 
                   className="w-24 h-24 object-contain"
                   whileHover={{ 
-                    scale: 1.1, 
-                    rotate: 5,
-                    transition: { duration: 0.3 }
+                    scale: 1.05,
+                    transition: { duration: 0.2 }
                   }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.98 }}
                 />
               </motion.div>
               
