@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
+import { z } from "zod";
 import { chromium } from 'playwright';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -799,7 +800,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/orders", async (req, res) => {
     try {
+      console.log('Order creation request body:', JSON.stringify(req.body, null, 2));
       const validatedOrder = insertOrderSchema.parse(req.body);
+      console.log('Validated order data:', JSON.stringify(validatedOrder, null, 2));
       const order = await storage.createOrder(validatedOrder);
       
       // Broadcast new order to connected store clients for real-time printing
@@ -827,7 +830,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(order);
     } catch (error) {
       console.error('Error creating order:', error);
-      res.status(400).json({ message: "Invalid order data" });
+      if (error instanceof z.ZodError) {
+        console.error('Validation errors:', error.errors);
+        res.status(400).json({ 
+          message: "Invalid order data", 
+          errors: error.errors,
+          details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        });
+      } else {
+        res.status(500).json({ message: "Internal server error", error: error.message });
+      }
     }
   });
 

@@ -41,7 +41,9 @@ export const createOrder = async (order: OrderRequest): Promise<string> => {
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      console.error('API Error Response:', errorData);
+      throw new Error(`HTTP ${response.status}: ${errorData.message || errorData.details || 'Unknown error'}`);
     }
     
     const createdOrder = await response.json();

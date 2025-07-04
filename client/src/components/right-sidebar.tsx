@@ -181,10 +181,20 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const hasAddress = primaryAddress !== null;
 
   const handlePlaceOrder = async () => {
-    if (!hasAddress || !user || !primaryAddress) {
-      alert('Missing required information. Please ensure you have an address and are logged in.');
+    console.log('Starting order placement...');
+    console.log('User:', user);
+    console.log('hasAddress:', hasAddress);
+    console.log('primaryAddress:', primaryAddress);
+    
+    if (!hasAddress || !primaryAddress) {
+      alert('Please add a delivery address first.');
       setIsPlacingOrder(false);
       return;
+    }
+    
+    // Allow orders without authentication by using address data for customer info
+    if (!user) {
+      console.log('No user authenticated, using address data for customer info');
     }
     
     if (!deliveryTime) {
@@ -199,7 +209,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       
       const orderData = {
         customerName: primaryAddress.fullName,
-        customerEmail: user.email || '',
+        customerEmail: user?.email || primaryAddress.fullName + '@guest.com',
         customerPhone: primaryAddress.phoneNumber,
         address: {
           governorate: primaryAddress.government,
@@ -219,7 +229,6 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         })),
         totalAmount: totalWithShipping,
         status: 'pending' as const,
-        orderDate: new Date().toISOString(),
         deliveryTime: deliveryTime,
         notes: globalDeliveryNotesRef.current || ''
       };
