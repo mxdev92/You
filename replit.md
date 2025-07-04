@@ -139,6 +139,10 @@ July 4, 2025:
 ✓ Updated invoice logo to exact custom design - stacked cube logo with 3D perspective
 ✓ Replaced generic logo with precise geometric cube design matching user's brand
 ✓ Logo positioned at top center with clean outline style and proper proportions
+✓ Implemented real QR code generation using qrcode library for order tracking
+✓ QR codes now contain actual Order ID data instead of placeholder text
+✓ Added 80x80px QR code images embedded directly into PDF invoices
+✓ QR codes are scannable and contain "Order ID: [number]" format for easy verification
 
 July 3, 2025:
 ✓ Built comprehensive Store API for Expo React Native integration

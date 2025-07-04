@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import QRCode from 'qrcode';
 
 export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
   try {
@@ -42,8 +43,8 @@ export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
     
     const page = await browser.newPage();
 
-    // Build complete HTML with professional black/gray design
-    const htmlContent = generateInvoiceHTML(validOrders);
+    // Build complete HTML with professional black/gray design and real QR code
+    const htmlContent = await generateInvoiceHTML(validOrders);
     
     // Set content and generate PDF
     await page.setContent(htmlContent, { 
@@ -67,7 +68,25 @@ export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
   }
 }
 
-function generateInvoiceHTML(orders: any[]): string {
+async function generateQRCode(orderId: number): Promise<string> {
+  try {
+    // Generate QR code as base64 data URL
+    const qrCodeDataURL = await QRCode.toDataURL(`Order ID: ${orderId}`, {
+      width: 80,
+      margin: 1,
+      color: {
+        dark: '#333333',
+        light: '#FFFFFF'
+      }
+    });
+    return qrCodeDataURL;
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    return '';
+  }
+}
+
+async function generateInvoiceHTML(orders: any[]): Promise<string> {
   const order = orders[0]; // Get first order
   const items = order.items || [];
   
@@ -75,6 +94,9 @@ function generateInvoiceHTML(orders: any[]): string {
   const subtotal = Math.round(order.totalAmount);
   const deliveryFee = 1000;
   const finalTotal = subtotal + deliveryFee;
+  
+  // Generate QR code for order ID
+  const qrCodeDataURL = await generateQRCode(order.id);
   
   return `
     <!DOCTYPE html>
@@ -305,7 +327,7 @@ function generateInvoiceHTML(orders: any[]): string {
           <div style="flex: 1;"></div>
           
           <div class="qr-info">
-            <div class="qr-box">QR</div>
+            ${qrCodeDataURL ? `<img src="${qrCodeDataURL}" alt="QR Code" style="width: 80px; height: 80px; border: 2px solid #333; margin-bottom: 8px;">` : '<div class="qr-box">QR</div>'}
             <div class="order-details">
               <div><strong>Order ID:</strong> ${order.id || 'N/A'}</div>
               <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-US')}</div>
