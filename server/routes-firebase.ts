@@ -106,11 +106,15 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/products", async (req, res) => {
     try {
+      console.log('Received product creation request:', req.body);
       const validatedData = insertProductSchema.parse(req.body);
+      console.log('Validated product data:', validatedData);
       const product = await firebaseStorage.createProduct(validatedData);
+      console.log('Product created in Firebase:', product);
       res.json(product);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ error: "Invalid product data", details: error.errors });
       }
       console.error("Failed to create product:", error);

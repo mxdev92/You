@@ -357,15 +357,23 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
     mutationFn: async (productData: any) => {
       const imageUrl = productData.image ? await uploadProductImage(productData.image) : '/api/placeholder/60/60';
       
+      const categoryId = getCategoryId(productData.category);
+      console.log('Category mapping debug:', {
+        originalCategory: productData.category,
+        mappedCategoryId: categoryId
+      });
+      
       const newProduct = {
         name: productData.name,
         description: productData.description || '',
         price: productData.price, // Keep as string for Zod validation
         unit: productData.unit,
         imageUrl,
-        categoryId: getCategoryId(productData.category),
+        categoryId,
         available: productData.available,
       };
+      
+      console.log('Sending product data to backend:', newProduct);
 
       const response = await fetch('/api/products', {
         method: 'POST',
