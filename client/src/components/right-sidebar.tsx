@@ -521,19 +521,38 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       {/* Address Section */}
       {hasAddress && primaryAddress && (
         <div className="px-6 py-4 border-t border-gray-100">
-          <div className="bg-white rounded-lg p-4 border border-green-200">
-            <div className="flex items-center justify-between mb-2">
+          <div className="bg-white rounded-lg p-4 border border-green-200" dir="rtl">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 عنوان التوصيل:
               </h3>
               <MapPin className="h-4 w-4 text-green-600" />
             </div>
-            <div className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              <p className="font-medium">{primaryAddress.governorate} - {primaryAddress.district}</p>
-              <p>{primaryAddress.neighborhood}</p>
-              {primaryAddress.notes && (
-                <p className="text-xs text-gray-500 mt-1">{primaryAddress.notes}</p>
-              )}
+            <div className="space-y-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              {/* الاسم */}
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-medium text-gray-500 min-w-[40px]">الاسم:</span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {primaryAddress.notes ? primaryAddress.notes.split(' - ')[0] || 'غير محدد' : 'غير محدد'}
+                </span>
+              </div>
+              
+              {/* الرقم */}
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-medium text-gray-500 min-w-[40px]">الرقم:</span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {primaryAddress.notes ? primaryAddress.notes.split(' - ')[1] || 'غير محدد' : 'غير محدد'}
+                </span>
+              </div>
+              
+              {/* العنوان */}
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-medium text-gray-500 min-w-[40px]">العنوان:</span>
+                <div className="text-sm text-gray-800">
+                  <p className="font-medium">{primaryAddress.governorate} - {primaryAddress.district}</p>
+                  <p className="text-gray-600">{primaryAddress.neighborhood}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
