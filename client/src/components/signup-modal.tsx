@@ -2,9 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useTranslation } from "@/hooks/use-translation";
-import { useAddressStore } from "@/store/firebase-address-store";
+import { usePostgresAddressStore } from "@/store/postgres-address-store";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -84,8 +84,8 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     confirmPassword: ''
   });
 
-  const { addAddress } = useAddressStore();
-  const { user, register: signUp, login: signIn } = useFirebaseAuth();
+  const { addAddress } = usePostgresAddressStore();
+  const { user, register: signUp, login: signIn } = usePostgresAuth();
 
   const [addressData, setAddressData] = useState({
     fullName: '',
@@ -241,7 +241,7 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
       // Race between address saving and timeout
       await Promise.race([
         addAddress({
-          userId: user?.uid || '',
+          userId: user?.id || 0,
           governorate: addressData.government,
           district: addressData.district,
           neighborhood: addressData.nearestLandmark,

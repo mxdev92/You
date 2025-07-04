@@ -3,10 +3,10 @@ import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, Arrow
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useTranslation } from "@/hooks/use-translation";
 import { useLanguage } from "@/hooks/use-language";
-import { useAddressStore } from "@/store/firebase-address-store";
+import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import SignupModal from "@/components/signup-modal";
@@ -14,12 +14,12 @@ import { useQuery } from "@tanstack/react-query";
 import { orderService, type Order } from "@/lib/firebase";
 
 function OrdersHistoryContent() {
-  const { user } = useFirebaseAuth();
+  const { user } = usePostgresAuth();
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['user-orders', user?.uid],
+    queryKey: ['user-orders', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
-      return await orderService.getUserOrders(user.uid);
+      return await orderService.getUserOrders(user.id.toString());
     },
     enabled: !!user,
   });
@@ -306,7 +306,7 @@ function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, 
 
 
 export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
-  const { user, logout } = useFirebaseAuth();
+  const { user, logout } = usePostgresAuth();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -316,7 +316,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     addAddress, 
     loadAddresses,
     getDefaultAddress
-  } = useAddressStore();
+  } = usePostgresAddressStore();
   const [addressData, setAddressData] = useState({
     governorate: '',
     district: '',
@@ -381,7 +381,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
         neighborhood: addressData.neighborhood,
         notes: addressData.notes,
         isDefault: addressData.is_default || savedAddresses.length === 0,
-        userId: user?.uid || ''
+        userId: user?.id || 0
       });
       
       // Reset form and close

@@ -1,4 +1,4 @@
-import { categories, products, cartItems, orders, type Category, type Product, type CartItem, type Order, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder } from "@shared/schema";
+import { categories, products, cartItems, orders, users, userAddresses, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 
@@ -28,6 +28,15 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: string): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
+
+  // Users
+  getUser(id: number): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
+  // User Addresses
+  getUserAddresses(userId: number): Promise<UserAddress[]>;
+  createUserAddress(address: InsertUserAddress): Promise<UserAddress>;
 }
 
 export class MemStorage implements IStorage {
@@ -418,6 +427,39 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrder(id: number): Promise<void> {
     await db.delete(orders).where(eq(orders.id, id));
+  }
+
+  // Users
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+
+  // User Addresses
+  async getUserAddresses(userId: number): Promise<UserAddress[]> {
+    return await db.select().from(userAddresses).where(eq(userAddresses.userId, userId));
+  }
+
+  async createUserAddress(address: InsertUserAddress): Promise<UserAddress> {
+    // If this is the default address, unset all other default addresses for this user
+    if (address.isDefault) {
+      await db.update(userAddresses)
+        .set({ isDefault: false })
+        .where(eq(userAddresses.userId, address.userId));
+    }
+
+    const [newAddress] = await db.insert(userAddresses).values(address).returning();
+    return newAddress;
   }
 }
 
