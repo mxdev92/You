@@ -52,8 +52,11 @@ function Router() {
       <Route path="/admin" component={ProtectedAdminRoute} />
       <Route path="/admin-login" component={AdminLogin} />
       
-      {/* Regular user routes - all protected */}
-      <Route path="/" component={() => <ProtectedRoute component={Home} />} />
+      {/* Home page - allows anonymous browsing */}
+      <Route path="/" component={Home} />
+      
+      {/* Auth page */}
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );

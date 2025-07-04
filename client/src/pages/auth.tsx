@@ -282,11 +282,32 @@ const AuthPage: React.FC = () => {
                 </motion.div>
               </motion.form>
               
+              {/* Continue Without Registration Button */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.3, duration: 0.5 }}
+                className="mt-4"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    onClick={() => setLocation('/')}
+                    className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm rounded-xl border border-gray-300 transition-all duration-300"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  >
+                    متابعة بدون تسجيل
+                  </Button>
+                </motion.div>
+              </motion.div>
+              
               <motion.div 
-                className="mt-6 text-center"
+                className="mt-4 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.3, duration: 0.5 }}
+                transition={{ delay: 1.5, duration: 0.5 }}
               >
                 <motion.button
                   onClick={() => setIsLogin(false)}

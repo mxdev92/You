@@ -6,8 +6,8 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
-import { useAuth } from "@/hooks/use-auth";
-import SignupModal from "./signup-modal";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useLocation } from "wouter";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -18,18 +18,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showSignupModal, setShowSignupModal] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { user } = usePostgresAuth();
+  const [, setLocation] = useLocation();
 
   const handleAddToCart = async () => {
     // Don't allow adding if product is not available
     if (!product.available) return;
     
     // Check if user is authenticated
-    if (!isAuthenticated) {
-      setShowSignupModal(true);
+    if (!user) {
+      setLocation('/auth');
       return;
     }
     
@@ -55,36 +55,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const handleSignupSuccess = async () => {
-    // After successful signup/login, add the item to cart
-    setShowSignupModal(false);
-    
-    // Wait a bit for authentication state to update, then add to cart directly
-    setTimeout(async () => {
-      if (!product.available) return;
-      
-      setIsAdding(true);
-      setShowShimmer(true);
 
-      try {
-        await addToCart({ productId: product.id, quantity: 1 });
-        
-        // Keep the "Added!" state for a moment
-        setTimeout(() => {
-          setIsAdding(false);
-        }, 1000);
-        
-        // Hide shimmer effect
-        setTimeout(() => {
-          setShowShimmer(false);
-        }, 1500);
-      } catch (error) {
-        console.error('Failed to add to cart after signup:', error);
-        setIsAdding(false);
-        setShowShimmer(false);
-      }
-    }, 500);
-  };
 
   return (
     <>
@@ -168,12 +139,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         onClose={() => setIsModalOpen(false)}
       />
 
-      {/* Signup Modal */}
-      <SignupModal
-        isOpen={showSignupModal}
-        onClose={() => setShowSignupModal(false)}
-        onSuccess={handleSignupSuccess}
-      />
+
     </>
   );
 }
