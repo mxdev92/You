@@ -68,6 +68,17 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.patch("/api/categories/:id/select", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const category = await firebaseStorage.updateCategory(id, { isSelected: true });
+      res.json(category);
+    } catch (error) {
+      console.error("Failed to select category:", error);
+      res.status(500).json({ error: "Failed to select category" });
+    }
+  });
+
   // Products
   app.get("/api/products", async (req, res) => {
     try {
@@ -126,6 +137,29 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Failed to delete product:", error);
       res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+
+  app.put("/api/products/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const product = await firebaseStorage.updateProduct(id, req.body);
+      res.json(product);
+    } catch (error) {
+      console.error("Failed to update product:", error);
+      res.status(500).json({ error: "Failed to update product" });
+    }
+  });
+
+  app.patch("/api/products/:id/display-order", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { displayOrder } = req.body;
+      const product = await firebaseStorage.updateProduct(id, { displayOrder });
+      res.json(product);
+    } catch (error) {
+      console.error("Failed to update product display order:", error);
+      res.status(500).json({ error: "Failed to update product display order" });
     }
   });
 

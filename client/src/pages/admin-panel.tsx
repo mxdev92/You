@@ -915,7 +915,8 @@ function ItemsManagement() {
     { id: 1, name: 'خضروات', icon: Leaf, count: 0 },
     { id: 2, name: 'فواكة', icon: Apple, count: 0 },
     { id: 3, name: 'ماء', icon: Droplets, count: 0 },
-    { id: 4, name: 'خبز', icon: Wheat, count: 0 }
+    { id: 4, name: 'خبز', icon: Wheat, count: 0 },
+    { id: 5, name: 'لحوم', icon: Beef, count: 0 }
   ];
 
   const filteredProducts = products.filter(product => {
