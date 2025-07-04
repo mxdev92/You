@@ -1,8 +1,9 @@
 import { Search, Menu, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
+import { useQuery } from "@tanstack/react-query";
+import type { CartItem, Product } from "@shared/schema";
 import CategoriesSection from "@/components/categories-section";
 
 interface HeaderProps {
@@ -11,8 +12,14 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
-  const cartItemsCount = useCartFlow(state => state.getCartItemsCount());
   const { t } = useTranslation();
+  
+  // Get cart items from database
+  const { data: cartItems = [] } = useQuery<(CartItem & { product: Product })[]>({
+    queryKey: ['/api/cart'],
+  });
+  
+  const cartItemsCount = cartItems.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">

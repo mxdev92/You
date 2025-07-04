@@ -38,9 +38,8 @@ const clearAllFirebaseStorage = () => {
   }
 };
 
-// Clear storage and force session-only persistence
-clearAllFirebaseStorage();
-setPersistence(auth, browserSessionPersistence).catch(console.error);
+// Allow normal Firebase auth persistence for better user experience
+// Only clear storage during explicit logout, not on initialization
 
 // Test database connection
 export const testConnection = async () => {
