@@ -24,6 +24,8 @@ const uploadProductImage = async (file: File): Promise<string> => {
   });
 };
 
+
+
 // Helper function to map category names to IDs
 const getCategoryId = (categoryName: string): number => {
   const mapping: { [key: string]: number } = {
@@ -349,14 +351,27 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
       
       const newProduct = {
         name: productData.name,
-        price: parseFloat(productData.price),
-        category: productData.category,
+        description: productData.description || '',
+        price: productData.price, // Keep as string for Zod validation
         unit: productData.unit,
+        imageUrl,
+        categoryId: getCategoryId(productData.category),
         available: productData.available,
-        imageUrl
       };
 
-      return await createProduct(newProduct);
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newProduct),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create product');
+      }
+
+      return response.json();
     },
     onSuccess: (savedProduct) => {
       // Invalidate and refetch products to update the UI
@@ -976,46 +991,9 @@ function ItemsManagement() {
     setEditingProduct(null);
   };
 
-  const handleAddItem = async (newItem: any) => {
-    try {
-      // Create product via backend API
-      const backendProduct = {
-        name: newItem.name,
-        price: newItem.price,
-        unit: newItem.unit,
-        imageUrl: newItem.imageUrl,
-        available: newItem.available ?? true,
-        categoryId: newItem.category === 'Fruits' ? 1 : newItem.category === 'Vegetables' ? 2 : null
-      };
-
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        body: JSON.stringify(backendProduct),
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
-
-      if (!response.ok) throw new Error('Failed to create product');
-      const createdProduct = await response.json();
-
-      // Convert to Firebase-compatible format for local state
-      const convertedProduct = {
-        id: createdProduct.id.toString(),
-        name: createdProduct.name,
-        description: createdProduct.name,
-        price: parseFloat(createdProduct.price),
-        category: getCategoryName(createdProduct.categoryId),
-        unit: createdProduct.unit,
-        available: createdProduct.available ?? true,
-        imageUrl: createdProduct.imageUrl,
-        createdAt: new Date().toISOString()
-      };
-
-      // Add to local state for immediate update
-      setProducts(prev => [...prev, convertedProduct]);
-    } catch (error) {
-      console.error('Failed to create product:', error);
-    }
+  const handleAddItem = (newItem: any) => {
+    // The mutation handles everything, just close the modal
+    setIsAddItemOpen(false);
   };
 
   return (
