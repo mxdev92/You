@@ -228,7 +228,7 @@ const AuthPage: React.FC = () => {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-xl shadow-lg"
+                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                 >
                   {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
@@ -417,7 +417,7 @@ const AuthPage: React.FC = () => {
                   {signupStep < 6 ? (
                     <Button
                       onClick={handleSignupNext}
-                      className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-xl shadow-lg"
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
                       التالي
@@ -426,7 +426,7 @@ const AuthPage: React.FC = () => {
                     <Button
                       onClick={handleSignupComplete}
                       disabled={isLoading}
-                      className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-xl shadow-lg"
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
                       {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
