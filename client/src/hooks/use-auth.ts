@@ -41,10 +41,21 @@ export function useAuth() {
     try {
       setError(null);
       setLoading(true);
-      const result = await loginWithEmail(email, password);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Login timed out after 10 seconds')), 10000);
+      });
+
+      const result = await Promise.race([
+        loginWithEmail(email, password),
+        timeoutPromise
+      ]) as any;
+      
       console.log('Login successful:', result.user.email);
       // Don't set loading to false here - let onAuthChange handle it
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message);
       setLoading(false);
     }
@@ -54,10 +65,21 @@ export function useAuth() {
     try {
       setError(null);
       setLoading(true);
-      const result = await registerWithEmail(email, password);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Registration timed out after 10 seconds')), 10000);
+      });
+
+      const result = await Promise.race([
+        registerWithEmail(email, password),
+        timeoutPromise
+      ]) as any;
+      
       console.log('Registration successful:', result.user.email);
       // Don't set loading to false here - let onAuthChange handle it
     } catch (err: any) {
+      console.error('Registration error:', err);
       setError(err.message);
       setLoading(false);
     }

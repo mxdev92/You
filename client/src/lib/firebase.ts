@@ -69,7 +69,17 @@ export const registerWithEmail = async (email: string, password: string) => {
     
     // Create new account with completely fresh state
     console.log('Creating new account for:', email);
-    const result = await createUserWithEmailAndPassword(auth, email, password);
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Firebase account creation timed out after 8 seconds')), 8000);
+    });
+
+    const result = await Promise.race([
+      createUserWithEmailAndPassword(auth, email, password),
+      timeoutPromise
+    ]) as any;
+    
     console.log('New account created successfully:', result.user.email);
     
     return result;
