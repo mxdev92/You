@@ -312,6 +312,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image upload endpoint
+  app.post("/api/upload-image", async (req, res) => {
+    try {
+      const { imageData, fileName } = req.body;
+      
+      if (!imageData) {
+        return res.status(400).json({ message: "No image data provided" });
+      }
+
+      // Store the image data directly in the database as base64
+      // In a production app, you'd use a cloud storage service like AWS S3
+      const imageUrl = imageData; // Use the base64 data URL directly
+      
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
   // Authentication routes
   app.post('/api/auth/signup', async (req, res) => {
     try {

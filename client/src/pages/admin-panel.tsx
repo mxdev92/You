@@ -16,10 +16,36 @@ import type { Product, InsertProduct } from '@shared/schema';
 
 // Helper functions for product operations
 const uploadProductImage = async (file: File): Promise<string> => {
-  // Create a data URL from the file for immediate display
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = async () => {
+      try {
+        const imageData = reader.result as string;
+        
+        // Upload to backend
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            imageData,
+            fileName: file.name
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const result = await response.json();
+        resolve(result.imageUrl);
+      } catch (error) {
+        console.error('Image upload failed:', error);
+        reject(error);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsDataURL(file);
   });
 };
