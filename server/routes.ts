@@ -186,51 +186,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Thermal Printer Invoice Generation - Combined PDF for multiple invoices
-  // Removed thermal PDF generation - HPRT N41BT only supports images via HereLabel app
-
-  // Generate thermal image for HereLabel app compatibility
-  app.post('/api/generate-thermal-image', async (req, res) => {
-    try {
-      const { orderIds } = req.body;
-      
-      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-        return res.status(400).json({ message: "Order IDs are required" });
-      }
-
-      // Import the HPRT N41BT thermal generator
-      const { generateHPRTThermalImage, generateBulkHPRTThermalImages } = await import('./hprt-thermal-generator');
-
-      // Fetch orders from database
-      const orders = await db.select().from(ordersTable).where(
-        inArray(ordersTable.id, orderIds)
-      );
-
-      if (orders.length === 0) {
-        return res.status(404).json({ message: 'No orders found' });
-      }
-
-      // Generate HPRT thermal image with exact specifications
-      const imageBuffer = orderIds.length === 1 
-        ? await generateHPRTThermalImage(orders[0])
-        : await generateBulkHPRTThermalImages(orders);
-
-      res.set({
-        'Content-Type': 'image/png',
-        'Content-Disposition': 'attachment; filename=hprt-thermal-invoices.png',
-        'Content-Length': imageBuffer.length
-      });
-
-      res.send(imageBuffer);
-    } catch (error) {
-      console.error('Error generating thermal image:', error);
-      res.status(500).json({ 
-        message: 'Failed to generate thermal image', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
-    }
-  });
-
   // Orders
   app.get("/api/orders", async (req, res) => {
     try {
