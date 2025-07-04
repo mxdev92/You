@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1237,7 +1237,7 @@ export default function AdminPanel() {
   // Handle select all orders
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allOrderIds = orders?.map(order => order.id) || [];
+      const allOrderIds = filteredOrders?.map(order => order.id) || [];
       setSelectedOrders(allOrderIds);
     } else {
       setSelectedOrders([]);
@@ -1346,11 +1346,18 @@ export default function AdminPanel() {
   });
 
   const deleteOrderMutation = useMutation({
-    mutationFn: deleteOrder,
+    mutationFn: (orderId: number) => fetch(`/api/orders/${orderId}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: "تم حذف الطلب",
+        description: "تم حذف الطلب بنجاح",
+        duration: 3000,
+      });
     }
   });
+
+
   const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -1537,6 +1544,20 @@ export default function AdminPanel() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('هل أنت متأكد من حذف هذا الطلب؟')) {
+                              deleteOrderMutation.mutate(order.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          title="حذف الطلب"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={async (e) => {
                             e.stopPropagation();
                             console.log('📄 Manual printing invoice for order:', order.id);
@@ -1643,7 +1664,6 @@ export default function AdminPanel() {
       />
 
       {/* Arabic Invoice Popup */}
-      {console.log('Rendering modal check - showInvoice:', showInvoice, 'selectedOrder:', selectedOrder)}
       {showInvoice && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" dir="rtl">
