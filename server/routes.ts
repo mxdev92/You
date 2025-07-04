@@ -527,9 +527,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Batch Invoices</title>
+          <title>فواتير مجمعة - PAKETY</title>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
             
             * {
               margin: 0;
@@ -541,15 +541,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               font-family: 'Cairo', sans-serif;
               direction: rtl;
               background: white;
-              color: #1a1a1a;
+              color: #000;
               line-height: 1.4;
+              font-size: 12px;
             }
             
             .invoice {
               width: 210mm;
               min-height: 297mm;
               margin: 0 auto;
-              padding: 15mm;
+              padding: 20mm;
               background: white;
               page-break-after: always;
               position: relative;
@@ -560,94 +561,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             .header {
-              text-align: center;
-              margin-bottom: 20px;
-              border-bottom: 2px solid #2563eb;
-              padding-bottom: 15px;
-            }
-            
-            .company-name {
-              font-size: 28px;
-              font-weight: 800;
-              color: #2563eb;
-              margin-bottom: 8px;
-              letter-spacing: 1px;
-            }
-            
-            .invoice-title {
-              font-size: 20px;
-              font-weight: 600;
-              color: #374151;
-              margin-bottom: 5px;
-            }
-            
-            .order-info {
               display: flex;
               justify-content: space-between;
-              margin-bottom: 20px;
-              background: #f8fafc;
-              padding: 12px 15px;
-              border-radius: 8px;
-              border-right: 4px solid #2563eb;
+              margin-bottom: 25px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 20px;
+            }
+            
+            .customer-section {
+              text-align: right;
+              flex: 1;
+              padding-left: 20px;
+            }
+            
+            .customer-title {
+              font-size: 16px;
+              font-weight: 700;
+              margin-bottom: 10px;
+              color: #000;
             }
             
             .customer-info {
-              margin-bottom: 20px;
-              background: #fefefe;
-              padding: 15px;
-              border-radius: 8px;
-              border: 1px solid #e5e7eb;
+              font-size: 13px;
+              line-height: 1.8;
             }
             
-            .customer-info h3 {
-              font-size: 16px;
-              font-weight: 600;
-              color: #374151;
-              margin-bottom: 8px;
-              border-bottom: 1px solid #e5e7eb;
-              padding-bottom: 5px;
+            .customer-info div {
+              margin-bottom: 5px;
+              font-weight: 500;
             }
             
-            .info-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 10px;
-              font-size: 14px;
+            .app-section {
+              text-align: left;
+              flex: 1;
+              padding-right: 20px;
             }
             
-            .info-item {
-              display: flex;
-              justify-content: space-between;
+            .app-name {
+              font-size: 28px;
+              font-weight: 800;
+              color: #000;
+              margin-bottom: 15px;
+              text-align: left;
+              direction: ltr;
+              letter-spacing: 1px;
             }
             
-            .info-item.full-width {
-              grid-column: 1 / -1;
+            .qr-code {
+              width: 70px;
+              height: 70px;
+              border: 2px solid #000;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 8px;
+              font-weight: bold;
+              margin-bottom: 15px;
+              text-align: center;
             }
             
-            .label {
-              font-weight: 600;
-              color: #6b7280;
+            .order-details {
+              font-size: 12px;
+              text-align: left;
+              direction: ltr;
+              line-height: 1.6;
             }
             
-            .value {
-              font-weight: 400;
-              color: #1f2937;
+            .order-details div {
+              margin-bottom: 5px;
+              font-weight: 500;
             }
             
             .items-table {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 20px;
+              margin-bottom: 25px;
+              border: 2px solid #000;
               font-size: 13px;
             }
             
             .items-table th {
-              background: #2563eb;
+              background: #000;
               color: white;
               padding: 12px 8px;
               text-align: center;
+              font-weight: 700;
+              border: 1px solid #000;
+            }
+            
+            .items-table td {
+              padding: 10px 8px;
+              text-align: center;
+              font-weight: 500;
+              border: 1px solid #000;
+              vertical-align: middle;
+            }
+            
+            .items-table tr:nth-child(even) {
+              background: #f8f8f8;
+            }
+            
+            .totals-section {
+              margin-bottom: 25px;
+              border: 2px solid #000;
+              padding: 15px;
+            }
+            
+            .totals-title {
+              text-align: center;
+              font-size: 16px;
+              font-weight: 700;
+              margin-bottom: 15px;
+              color: #000;
+            }
+            
+            .totals-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 8px 0;
+              font-size: 14px;
               font-weight: 600;
-              border: 1px solid #1d4ed8;
+              border-bottom: 1px solid #ddd;
+            }
+            
+            .totals-row:last-child {
+              border-bottom: none;
+              font-size: 16px;
+              font-weight: 800;
+              color: #000;
+              border-top: 2px solid #000;
+              padding-top: 12px;
+              margin-top: 8px;
+            }
+            
+            .notes-section {
+              margin-bottom: 20px;
+              padding: 15px;
+              border: 1px solid #000;
+              background: #fffbf0;
+            }
+            
+            .notes-title {
+              font-size: 14px;
+              font-weight: 700;
+              margin-bottom: 8px;
+              color: #000;
+            }
+            
+            .notes-content {
+              font-size: 12px;
+              font-weight: 500;
+              line-height: 1.6;
+            }
+            
+            .footer {
+              position: absolute;
+              bottom: 15mm;
+              left: 20mm;
+              right: 20mm;
+              text-align: center;
+              font-size: 10px;
+              color: #666;
+              padding-top: 10px;
+              border-top: 1px solid #ddd;
             }
             
             .items-table td {
@@ -721,39 +797,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const orderDate = new Date(order.orderDate || Date.now()).toLocaleDateString('ar-EG');
         const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [];
         const address = typeof order.address === 'string' ? JSON.parse(order.address) : order.address || {};
+        const subtotal = Number(order.totalAmount || 0);
+        const deliveryFee = 1000; // 1000 IQD delivery fee
+        const total = subtotal + deliveryFee;
         
         combinedHtml += `
           <div class="invoice">
             <div class="header">
-              <div class="company-name">ORDERY</div>
-              <div class="invoice-title">فاتورة مبيعات</div>
-            </div>
-            
-            <div class="order-info">
-              <div>
-                <span class="label">رقم الطلب:</span>
-                <span class="value">#${order.id}</span>
-              </div>
-              <div>
-                <span class="label">التاريخ:</span>
-                <span class="value">${orderDate}</span>
-              </div>
-            </div>
-            
-            <div class="customer-info">
-              <h3>معلومات العميل</h3>
-              <div class="info-grid">
-                <div class="info-item">
-                  <span class="label">الاسم:</span>
-                  <span class="value">${order.customerName || 'غير محدد'}</span>
+              <div class="customer-section">
+                <div class="customer-title">معلومات العميل</div>
+                <div class="customer-info">
+                  <div>الاسم: ${order.customerName || 'غير محدد'}</div>
+                  <div>رقم الموبايل: ${order.customerPhone || 'غير محدد'}</div>
+                  <div>العنوان: (${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${address.landmark || address.notes || 'غير محدد'})</div>
                 </div>
-                <div class="info-item">
-                  <span class="label">رقم الموبايل:</span>
-                  <span class="value">${order.customerPhone || 'غير محدد'}</span>
-                </div>
-                <div class="info-item full-width">
-                  <span class="label">العنوان:</span>
-                  <span class="value">(${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${address.landmark || address.notes || 'غير محدد'})</span>
+              </div>
+              
+              <div class="app-section">
+                <div class="app-name">PAKETY</div>
+                <div class="qr-code">QR<br/>CODE<br/>#${order.id}</div>
+                <div class="order-details">
+                  <div>Order #${order.id}</div>
+                  <div>Date: ${orderDate}</div>
                 </div>
               </div>
             </div>
@@ -762,32 +827,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <thead>
                 <tr>
                   <th>المنتج</th>
+                  <th>السعر لكل كيلو</th>
                   <th>الكمية</th>
-                  <th>السعر</th>
-                  <th>المجموع</th>
+                  <th>السعر الكلي</th>
                 </tr>
               </thead>
               <tbody>
                 ${items.map((item: any) => `
                   <tr>
                     <td>${item.productName || item.name || 'منتج غير محدد'}</td>
-                    <td>${item.quantity || 1}</td>
                     <td>${Number(item.price || 0).toLocaleString('ar-EG')} د.ع</td>
+                    <td>${item.quantity || 1} ${item.unit === 'kg' ? 'كيلو' : item.unit || ''}</td>
                     <td>${(Number(item.price || 0) * Number(item.quantity || 1)).toLocaleString('ar-EG')} د.ع</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
             
-            <div class="total-section">
-              <div class="total-box">
-                <div class="total-label">المجموع الكلي</div>
-                <div class="total-amount">${Number(order.totalAmount || 0).toLocaleString('ar-EG')} د.ع</div>
+            <div class="totals-section">
+              <div class="totals-title">تفاصيل الكلفة</div>
+              <div class="totals-row">
+                <span>مجموع سعر الطلبات:</span>
+                <span>${subtotal.toLocaleString('ar-EG')} د.ع</span>
+              </div>
+              <div class="totals-row">
+                <span>أجور خدمة التوصيل:</span>
+                <span>${deliveryFee.toLocaleString('ar-EG')} د.ع</span>
+              </div>
+              <div class="totals-row">
+                <span>المجموع الإجمالي:</span>
+                <span>${total.toLocaleString('ar-EG')} د.ع</span>
+              </div>
+            </div>
+            
+            <div class="notes-section">
+              <div class="notes-title">ملاحظات إضافية:</div>
+              <div class="notes-content">
+                وقت التوصيل: ${order.deliveryTime || '11 - 8 صباحاً'}
+                <br/>
+                الملاحظات: ${order.notes || 'لا يوجد'}
               </div>
             </div>
             
             <div class="footer">
-              <div>شكراً لتسوقكم معنا | ORDERY - يلا جيتك</div>
+              شكراً لتسوقكم معنا | PAKETY - يلا جيتك | هاتف خ: 07575250444
             </div>
           </div>
         `;
