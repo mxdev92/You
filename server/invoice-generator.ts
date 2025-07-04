@@ -137,25 +137,25 @@ function generateInvoiceHTML(orders: any[]): string {
         }
         
         .customer-title {
-          font-size: 11px;
+          font-size: 14px;
           font-weight: 600;
-          margin-bottom: 6px;
+          margin-bottom: 8px;
           color: white;
           text-align: center;
           background: #333;
-          padding: 3px;
-          margin: -8px -8px 6px -8px;
+          padding: 4px;
+          margin: -8px -8px 8px -8px;
         }
         
         .customer-info {
-          font-size: 9px;
-          line-height: 1.2;
+          font-size: 12px;
+          line-height: 1.4;
           text-align: right;
           direction: rtl;
         }
         
         .customer-info div {
-          margin-bottom: 2px;
+          margin-bottom: 4px;
           font-weight: 400;
           color: #333;
         }
