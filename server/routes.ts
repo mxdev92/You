@@ -571,12 +571,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .customer-section {
               text-align: right;
               flex: 1;
-              padding-left: 20px;
               direction: rtl;
               border: 2px solid #000;
-              padding: 20px;
+              padding: 20px !important;
+              margin-right: 20px;
               border-radius: 8px;
               background: white;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             
             .customer-title {
@@ -830,35 +831,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   <div>رقم الموبايل: ${order.customerPhone || 'غير محدد'}</div>
                   <div>العنوان: (${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${
                     (() => {
-                      // First try neighborhood field (most reliable)
+                      let landmark = 'غير محدد';
+                      
+                      // Console log for debugging
+                      console.log('Debug address data:', JSON.stringify(address));
+                      
+                      // Priority 1: Use neighborhood if it exists and is not generic
                       if (address.neighborhood && address.neighborhood !== 'غير محدد' && address.neighborhood !== 'B') {
-                        return address.neighborhood;
+                        landmark = address.neighborhood;
+                        console.log('Using neighborhood:', landmark);
+                        return landmark;
                       }
                       
-                      // Then try landmark field
-                      if (address.landmark && !address.landmark.includes('07') && !address.landmark.includes('075')) {
-                        return address.landmark;
+                      // Priority 2: Use landmark field if available and clean
+                      if (address.landmark && typeof address.landmark === 'string') {
+                        landmark = address.landmark;
+                        // Remove phone numbers if present
+                        landmark = landmark.replace(/07[0-9]{8,9}/g, '');
+                        landmark = landmark.replace(/\b\d{10,11}\b/g, '');
+                        landmark = landmark.replace(/\s*-\s*$/, '').replace(/^\s*-\s*/, '').trim();
+                        if (landmark && landmark !== '' && landmark !== 'غير محدد') {
+                          console.log('Using cleaned landmark:', landmark);
+                          return landmark;
+                        }
                       }
                       
-                      // Finally try to extract from notes, removing any phone patterns
-                      if (address.notes) {
-                        let cleanAddress = address.notes.toString();
+                      // Priority 3: Extract from notes field by removing phone numbers
+                      if (address.notes && typeof address.notes === 'string') {
+                        let cleanNotes = address.notes;
+                        console.log('Original notes:', cleanNotes);
                         
-                        // Remove common Iraqi phone patterns
-                        cleanAddress = cleanAddress.replace(/07[0-9]{8,9}/g, ''); // Remove 07xxxxxxxxx
-                        cleanAddress = cleanAddress.replace(/\+964[0-9]{8,10}/g, ''); // Remove +964xxxxxxxxxx
-                        cleanAddress = cleanAddress.replace(/\b\d{10,11}\b/g, ''); // Remove any 10-11 digit numbers
+                        // Remove Iraqi phone patterns more aggressively
+                        cleanNotes = cleanNotes.replace(/07[0-9]{8,9}/g, '');
+                        cleanNotes = cleanNotes.replace(/\+964[0-9]{8,10}/g, '');
+                        cleanNotes = cleanNotes.replace(/\b\d{10,11}\b/g, '');
+                        cleanNotes = cleanNotes.replace(/\d{10,}/g, ''); // Remove any string of 10+ digits
                         
-                        // Clean up separators and whitespace
-                        cleanAddress = cleanAddress.replace(/\s*-\s*$/, ''); // Remove trailing " - "
-                        cleanAddress = cleanAddress.replace(/^\s*-\s*/, ''); // Remove leading " - "
-                        cleanAddress = cleanAddress.replace(/\s*-\s*-\s*/g, ' - '); // Fix double separators
-                        cleanAddress = cleanAddress.trim();
+                        // Clean up formatting
+                        cleanNotes = cleanNotes.replace(/\s*-\s*$/, '');
+                        cleanNotes = cleanNotes.replace(/^\s*-\s*/, '');
+                        cleanNotes = cleanNotes.replace(/\s+-\s+/g, ' - ');
+                        cleanNotes = cleanNotes.trim();
                         
-                        return cleanAddress || 'غير محدد';
+                        if (cleanNotes && cleanNotes !== '' && cleanNotes !== '-') {
+                          console.log('Using cleaned notes:', cleanNotes);
+                          return cleanNotes;
+                        }
                       }
                       
-                      return 'غير محدد';
+                      console.log('Using fallback:', landmark);
+                      return landmark;
                     })()
                   })</div>
                 </div>
