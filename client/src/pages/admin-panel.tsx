@@ -1357,8 +1357,11 @@ export default function AdminPanel() {
   const [showInvoice, setShowInvoice] = useState(false);
 
   const handleOrderClick = (order: Order) => {
+    console.log('handleOrderClick called with order:', order);
+    console.log('Setting selectedOrder and showInvoice to true');
     setSelectedOrder(order);
     setShowInvoice(true);
+    console.log('State should be updated - showInvoice:', true);
   };
 
   const closeInvoice = () => {
@@ -1513,7 +1516,11 @@ export default function AdminPanel() {
                 {filteredOrders.map((order) => (
                   <div 
                     key={order.id} 
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => {
+                      console.log('Order card clicked:', order.id);
+                      handleOrderClick(order);
+                    }}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
@@ -1522,7 +1529,7 @@ export default function AdminPanel() {
                           onCheckedChange={(checked) => handleOrderSelect(order.id, checked as boolean)}
                           onClick={(e) => e.stopPropagation()}
                         />
-                        <div className="flex-1 cursor-pointer" onClick={() => handleOrderClick(order)}>
+                        <div className="flex-1">
                           <span className="text-sm font-medium text-gray-900">{order.customerName}</span>
                         </div>
                       </div>
@@ -1636,6 +1643,7 @@ export default function AdminPanel() {
       />
 
       {/* Arabic Invoice Popup */}
+      {console.log('Rendering modal check - showInvoice:', showInvoice, 'selectedOrder:', selectedOrder)}
       {showInvoice && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto" dir="rtl">
