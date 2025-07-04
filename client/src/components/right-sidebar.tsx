@@ -699,7 +699,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     </div>
   );
 
-  const CartScreen = () => (
+  const CartScreen = () => {
+    console.log('CartScreen render - cartItems:', cartItems);
+    console.log('CartScreen render - isLoadingCart:', isLoadingCart);
+    console.log('CartScreen render - cartItems length:', cartItems.length);
+    
+    return (
     <>
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -707,7 +712,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           <div className="text-center py-8">
             <p className="text-gray-500">Loading cart...</p>
           </div>
-        ) : cartItems.length === 0 ? (
+        ) : !cartItems || cartItems.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500">{t('yourCartIsEmpty')}</p>
           </div>
@@ -802,7 +807,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       )}
     </>
-  );
+    );
+  };
 
   return (
     <>
