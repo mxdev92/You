@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -1220,8 +1221,117 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 // Main Admin Panel Component
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Handle order selection
+  const handleOrderSelect = (orderId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(prev => [...prev, orderId]);
+    } else {
+      setSelectedOrders(prev => prev.filter(id => id !== orderId));
+    }
+  };
+
+  // Handle select all orders
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allOrderIds = orders?.map(order => order.id) || [];
+      setSelectedOrders(allOrderIds);
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  // Handle batch print
+  const handleBatchPrint = async () => {
+    if (selectedOrders.length === 0) {
+      toast({
+        title: "لا توجد طلبات محددة",
+        description: "يرجى تحديد طلبات للطباعة",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "طباعة مجمعة",
+        description: `جاري إنشاء ${selectedOrders.length} فاتورة...`,
+        duration: 2000,
+      });
+
+      const response = await fetch('/api/generate-batch-invoices-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderIds: selectedOrders
+        })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Open PDF in new window and trigger print dialog for Brother DCP-T520W
+        const printWindow = window.open(url, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+              // Also download as backup
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `batch-invoices-${selectedOrders.length}-orders.pdf`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }, 1000);
+          };
+        } else {
+          // Fallback: just download if popup blocked
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `batch-invoices-${selectedOrders.length}-orders.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 5000);
+        
+        toast({
+          title: "✅ تم فتح الطباعة المجمعة",
+          description: `${selectedOrders.length} فواتير جاهزة للطباعة - اختر Brother DCP-T520W`,
+          duration: 4000,
+        });
+
+        // Clear selection after successful batch print
+        setSelectedOrders([]);
+      } else {
+        toast({
+          title: "❌ خطأ في الطباعة المجمعة",
+          description: "فشل في إنشاء الفواتير. حاول مرة أخرى.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "❌ خطأ في الطباعة المجمعة",
+        description: "مشكلة في الاتصال. تحقق من الإنترنت.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: getOrders,
@@ -1353,6 +1463,44 @@ export default function AdminPanel() {
             <p className="text-gray-600">Manage customer orders and deliveries</p>
           </div>
           
+          {/* Batch Print Controls */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                  <span className="text-sm text-gray-600">
+                    {selectedOrders.length > 0 
+                      ? `${selectedOrders.length} طلبات محددة`
+                      : 'تحديد الكل'
+                    }
+                  </span>
+                </div>
+                {selectedOrders.length > 0 && (
+                  <Button
+                    onClick={handleBatchPrint}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Printer className="h-4 w-4" />
+                    طباعة مجمعة ({selectedOrders.length})
+                  </Button>
+                )}
+              </div>
+              {selectedOrders.length > 0 && (
+                <Button
+                  onClick={() => setSelectedOrders([])}
+                  variant="outline"
+                  size="sm"
+                >
+                  إلغاء التحديد
+                </Button>
+              )}
+            </div>
+          </div>
+          
           <div className="space-y-4">
             {filteredOrders.length === 0 ? (
               <div className="bg-white rounded-lg p-12 text-center">
@@ -1368,8 +1516,15 @@ export default function AdminPanel() {
                     className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
                   >
                     <div className="flex justify-between items-center">
-                      <div className="flex-1 cursor-pointer" onClick={() => handleOrderClick(order)}>
-                        <span className="text-sm font-medium text-gray-900">{order.customerName}</span>
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedOrders.includes(order.id)}
+                          onCheckedChange={(checked) => handleOrderSelect(order.id, checked as boolean)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="flex-1 cursor-pointer" onClick={() => handleOrderClick(order)}>
+                          <span className="text-sm font-medium text-gray-900">{order.customerName}</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button

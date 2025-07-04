@@ -450,6 +450,343 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate batch invoices PDF endpoint (multiple orders in one PDF)
+  app.post('/api/generate-batch-invoices-pdf', async (req, res) => {
+    try {
+      const { orderIds } = req.body;
+      
+      if (!Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ error: 'Order IDs array is required' });
+      }
+
+      console.log('Generating batch PDF with Playwright server-side rendering...');
+
+      // Fetch all orders
+      const allOrders = await storage.getOrders();
+      const validOrders = orderIds
+        .map((id: number) => allOrders.find(order => order.id === id))
+        .filter(order => order !== undefined);
+
+      if (validOrders.length === 0) {
+        return res.status(404).json({ error: 'No valid orders found' });
+      }
+
+      const browser = await chromium.launch();
+      const page = await browser.newPage();
+
+      // Generate combined HTML for all invoices
+      let combinedHtml = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Batch Invoices</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+            
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: 'Cairo', sans-serif;
+              direction: rtl;
+              background: white;
+              color: #1a1a1a;
+              line-height: 1.4;
+            }
+            
+            .invoice {
+              width: 210mm;
+              min-height: 297mm;
+              margin: 0 auto;
+              padding: 15mm;
+              background: white;
+              page-break-after: always;
+              position: relative;
+            }
+            
+            .invoice:last-child {
+              page-break-after: avoid;
+            }
+            
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #2563eb;
+              padding-bottom: 15px;
+            }
+            
+            .company-name {
+              font-size: 28px;
+              font-weight: 800;
+              color: #2563eb;
+              margin-bottom: 8px;
+              letter-spacing: 1px;
+            }
+            
+            .invoice-title {
+              font-size: 20px;
+              font-weight: 600;
+              color: #374151;
+              margin-bottom: 5px;
+            }
+            
+            .order-info {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 20px;
+              background: #f8fafc;
+              padding: 12px 15px;
+              border-radius: 8px;
+              border-right: 4px solid #2563eb;
+            }
+            
+            .customer-info {
+              margin-bottom: 20px;
+              background: #fefefe;
+              padding: 15px;
+              border-radius: 8px;
+              border: 1px solid #e5e7eb;
+            }
+            
+            .customer-info h3 {
+              font-size: 16px;
+              font-weight: 600;
+              color: #374151;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #e5e7eb;
+              padding-bottom: 5px;
+            }
+            
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 10px;
+              font-size: 14px;
+            }
+            
+            .info-item {
+              display: flex;
+              justify-content: space-between;
+            }
+            
+            .label {
+              font-weight: 600;
+              color: #6b7280;
+            }
+            
+            .value {
+              font-weight: 400;
+              color: #1f2937;
+            }
+            
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+              font-size: 13px;
+            }
+            
+            .items-table th {
+              background: #2563eb;
+              color: white;
+              padding: 12px 8px;
+              text-align: center;
+              font-weight: 600;
+              border: 1px solid #1d4ed8;
+            }
+            
+            .items-table td {
+              padding: 10px 8px;
+              text-align: center;
+              border: 1px solid #d1d5db;
+              background: #fefefe;
+            }
+            
+            .items-table tr:nth-child(even) td {
+              background: #f9fafb;
+            }
+            
+            .total-section {
+              margin-top: 20px;
+              display: flex;
+              justify-content: flex-end;
+            }
+            
+            .total-box {
+              background: #1e40af;
+              color: white;
+              padding: 15px 25px;
+              border-radius: 8px;
+              min-width: 200px;
+              text-align: center;
+            }
+            
+            .total-label {
+              font-size: 16px;
+              font-weight: 600;
+              margin-bottom: 5px;
+            }
+            
+            .total-amount {
+              font-size: 22px;
+              font-weight: 800;
+              letter-spacing: 1px;
+            }
+            
+            .footer {
+              position: absolute;
+              bottom: 15mm;
+              left: 15mm;
+              right: 15mm;
+              text-align: center;
+              font-size: 12px;
+              color: #6b7280;
+              border-top: 1px solid #e5e7eb;
+              padding-top: 10px;
+            }
+            
+            @media print {
+              .invoice {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+              }
+              
+              .invoice:last-child {
+                page-break-after: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body>
+      `;
+
+      // Add each order as a separate page
+      validOrders.forEach((order) => {
+        const orderDate = new Date(order.orderDate || Date.now()).toLocaleDateString('ar-EG');
+        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [];
+        const address = typeof order.address === 'string' ? JSON.parse(order.address) : order.address || {};
+        
+        combinedHtml += `
+          <div class="invoice">
+            <div class="header">
+              <div class="company-name">ORDERY</div>
+              <div class="invoice-title">فاتورة مبيعات</div>
+            </div>
+            
+            <div class="order-info">
+              <div>
+                <span class="label">رقم الطلب:</span>
+                <span class="value">#${order.id}</span>
+              </div>
+              <div>
+                <span class="label">التاريخ:</span>
+                <span class="value">${orderDate}</span>
+              </div>
+            </div>
+            
+            <div class="customer-info">
+              <h3>معلومات العميل</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="label">الاسم:</span>
+                  <span class="value">${order.customerName || 'غير محدد'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">البريد الإلكتروني:</span>
+                  <span class="value">${order.customerEmail || 'غير محدد'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">الهاتف:</span>
+                  <span class="value">${order.customerPhone || 'غير محدد'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">المحافظة:</span>
+                  <span class="value">${address.governorate || 'غير محدد'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">المدينة:</span>
+                  <span class="value">${address.city || 'غير محدد'}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">العنوان:</span>
+                  <span class="value">${address.street || 'غير محدد'}</span>
+                </div>
+              </div>
+            </div>
+            
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th>المنتج</th>
+                  <th>الكمية</th>
+                  <th>السعر</th>
+                  <th>المجموع</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((item: any) => `
+                  <tr>
+                    <td>${item.name || 'منتج غير محدد'}</td>
+                    <td>${item.quantity || 1}</td>
+                    <td>${Number(item.price || 0).toLocaleString('ar-EG')} د.ع</td>
+                    <td>${(Number(item.price || 0) * Number(item.quantity || 1)).toLocaleString('ar-EG')} د.ع</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            
+            <div class="total-section">
+              <div class="total-box">
+                <div class="total-label">المجموع الكلي</div>
+                <div class="total-amount">${Number(order.totalAmount || 0).toLocaleString('ar-EG')} د.ع</div>
+              </div>
+            </div>
+            
+            <div class="footer">
+              <div>شكراً لتسوقكم معنا | ORDERY - يلا جيتك</div>
+            </div>
+          </div>
+        `;
+      });
+
+      combinedHtml += `
+        </body>
+        </html>
+      `;
+
+      await page.setContent(combinedHtml, { waitUntil: 'networkidle' });
+      
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '0mm',
+          right: '0mm',
+          bottom: '0mm',
+          left: '0mm'
+        }
+      });
+
+      await browser.close();
+
+      console.log('Professional Arabic RTL batch PDF with selectable text generated successfully');
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="batch-invoices-${Date.now()}.pdf"`);
+      res.send(pdf);
+
+    } catch (error) {
+      console.error('Error generating batch PDF:', error);
+      res.status(500).json({ error: 'Failed to generate batch PDF' });
+    }
+  });
+
   // Orders API
   app.get("/api/orders", async (req, res) => {
     try {
