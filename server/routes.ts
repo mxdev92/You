@@ -9,6 +9,25 @@ import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add cache control headers to prevent browser caching issues after deployment
+  app.use((req, res, next) => {
+    // For HTML files and API routes, prevent caching
+    if (req.path.endsWith('.html') || req.path.startsWith('/api/')) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+    } else if (req.path.includes('.js') || req.path.includes('.css')) {
+      // For static assets, use versioned caching
+      res.set('Cache-Control', 'public, max-age=31536000'); // 1 year
+    }
+    next();
+  });
+
+  // Version endpoint for cache busting
+  app.get("/api/version", (req, res) => {
+    res.json({ version: "2.1.0", timestamp: Date.now() });
+  });
+
   // Categories
   app.get("/api/categories", async (req, res) => {
     try {
