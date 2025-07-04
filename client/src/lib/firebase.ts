@@ -17,7 +17,6 @@ export const auth = getAuth(app);
 // Fix Firestore connection issues with force long polling
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true, // This fixes the WebChannel transport errors
-  useFetchStreams: false,
 });
 
 console.log('Firestore initialized with force long polling to fix transport errors');

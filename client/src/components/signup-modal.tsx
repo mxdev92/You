@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
 import { useFirebaseAddressStore } from "@/store/firebase-address-store";
+import { testFirebaseConnection } from "@/lib/firebase-test";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -205,6 +206,12 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
       } else {
         await register(authData.email, authData.password);
         console.log('Registration successful, moving to address step');
+        
+        // Run Firebase diagnostic after successful auth
+        setTimeout(() => {
+          testFirebaseConnection();
+        }, 1000);
+        
         setStep('address');
       }
     } catch (error) {
