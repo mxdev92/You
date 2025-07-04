@@ -11,6 +11,29 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import type { Product, InsertProduct } from '@shared/schema';
+
+// Helper functions for product operations
+const uploadProductImage = async (file: File): Promise<string> => {
+  // For now, return a placeholder. In a real app, you'd upload to cloud storage
+  return '/api/placeholder/60/60';
+};
+
+const createProduct = async (productData: any): Promise<Product> => {
+  const insertProduct: InsertProduct = {
+    name: productData.name,
+    description: productData.description || '',
+    price: productData.price.toString(),
+    unit: productData.unit,
+    imageUrl: productData.imageUrl,
+    categoryId: null, // Will be set based on category name
+    available: productData.available,
+    displayOrder: 0
+  };
+  
+  return await apiRequest('POST', '/api/products', insertProduct);
+};
 
 // Mock orders data
 const mockOrders = [
