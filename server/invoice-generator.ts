@@ -428,16 +428,15 @@ export async function generateThermalInvoicePDF(orderIds: number[], orders: any[
     await page.waitForTimeout(2000);
     await page.evaluate(() => document.fonts.ready);
     
-    // Generate PDF with thermal printer specifications
+    // Generate PDF with HPRT N41BT thermal printer specifications
     const pdfBuffer = await page.pdf({
-      format: 'A4',
-      width: '80mm',  // HPRT N41BT thermal printer width
-      height: 'auto',  // Dynamic height based on content
+      width: '76mm',  // HPRT N41BT actual width (76mmX100mm)
+      height: '100mm',  // Standard length per page as shown in printer preview
       margin: {
-        top: '3mm',
-        right: '3mm',
-        bottom: '3mm',
-        left: '3mm'
+        top: '2mm',
+        right: '2mm',
+        bottom: '2mm',
+        left: '2mm'
       },
       printBackground: true,
       preferCSSPageSize: true
@@ -499,15 +498,15 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
         }
         
         @page {
-          size: 80mm auto;
-          margin: 3mm;
+          size: 76mm auto;
+          margin: 2mm;
         }
         
         .thermal-invoice {
           width: 100%;
-          max-width: 74mm;
+          max-width: 72mm;
           margin: 0 auto;
-          padding: 2mm;
+          padding: 1.5mm;
           background: white;
           page-break-after: always;
           page-break-inside: avoid;

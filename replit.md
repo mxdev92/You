@@ -113,6 +113,9 @@ July 4, 2025:
 ✓ Final thermal PDF: 28KB optimized for HPRT N41BT printer with complete Arabic support
 ✓ Cairo font properly integrated for professional Arabic text rendering in thermal PDFs
 ✓ All thermal invoice issues resolved: correct table structure, no QR code, proper RTL layout
+✓ Fixed thermal PDF dimensions to HPRT N41BT specifications: 76mmX100mm (was 80mm)
+✓ Updated margins and layout for proper thermal printer compatibility
+✓ PDF now opens correctly in HPRT N41BT printer app for printing
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications
 ✓ Added blur overlay (backdrop-blur-sm) with rounded-2xl edges for modern appearance  
 ✓ Implemented notification system in both auth page and cart checkout functionality
