@@ -424,6 +424,10 @@ export async function generateThermalInvoicePDF(orderIds: number[], orders: any[
     
     await page.setContent(html);
     
+    // Wait for fonts to load before generating PDF
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => document.fonts.ready);
+    
     // Generate PDF with thermal printer specifications
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -460,9 +464,22 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Thermal Invoices</title>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+      <style>
+        @font-face {
+          font-family: 'Cairo';
+          font-style: normal;
+          font-weight: 400;
+          src: url(https://fonts.gstatic.com/s/cairo/v17/SLXGc1nY6HkvalIhTp2mxdt0UX8gWrpkqEcY.woff2) format('woff2');
+          unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
+        }
+        @font-face {
+          font-family: 'Cairo';
+          font-style: normal;
+          font-weight: 700;
+          src: url(https://fonts.gstatic.com/s/cairo/v17/SLXGc1nY6HkvalIhTp2mxdt0UX8gWrpkqEcY.woff2) format('woff2');
+          unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
+        }
+      </style>
       <style>
         * {
           margin: 0;
@@ -471,12 +488,14 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
         }
         
         body {
-          font-family: 'Cairo', Arial, sans-serif;
+          font-family: 'Cairo', 'DejaVu Sans', 'Liberation Sans', 'Segoe UI', 'Tahoma', 'Arial Unicode MS', sans-serif;
           background: white;
           color: #000;
           line-height: 1.3;
           direction: rtl;
           font-size: 8px;
+          -webkit-font-feature-settings: "liga" off;
+          font-feature-settings: "liga" off;
         }
         
         @page {
