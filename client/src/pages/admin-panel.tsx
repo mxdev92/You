@@ -1394,6 +1394,77 @@ export default function AdminPanel() {
     }
   };
 
+  // Handle thermal image download for HereLabel app
+  const handleDownloadThermalImage = async () => {
+    if (selectedOrders.length === 0) {
+      toast({
+        title: "No orders selected",
+        description: "Please select orders to download",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating thermal image...",
+        description: `Creating thermal image for ${selectedOrders.length} orders...`,
+        duration: 2000,
+      });
+
+      const response = await fetch('/api/generate-thermal-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderIds: selectedOrders
+        })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Download the thermal image
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'thermal-invoices.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 5000);
+        
+        toast({
+          title: "✅ Thermal Image Downloaded",
+          description: `${selectedOrders.length} invoices ready for HereLabel app`,
+          duration: 4000,
+        });
+
+        // Clear selection after successful download
+        setSelectedOrders([]);
+      } else {
+        toast({
+          title: "❌ Download failed",
+          description: "Failed to generate thermal image. Please try again.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "❌ Download error",
+        description: "Connection problem. Check your internet connection.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: getOrders,
@@ -1587,6 +1658,15 @@ export default function AdminPanel() {
                   >
                     <Download className="h-4 w-4" />
                     Download All In One ({selectedOrders.length})
+                  </Button>
+                )}
+                {selectedOrders.length > 0 && (
+                  <Button
+                    onClick={handleDownloadThermalImage}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Download className="h-4 w-4" />
+                    HereLabel Image ({selectedOrders.length})
                   </Button>
                 )}
               </div>

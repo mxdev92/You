@@ -1,0 +1,213 @@
+import { createCanvas, loadImage, registerFont } from 'canvas';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+// Register fonts for better Arabic support
+try {
+  // Try to load system fonts for Arabic support
+  registerFont('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', { family: 'DejaVu Sans' });
+} catch (error) {
+  console.warn('Could not load DejaVu Sans font, falling back to default');
+}
+
+interface OrderItem {
+  productName: string;
+  unit: string;
+  price: string;
+  quantity: number;
+}
+
+interface OrderData {
+  id: number;
+  customerName: string;
+  customerPhone: string;
+  address: any;
+  items: any;
+  totalAmount: number;
+  deliveryTime: string | null;
+  notes: string | null;
+  orderDate: Date;
+}
+
+export async function generateThermalImage(orderData: OrderData): Promise<Buffer> {
+  // Parse JSON fields
+  const address = typeof orderData.address === 'string' ? JSON.parse(orderData.address) : orderData.address;
+  const items = typeof orderData.items === 'string' ? JSON.parse(orderData.items) : orderData.items;
+  
+  // HPRT N41BT thermal printer specs: 76mm width = 288px at 96 DPI
+  const width = 288; // 76mm at 96 DPI
+  const height = 600; // Dynamic height, will be adjusted
+  
+  // Create canvas
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext('2d');
+  
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  
+  // Set default font and color
+  ctx.fillStyle = '#000000';
+  ctx.textAlign = 'right'; // RTL for Arabic
+  
+  let y = 20;
+  const margin = 10;
+  const lineHeight = 18;
+  
+  // Header - PAKETY
+  ctx.font = 'bold 20px "DejaVu Sans", Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('PAKETY', width / 2, y);
+  y += 30;
+  
+  // Order ID
+  ctx.font = '12px "DejaVu Sans", Arial';
+  ctx.fillText(`Order ID: ${orderData.id}`, width / 2, y);
+  y += 25;
+  
+  // Customer Info Section
+  ctx.font = 'bold 14px "DejaVu Sans", Arial';
+  ctx.textAlign = 'right';
+  ctx.fillText('معلومات العميل', width - margin, y);
+  y += 20;
+  
+  ctx.font = '12px "DejaVu Sans", Arial';
+  ctx.fillText(`الاسم: ${orderData.customerName}`, width - margin, y);
+  y += lineHeight;
+  
+  ctx.fillText(`رقم الموبايل: ${orderData.customerPhone}`, width - margin, y);
+  y += lineHeight;
+  
+  const addressText = address ? `${address.governorate || ''} - ${address.district || ''} - ${address.landmark || ''}` : 'عنوان غير محدد';
+  ctx.fillText(`العنوان: ${addressText}`, width - margin, y);
+  y += 25;
+  
+  // Items Table Header
+  ctx.font = 'bold 12px "DejaVu Sans", Arial';
+  ctx.fillText('المنتج', width - margin, y);
+  ctx.fillText('السعر', width - 80, y);
+  ctx.fillText('الكمية', width - 130, y);
+  ctx.fillText('الإجمالي', width - 180, y);
+  y += 20;
+  
+  // Draw line under header
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(margin, y - 5);
+  ctx.lineTo(width - margin, y - 5);
+  ctx.stroke();
+  
+  // Items
+  ctx.font = '11px "DejaVu Sans", Arial';
+  if (items && Array.isArray(items)) {
+    items.forEach((item: any) => {
+      const itemTotal = parseFloat(item.price) * item.quantity;
+      
+      ctx.fillText(item.productName || 'منتج غير محدد', width - margin, y);
+      ctx.fillText(item.price || '0', width - 80, y);
+      ctx.fillText(item.quantity?.toString() || '0', width - 130, y);
+      ctx.fillText(itemTotal.toFixed(0), width - 180, y);
+      y += lineHeight;
+    });
+  }
+  
+  // Total line
+  y += 10;
+  ctx.beginPath();
+  ctx.moveTo(margin, y - 5);
+  ctx.lineTo(width - margin, y - 5);
+  ctx.stroke();
+  
+  // Total Amount
+  ctx.font = 'bold 14px "DejaVu Sans", Arial';
+  ctx.fillText(`المبلغ الإجمالي: ${orderData.totalAmount.toFixed(0)} د.ع`, width - margin, y);
+  y += 25;
+  
+  // Delivery Time
+  ctx.font = '12px "DejaVu Sans", Arial';
+  if (orderData.deliveryTime) {
+    ctx.fillText(`وقت التوصيل: ${orderData.deliveryTime}`, width - margin, y);
+    y += lineHeight;
+  }
+  
+  // Notes
+  if (orderData.notes && orderData.notes !== '$') {
+    ctx.fillText(`ملاحظات: ${orderData.notes}`, width - margin, y);
+    y += lineHeight;
+  }
+  
+  // Date
+  y += 10;
+  const orderDate = new Date(orderData.orderDate).toLocaleDateString('ar-EG');
+  ctx.fillText(`التاريخ: ${orderDate}`, width - margin, y);
+  
+  // Adjust canvas height to content
+  const finalHeight = y + 20;
+  const finalCanvas = createCanvas(width, finalHeight);
+  const finalCtx = finalCanvas.getContext('2d');
+  
+  // White background for final canvas
+  finalCtx.fillStyle = '#ffffff';
+  finalCtx.fillRect(0, 0, width, finalHeight);
+  
+  // Copy content to final canvas
+  finalCtx.drawImage(canvas, 0, 0);
+  
+  // Return as PNG buffer
+  return finalCanvas.toBuffer('image/png');
+}
+
+export async function generateThermalImageForMultipleOrders(orders: OrderData[]): Promise<Buffer> {
+  const width = 288; // 76mm at 96 DPI
+  const estimatedHeightPerOrder = 300;
+  const totalHeight = orders.length * estimatedHeightPerOrder + 100;
+  
+  const canvas = createCanvas(width, totalHeight);
+  const ctx = canvas.getContext('2d');
+  
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, totalHeight);
+  
+  let currentY = 0;
+  
+  for (let i = 0; i < orders.length; i++) {
+    const orderImage = await generateThermalImage(orders[i]);
+    const orderCanvas = createCanvas(width, 600);
+    const orderCtx = orderCanvas.getContext('2d');
+    
+    // Load the order image
+    const img = await loadImage(orderImage);
+    orderCtx.drawImage(img, 0, 0);
+    
+    // Draw the order image on the main canvas
+    ctx.drawImage(orderCanvas, 0, currentY);
+    currentY += img.height + 20; // Add spacing between orders
+    
+    // Add separator line between orders (except for last order)
+    if (i < orders.length - 1) {
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(10, currentY - 10);
+      ctx.lineTo(width - 10, currentY - 10);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  
+  // Create final canvas with actual used height
+  const finalCanvas = createCanvas(width, currentY);
+  const finalCtx = finalCanvas.getContext('2d');
+  
+  // White background
+  finalCtx.fillStyle = '#ffffff';
+  finalCtx.fillRect(0, 0, width, currentY);
+  
+  // Copy content
+  finalCtx.drawImage(canvas, 0, 0, width, currentY, 0, 0, width, currentY);
+  
+  return finalCanvas.toBuffer('image/png');
+}
