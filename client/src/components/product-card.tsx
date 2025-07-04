@@ -116,7 +116,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 ? "bg-green-500 hover:bg-green-500 text-white"
                 : "hover:opacity-90 text-black"
             }`}
-            style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#FFC800' }}
+            style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#22c55e' }}
           >
             {!product.available ? (
               t('outOfStock')

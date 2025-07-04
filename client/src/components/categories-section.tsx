@@ -100,7 +100,7 @@ export default function CategoriesSection() {
                   ? "shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
               }`}
-              style={category.isSelected ? { backgroundColor: '#FFC800' } : {}}
+              style={category.isSelected ? { backgroundColor: '#22c55e' } : {}}
             >
               {(() => {
                 const IconComponent = iconMap[category.icon];

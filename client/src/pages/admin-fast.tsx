@@ -363,7 +363,7 @@ function ItemsManagement() {
                 ? 'text-black border-2 border-gray-300' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
-            style={selectedCategory === null ? { backgroundColor: '#FFC800' } : {}}
+            style={selectedCategory === null ? { backgroundColor: '#22c55e' } : {}}
           >
             <Package2 className="h-4 w-4" />
             All Items
@@ -380,7 +380,7 @@ function ItemsManagement() {
                     ? 'text-black border-2 border-gray-300' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
-                style={selectedCategory === category.id ? { backgroundColor: '#FFC800' } : {}}
+                style={selectedCategory === category.id ? { backgroundColor: '#22c55e' } : {}}
               >
                 <IconComponent className="h-4 w-4" />
                 {category.name}

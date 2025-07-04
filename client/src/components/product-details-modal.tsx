@@ -169,7 +169,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
             className={`w-full py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-all duration-200 ${
               isAdding ? "bg-green-500 text-white" : "text-black"
             }`}
-            style={isAdding ? {} : { backgroundColor: '#FFC800' }}
+            style={isAdding ? {} : { backgroundColor: '#22c55e' }}
           >
             {isAdding ? (
               <Check className="h-4 w-4 text-white" />
