@@ -36,7 +36,7 @@ export async function generateThermalImage(orderData: OrderData): Promise<Buffer
   
   // HPRT N41BT thermal printer specs: 76mm width = 288px at 96 DPI
   const width = 288; // 76mm at 96 DPI
-  const height = 800; // Dynamic height, will be adjusted
+  const height = 600; // Dynamic height, will be adjusted
   
   // Create canvas
   const canvas = createCanvas(width, height);
@@ -50,103 +50,98 @@ export async function generateThermalImage(orderData: OrderData): Promise<Buffer
   ctx.fillStyle = '#000000';
   ctx.textAlign = 'right'; // RTL for Arabic
   
-  let y = 15;
-  const margin = 8;
-  const lineHeight = 12;
+  let y = 8;
+  const margin = 5;
   
-  // Header - PAKETY (smaller)
-  ctx.font = 'bold 14px "DejaVu Sans", Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('PAKETY', width / 2, y);
-  y += 18;
-  
-  // Order ID (smaller)
-  ctx.font = '9px "DejaVu Sans", Arial';
-  ctx.fillText(`Order ID: ${orderData.id}`, width / 2, y);
-  y += 15;
-  
-  // Customer Info Section (compact)
-  ctx.font = 'bold 10px "DejaVu Sans", Arial';
-  ctx.textAlign = 'right';
-  ctx.fillText('معلومات العميل', width - margin, y);
-  y += 12;
-  
-  ctx.font = '8px "DejaVu Sans", Arial';
+  // Customer Info Section (right top corner, no titles)
+  ctx.font = '7px "DejaVu Sans", Arial';
   ctx.fillText(`الاسم: ${orderData.customerName}`, width - margin, y);
-  y += 10;
+  y += 8;
   
   ctx.fillText(`رقم الموبايل: ${orderData.customerPhone}`, width - margin, y);
-  y += 10;
+  y += 8;
   
-  const addressText = address ? `${address.governorate || ''} - ${address.district || ''} - ${address.landmark || ''}` : 'عنوان غير محدد';
-  ctx.fillText(`العنوان: ${addressText}`, width - margin, y);
-  y += 15;
-  
-  // Single compact table for all items
-  if (items && Array.isArray(items)) {
-    // Table Header (very compact)
-    ctx.font = 'bold 8px "DejaVu Sans", Arial';
-    ctx.fillText('المنتج', width - margin, y);
-    ctx.fillText('السعر', width - 60, y);
-    ctx.fillText('ك', width - 90, y); // Short for كمية
-    ctx.fillText('المجموع', width - 120, y);
-    y += 10;
-    
-    // Draw line under header
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(margin, y - 2);
-    ctx.lineTo(width - margin, y - 2);
-    ctx.stroke();
-    y += 2;
-    
-    // Table Items (ultra compact)
-    ctx.font = '7px "DejaVu Sans", Arial';
-    items.forEach((item: any) => {
-      const itemTotal = parseFloat(item.price) * item.quantity;
-      
-      // Very short product name (8 characters max)
-      const productName = (item.productName || 'منتج').substring(0, 8);
-      
-      ctx.fillText(productName, width - margin, y);
-      ctx.fillText((item.price || '0'), width - 60, y);
-      ctx.fillText((item.quantity?.toString() || '0'), width - 90, y);
-      ctx.fillText(itemTotal.toFixed(0), width - 120, y);
-      y += 9; // Very tight spacing
-    });
-    
-    // Draw line after table
-    y += 3;
-    ctx.beginPath();
-    ctx.moveTo(margin, y - 2);
-    ctx.lineTo(width - margin, y - 2);
-    ctx.stroke();
-    y += 8;
-  }
-
-  // Total Amount (compact)
-  ctx.font = 'bold 10px "DejaVu Sans", Arial';
-  ctx.fillText(`المبلغ الإجمالي: ${orderData.totalAmount.toFixed(0)} د.ع`, width - margin, y);
+  const addressText = address ? `العنوان: ${address.governorate || ''} - ${address.district || ''} - ${address.landmark || ''}` : 'العنوان: غير محدد';
+  ctx.fillText(addressText, width - margin, y);
   y += 12;
   
-  // Delivery Time (compact)
-  ctx.font = '8px "DejaVu Sans", Arial';
-  if (orderData.deliveryTime) {
-    ctx.fillText(`وقت التوصيل: ${orderData.deliveryTime}`, width - margin, y);
-    y += 10;
+  // Dual thin tables - each supports 15 items
+  if (items && Array.isArray(items)) {
+    const itemsPerTable = 15;
+    
+    // Function to draw a thin table
+    const drawThinTable = (tableItems: any[], startY: number) => {
+      let currentY = startY;
+      
+      // Table Header (very thin)
+      ctx.font = 'bold 6px "DejaVu Sans", Arial';
+      ctx.fillText('المنتج', width - margin, currentY);
+      ctx.fillText('السعر', width - 50, currentY);
+      ctx.fillText('ك', width - 75, currentY);
+      ctx.fillText('المجموع', width - 100, currentY);
+      currentY += 8;
+      
+      // Thin line under header
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 0.3;
+      ctx.beginPath();
+      ctx.moveTo(margin, currentY - 1);
+      ctx.lineTo(width - margin, currentY - 1);
+      ctx.stroke();
+      currentY += 1;
+      
+      // Table Items (ultra thin)
+      ctx.font = '5px "DejaVu Sans", Arial';
+      tableItems.forEach((item: any) => {
+        const itemTotal = parseFloat(item.price) * item.quantity;
+        
+        // Very short product name (6 characters max)
+        const productName = (item.productName || 'منتج').substring(0, 6);
+        
+        ctx.fillText(productName, width - margin, currentY);
+        ctx.fillText((item.price || '0'), width - 50, currentY);
+        ctx.fillText((item.quantity?.toString() || '0'), width - 75, currentY);
+        ctx.fillText(itemTotal.toFixed(0), width - 100, currentY);
+        currentY += 7; // Ultra tight spacing
+      });
+      
+      // Thin line after table
+      currentY += 2;
+      ctx.beginPath();
+      ctx.moveTo(margin, currentY - 1);
+      ctx.lineTo(width - margin, currentY - 1);
+      ctx.stroke();
+      
+      return currentY + 3;
+    };
+    
+    // Draw tables
+    for (let i = 0; i < items.length; i += itemsPerTable) {
+      const tableItems = items.slice(i, i + itemsPerTable);
+      y = drawThinTable(tableItems, y);
+      
+      // Small gap between tables
+      if (i + itemsPerTable < items.length) {
+        y += 3;
+      }
+    }
   }
+
+  // RTL Totals section (minimal)
+  ctx.font = '6px "DejaVu Sans", Arial';
   
-  // Notes (compact)
-  if (orderData.notes && orderData.notes !== '$') {
-    ctx.fillText(`ملاحظات: ${orderData.notes}`, width - margin, y);
-    y += 10;
-  }
+  // Calculate subtotal from items
+  const subtotal = items ? items.reduce((sum: number, item: any) => sum + (parseFloat(item.price) * item.quantity), 0) : 0;
+  const deliveryFee = 2000; // Standard delivery fee
   
-  // Date (compact)
-  y += 5;
-  const orderDate = new Date(orderData.orderDate).toLocaleDateString('ar-EG');
-  ctx.fillText(`التاريخ: ${orderDate}`, width - margin, y);
+  ctx.fillText(`مجموع الطلبات: ${subtotal.toFixed(0)} د.ع`, width - margin, y);
+  y += 8;
+  
+  ctx.fillText(`اجور التوصيل: ${deliveryFee.toFixed(0)} د.ع`, width - margin, y);
+  y += 8;
+  
+  ctx.font = 'bold 7px "DejaVu Sans", Arial';
+  ctx.fillText(`المبلغ الكلي: ${orderData.totalAmount.toFixed(0)} د.ع`, width - margin, y);
   
   // Adjust canvas height to content
   const finalHeight = y + 20;
