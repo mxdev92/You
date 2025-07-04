@@ -4,7 +4,7 @@ import { X, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
-import { useAddressStore } from "@/store/address-store";
+import { useFirebaseAddressStore } from "@/store/firebase-address-store";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -84,7 +84,7 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     confirmPassword: ''
   });
 
-  const { addAddress } = useAddressStore();
+  const { addAddress } = useFirebaseAddressStore();
 
   const [addressData, setAddressData] = useState({
     fullName: '',
@@ -218,13 +218,13 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
 
     setIsLoading(true);
     try {
-      // Save address to the global store
+      // Save address to Firebase address store
       addAddress({
-        fullName: addressData.fullName,
-        phoneNumber: addressData.phoneNumber,
-        government: addressData.government,
+        governorate: addressData.government,
         district: addressData.district,
-        nearestLandmark: addressData.nearestLandmark,
+        neighborhood: addressData.nearestLandmark,
+        notes: `${addressData.fullName} - ${addressData.phoneNumber}`,
+        isDefault: true,
       });
       
       console.log('Address data saved:', addressData);
