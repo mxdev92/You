@@ -227,13 +227,24 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           price: item.product.price,
           unit: item.product.unit
         })),
-        totalAmount: Math.round(totalWithShipping),
+        totalAmount: Math.round(totalWithShipping), // Convert to integer dinars
         status: 'pending' as const,
         deliveryTime: deliveryTime,
         notes: globalDeliveryNotesRef.current || ''
       };
 
       console.log('Order data prepared:', orderData);
+      console.log('Order data types:', {
+        customerName: typeof orderData.customerName,
+        customerEmail: typeof orderData.customerEmail,
+        customerPhone: typeof orderData.customerPhone,
+        address: typeof orderData.address,
+        items: typeof orderData.items,
+        totalAmount: typeof orderData.totalAmount,
+        status: typeof orderData.status,
+        deliveryTime: typeof orderData.deliveryTime,
+        notes: typeof orderData.notes
+      });
       
       const orderId = await createOrder(orderData);
       console.log('Order created successfully with ID:', orderId);
