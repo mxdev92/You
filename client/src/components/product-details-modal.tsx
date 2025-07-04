@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Plus, Minus } from "lucide-react";
+import { X, Plus, Minus, ShoppingCart, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Product } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const { t } = useTranslation();
   const addToCart = useCartFlow(state => state.addToCart);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -39,12 +40,24 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const translationKey = getProductTranslationKey(product.name);
   const displayName = translationKey ? t(translationKey) : product.name;
 
-  const handleAddToCart = () => {
-    addToCart({
-      productId: product.id,
-      quantity: selectedQuantity,
-    });
-    onClose();
+  const handleAddToCart = async () => {
+    setIsAdding(true);
+    
+    try {
+      await addToCart({
+        productId: product.id,
+        quantity: selectedQuantity,
+      });
+      
+      // Keep the "Added!" state for a moment
+      setTimeout(() => {
+        setIsAdding(false);
+        onClose();
+      }, 1000);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      setIsAdding(false);
+    }
   };
 
   const totalPrice = (parseFloat(product.price) * selectedQuantity).toLocaleString();
@@ -152,10 +165,17 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
           {/* Add to Cart Button */}
           <Button
             onClick={handleAddToCart}
-            className="w-full text-black py-2 rounded-lg font-medium text-sm hover:opacity-90"
-            style={{ backgroundColor: '#FFC800' }}
+            disabled={isAdding}
+            className={`w-full py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-all duration-200 ${
+              isAdding ? "bg-green-500 text-white" : "text-black"
+            }`}
+            style={isAdding ? {} : { backgroundColor: '#FFC800' }}
           >
-            {t('addToCart')}
+            {isAdding ? (
+              <Check className="h-4 w-4 text-white" />
+            ) : (
+              <ShoppingCart className="h-4 w-4 text-gray-700" />
+            )}
           </Button>
         </div>
           </motion.div>

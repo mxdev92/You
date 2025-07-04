@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
@@ -121,12 +121,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             {!product.available ? (
               t('outOfStock')
             ) : isAdding ? (
-              <>
-                <Check className="h-3 w-3 mr-1" />
-                {t('added')}
-              </>
+              <Check className="h-4 w-4 text-white" />
             ) : (
-              t('addToCart')
+              <ShoppingCart className="h-4 w-4 text-gray-700" />
             )}
           </Button>
         </motion.div>
