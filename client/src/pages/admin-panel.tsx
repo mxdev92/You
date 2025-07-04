@@ -968,54 +968,11 @@ function ItemsManagement() {
     setIsEditItemOpen(true);
   };
 
-  const handleUpdateItem = async (updatedItem: any) => {
-    try {
-      if (!editingProduct?.id) return;
-
-      // Update product via backend API
-      const backendProduct = {
-        name: updatedItem.name,
-        price: updatedItem.price,
-        unit: updatedItem.unit,
-        imageUrl: updatedItem.imageUrl,
-        available: updatedItem.available,
-        categoryId: updatedItem.category === 'Fruits' ? 1 : updatedItem.category === 'Vegetables' ? 2 : null
-      };
-
-      const response = await fetch(`/api/products/${editingProduct.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(backendProduct),
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
-
-      if (!response.ok) throw new Error('Failed to update product');
-      const updatedProduct = await response.json();
-
-      // Convert to Firebase-compatible format for local state
-      const convertedProduct = {
-        id: updatedProduct.id.toString(),
-        name: updatedProduct.name,
-        description: updatedItem.description,
-        price: parseFloat(updatedProduct.price),
-        category: getCategoryName(updatedProduct.categoryId),
-        unit: updatedProduct.unit,
-        available: updatedProduct.available ?? true,
-        imageUrl: updatedProduct.imageUrl,
-        createdAt: editingProduct.createdAt
-      };
-
-      // Update local state
-      setProducts(prev => prev.map(product => 
-        product.id === editingProduct.id ? convertedProduct : product
-      ));
-
-      // Close edit modal
-      setIsEditItemOpen(false);
-      setEditingProduct(null);
-    } catch (error) {
-      console.error('Failed to update product:', error);
-    }
+  const handleUpdateItem = (updatedProduct: any) => {
+    // The API call is already handled by the EditItemPopup mutation
+    // Just close the modal here since React Query will handle cache invalidation
+    setIsEditItemOpen(false);
+    setEditingProduct(null);
   };
 
   const handleAddItem = async (newItem: any) => {
