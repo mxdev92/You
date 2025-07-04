@@ -11,7 +11,6 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import SignupModal from "@/components/signup-modal";
 import { useQuery } from "@tanstack/react-query";
-import { orderService, type Order } from "@/lib/firebase";
 
 function OrdersHistoryContent() {
   const { user } = usePostgresAuth();
@@ -19,7 +18,11 @@ function OrdersHistoryContent() {
     queryKey: ['user-orders', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
-      return await orderService.getUserOrders(user.id.toString());
+      const response = await fetch('/api/orders');
+      if (!response.ok) throw new Error('Failed to fetch orders');
+      const allOrders = await response.json();
+      // Filter orders by current user's email
+      return allOrders.filter((order: any) => order.customerEmail === user.email);
     },
     enabled: !!user,
   });

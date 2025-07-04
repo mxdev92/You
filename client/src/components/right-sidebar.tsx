@@ -375,7 +375,14 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       const orderId = await createOrderMutation.mutateAsync(orderData);
       console.log('Order created successfully with ID:', orderId);
       
-      clearCart();
+      // Clear cart and wait for completion
+      await clearCartMutation.mutateAsync();
+      console.log('Cart cleared successfully');
+      
+      // Invalidate order queries to refresh order history
+      queryClient.invalidateQueries({ queryKey: ['user-orders'] });
+      console.log('Order history cache invalidated');
+      
       alert('تم تقديم الطلب بنجاح! يمكنك مراجعة الطلب في لوحة الإدارة.');
       setCurrentView('cart');
       onClose();
