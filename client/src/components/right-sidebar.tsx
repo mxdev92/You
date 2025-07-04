@@ -140,33 +140,63 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   const updateCartMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
-      console.log('Mutation: updating cart item', { id, quantity });
       const result = await apiRequest('PATCH', `/api/cart/${id}`, { quantity });
-      console.log('Mutation result:', result);
       return result;
     },
-    onSuccess: (data) => {
-      console.log('Update mutation success:', data);
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    onMutate: async ({ id, quantity }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
+      
+      // Snapshot the previous value
+      const previousCart = queryClient.getQueryData(['/api/cart']);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(['/api/cart'], (old: any) => {
+        if (!old) return old;
+        return old.map((item: any) => 
+          item.id === id ? { ...item, quantity } : item
+        );
+      });
+      
+      return { previousCart };
     },
-    onError: (error) => {
-      console.error('Update mutation error:', error);
+    onError: (err, newData, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['/api/cart'], context?.previousCart);
+    },
+    onSettled: () => {
+      // Refetch after success or error
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
     },
   });
 
   const removeCartMutation = useMutation({
     mutationFn: async (id: number) => {
-      console.log('Mutation: removing cart item', id);
       const result = await apiRequest('DELETE', `/api/cart/${id}`);
-      console.log('Remove mutation result:', result);
       return result;
     },
-    onSuccess: (data) => {
-      console.log('Remove mutation success:', data);
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    onMutate: async (id) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
+      
+      // Snapshot the previous value
+      const previousCart = queryClient.getQueryData(['/api/cart']);
+      
+      // Optimistically remove the item
+      queryClient.setQueryData(['/api/cart'], (old: any) => {
+        if (!old) return old;
+        return old.filter((item: any) => item.id !== id);
+      });
+      
+      return { previousCart };
     },
-    onError: (error) => {
-      console.error('Remove mutation error:', error);
+    onError: (err, id, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['/api/cart'], context?.previousCart);
+    },
+    onSettled: () => {
+      // Refetch after success or error
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
     },
   });
 
@@ -205,12 +235,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   };
 
   const updateQuantity = (id: number, quantity: number) => {
-    console.log('updateQuantity called with:', { id, quantity });
     updateCartMutation.mutate({ id, quantity });
   };
 
   const removeFromCart = (id: number) => {
-    console.log('removeFromCart called with id:', id);
     removeCartMutation.mutate(id);
   };
 
@@ -676,13 +704,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {cartItems.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-8"
-          >
+          <div className="text-center py-8">
             <p className="text-gray-500">{t('yourCartIsEmpty')}</p>
-          </motion.div>
+          </div>
         ) : (
           <div className="space-y-4">
             {cartItems.map((item) => (
@@ -713,53 +737,42 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                   
                   {/* Line 3: Quantity Controls */}
                   <div className="flex items-center space-x-1.5">
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Decrease button clicked for item:', item.id, 'current quantity:', item.quantity);
                         updateQuantity(item.id, Math.max(1, item.quantity - 1));
                       }}
-                      disabled={updateCartMutation.isPending || item.quantity <= 1}
-                      className="h-6 w-6 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
+                      disabled={item.quantity <= 1}
+                      className="h-6 w-6 bg-red-500 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center border-0 outline-0"
                     >
                       <Minus className="h-2.5 w-2.5" />
-                    </Button>
+                    </button>
                     <span className="min-w-5 text-center font-medium text-xs">{item.quantity}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                    <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Increase button clicked for item:', item.id, 'current quantity:', item.quantity);
                         updateQuantity(item.id, item.quantity + 1);
                       }}
-                      disabled={updateCartMutation.isPending}
-                      className="h-6 w-6 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
+                      className="h-6 w-6 bg-green-500 text-white rounded-full flex items-center justify-center border-0 outline-0"
                     >
                       <Plus className="h-2.5 w-2.5" />
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 
                 {/* Delete Button (Right Side Middle) - Red Icon Only */}
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Delete button clicked for item:', item.id);
                     removeFromCart(item.id);
                   }}
-                  disabled={removeCartMutation.isPending}
-                  className="hover:bg-red-50 text-red-500 hover:text-red-600 disabled:text-red-300 disabled:cursor-not-allowed touch-action-manipulation h-7 w-7 flex-shrink-0"
+                  className="text-red-500 h-7 w-7 flex-shrink-0 flex items-center justify-center border-0 outline-0 bg-transparent"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                </button>
               </div>
             ))}
           </div>
@@ -768,12 +781,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
       {/* Footer */}
       {cartItems.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="px-6 py-6 border-t border-gray-100 bg-gray-50"
-        >
+        <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
           <div className="flex justify-between items-center mb-4">
             <span className="text-lg font-semibold text-gray-800">Total:</span>
             <span className="text-xl font-bold text-fresh-green">
@@ -787,7 +795,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           >
             اكمال عملية الطلب
           </Button>
-        </motion.div>
+        </div>
       )}
     </>
   );
