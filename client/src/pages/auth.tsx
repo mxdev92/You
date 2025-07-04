@@ -182,15 +182,12 @@ const AuthPage: React.FC = () => {
             /* Login Form */
             <div className="p-8 pt-4">
               {/* Logo */}
-              <div className="flex flex-col items-center mb-6">
+              <div className="flex justify-center mb-6">
                 <img 
                   src={paketyLogo} 
                   alt="PAKETY Logo" 
-                  className="w-24 h-24 object-contain mb-1"
+                  className="w-24 h-24 object-contain"
                 />
-                <h1 className="text-lg font-black text-gray-800 text-center" style={{ fontFamily: 'Montserrat, system-ui, sans-serif', letterSpacing: '1.5px', fontWeight: '900' }}>
-                  PAKETY FAST DELIVERY
-                </h1>
               </div>
               
               <form onSubmit={handleLogin} className="space-y-4">
