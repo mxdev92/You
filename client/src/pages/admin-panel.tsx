@@ -24,6 +24,32 @@ const uploadProductImage = async (file: File): Promise<string> => {
   });
 };
 
+// Helper function to map category names to IDs
+const getCategoryId = (categoryName: string): number => {
+  const mapping: { [key: string]: number } = {
+    'Vegetables': 2,
+    'Fruits': 1,
+    'Dairy': 3,
+    'Meat': 4,
+    'Seafood': 5,
+    'Bakery': 6
+  };
+  return mapping[categoryName] || 2; // Default to Vegetables
+};
+
+// Helper function to map category IDs to names
+const getCategoryName = (categoryId: number | null): string => {
+  const mapping: { [key: number]: string } = {
+    1: 'Fruits',
+    2: 'Vegetables', 
+    3: 'Dairy',
+    4: 'Meat',
+    5: 'Seafood',
+    6: 'Bakery'
+  };
+  return mapping[categoryId || 2] || 'Vegetables'; // Default to Vegetables
+};
+
 const createProduct = async (productData: any): Promise<Product> => {
   // Map category names to category IDs
   const categoryMapping: { [key: string]: number } = {
@@ -526,28 +552,66 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
   onUpdateItem: (item: any) => void;
   product: Product | null;
 }) {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    category: 'Fruits',
+    category: 'Vegetables',
     unit: 'kg',
     available: true,
     image: null as File | null,
     imageUrl: '' // Store the uploaded image URL
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const updateProductMutation = useMutation({
+    mutationFn: async (productData: any) => {
+      // Use the new image URL if available, otherwise keep existing image URL
+      const imageUrl = productData.imageUrl || product?.imageUrl || '/api/placeholder/60/60';
+      
+      const updatedProduct = {
+        name: productData.name,
+        price: parseFloat(productData.price),
+        // Convert category string to categoryId number
+        categoryId: getCategoryId(productData.category),
+        unit: productData.unit,
+        available: productData.available,
+        imageUrl
+      };
+
+      const response = await fetch(`/api/products/${product?.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProduct)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update product');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (updatedProduct) => {
+      // Invalidate and refetch products to update the UI
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      onUpdateItem(updatedProduct);
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Failed to update product:', error);
+    }
+  });
 
   // Initialize form with product data when product changes
   useEffect(() => {
     if (product) {
       setFormData({
         name: product.name,
-        description: product.description || '',
+        description: '',
         price: product.price.toString(),
-        category: product.category,
+        category: getCategoryName(product.categoryId),
         unit: product.unit,
         available: product.available,
         image: null,
@@ -570,7 +634,7 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
         reader.readAsDataURL(file);
 
         // Upload image and get URL for storage across entire app
-        const uploadedImageUrl = await uploadImage(file);
+        const uploadedImageUrl = await uploadProductImage(file);
         setFormData(prev => ({ 
           ...prev, 
           image: file,
@@ -584,44 +648,13 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
     }
   };
 
-  const uploadImage = async (file: File): Promise<string> => {
-    // Convert image to base64 data URL which works across the entire app
-    // In production, this would upload to cloud storage (AWS S3, Cloudinary, etc.)
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        resolve(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price) return;
-
-    setIsLoading(true);
-    try {
-      // Use the uploaded image URL if available, otherwise keep existing image URL
-      const imageUrl = formData.imageUrl || product?.imageUrl || '/api/placeholder/60/60';
-      
-      const updatedProduct = {
-        name: formData.name,
-        description: formData.description,
-        price: formData.price,
-        category: formData.category,
-        unit: formData.unit,
-        available: formData.available,
-        imageUrl
-      };
-
-      onUpdateItem(updatedProduct);
-      onClose();
-    } catch (error) {
-      console.error('Error updating product:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    
+    updateProductMutation.mutate(formData);
   };
 
   return (
@@ -760,15 +793,15 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
             </Button>
             <Button 
               type="submit" 
-              disabled={isLoading} 
+              disabled={updateProductMutation.isPending} 
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 rounded-xl"
             >
-              {isLoading ? (
+              {updateProductMutation.isPending ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              {isLoading ? 'Updating...' : 'Update Item'}
+              {updateProductMutation.isPending ? 'Updating...' : 'Update Item'}
             </Button>
           </div>
         </form>
