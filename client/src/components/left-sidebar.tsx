@@ -11,6 +11,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import SignupModal from "@/components/signup-modal";
 import { useQuery } from "@tanstack/react-query";
+import type { Order } from "@shared/schema";
 
 function OrdersHistoryContent() {
   const { user } = usePostgresAuth();
@@ -85,7 +86,7 @@ function OrdersHistoryContent() {
                   السعر الكلي: {order.totalAmount.toLocaleString()} د.ع
                 </p>
                 <p className="text-xs text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  التاريخ: {new Date(order.createdAt).toLocaleDateString('ar-IQ')}
+                  التاريخ: {new Date(order.orderDate).toLocaleDateString('ar-IQ')}
                 </p>
               </div>
             </div>
@@ -94,7 +95,7 @@ function OrdersHistoryContent() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => order.id && handleDownloadInvoice(parseInt(order.id))}
+              onClick={() => order.id && handleDownloadInvoice(order.id)}
               className="text-green-600 hover:text-green-700 hover:bg-green-50 p-2"
             >
               <Download className="h-4 w-4" />

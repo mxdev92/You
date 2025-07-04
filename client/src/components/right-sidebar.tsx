@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
@@ -136,7 +136,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const queryClient = useQueryClient();
   
   // Use CartFlow store for cart data
-  const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem } = useCartFlow();
+  const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem, clearCart: clearCartFlow } = useCartFlow();
   
   // PostgreSQL authentication and address integration
   const { user: postgresUser } = usePostgresAuth();
@@ -159,76 +159,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     await removeCartItem(id);
   };
 
-  const _updateCartMutation = useMutation({
-    mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
-      const result = await apiRequest('PATCH', `/api/cart/${id}`, { quantity });
-      return result;
-    },
-    onMutate: async ({ id, quantity }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
-      
-      // Snapshot the previous value
-      const previousCart = queryClient.getQueryData(['/api/cart']);
-      
-      // Optimistically update to the new value
-      queryClient.setQueryData(['/api/cart'], (old: any) => {
-        if (!old) return old;
-        return old.map((item: any) => 
-          item.id === id ? { ...item, quantity } : item
-        );
-      });
-      
-      return { previousCart };
-    },
-    onError: (err, newData, context) => {
-      // Rollback on error
-      queryClient.setQueryData(['/api/cart'], context?.previousCart);
-    },
-    onSettled: () => {
-      // Refetch after success or error
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
-    },
-  });
 
-  const removeCartMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const result = await apiRequest('DELETE', `/api/cart/${id}`);
-      return result;
-    },
-    onMutate: async (id) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['/api/cart'] });
-      
-      // Snapshot the previous value
-      const previousCart = queryClient.getQueryData(['/api/cart']);
-      
-      // Optimistically remove the item
-      queryClient.setQueryData(['/api/cart'], (old: any) => {
-        if (!old) return old;
-        return old.filter((item: any) => item.id !== id);
-      });
-      
-      return { previousCart };
-    },
-    onError: (err, id, context) => {
-      // Rollback on error
-      queryClient.setQueryData(['/api/cart'], context?.previousCart);
-    },
-    onSettled: () => {
-      // Refetch after success or error
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
-    },
-  });
-
-  const clearCartMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('DELETE', '/api/cart');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
-    },
-  });
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
@@ -263,9 +194,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     handleRemoveItem(id);
   };
 
-  const clearCart = () => {
-    clearCartMutation.mutate();
-  };
+
   const [currentView, setCurrentView] = useState<'cart' | 'checkout' | 'final'>('cart');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -375,9 +304,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       const orderId = await createOrderMutation.mutateAsync(orderData);
       console.log('Order created successfully with ID:', orderId);
       
-      // Clear cart and wait for completion
-      await clearCartMutation.mutateAsync();
+      // Clear cart using CartFlow store for immediate UI update
+      await clearCartFlow();
       console.log('Cart cleared successfully');
+      
+      // Also reload cart to ensure consistency
+      await loadCart();
       
       // Invalidate order queries to refresh order history
       queryClient.invalidateQueries({ queryKey: ['user-orders'] });
