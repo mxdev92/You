@@ -20,12 +20,13 @@ console.log('Database URL:', firebaseConfig.databaseURL);
 export class FirebaseRealtimeStorage {
   async getCategories() {
     try {
-      // Force reset categories to the new 4 categories
+      // Force reset categories to the new 5 categories including لحوم
       const newCategories = [
         { id: 1, name: "خضروات", icon: "Leaf", displayOrder: 1, isSelected: false },
         { id: 2, name: "فواكة", icon: "Apple", displayOrder: 2, isSelected: false },
         { id: 3, name: "ماء", icon: "Droplets", displayOrder: 3, isSelected: false },
-        { id: 4, name: "خبز", icon: "Wheat", displayOrder: 4, isSelected: false }
+        { id: 4, name: "خبز", icon: "Wheat", displayOrder: 4, isSelected: false },
+        { id: 5, name: "لحوم", icon: "Beef", displayOrder: 5, isSelected: false }
       ];
       
       // Clear all existing categories and set new ones
@@ -37,7 +38,7 @@ export class FirebaseRealtimeStorage {
         await set(ref(db, `categories/${category.id}`), category);
       }
       
-      console.log('Categories reset to new 4 categories:', newCategories);
+      console.log('Categories reset to new 5 categories:', newCategories);
       return newCategories;
     } catch (error) {
       console.error('Firebase getCategories error:', error);
@@ -45,7 +46,8 @@ export class FirebaseRealtimeStorage {
         { id: 1, name: "خضروات", icon: "Leaf", displayOrder: 1, isSelected: false },
         { id: 2, name: "فواكة", icon: "Apple", displayOrder: 2, isSelected: false },
         { id: 3, name: "ماء", icon: "Droplets", displayOrder: 3, isSelected: false },
-        { id: 4, name: "خبز", icon: "Wheat", displayOrder: 4, isSelected: false }
+        { id: 4, name: "خبز", icon: "Wheat", displayOrder: 4, isSelected: false },
+        { id: 5, name: "لحوم", icon: "Beef", displayOrder: 5, isSelected: false }
       ];
     }
   }
