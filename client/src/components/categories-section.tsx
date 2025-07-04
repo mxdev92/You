@@ -52,16 +52,13 @@ export default function CategoriesSection() {
         queryClient.setQueryData(["/api/categories"], context.previousCategories);
       }
     },
-    onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+    onSuccess: () => {
+      // Only refetch products, not categories to maintain UI stability
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     },
   });
 
   const handleCategorySelect = (categoryId: number) => {
-    // Prevent multiple rapid clicks
-    if (selectCategoryMutation.isPending) return;
     selectCategoryMutation.mutate(categoryId);
   };
 
@@ -115,9 +112,11 @@ export default function CategoriesSection() {
                 );
               })()}
             </motion.div>
-            <span className={`text-[11px] font-semibold text-center w-full leading-tight mt-1 ${
-              category.isSelected ? "text-white drop-shadow-sm" : "text-gray-700"
-            }`}>
+            <span className={`text-xs font-bold text-center w-full leading-tight mt-1 ${
+              category.isSelected ? "text-white" : "text-gray-700"
+            }`} style={{
+              textShadow: category.isSelected ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
+            }}>
               {t(getCategoryTranslationKey(category.name))}
             </span>
           </motion.div>
