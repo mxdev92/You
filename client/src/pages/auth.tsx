@@ -180,7 +180,7 @@ const AuthPage: React.FC = () => {
         >
           {isLogin ? (
             /* Login Form */
-            <div className="p-8">
+            <div className="p-8 pt-4">
               {/* Logo */}
               <div className="flex justify-center mb-6">
                 <img 
