@@ -113,8 +113,8 @@ export default function ProductCard({ product }: ProductCardProps) {
               !product.available
                 ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
                 : isAdding
-                ? "bg-green-500 hover:bg-green-500"
-                : "hover:opacity-90"
+                ? "bg-green-500 hover:bg-green-500 text-white"
+                : "hover:opacity-90 text-black"
             }`}
             style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#FFC800' }}
           >
