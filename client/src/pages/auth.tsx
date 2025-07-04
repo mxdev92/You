@@ -186,7 +186,7 @@ const AuthPage: React.FC = () => {
                 <img 
                   src={paketyLogo} 
                   alt="PAKETY Logo" 
-                  className="w-24 h-24 object-contain mb-3"
+                  className="w-24 h-24 object-contain mb-1"
                 />
                 <h1 className="text-lg font-bold text-gray-800 text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                   Pakety Fast Delivery
