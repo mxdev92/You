@@ -1726,7 +1726,7 @@ export default function AdminPanel() {
                   <div className="flex justify-between items-start">
                     <span className="font-medium text-gray-700">العنوان:</span>
                     <span className="text-gray-900 text-left max-w-xs" dir="ltr">
-                      ({(selectedOrder.address as any).governorate} - {(selectedOrder.address as any).district} - {(selectedOrder.address as any).landmark || (selectedOrder.address as any).notes || 'غير محدد'})
+                      ({(selectedOrder.address as any).governorate} - {(selectedOrder.address as any).district} - {((selectedOrder.address as any).landmark || (selectedOrder.address as any).notes || 'غير محدد').replace(/\s*-\s*\d{10,}.*$/, '')})
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

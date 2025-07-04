@@ -809,7 +809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 <div class="customer-info">
                   <div>الاسم: ${order.customerName || 'غير محدد'}</div>
                   <div>رقم الموبايل: ${order.customerPhone || 'غير محدد'}</div>
-                  <div>العنوان: (${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${address.landmark || address.notes || 'غير محدد'})</div>
+                  <div>العنوان: (${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${(address.landmark || address.notes || 'غير محدد').replace(/\s*-\s*\d{10,}.*$/, '')})</div>
                 </div>
               </div>
               
