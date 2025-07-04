@@ -16,18 +16,31 @@ import type { Product, InsertProduct } from '@shared/schema';
 
 // Helper functions for product operations
 const uploadProductImage = async (file: File): Promise<string> => {
-  // For now, return a placeholder. In a real app, you'd upload to cloud storage
-  return '/api/placeholder/60/60';
+  // Create a data URL from the file for immediate display
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.readAsDataURL(file);
+  });
 };
 
 const createProduct = async (productData: any): Promise<Product> => {
+  // Map category names to category IDs
+  const categoryMapping: { [key: string]: number } = {
+    'Vegetables': 2,
+    'Fruits': 1,
+    'Dairy': 4,
+    'Meat': 6,
+    'Seafood': 5,
+    'Bakery': 3
+  };
+  
   const insertProduct: InsertProduct = {
     name: productData.name,
-    description: productData.description || '',
     price: productData.price.toString(),
     unit: productData.unit,
     imageUrl: productData.imageUrl,
-    categoryId: null, // Will be set based on category name
+    categoryId: categoryMapping[productData.category] || 2, // Default to Vegetables
     available: productData.available,
     displayOrder: 0
   };
@@ -292,17 +305,55 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
   onClose: () => void;
   onAddItem: (item: any) => void;
 }) {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    category: 'Fruits',
+    category: 'Vegetables',
     unit: 'kg',
     available: true,
     image: null as File | null
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const createProductMutation = useMutation({
+    mutationFn: async (productData: any) => {
+      const imageUrl = productData.image ? await uploadProductImage(productData.image) : '/api/placeholder/60/60';
+      
+      const newProduct = {
+        name: productData.name,
+        price: parseFloat(productData.price),
+        category: productData.category,
+        unit: productData.unit,
+        available: productData.available,
+        imageUrl
+      };
+
+      return await createProduct(newProduct);
+    },
+    onSuccess: (savedProduct) => {
+      // Invalidate and refetch products to update the UI
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      onAddItem(savedProduct);
+      onClose();
+      
+      // Reset form
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        category: 'Vegetables',
+        unit: 'kg',
+        available: true,
+        image: null
+      });
+      setImagePreview(null);
+    },
+    onError: (error) => {
+      console.error('Error creating product:', error);
+    }
+  });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -316,45 +367,11 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price) return;
-
-    setIsLoading(true);
-    try {
-      // Upload image and create product
-      const imageUrl = formData.image ? await uploadProductImage(formData.image) : '/api/placeholder/60/60';
-      
-      const newProduct = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        category: formData.category,
-        unit: formData.unit,
-        available: formData.available,
-        imageUrl
-      };
-
-      const savedProduct = await createProduct(newProduct);
-      onAddItem(savedProduct);
-      
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        category: 'Fruits',
-        unit: 'kg',
-        available: true,
-        image: null
-      });
-      setImagePreview(null);
-      onClose();
-    } catch (error) {
-      console.error('Error adding product:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    
+    createProductMutation.mutate(formData);
   };
 
   return (
@@ -485,15 +502,15 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
             </Button>
             <Button 
               type="submit" 
-              disabled={isLoading} 
+              disabled={createProductMutation.isPending} 
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 rounded-xl"
             >
-              {isLoading ? (
+              {createProductMutation.isPending ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              {isLoading ? 'Adding...' : 'Add Item'}
+              {createProductMutation.isPending ? 'Adding...' : 'Add Item'}
             </Button>
           </div>
         </form>
