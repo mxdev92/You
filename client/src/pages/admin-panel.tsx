@@ -1236,10 +1236,13 @@ export default function AdminPanel() {
 
   // Handle select all orders
   const handleSelectAll = (checked: boolean) => {
+    console.log('handleSelectAll called:', { checked, filteredOrdersCount: filteredOrders.length });
     if (checked) {
       const allOrderIds = filteredOrders?.map(order => order.id) || [];
+      console.log('Selecting all orders:', allOrderIds);
       setSelectedOrders(allOrderIds);
     } else {
+      console.log('Deselecting all orders');
       setSelectedOrders([]);
     }
   };
@@ -1474,22 +1477,26 @@ export default function AdminPanel() {
           </div>
           
           {/* Batch Print Controls */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+          <div className={`rounded-lg border p-4 mb-6 ${
+            selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length
+              ? 'bg-green-50 border-green-200'
+              : 'bg-white border-gray-200'
+          }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Checkbox
-                    checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
+                    checked={selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length}
                     onCheckedChange={handleSelectAll}
                   />
                   <span className={`text-sm ${
-                    selectedOrders.length === filteredOrders.length && filteredOrders.length > 0
-                      ? 'text-green-600 font-medium'
+                    selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length
+                      ? 'text-green-600 font-bold'
                       : selectedOrders.length > 0 
                         ? 'text-blue-600 font-medium'
                         : 'text-gray-600'
                   }`}>
-                    {selectedOrders.length === filteredOrders.length && filteredOrders.length > 0
+                    {selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length
                       ? `✓ تم تحديد الكل (${selectedOrders.length} طلبات)`
                       : selectedOrders.length > 0 
                         ? `${selectedOrders.length} طلبات محددة`
