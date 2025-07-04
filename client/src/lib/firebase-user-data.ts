@@ -156,8 +156,32 @@ export const addUserAddress = async (addressData: Omit<UserAddress, 'id' | 'uid'
     createdAt: new Date().toISOString()
   };
   
-  const docRef = await addDoc(collection(db, 'userAddresses'), newAddress);
-  return { id: docRef.id, ...newAddress };
+  console.log('Adding address to Firestore:', newAddress);
+  
+  // Retry logic for Firestore operations
+  let retries = 3;
+  let lastError: any;
+  
+  while (retries > 0) {
+    try {
+      console.log(`Attempting to add address (${4 - retries}/3)...`);
+      const docRef = await addDoc(collection(db, 'userAddresses'), newAddress);
+      console.log('Address added successfully with ID:', docRef.id);
+      return { id: docRef.id, ...newAddress };
+    } catch (error: any) {
+      lastError = error;
+      retries--;
+      console.warn(`Address add attempt failed (${3 - retries}/3):`, error.message);
+      
+      if (retries > 0) {
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+      }
+    }
+  }
+  
+  console.error('All address add attempts failed:', lastError);
+  throw new Error(`فشل في حفظ العنوان: ${lastError.message || 'خطأ في الاتصال'}`);
 };
 
 export const updateUserAddress = async (addressId: string, addressData: Partial<UserAddress>): Promise<void> => {

@@ -55,15 +55,7 @@ export const useFirebaseAddressStore = create<FirebaseAddressState>((set, get) =
     try {
       console.log('Firebase Address Store: Attempting to add address', addressData);
       
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Firestore operation timed out after 8 seconds')), 8000);
-      });
-
-      const newAddress = await Promise.race([
-        addUserAddress(addressData),
-        timeoutPromise
-      ]);
+      const newAddress = await addUserAddress(addressData);
       
       console.log('Firebase Address Store: Address added successfully', newAddress);
       const { addresses } = get();
@@ -79,7 +71,7 @@ export const useFirebaseAddressStore = create<FirebaseAddressState>((set, get) =
         error: error.message || 'Failed to add address',
         isLoading: false 
       });
-      throw error; // Re-throw to allow caller to handle
+      throw error;
     }
   },
 
