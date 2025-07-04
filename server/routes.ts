@@ -90,6 +90,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/products/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const productData = req.body;
+      
+      console.log('Updating product ID:', id);
+      console.log('Product data received:', productData);
+      
+      const product = await storage.updateProduct(id, productData);
+      console.log('Product updated successfully:', product);
+      res.json(product);
+    } catch (error) {
+      console.error('Failed to update product:', error);
+      res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
   app.patch("/api/products/:id/display-order", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
