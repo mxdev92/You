@@ -98,6 +98,14 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 4, 2025:
+✓ Added "Download All In One" thermal printer button for HPRT N41BT compatibility
+✓ Created thermal PDF endpoint (/api/generate-thermal-invoice-pdf) with 80mm width optimization
+✓ Button appears when multiple orders selected, positioned below existing bulk print button
+✓ Downloads combined PDF named "invoices.pdf" containing all selected invoices on separate pages
+✓ Thermal design: black/white only, Arial fonts, 3mm margins, 80mm width for thermal paper
+✓ Compact invoice layout optimized for thermal printing with smaller fonts and spacing
+✓ Maintains all invoice information: PAKETY header, customer data, order items, QR codes
+✓ Successfully tested - generates 43KB thermal PDF vs 180KB standard PDF (75% size reduction)
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications
 ✓ Added blur overlay (backdrop-blur-sm) with rounded-2xl edges for modern appearance  
 ✓ Implemented notification system in both auth page and cart checkout functionality

@@ -1323,6 +1323,77 @@ export default function AdminPanel() {
     }
   };
 
+  // Handle thermal printer download all in one
+  const handleDownloadAllInOne = async () => {
+    if (selectedOrders.length === 0) {
+      toast({
+        title: "No orders selected",
+        description: "Please select orders to download",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating thermal invoices...",
+        description: `Creating thermal PDF for ${selectedOrders.length} orders...`,
+        duration: 2000,
+      });
+
+      const response = await fetch('/api/generate-thermal-invoice-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderIds: selectedOrders
+        })
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        // Download the thermal PDF
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'invoices.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 5000);
+        
+        toast({
+          title: "✅ Thermal PDF Downloaded",
+          description: `${selectedOrders.length} invoices ready for HPRT N41BT printer`,
+          duration: 4000,
+        });
+
+        // Clear selection after successful download
+        setSelectedOrders([]);
+      } else {
+        toast({
+          title: "❌ Download failed",
+          description: "Failed to generate thermal PDF. Please try again.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "❌ Download error",
+        description: "Connection problem. Check your internet connection.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: getOrders,
@@ -1507,6 +1578,15 @@ export default function AdminPanel() {
                   >
                     <Printer className="h-4 w-4" />
                     طباعة مجمعة ({selectedOrders.length})
+                  </Button>
+                )}
+                {selectedOrders.length > 0 && (
+                  <Button
+                    onClick={handleDownloadAllInOne}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download All In One ({selectedOrders.length})
                   </Button>
                 )}
               </div>

@@ -405,3 +405,263 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
     </html>
   `;
 }
+
+// Generate thermal printer compatible PDF for multiple invoices
+export async function generateThermalInvoicePDF(orderIds: number[], orders: any[]): Promise<Buffer> {
+  console.log('🚀 Generating Thermal Invoice PDF with Playwright...');
+  
+  const browser = await chromium.launch({
+    executablePath: '/usr/bin/chromium-browser',
+    args: ['--no-sandbox', '--disable-dev-shm-usage']
+  });
+
+  try {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    // Generate HTML for all invoices
+    const html = await generateThermalInvoiceHTML(orders);
+    
+    await page.setContent(html);
+    
+    // Generate PDF with thermal printer specifications
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      width: '80mm',  // HPRT N41BT thermal printer width
+      height: 'auto',  // Dynamic height based on content
+      margin: {
+        top: '3mm',
+        right: '3mm',
+        bottom: '3mm',
+        left: '3mm'
+      },
+      printBackground: true,
+      preferCSSPageSize: true
+    });
+
+    await browser.close();
+    console.log('✅ Thermal Invoice PDF generated successfully');
+    return pdfBuffer;
+  } catch (error) {
+    await browser.close();
+    throw error;
+  }
+}
+
+// Generate HTML for thermal printer invoices
+async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
+  const invoicesHTML = await Promise.all(orders.map(order => generateSingleThermalInvoiceHTML(order)));
+  const combinedHTML = invoicesHTML.join('');
+  
+  return `
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Thermal Invoices</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        
+        body {
+          font-family: Arial, sans-serif;
+          background: white;
+          color: #000;
+          line-height: 1.2;
+          direction: rtl;
+          font-size: 8px;
+        }
+        
+        @page {
+          size: 80mm auto;
+          margin: 3mm;
+        }
+        
+        .thermal-invoice {
+          width: 100%;
+          max-width: 74mm;
+          margin: 0 auto;
+          padding: 2mm;
+          background: white;
+          page-break-after: always;
+          page-break-inside: avoid;
+        }
+        
+        .thermal-invoice:last-child {
+          page-break-after: avoid;
+        }
+        
+        .thermal-header {
+          text-align: center;
+          margin-bottom: 3mm;
+          padding-bottom: 2mm;
+          border-bottom: 1px solid #000;
+        }
+        
+        .thermal-logo {
+          font-size: 12px;
+          font-weight: bold;
+          margin-bottom: 1mm;
+        }
+        
+        .thermal-section {
+          margin-bottom: 2mm;
+        }
+        
+        .thermal-section-title {
+          font-weight: bold;
+          font-size: 9px;
+          margin-bottom: 1mm;
+          text-align: center;
+        }
+        
+        .thermal-customer-info {
+          font-size: 7px;
+          line-height: 1.3;
+        }
+        
+        .thermal-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 2mm 0;
+        }
+        
+        .thermal-table th,
+        .thermal-table td {
+          font-size: 7px;
+          padding: 0.5mm;
+          text-align: right;
+          border-bottom: 1px solid #ccc;
+        }
+        
+        .thermal-table th {
+          font-weight: bold;
+          background: #f0f0f0;
+        }
+        
+        .thermal-totals {
+          margin-top: 2mm;
+          padding-top: 2mm;
+          border-top: 1px solid #000;
+        }
+        
+        .thermal-total-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 1mm;
+          font-size: 8px;
+        }
+        
+        .thermal-total-row.final {
+          font-weight: bold;
+          font-size: 9px;
+          padding-top: 1mm;
+          border-top: 1px solid #000;
+        }
+        
+        .thermal-qr {
+          text-align: center;
+          margin: 2mm 0;
+        }
+        
+        .thermal-qr img {
+          width: 20mm;
+          height: 20mm;
+        }
+        
+        .thermal-notes {
+          margin-top: 2mm;
+          padding: 1mm;
+          background: #f8f8f8;
+          font-size: 7px;
+        }
+      </style>
+    </head>
+    <body>
+      ${combinedHTML}
+    </body>
+    </html>
+  `;
+}
+
+// Generate single thermal invoice HTML
+async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
+  const items = JSON.parse(order.items);
+  const customerData = JSON.parse(order.customerData);
+  
+  const itemsHTML = items.map((item: any) => `
+    <tr>
+      <td style="text-align: left;">${(parseFloat(item.price) * item.quantity).toFixed(0)} د.ع</td>
+      <td>${item.quantity}</td>
+      <td>${item.name}</td>
+    </tr>
+  `).join('');
+
+  const qrCodeBase64 = await generateQRCode(order.id);
+  
+  return `
+    <div class="thermal-invoice">
+      <div class="thermal-header">
+        <div class="thermal-logo">PAKETY</div>
+        <div style="font-size: 7px;">${new Date(order.createdAt).toLocaleDateString('ar-IQ')}</div>
+        <div style="font-size: 7px;">رقم الطلب: ${order.id}</div>
+      </div>
+      
+      <div class="thermal-section">
+        <div class="thermal-section-title">معلومات العميل</div>
+        <div class="thermal-customer-info">
+          <div>الاسم: ${customerData.fullName}</div>
+          <div>الموبايل: ${customerData.phone}</div>
+          <div>العنوان: ${customerData.governorate} - ${customerData.district} - ${customerData.landmark}</div>
+        </div>
+      </div>
+      
+      <div class="thermal-section">
+        <div class="thermal-section-title">تفاصيل الطلب</div>
+        <table class="thermal-table">
+          <thead>
+            <tr>
+              <th>المجموع</th>
+              <th>الكمية</th>
+              <th>الصنف</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHTML}
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="thermal-totals">
+        <div class="thermal-total-row">
+          <span>مجموع الطلبات:</span>
+          <span>${order.totalAmount} د.ع</span>
+        </div>
+        <div class="thermal-total-row">
+          <span>اجور التوصيل:</span>
+          <span>2000 د.ع</span>
+        </div>
+        <div class="thermal-total-row final">
+          <span>المبلغ الاجمالي:</span>
+          <span>${(parseFloat(order.totalAmount) + 2000).toFixed(0)} د.ع</span>
+        </div>
+      </div>
+      
+      <div class="thermal-qr">
+        <img src="data:image/png;base64,${qrCodeBase64}" alt="QR Code">
+        <div style="font-size: 6px; margin-top: 1mm;">رقم الطلب: ${order.id}</div>
+      </div>
+      
+      <div class="thermal-notes">
+        <div style="font-weight: bold; margin-bottom: 1mm;">ملاحظات:</div>
+        <div style="height: 8mm; border: 1px solid #ccc;"></div>
+        <div style="font-weight: bold; margin: 1mm 0;">وقت التوصيل:</div>
+        <div style="height: 8mm; border: 1px solid #ccc;"></div>
+      </div>
+    </div>
+  `;
+}
