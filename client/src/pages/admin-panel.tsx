@@ -13,6 +13,7 @@ import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-clie
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import type { Product, InsertProduct } from '@shared/schema';
+import ItemsManagement from './items-management';
 
 // Helper functions for product operations
 const uploadProductImage = async (file: File): Promise<string> => {
@@ -869,8 +870,8 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
   );
 }
 
-// Items Management Component
-function ItemsManagement() {
+// Placeholder function to maintain structure (OLD ITEMS MANAGEMENT REMOVED)
+function OldItemsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(1); // Default to خضروات
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
