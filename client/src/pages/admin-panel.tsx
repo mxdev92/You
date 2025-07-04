@@ -886,6 +886,7 @@ function ItemsManagement() {
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const queryClient = useQueryClient(); // Move to top level
 
   // Load products from backend API
   useEffect(() => {
@@ -1037,6 +1038,11 @@ function ItemsManagement() {
 
       // Remove product from local state
       setProducts(prev => prev.filter(product => product.id !== productId));
+      
+      // CRITICAL: Invalidate React Query cache to sync with main app immediately
+      // Invalidate all products queries to force refetch in main app
+      await queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      console.log('Cache invalidated - main app will update immediately');
       
       console.log('Product deleted successfully');
     } catch (error) {
