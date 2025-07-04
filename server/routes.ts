@@ -572,23 +572,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
               text-align: right;
               flex: 1;
               padding-left: 20px;
+              direction: rtl;
+              border: 2px solid #000;
+              padding: 20px;
+              border-radius: 8px;
+              background: white;
             }
             
             .customer-title {
-              font-size: 16px;
-              font-weight: 700;
-              margin-bottom: 10px;
+              font-size: 18px;
+              font-weight: 800;
+              margin-bottom: 15px;
               color: #000;
+              text-align: center;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 10px;
             }
             
             .customer-info {
-              font-size: 13px;
-              line-height: 1.8;
+              font-size: 14px;
+              line-height: 2.0;
+              direction: rtl;
+              text-align: right;
             }
             
             .customer-info div {
-              margin-bottom: 5px;
-              font-weight: 500;
+              margin-bottom: 8px;
+              font-weight: 600;
+              color: #333;
+              background: transparent;
+              border: none;
+              padding: 5px 0;
+              border-bottom: 1px dotted #ccc;
+            }
+            
+            .customer-info div:last-child {
+              border-bottom: none;
             }
             
             .app-section {
@@ -811,20 +830,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   <div>رقم الموبايل: ${order.customerPhone || 'غير محدد'}</div>
                   <div>العنوان: (${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${
                     (() => {
-                      if (address.neighborhood && address.neighborhood !== 'غير محدد') {
+                      // First try neighborhood field (most reliable)
+                      if (address.neighborhood && address.neighborhood !== 'غير محدد' && address.neighborhood !== 'B') {
                         return address.neighborhood;
                       }
-                      if (address.landmark) {
+                      
+                      // Then try landmark field
+                      if (address.landmark && !address.landmark.includes('07') && !address.landmark.includes('075')) {
                         return address.landmark;
                       }
+                      
+                      // Finally try to extract from notes, removing any phone patterns
                       if (address.notes) {
-                        // Remove any phone numbers from the notes
-                        let cleanNotes = address.notes.toString();
-                        // Split by ' - ' and filter out any parts that contain phone numbers
-                        const parts = cleanNotes.split(' - ');
-                        const filteredParts = parts.filter(part => !/\d{10,}/.test(part));
-                        return filteredParts.join(' - ') || 'غير محدد';
+                        let cleanAddress = address.notes.toString();
+                        
+                        // Remove common Iraqi phone patterns
+                        cleanAddress = cleanAddress.replace(/07[0-9]{8,9}/g, ''); // Remove 07xxxxxxxxx
+                        cleanAddress = cleanAddress.replace(/\+964[0-9]{8,10}/g, ''); // Remove +964xxxxxxxxxx
+                        cleanAddress = cleanAddress.replace(/\b\d{10,11}\b/g, ''); // Remove any 10-11 digit numbers
+                        
+                        // Clean up separators and whitespace
+                        cleanAddress = cleanAddress.replace(/\s*-\s*$/, ''); // Remove trailing " - "
+                        cleanAddress = cleanAddress.replace(/^\s*-\s*/, ''); // Remove leading " - "
+                        cleanAddress = cleanAddress.replace(/\s*-\s*-\s*/g, ' - '); // Fix double separators
+                        cleanAddress = cleanAddress.trim();
+                        
+                        return cleanAddress || 'غير محدد';
                       }
+                      
                       return 'غير محدد';
                     })()
                   })</div>
