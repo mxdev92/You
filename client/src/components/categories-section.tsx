@@ -112,11 +112,9 @@ export default function CategoriesSection() {
                 );
               })()}
             </motion.div>
-            <span className={`text-xs font-bold text-center w-full leading-tight mt-1 ${
-              category.isSelected ? "text-white" : "text-gray-700"
-            }`} style={{
-              textShadow: category.isSelected ? '0 1px 2px rgba(0,0,0,0.8)' : 'none'
-            }}>
+            <span className={`text-[10px] font-medium text-center w-full leading-tight mt-1 ${
+              category.isSelected ? "text-black" : "text-gray-700"
+            }`}>
               {t(getCategoryTranslationKey(category.name))}
             </span>
           </motion.div>
