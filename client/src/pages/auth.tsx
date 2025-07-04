@@ -116,6 +116,7 @@ const AuthPage: React.FC = () => {
       
       // Create address record from signup data
       const addressData = {
+        userId: newUser.id,
         governorate: signupData.governorate,
         district: signupData.district,
         neighborhood: signupData.landmark,
@@ -126,7 +127,7 @@ const AuthPage: React.FC = () => {
       console.log('Creating address from signup data:', addressData);
       
       // Add the address to the user's profile
-      await addAddress(newUser.id, addressData);
+      await addAddress(addressData);
       console.log('Address created successfully during signup');
       
       // Redirect to main app
@@ -160,32 +161,7 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col">
-      {/* Fixed Header */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4"
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="text-center">
-          <h1 
-            className="text-lg font-bold text-green-600"
-            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-          >
-            PAKETY
-          </h1>
-          <p 
-            className="text-xs text-gray-500 mt-1"
-            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-          >
-            تسوق البقالة بسهولة
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Content Area */}
-      <div className="flex-1 pt-20 pb-6 px-4 flex items-center justify-center">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -194,85 +170,85 @@ const AuthPage: React.FC = () => {
           className="w-full max-w-sm"
         >
 
-          {/* Main Card */}
-          <motion.div
-            className="bg-white rounded-xl shadow-lg overflow-hidden"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
-            {isLogin ? (
-              /* Login Form */
-              <div className="p-6">
-                <h2 className="text-lg font-bold text-gray-800 mb-4 text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  تسجيل الدخول
-                </h2>
-                
-                <form onSubmit={handleLogin} className="space-y-3">
-                  <div>
-                    <Input
-                      type="email"
-                      placeholder="البريد الإلكتروني"
-                      value={loginData.email}
-                      onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full h-10 text-right text-sm"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                      dir="rtl"
-                    />
-                  </div>
-                  
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="كلمة المرور"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
-                      className="w-full h-10 text-right pr-8 text-sm"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                      dir="rtl"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
-                    >
-                      {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                    </button>
-                  </div>
-                  
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-medium text-sm"
+        {/* Main Card */}
+        <motion.div
+          className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden w-full max-w-sm"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          {isLogin ? (
+            /* Login Form */
+            <div className="p-8">
+              <h2 className="text-xl font-bold text-gray-800 mb-6 text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                تسجيل الدخول
+              </h2>
+              
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Input
+                    type="email"
+                    placeholder="البريد الإلكتروني"
+                    value={loginData.email}
+                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                     style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  >
-                    {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
-                  </Button>
-                </form>
+                    dir="rtl"
+                  />
+                </div>
                 
-                <div className="mt-4 text-center">
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="كلمة المرور"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full h-12 text-right pr-10 text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    dir="rtl"
+                  />
                   <button
-                    onClick={() => setIsLogin(false)}
-                    className="text-green-600 hover:text-green-700 font-medium text-sm"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   >
-                    إنشاء حساب جديد
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-xl shadow-lg"
+                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                >
+                  {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+                </Button>
+              </form>
+              
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setIsLogin(false)}
+                  className="text-gray-600 hover:text-gray-800 font-medium text-sm"
+                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                >
+                  إنشاء حساب جديد
+                </button>
               </div>
-            ) : (
-              /* Signup Form */
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    onClick={() => {
-                      if (signupStep === 1) {
-                        setIsLogin(true);
-                      } else {
-                        setSignupStep(signupStep - 1);
-                      }
-                    }}
-                    className="p-1 hover:bg-gray-100 rounded-full"
+            </div>
+          ) : (
+            /* Signup Form */
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={() => {
+                    if (signupStep === 1) {
+                      setIsLogin(true);
+                    } else {
+                      setSignupStep(signupStep - 1);
+                    }
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full"
                   >
                     <ArrowRight className="h-4 w-4 text-gray-600" />
                   </button>
@@ -321,7 +297,7 @@ const AuthPage: React.FC = () => {
                             placeholder="الاسم الكامل"
                             value={signupData.name}
                             onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full h-10 text-right text-sm"
+                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           />
@@ -338,7 +314,7 @@ const AuthPage: React.FC = () => {
                             placeholder="07xxxxxxxxx"
                             value={signupData.phone}
                             onChange={(e) => setSignupData(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full h-10 text-center text-sm"
+                            className="w-full h-12 text-center text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                           />
                         </div>
@@ -355,16 +331,16 @@ const AuthPage: React.FC = () => {
                               placeholder="كلمة المرور (6 أحرف على الأقل)"
                               value={signupData.password}
                               onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
-                              className="w-full h-10 text-right pr-8 text-sm"
+                              className="w-full h-12 text-right pr-10 text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                               dir="rtl"
                             />
                             <button
                               type="button"
                               onClick={() => setShowPassword(!showPassword)}
-                              className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                             >
-                              {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
                         </div>
@@ -378,7 +354,7 @@ const AuthPage: React.FC = () => {
                           <select
                             value={signupData.governorate}
                             onChange={(e) => setSignupData(prev => ({ ...prev, governorate: e.target.value }))}
-                            className="w-full h-10 px-2 border border-gray-300 rounded-md text-right text-sm"
+                            className="w-full h-12 px-3 border border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl text-right text-sm"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           >
@@ -400,7 +376,7 @@ const AuthPage: React.FC = () => {
                             placeholder="اسم المنطقة أو الحي"
                             value={signupData.district}
                             onChange={(e) => setSignupData(prev => ({ ...prev, district: e.target.value }))}
-                            className="w-full h-10 text-right text-sm"
+                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           />
@@ -417,7 +393,7 @@ const AuthPage: React.FC = () => {
                             placeholder="مثال: قرب مسجد الرحمن، بجانب صيدلية الشفاء"
                             value={signupData.landmark}
                             onChange={(e) => setSignupData(prev => ({ ...prev, landmark: e.target.value }))}
-                            className="w-full h-10 text-right text-sm"
+                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           />
@@ -428,11 +404,11 @@ const AuthPage: React.FC = () => {
                 </div>
 
                 {/* Action Button */}
-                <div className="mt-4">
+                <div className="mt-6">
                   {signupStep < 6 ? (
                     <Button
                       onClick={handleSignupNext}
-                      className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-medium text-sm"
+                      className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-xl shadow-lg"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
                       التالي
@@ -441,7 +417,7 @@ const AuthPage: React.FC = () => {
                     <Button
                       onClick={handleSignupComplete}
                       disabled={isLoading}
-                      className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-medium text-sm"
+                      className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium text-sm rounded-xl shadow-lg"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
                       {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
@@ -450,9 +426,8 @@ const AuthPage: React.FC = () => {
                 </div>
               </div>
             )}
-          </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 };
