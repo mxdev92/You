@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { usePostgresAuth } from '@/hooks/use-postgres-auth';
 import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
+import paketyLogo from '@/assets/pakety-logo.png';
 
 interface SignupData {
   name: string;
@@ -180,6 +181,15 @@ const AuthPage: React.FC = () => {
           {isLogin ? (
             /* Login Form */
             <div className="p-8">
+              {/* Logo */}
+              <div className="flex justify-center mb-6">
+                <img 
+                  src={paketyLogo} 
+                  alt="PAKETY Logo" 
+                  className="w-16 h-16 object-contain"
+                />
+              </div>
+              
               <h2 className="text-xl font-bold text-gray-800 mb-6 text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 تسجيل الدخول
               </h2>
