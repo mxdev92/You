@@ -24,8 +24,6 @@ function ProtectedAdminRoute() {
 }
 
 function Router() {
-  const { isAuthenticated, loading } = useAuth();
-
   return (
     <Switch>
       {/* Admin routes - separate authentication */}
@@ -34,21 +32,7 @@ function Router() {
       
       {/* Regular user routes */}
       <Route path="/login" component={Login} />
-      <Route path="/">
-        {() => {
-          if (loading) {
-            return (
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="w-8 h-8 border-2 border-fresh-green border-t-transparent rounded-full animate-spin" />
-              </div>
-            );
-          }
-
-          // Allow anonymous browsing - no authentication required for main app
-          return <Home />;
-        }}
-      </Route>
-      
+      <Route path="/" component={Home} />
       <Route component={NotFound} />
     </Switch>
   );
