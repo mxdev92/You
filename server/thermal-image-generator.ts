@@ -36,7 +36,7 @@ export async function generateThermalImage(orderData: OrderData): Promise<Buffer
   
   // HPRT N41BT thermal printer specs: 76mm width = 288px at 96 DPI
   const width = 288; // 76mm at 96 DPI
-  const height = 600; // Dynamic height, will be adjusted
+  const height = 800; // Dynamic height, will be adjusted
   
   // Create canvas
   const canvas = createCanvas(width, height);
@@ -50,130 +50,101 @@ export async function generateThermalImage(orderData: OrderData): Promise<Buffer
   ctx.fillStyle = '#000000';
   ctx.textAlign = 'right'; // RTL for Arabic
   
-  let y = 20;
-  const margin = 10;
-  const lineHeight = 18;
+  let y = 15;
+  const margin = 8;
+  const lineHeight = 12;
   
-  // Header - PAKETY
-  ctx.font = 'bold 20px "DejaVu Sans", Arial';
+  // Header - PAKETY (smaller)
+  ctx.font = 'bold 14px "DejaVu Sans", Arial';
   ctx.textAlign = 'center';
   ctx.fillText('PAKETY', width / 2, y);
-  y += 30;
+  y += 18;
   
-  // Order ID
-  ctx.font = '12px "DejaVu Sans", Arial';
+  // Order ID (smaller)
+  ctx.font = '9px "DejaVu Sans", Arial';
   ctx.fillText(`Order ID: ${orderData.id}`, width / 2, y);
-  y += 25;
+  y += 15;
   
-  // Customer Info Section
-  ctx.font = 'bold 14px "DejaVu Sans", Arial';
+  // Customer Info Section (compact)
+  ctx.font = 'bold 10px "DejaVu Sans", Arial';
   ctx.textAlign = 'right';
   ctx.fillText('معلومات العميل', width - margin, y);
-  y += 20;
+  y += 12;
   
-  ctx.font = '12px "DejaVu Sans", Arial';
+  ctx.font = '8px "DejaVu Sans", Arial';
   ctx.fillText(`الاسم: ${orderData.customerName}`, width - margin, y);
-  y += lineHeight;
+  y += 10;
   
   ctx.fillText(`رقم الموبايل: ${orderData.customerPhone}`, width - margin, y);
-  y += lineHeight;
+  y += 10;
   
   const addressText = address ? `${address.governorate || ''} - ${address.district || ''} - ${address.landmark || ''}` : 'عنوان غير محدد';
   ctx.fillText(`العنوان: ${addressText}`, width - margin, y);
-  y += 25;
+  y += 15;
   
-  // Function to draw a table
-  const drawTable = (tableItems: any[], startY: number) => {
-    let currentY = startY;
-    
-    // Table Header
-    ctx.font = 'bold 10px "DejaVu Sans", Arial';
-    ctx.fillText('المنتج', width - margin, currentY);
-    ctx.fillText('السعر', width - 70, currentY);
-    ctx.fillText('الكمية', width - 110, currentY);
-    ctx.fillText('الإجمالي', width - 150, currentY);
-    currentY += 15;
+  // Single compact table for all items
+  if (items && Array.isArray(items)) {
+    // Table Header (very compact)
+    ctx.font = 'bold 8px "DejaVu Sans", Arial';
+    ctx.fillText('المنتج', width - margin, y);
+    ctx.fillText('السعر', width - 60, y);
+    ctx.fillText('ك', width - 90, y); // Short for كمية
+    ctx.fillText('المجموع', width - 120, y);
+    y += 10;
     
     // Draw line under header
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
-    ctx.moveTo(margin, currentY - 3);
-    ctx.lineTo(width - margin, currentY - 3);
+    ctx.moveTo(margin, y - 2);
+    ctx.lineTo(width - margin, y - 2);
     ctx.stroke();
+    y += 2;
     
-    // Table Items
-    ctx.font = '9px "DejaVu Sans", Arial';
-    tableItems.forEach((item: any) => {
+    // Table Items (ultra compact)
+    ctx.font = '7px "DejaVu Sans", Arial';
+    items.forEach((item: any) => {
       const itemTotal = parseFloat(item.price) * item.quantity;
       
-      // Truncate product name if too long
-      const productName = (item.productName || 'منتج غير محدد').substring(0, 12);
+      // Very short product name (8 characters max)
+      const productName = (item.productName || 'منتج').substring(0, 8);
       
-      ctx.fillText(productName, width - margin, currentY);
-      ctx.fillText(item.price || '0', width - 70, currentY);
-      ctx.fillText(item.quantity?.toString() || '0', width - 110, currentY);
-      ctx.fillText(itemTotal.toFixed(0), width - 150, currentY);
-      currentY += 12;
+      ctx.fillText(productName, width - margin, y);
+      ctx.fillText((item.price || '0'), width - 60, y);
+      ctx.fillText((item.quantity?.toString() || '0'), width - 90, y);
+      ctx.fillText(itemTotal.toFixed(0), width - 120, y);
+      y += 9; // Very tight spacing
     });
     
     // Draw line after table
+    y += 3;
     ctx.beginPath();
-    ctx.moveTo(margin, currentY);
-    ctx.lineTo(width - margin, currentY);
+    ctx.moveTo(margin, y - 2);
+    ctx.lineTo(width - margin, y - 2);
     ctx.stroke();
-    
-    return currentY + 10;
-  };
-
-  // Split items into tables of 15 each
-  if (items && Array.isArray(items)) {
-    const itemsPerTable = 15;
-    let currentY = y;
-    
-    for (let i = 0; i < items.length; i += itemsPerTable) {
-      const tableItems = items.slice(i, i + itemsPerTable);
-      
-      // Add table title if multiple tables
-      if (items.length > itemsPerTable) {
-        ctx.font = 'bold 11px "DejaVu Sans", Arial';
-        const tableNumber = Math.floor(i / itemsPerTable) + 1;
-        ctx.fillText(`جدول ${tableNumber}`, width - margin, currentY);
-        currentY += 15;
-      }
-      
-      currentY = drawTable(tableItems, currentY);
-      
-      // Add spacing between tables
-      if (i + itemsPerTable < items.length) {
-        currentY += 5;
-      }
-    }
-    
-    y = currentY;
+    y += 8;
   }
 
-  
-  // Total Amount
-  ctx.font = 'bold 14px "DejaVu Sans", Arial';
+  // Total Amount (compact)
+  ctx.font = 'bold 10px "DejaVu Sans", Arial';
   ctx.fillText(`المبلغ الإجمالي: ${orderData.totalAmount.toFixed(0)} د.ع`, width - margin, y);
-  y += 25;
+  y += 12;
   
-  // Delivery Time
-  ctx.font = '12px "DejaVu Sans", Arial';
+  // Delivery Time (compact)
+  ctx.font = '8px "DejaVu Sans", Arial';
   if (orderData.deliveryTime) {
     ctx.fillText(`وقت التوصيل: ${orderData.deliveryTime}`, width - margin, y);
-    y += lineHeight;
+    y += 10;
   }
   
-  // Notes
+  // Notes (compact)
   if (orderData.notes && orderData.notes !== '$') {
     ctx.fillText(`ملاحظات: ${orderData.notes}`, width - margin, y);
-    y += lineHeight;
+    y += 10;
   }
   
-  // Date
-  y += 10;
+  // Date (compact)
+  y += 5;
   const orderDate = new Date(orderData.orderDate).toLocaleDateString('ar-EG');
   ctx.fillText(`التاريخ: ${orderDate}`, width - margin, y);
   
