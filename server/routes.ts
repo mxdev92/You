@@ -4,7 +4,9 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
-import { chromium } from 'playwright';
+import { db } from "./db";
+import { orders as ordersTable } from "@shared/schema";
+import { inArray } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Categories
@@ -20,23 +22,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/categories/:id/select", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const category = await storage.updateCategorySelection(id, true);
-      res.json(category);
+      const categories = await storage.selectCategory(id);
+      res.json(categories);
     } catch (error) {
-      res.status(404).json({ message: "Category not found" });
+      res.status(500).json({ message: "Failed to select category" });
     }
   });
 
   // Products
   app.get("/api/products", async (req, res) => {
     try {
-      const { categoryId } = req.query;
-      let products;
+      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+      const search = req.query.search as string;
+      
+      let products = await storage.getProducts();
       
       if (categoryId) {
-        products = await storage.getProductsByCategory(parseInt(categoryId as string));
-      } else {
-        products = await storage.getProducts();
+        products = products.filter(p => p.categoryId === categoryId);
+      }
+      
+      if (search) {
+        products = products.filter(p => 
+          p.name.toLowerCase().includes(search.toLowerCase())
+        );
       }
       
       res.json(products);
@@ -49,11 +57,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const product = await storage.getProduct(id);
-      
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
-      
       res.json(product);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch product" });
@@ -66,18 +72,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const product = await storage.createProduct(validatedData);
       res.status(201).json(product);
     } catch (error) {
-      res.status(400).json({ message: "Invalid product data" });
-    }
-  });
-
-  app.put("/api/products/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updateData = req.body; // Allow partial updates
-      const updatedProduct = await storage.updateProduct(id, updateData);
-      res.json(updatedProduct);
-    } catch (error) {
-      res.status(404).json({ message: "Product not found" });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid product data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create product" });
+      }
     }
   });
 
@@ -86,14 +85,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { displayOrder } = req.body;
       
-      if (typeof displayOrder !== 'number') {
-        return res.status(400).json({ message: "Invalid display order" });
+      if (typeof displayOrder !== 'number' || displayOrder < 1 || displayOrder > 10) {
+        return res.status(400).json({ message: "Display order must be between 1 and 10" });
       }
       
-      const updatedProduct = await storage.updateProductDisplayOrder(id, displayOrder);
-      res.json(updatedProduct);
+      const product = await storage.updateProductDisplayOrder(id, displayOrder);
+      res.json(product);
     } catch (error) {
-      res.status(404).json({ message: "Product not found" });
+      res.status(500).json({ message: "Failed to update product display order" });
     }
   });
 
@@ -113,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cartItem = await storage.addToCart(validatedData);
       res.status(201).json(cartItem);
     } catch (error) {
-      res.status(400).json({ message: "Invalid cart item data" });
+      res.status(500).json({ message: "Failed to add item to cart" });
     }
   });
 
@@ -121,15 +120,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
-      
-      if (!quantity || quantity < 1) {
-        return res.status(400).json({ message: "Invalid quantity" });
-      }
-      
-      const cartItem = await storage.updateCartItemQuantity(id, quantity);
+      const cartItem = await storage.updateCartItem(id, quantity);
       res.json(cartItem);
     } catch (error) {
-      res.status(404).json({ message: "Cart item not found" });
+      res.status(500).json({ message: "Failed to update cart item" });
     }
   });
 
@@ -139,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.removeFromCart(id);
       res.status(204).send();
     } catch (error) {
-      res.status(404).json({ message: "Cart item not found" });
+      res.status(500).json({ message: "Failed to remove item from cart" });
     }
   });
 
@@ -152,841 +146,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PDF Generation with Playwright
-  app.post("/api/generate-invoice-pdf", async (req, res) => {
-    try {
-      const { orderData } = req.body;
-      
-      if (!orderData) {
-        return res.status(400).json({ message: "Order data is required" });
-      }
-
-      // Set environment variables for Playwright to use system browser
-      process.env.PLAYWRIGHT_BROWSERS_PATH = '/usr';
-      process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1';
-
-      // Launch browser with production-safe settings using system Chromium
-      const browser = await chromium.launch({
-        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium-browser',
-        args: [
-          '--no-sandbox', 
-          '--disable-setuid-sandbox', 
-          '--disable-dev-shm-usage', 
-          '--disable-gpu',
-          '--disable-web-security',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding',
-          '--headless'
-        ]
-      });
-      const page = await browser.newPage();
-
-      // Create HTML content for the invoice with compact RTL design
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html dir="rtl" lang="ar">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>فاتورة</title>
-          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
-            body {
-              font-family: 'Cairo', Arial, sans-serif;
-              direction: rtl;
-              background: white;
-              color: #333;
-              line-height: 1.3;
-              padding: 15px;
-              font-size: 12px;
-            }
-            
-            .company-header {
-              text-align: center;
-              margin-bottom: 15px;
-              border-bottom: 2px solid #10b981;
-              padding-bottom: 10px;
-            }
-            
-            .company-name {
-              font-size: 28px;
-              font-weight: 700;
-              color: #10b981;
-              margin-bottom: 10px;
-            }
-            
-            .header-section {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-              margin-bottom: 15px;
-            }
-            
-            .customer-info {
-              text-align: right;
-              font-size: 11px;
-              line-height: 1.4;
-              border: 1px solid #e5e7eb;
-              padding: 12px;
-              border-radius: 8px;
-              background: #fafafa;
-            }
-            
-            .customer-info h3 {
-              font-size: 14px;
-              font-weight: 600;
-              color: #374151;
-              margin-bottom: 8px;
-              border-bottom: 1px solid #e5e7eb;
-              padding-bottom: 4px;
-            }
-            
-            .info-line {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 4px;
-              padding: 2px 0;
-            }
-            
-            .info-label {
-              font-weight: 600;
-              color: #374151;
-              white-space: nowrap;
-            }
-            
-            .info-value {
-              color: #1f2937;
-              text-align: left;
-              direction: ltr;
-            }
-            
-            .left-section {
-              text-align: left;
-              direction: ltr;
-            }
-            
-            .qr-placeholder {
-              width: 60px;
-              height: 60px;
-              border: 2px solid #10b981;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 8px;
-              text-align: center;
-            }
-            
-            .items-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 15px;
-              font-size: 10px;
-            }
-            
-            .items-table th {
-              background: #000;
-              color: white;
-              padding: 6px 4px;
-              font-weight: 600;
-              border: 1px solid #000;
-              font-size: 10px;
-            }
-            
-            .items-table td {
-              padding: 4px;
-              border: 1px solid #e5e7eb;
-              vertical-align: middle;
-              text-align: center;
-              font-size: 9px;
-            }
-            
-            .items-table tr:nth-child(even) {
-              background: #f9fafb;
-            }
-            
-            .separator-line {
-              width: 100%;
-              height: 1px;
-              background: #000;
-              margin: 10px 0;
-            }
-            
-            .totals-section {
-              text-align: right;
-              direction: rtl;
-              font-size: 11px;
-              margin-bottom: 10px;
-            }
-            
-            .totals-table {
-              margin-right: auto;
-              min-width: 200px;
-            }
-            
-            .totals-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 3px 0;
-              border-bottom: 1px solid #e5e7eb;
-            }
-            
-            .totals-row .label {
-              text-align: right;
-            }
-            
-            .totals-row .amount {
-              text-align: left;
-            }
-            
-            .totals-row.final {
-              font-size: 13px;
-              font-weight: 700;
-              color: #10b981;
-              border-bottom: 2px solid #10b981;
-              margin-top: 5px;
-            }
-            
-            .notes-section {
-              margin-top: 10px;
-              font-size: 10px;
-              border-top: 1px solid #e5e7eb;
-              padding-top: 8px;
-            }
-            
-            .footer {
-              margin-top: 15px;
-              text-align: center;
-              font-size: 10px;
-              color: #6b7280;
-              border-top: 1px solid #e5e7eb;
-              padding-top: 8px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="company-header">
-            <div class="company-name">ORDERY</div>
-          </div>
-          
-          <div class="header-section">
-            <div class="customer-info">
-              <h3>معلومات العميل</h3>
-              <div class="info-line">
-                <span class="info-label">الاسم:</span>
-                <span class="info-value">${orderData.customerName}</span>
-              </div>
-              <div class="info-line">
-                <span class="info-label">رقم الموبايل:</span>
-                <span class="info-value">${orderData.customerPhone}</span>
-              </div>
-              <div class="info-line">
-                <span class="info-label">العنوان:</span>
-                <span class="info-value">(${orderData.address.governorate} - ${orderData.address.district} - ${orderData.address.landmark || orderData.address.notes || 'غير محدد'})</span>
-              </div>
-              <div class="info-line">
-                <span class="info-label">تاريخ الطلب:</span>
-                <span class="info-value">${new Date(orderData.orderDate).toLocaleDateString('ar-EG')}</span>
-              </div>
-            </div>
-            
-            <div class="left-section">
-              <div class="qr-placeholder">
-                QR<br/>${orderData.id}
-              </div>
-            </div>
-          </div>
-
-          <table class="items-table">
-            <thead>
-              <tr>
-                <th style="width: 45%">اسم المنتج</th>
-                <th style="width: 20%">السعر</th>
-                <th style="width: 15%">الكمية</th>
-                <th style="width: 20%">المجموع</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${orderData.items.map((item: any) => {
-                const total = (parseFloat(item.price) * item.quantity).toFixed(2);
-                const unitText = item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit;
-                return `
-                  <tr>
-                    <td style="text-align: right">${item.productName}</td>
-                    <td>${item.price}</td>
-                    <td>${item.quantity} ${unitText}</td>
-                    <td>${total}</td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-
-          <div class="separator-line"></div>
-
-          <div class="totals-section">
-            <div class="totals-table">
-              <div class="totals-row">
-                <span class="label">المجموع الفرعي:</span>
-                <span class="amount">${orderData.totalAmount.toFixed(2)} دينار</span>
-              </div>
-              <div class="totals-row">
-                <span class="label">رسوم التوصيل:</span>
-                <span class="amount">5.00 دينار</span>
-              </div>
-              <div class="totals-row final">
-                <span class="label">المجموع الكلي:</span>
-                <span class="amount">${(orderData.totalAmount + 5).toFixed(2)} دينار</span>
-              </div>
-            </div>
-          </div>
-
-          ${orderData.notes ? `
-            <div class="notes-section">
-              <strong>ملاحظات:</strong> ${orderData.notes}
-            </div>
-          ` : ''}
-
-          <div class="footer">
-            <div>شكراً لك على اختيارك Ordery</div>
-          </div>
-        </body>
-        </html>
-      `;
-
-      // Set page content and wait for fonts to load
-      await page.setContent(htmlContent, { waitUntil: 'networkidle' });
-      
-      // Wait for fonts to be loaded
-      await page.waitForFunction(() => document.fonts.ready);
-
-      // Generate PDF
-      const pdf = await page.pdf({
-        format: 'A4',
-        margin: {
-          top: '20mm',
-          right: '15mm',
-          bottom: '20mm',
-          left: '15mm'
-        },
-        printBackground: true,
-        preferCSSPageSize: true
-      });
-
-      await browser.close();
-
-      // Set proper headers for PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="invoice-${orderData.id}.pdf"`);
-      res.send(pdf);
-
-    } catch (error) {
-      console.error('PDF generation error:', error);
-      res.status(500).json({ message: "Failed to generate PDF" });
-    }
-  });
-
-  // Generate batch invoices PDF endpoint (multiple orders in one PDF)
-  app.post('/api/generate-batch-invoices-pdf', async (req, res) => {
+  // Professional Invoice Generation - Rebuilt from scratch
+  app.post('/api/generate-invoice-pdf', async (req, res) => {
     try {
       const { orderIds } = req.body;
       
-      if (!Array.isArray(orderIds) || orderIds.length === 0) {
-        return res.status(400).json({ error: 'Order IDs array is required' });
+      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ message: "Order IDs are required" });
       }
 
-      console.log('Generating batch PDF with Playwright server-side rendering...');
+      // Import the new invoice generator
+      const { generateInvoicePDF } = await import('./invoice-generator');
 
-      // Fetch all orders
-      const allOrders = await storage.getOrders();
-      const validOrders = orderIds
-        .map((id: number) => allOrders.find(order => order.id === id))
-        .filter(order => order !== undefined);
+      // Fetch orders from database
+      const orders = await db.select().from(ordersTable).where(
+        inArray(ordersTable.id, orderIds)
+      );
 
-      if (validOrders.length === 0) {
-        return res.status(404).json({ error: 'No valid orders found' });
+      if (orders.length === 0) {
+        return res.status(404).json({ message: 'No orders found' });
       }
 
-      const browser = await chromium.launch({ 
-        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      const page = await browser.newPage();
+      // Generate PDF
+      const pdfBuffer = await generateInvoicePDF(orderIds, orders);
 
-      // Generate combined HTML for all invoices
-      let combinedHtml = `
-        <!DOCTYPE html>
-        <html dir="rtl" lang="ar">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>فواتير مجمعة - PAKETY</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
-            
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
-            body {
-              font-family: 'Cairo', sans-serif;
-              direction: rtl;
-              background: white;
-              color: #000;
-              line-height: 1.4;
-              font-size: 12px;
-            }
-            
-            .invoice {
-              width: 210mm;
-              min-height: 297mm;
-              margin: 0 auto;
-              padding: 20mm;
-              background: #f8f9fa;
-              page-break-after: always;
-              position: relative;
-              direction: rtl;
-              font-family: 'Cairo', Arial, sans-serif;
-            }
-            
-            .invoice:last-child {
-              page-break-after: avoid;
-            }
-            
-            .header {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 25px;
-              border-bottom: 2px solid #000;
-              padding-bottom: 20px;
-            }
-            
-            .customer-section {
-              text-align: right;
-              flex: 1;
-              direction: rtl;
-              border: 2px solid #000;
-              padding: 20px;
-              margin-right: 20px;
-              background: white;
-            }
-            
-            .customer-title {
-              font-size: 18px;
-              font-weight: 800;
-              margin-bottom: 15px;
-              color: #000;
-              text-align: center;
-              border-bottom: 2px solid #000;
-              padding-bottom: 10px;
-            }
-            
-            .customer-info {
-              font-size: 14px;
-              line-height: 2.2;
-              direction: rtl;
-              text-align: right;
-            }
-            
-            .customer-info div {
-              margin-bottom: 10px;
-              font-weight: 600;
-              color: #000;
-              background: white;
-              border: none;
-              padding: 8px 0;
-            }
-            
-            .customer-info div:last-child {
-              border-bottom: none;
-            }
-            
-            .app-section {
-              text-align: left;
-              flex: 1;
-              padding-left: 20px;
-              display: flex;
-              flex-direction: column;
-              align-items: flex-start;
-            }
-            
-            .app-name {
-              font-size: 24px;
-              font-weight: 800;
-              color: #000;
-              margin-bottom: 20px;
-              text-align: left;
-              direction: ltr;
-              letter-spacing: 1px;
-            }
-            
-            .qr-code {
-              width: 80px;
-              height: 80px;
-              border: 2px solid #000;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 10px;
-              font-weight: bold;
-              margin-bottom: 15px;
-              text-align: center;
-              background: white;
-            }
-            
-            .order-details {
-              font-size: 12px;
-              text-align: left;
-              direction: ltr;
-              line-height: 1.6;
-            }
-            
-            .order-details div {
-              margin-bottom: 5px;
-              font-weight: 500;
-            }
-            
-            .items-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 25px;
-              border: 2px solid #000;
-              font-size: 13px;
-            }
-            
-            .items-table th {
-              background: #000;
-              color: white;
-              padding: 12px 8px;
-              text-align: center;
-              font-weight: 700;
-              border: 1px solid #000;
-            }
-            
-            .items-table td {
-              padding: 10px 8px;
-              text-align: center;
-              font-weight: 500;
-              border: 1px solid #000;
-              vertical-align: middle;
-            }
-            
-            .items-table tr:nth-child(even) {
-              background: #f8f8f8;
-            }
-            
-            .totals-section {
-              margin-bottom: 25px;
-              border: 2px solid #000;
-              padding: 15px;
-            }
-            
-            .totals-title {
-              text-align: center;
-              font-size: 16px;
-              font-weight: 700;
-              margin-bottom: 15px;
-              color: #000;
-            }
-            
-            .totals-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 8px 0;
-              font-size: 14px;
-              font-weight: 600;
-              border-bottom: 1px solid #ddd;
-            }
-            
-            .totals-row:last-child {
-              border-bottom: none;
-              font-size: 16px;
-              font-weight: 800;
-              color: #000;
-              border-top: 2px solid #000;
-              padding-top: 12px;
-              margin-top: 8px;
-            }
-            
-            .notes-section {
-              margin-bottom: 20px;
-              padding: 15px;
-              border: 1px solid #000;
-              background: white;
-            }
-            
-            .notes-title {
-              font-size: 14px;
-              font-weight: 700;
-              margin-bottom: 8px;
-              color: #000;
-            }
-            
-            .notes-content {
-              font-size: 12px;
-              font-weight: 500;
-              line-height: 1.6;
-            }
-            
-            .footer {
-              position: absolute;
-              bottom: 15mm;
-              left: 20mm;
-              right: 20mm;
-              text-align: center;
-              font-size: 10px;
-              color: #666;
-              padding-top: 10px;
-              border-top: 1px solid #ddd;
-            }
-            
-            .items-table td {
-              padding: 10px 8px;
-              text-align: center;
-              border: 1px solid #000;
-              background: white;
-              color: #000;
-              font-weight: 500;
-            }
-            
-            .items-table tr:nth-child(even) td {
-              background: white;
-            }
-            
-            .total-section {
-              margin-top: 20px;
-              display: flex;
-              justify-content: flex-end;
-            }
-            
-            .total-box {
-              background: #1e40af;
-              color: white;
-              padding: 15px 25px;
-              border-radius: 8px;
-              min-width: 200px;
-              text-align: center;
-            }
-            
-            .total-label {
-              font-size: 16px;
-              font-weight: 600;
-              margin-bottom: 5px;
-            }
-            
-            .total-amount {
-              font-size: 22px;
-              font-weight: 800;
-              letter-spacing: 1px;
-            }
-            
-            .footer {
-              position: absolute;
-              bottom: 15mm;
-              left: 15mm;
-              right: 15mm;
-              text-align: center;
-              font-size: 12px;
-              color: #6b7280;
-              border-top: 1px solid #e5e7eb;
-              padding-top: 10px;
-            }
-            
-            @media print {
-              .invoice {
-                margin: 0;
-                box-shadow: none;
-                page-break-after: always;
-              }
-              
-              .invoice:last-child {
-                page-break-after: avoid;
-              }
-            }
-          </style>
-        </head>
-        <body>
-      `;
-
-      // Add each order as a separate page
-      validOrders.forEach((order) => {
-        const orderDate = new Date(order.orderDate || Date.now()).toLocaleDateString('ar-EG');
-        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [];
-        const address = typeof order.address === 'string' ? JSON.parse(order.address) : order.address || {};
-        const subtotal = Number(order.totalAmount || 0);
-        const deliveryFee = 1000; // 1000 IQD delivery fee
-        const total = subtotal + deliveryFee;
-        
-        combinedHtml += `
-          <div class="invoice">
-            <div class="header">
-              <div class="customer-section">
-                <div class="customer-title">معلومات العميل</div>
-                <div class="customer-info">
-                  <div>الاسم: ${order.customerName || 'غير محدد'}</div>
-                  <div>رقم الموبايل: ${order.customerPhone || 'غير محدد'}</div>
-                  <div>العنوان: (${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${
-                    (() => {
-                      let landmark = 'غير محدد';
-                      
-                      // Console log for debugging
-                      console.log('Debug address data:', JSON.stringify(address));
-                      
-                      // Priority 1: Use neighborhood if it exists and is not generic
-                      if (address.neighborhood && address.neighborhood !== 'غير محدد' && address.neighborhood !== 'B') {
-                        landmark = address.neighborhood;
-                        console.log('Using neighborhood:', landmark);
-                        return landmark;
-                      }
-                      
-                      // Priority 2: Use landmark field if available and clean
-                      if (address.landmark && typeof address.landmark === 'string') {
-                        landmark = address.landmark;
-                        // Remove phone numbers if present
-                        landmark = landmark.replace(/07[0-9]{8,9}/g, '');
-                        landmark = landmark.replace(/\b\d{10,11}\b/g, '');
-                        landmark = landmark.replace(/\s*-\s*$/, '').replace(/^\s*-\s*/, '').trim();
-                        if (landmark && landmark !== '' && landmark !== 'غير محدد') {
-                          console.log('Using cleaned landmark:', landmark);
-                          return landmark;
-                        }
-                      }
-                      
-                      // Priority 3: Extract from notes field by removing phone numbers
-                      if (address.notes && typeof address.notes === 'string') {
-                        let cleanNotes = address.notes;
-                        console.log('Original notes:', cleanNotes);
-                        
-                        // Remove Iraqi phone patterns more aggressively
-                        cleanNotes = cleanNotes.replace(/07[0-9]{8,9}/g, '');
-                        cleanNotes = cleanNotes.replace(/\+964[0-9]{8,10}/g, '');
-                        cleanNotes = cleanNotes.replace(/\b\d{10,11}\b/g, '');
-                        cleanNotes = cleanNotes.replace(/\d{10,}/g, ''); // Remove any string of 10+ digits
-                        
-                        // Clean up formatting
-                        cleanNotes = cleanNotes.replace(/\s*-\s*$/, '');
-                        cleanNotes = cleanNotes.replace(/^\s*-\s*/, '');
-                        cleanNotes = cleanNotes.replace(/\s+-\s+/g, ' - ');
-                        cleanNotes = cleanNotes.trim();
-                        
-                        if (cleanNotes && cleanNotes !== '' && cleanNotes !== '-') {
-                          console.log('Using cleaned notes:', cleanNotes);
-                          return cleanNotes;
-                        }
-                      }
-                      
-                      console.log('Using fallback:', landmark);
-                      return landmark;
-                    })()
-                  })</div>
-                </div>
-              </div>
-              
-              <div class="app-section">
-                <div class="app-name">PAKETY</div>
-                <div class="qr-code">QR<br/>CODE<br/>#${order.id}</div>
-                <div class="order-details">
-                  <div>Order #${order.id}</div>
-                  <div>Date: ${orderDate}</div>
-                </div>
-              </div>
-            </div>
-            
-            <table class="items-table">
-              <thead>
-                <tr>
-                  <th>المنتج</th>
-                  <th>السعر لكل كيلو</th>
-                  <th>الكمية</th>
-                  <th>السعر الكلي</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${items.map((item: any) => `
-                  <tr>
-                    <td>${item.productName || item.name || 'منتج غير محدد'}</td>
-                    <td>${Number(item.price || 0).toLocaleString('ar-EG')} د.ع</td>
-                    <td>${item.quantity || 1} ${item.unit === 'kg' ? 'كيلو' : item.unit || ''}</td>
-                    <td>${(Number(item.price || 0) * Number(item.quantity || 1)).toLocaleString('ar-EG')} د.ع</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            
-            <div class="totals-section">
-              <div class="totals-title">تفاصيل الكلفة</div>
-              <div class="totals-row">
-                <span>مجموع سعر الطلبات:</span>
-                <span>${subtotal.toLocaleString('ar-EG')} د.ع</span>
-              </div>
-              <div class="totals-row">
-                <span>أجور خدمة التوصيل:</span>
-                <span>${deliveryFee.toLocaleString('ar-EG')} د.ع</span>
-              </div>
-              <div class="totals-row">
-                <span>المجموع الإجمالي:</span>
-                <span>${total.toLocaleString('ar-EG')} د.ع</span>
-              </div>
-            </div>
-            
-            <div class="notes-section">
-              <div class="notes-title">ملاحظات إضافية:</div>
-              <div class="notes-content">
-                وقت التوصيل: ${order.deliveryTime || '11 - 8 صباحاً'}
-                <br/>
-                الملاحظات: ${order.notes || 'لا يوجد'}
-              </div>
-            </div>
-            
-            <div class="footer">
-              شكراً لتسوقكم معنا | PAKETY - يلا جيتك | هاتف خ: 07575250444
-            </div>
-          </div>
-        `;
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename=invoice.pdf',
+        'Content-Length': pdfBuffer.length
       });
 
-      combinedHtml += `
-        </body>
-        </html>
-      `;
-
-      await page.setContent(combinedHtml, { waitUntil: 'networkidle' });
-      
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '0mm',
-          right: '0mm',
-          bottom: '0mm',
-          left: '0mm'
-        }
-      });
-
-      await browser.close();
-
-      console.log('Professional Arabic RTL batch PDF with selectable text generated successfully');
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="batch-invoices-${Date.now()}.pdf"`);
-      res.send(pdf);
-
+      res.send(pdfBuffer);
     } catch (error) {
-      console.error('Error generating batch PDF:', error);
-      res.status(500).json({ error: 'Failed to generate batch PDF' });
+      console.error('Error generating invoice PDF:', error);
+      res.status(500).json({ 
+        message: 'Failed to generate PDF', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   });
 
-  // Orders API
+  // Orders
   app.get("/api/orders", async (req, res) => {
     try {
       const orders = await storage.getOrders();
@@ -1001,13 +201,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('=== ORDER CREATION DEBUG ===');
       console.log('Raw request body:', JSON.stringify(req.body, null, 2));
       
-      // Transform the data to match schema expectations
       const transformedOrder = {
         customerName: String(req.body.customerName || ''),
         customerEmail: String(req.body.customerEmail || ''),
         customerPhone: String(req.body.customerPhone || ''),
-        address: req.body.address, // Keep as object for jsonb
-        items: req.body.items, // Keep as array for jsonb
+        address: req.body.address,
+        items: req.body.items,
         totalAmount: Number(req.body.totalAmount) || 0,
         status: String(req.body.status || 'pending'),
         deliveryTime: req.body.deliveryTime ? String(req.body.deliveryTime) : null,
@@ -1085,721 +284,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Store API - Latest Orders for Expo React Native App
-  app.get("/api/store/orders/latest", async (req, res) => {
-    try {
-      const limit = parseInt(req.query.limit as string) || 10;
-      const orders = await storage.getOrders();
-      
-      // Sort by order date descending and limit results
-      const latestOrders = orders
-        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
-        .slice(0, limit)
-        .map(order => {
-          // Safely parse items
-          let items;
-          try {
-            items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-          } catch (e) {
-            items = [];
-          }
-
-          // Safely parse address
-          let shippingAddress = null;
-          if (order.address) {
-            try {
-              shippingAddress = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
-            } catch (e) {
-              shippingAddress = null;
-            }
-          }
-
-          return {
-            id: order.id,
-            customerName: order.customerName,
-            customerEmail: order.customerEmail,
-            customerPhone: order.customerPhone,
-            items: items,
-            totalAmount: order.totalAmount,
-            orderDate: order.orderDate,
-            status: order.status,
-            shippingAddress: shippingAddress,
-            deliveryTime: order.deliveryTime,
-            notes: order.notes,
-            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
-            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
-            itemsCount: items.length,
-            estimatedPreparationTime: Math.max(items.length * 5, 15) // 5 mins per item, min 15 mins
-          };
-        });
-      
-      res.json({
-        success: true,
-        data: latestOrders,
-        count: latestOrders.length,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error fetching latest orders:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch latest orders",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Order Details for Printing
-  app.get("/api/store/orders/:id/print", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const orders = await storage.getOrders();
-      const order = orders.find(o => o.id === id);
-      
-      if (!order) {
-        return res.status(404).json({ 
-          success: false, 
-          message: "Order not found" 
-        });
-      }
-
-      // Format order for printing
-      const printData = {
-        id: order.id,
-        customerName: order.customerName,
-        customerEmail: order.customerEmail,
-        customerPhone: order.customerPhone,
-        items: order.items,
-        totalAmount: order.totalAmount,
-        orderDate: order.orderDate,
-        status: order.status,
-        shippingAddress: order.address,
-        formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
-        formattedTotal: order.totalAmount.toLocaleString() + ' د.ع'
-      };
-
-      res.json({
-        success: true,
-        data: printData,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error fetching order for printing:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch order details",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Update Order Status (for store workflow)
-  app.patch("/api/store/orders/:id/status", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const { status, storeNotes } = req.body;
-      
-      // Valid store statuses
-      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out-for-delivery', 'delivered', 'cancelled'];
-      
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid status",
-          validStatuses 
-        });
-      }
-
-      const order = await storage.updateOrderStatus(id, status);
-      
-      // Broadcast status update to connected WebSocket clients
-      broadcastToClients({
-        type: 'ORDER_STATUS_UPDATE',
-        orderId: id,
-        status: status,
-        storeNotes: storeNotes || null,
-        timestamp: new Date().toISOString()
-      });
-
-      res.json({
-        success: true,
-        data: order,
-        message: `Order status updated to ${status}`,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to update order status",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Today's Orders Summary
-  app.get("/api/store/orders/today", async (req, res) => {
-    try {
-      const orders = await storage.getOrders();
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const todayOrders = orders.filter(order => {
-        const orderDate = new Date(order.orderDate);
-        orderDate.setHours(0, 0, 0, 0);
-        return orderDate.getTime() === today.getTime();
-      });
-
-      const summary = {
-        totalOrders: todayOrders.length,
-        totalRevenue: todayOrders.reduce((sum, order) => sum + order.totalAmount, 0),
-        ordersByStatus: {
-          pending: todayOrders.filter(o => o.status === 'pending').length,
-          confirmed: todayOrders.filter(o => o.status === 'confirmed').length,
-          preparing: todayOrders.filter(o => o.status === 'preparing').length,
-          ready: todayOrders.filter(o => o.status === 'ready').length,
-          'out-for-delivery': todayOrders.filter(o => o.status === 'out-for-delivery').length,
-          delivered: todayOrders.filter(o => o.status === 'delivered').length,
-          cancelled: todayOrders.filter(o => o.status === 'cancelled').length
-        },
-        averageOrderValue: todayOrders.length > 0 ? todayOrders.reduce((sum, order) => sum + order.totalAmount, 0) / todayOrders.length : 0
-      };
-
-      // Format orders with parsed address data
-      const formattedOrders = todayOrders
-        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
-        .map(order => {
-          // Safely parse items
-          let items;
-          try {
-            items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-          } catch (e) {
-            items = [];
-          }
-
-          // Safely parse address
-          let shippingAddress = null;
-          if (order.address) {
-            try {
-              shippingAddress = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
-            } catch (e) {
-              shippingAddress = null;
-            }
-          }
-
-          return {
-            id: order.id,
-            customerName: order.customerName,
-            customerEmail: order.customerEmail,
-            customerPhone: order.customerPhone,
-            items: items,
-            totalAmount: order.totalAmount,
-            orderDate: order.orderDate,
-            status: order.status,
-            shippingAddress: shippingAddress,
-            deliveryTime: order.deliveryTime,
-            notes: order.notes,
-            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
-            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
-            itemsCount: items.length,
-            estimatedPreparationTime: Math.max(items.length * 5, 15)
-          };
-        });
-
-      res.json({
-        success: true,
-        data: summary,
-        orders: formattedOrders,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error fetching today orders:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch today's orders",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Orders by Status
-  app.get("/api/store/orders/status/:status", async (req, res) => {
-    try {
-      const { status } = req.params;
-      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out-for-delivery', 'delivered', 'cancelled'];
-      
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid status",
-          validStatuses 
-        });
-      }
-
-      const orders = await storage.getOrders();
-      const filteredOrders = orders
-        .filter(order => order.status === status)
-        .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
-        .map(order => {
-          // Safely parse items
-          let items;
-          try {
-            items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-          } catch (e) {
-            items = [];
-          }
-
-          // Safely parse address
-          let shippingAddress = null;
-          if (order.address) {
-            try {
-              shippingAddress = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
-            } catch (e) {
-              shippingAddress = null;
-            }
-          }
-
-          return {
-            id: order.id,
-            customerName: order.customerName,
-            customerEmail: order.customerEmail,
-            customerPhone: order.customerPhone,
-            items: items,
-            totalAmount: order.totalAmount,
-            orderDate: order.orderDate,
-            status: order.status,
-            shippingAddress: shippingAddress,
-            deliveryTime: order.deliveryTime,
-            notes: order.notes,
-            formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
-            formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
-            itemsCount: items.length,
-            estimatedPreparationTime: Math.max(items.length * 5, 15)
-          };
-        });
-
-      res.json({
-        success: true,
-        data: filteredOrders,
-        count: filteredOrders.length,
-        status: status,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error fetching orders by status:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch orders by status",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Order Details with Full Information
-  app.get("/api/store/orders/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const orders = await storage.getOrders();
-      const order = orders.find(o => o.id === id);
-      
-      if (!order) {
-        return res.status(404).json({ 
-          success: false, 
-          message: "Order not found" 
-        });
-      }
-
-      const detailedOrder = {
-        id: order.id,
-        customerName: order.customerName,
-        customerEmail: order.customerEmail,
-        customerPhone: order.customerPhone,
-        items: order.items,
-        totalAmount: order.totalAmount,
-        orderDate: order.orderDate,
-        status: order.status,
-        shippingAddress: order.address,
-        deliveryTime: order.deliveryTime,
-        notes: order.notes,
-        formattedDate: new Date(order.orderDate).toLocaleString('ar-IQ'),
-        formattedTotal: order.totalAmount.toLocaleString() + ' د.ع',
-        itemsCount: Array.isArray(order.items) ? order.items.length : 0,
-        estimatedPreparationTime: Math.max(Array.isArray(order.items) ? order.items.length * 5 : 15, 15) // 5 mins per item, min 15 mins
-      };
-
-      res.json({
-        success: true,
-        data: detailedOrder,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error fetching order details:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch order details",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Mark Order as Printed
-  app.patch("/api/store/orders/:id/printed", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const { printerName, printedAt } = req.body;
-      
-      // For now, we'll just log this and broadcast the event
-      // In a real implementation, you might want to store print history
-      console.log(`Order ${id} printed on ${printerName} at ${printedAt}`);
-      
-      // Broadcast print confirmation to connected clients
-      if ((global as any).broadcastToStoreClients) {
-        (global as any).broadcastToStoreClients({
-          type: 'ORDER_PRINTED',
-          orderId: id,
-          printerName: printerName || 'Unknown Printer',
-          printedAt: printedAt || new Date().toISOString(),
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      res.json({
-        success: true,
-        message: "Order marked as printed",
-        orderId: id,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error marking order as printed:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to mark order as printed",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Bulk Status Update
-  app.patch("/api/store/orders/bulk/status", async (req, res) => {
-    try {
-      const { orderIds, status, notes } = req.body;
-      
-      if (!Array.isArray(orderIds) || orderIds.length === 0) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "orderIds must be a non-empty array" 
-        });
-      }
-
-      const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out-for-delivery', 'delivered', 'cancelled'];
-      
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid status",
-          validStatuses 
-        });
-      }
-
-      const updatedOrders = [];
-      const errors = [];
-
-      for (const orderId of orderIds) {
-        try {
-          const order = await storage.updateOrderStatus(parseInt(orderId), status);
-          updatedOrders.push(order);
-        } catch (error) {
-          errors.push({ orderId, error: error instanceof Error ? error.message : 'Unknown error' });
-        }
-      }
-
-      // Broadcast bulk update to connected clients
-      if ((global as any).broadcastToStoreClients) {
-        (global as any).broadcastToStoreClients({
-          type: 'BULK_STATUS_UPDATE',
-          orderIds: orderIds,
-          status: status,
-          notes: notes || null,
-          successCount: updatedOrders.length,
-          errorCount: errors.length,
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      res.json({
-        success: true,
-        message: `Bulk update completed`,
-        updatedOrders: updatedOrders.length,
-        errors: errors,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error in bulk status update:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to perform bulk status update",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Statistics Dashboard
-  app.get("/api/store/stats", async (req, res) => {
-    try {
-      const orders = await storage.getOrders();
-      const now = new Date();
-      
-      // Today's stats
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayOrders = orders.filter(order => {
-        const orderDate = new Date(order.orderDate);
-        orderDate.setHours(0, 0, 0, 0);
-        return orderDate.getTime() === today.getTime();
-      });
-
-      // This week's stats
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const weekOrders = orders.filter(order => new Date(order.orderDate) >= weekStart);
-
-      // This month's stats
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-      const monthOrders = orders.filter(order => new Date(order.orderDate) >= monthStart);
-
-      const stats = {
-        today: {
-          orders: todayOrders.length,
-          revenue: todayOrders.reduce((sum, order) => sum + order.totalAmount, 0),
-          averageOrderValue: todayOrders.length > 0 ? todayOrders.reduce((sum, order) => sum + order.totalAmount, 0) / todayOrders.length : 0
-        },
-        week: {
-          orders: weekOrders.length,
-          revenue: weekOrders.reduce((sum, order) => sum + order.totalAmount, 0),
-          averageOrderValue: weekOrders.length > 0 ? weekOrders.reduce((sum, order) => sum + order.totalAmount, 0) / weekOrders.length : 0
-        },
-        month: {
-          orders: monthOrders.length,
-          revenue: monthOrders.reduce((sum, order) => sum + order.totalAmount, 0),
-          averageOrderValue: monthOrders.length > 0 ? monthOrders.reduce((sum, order) => sum + order.totalAmount, 0) / monthOrders.length : 0
-        },
-        total: {
-          orders: orders.length,
-          revenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
-          averageOrderValue: orders.length > 0 ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / orders.length : 0
-        },
-        statusBreakdown: {
-          pending: orders.filter(o => o.status === 'pending').length,
-          confirmed: orders.filter(o => o.status === 'confirmed').length,
-          preparing: orders.filter(o => o.status === 'preparing').length,
-          ready: orders.filter(o => o.status === 'ready').length,
-          'out-for-delivery': orders.filter(o => o.status === 'out-for-delivery').length,
-          delivered: orders.filter(o => o.status === 'delivered').length,
-          cancelled: orders.filter(o => o.status === 'cancelled').length
-        }
-      };
-
-      res.json({
-        success: true,
-        data: stats,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error fetching store stats:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to fetch store statistics",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Store API - Health Check
-  app.get("/api/store/health", (req, res) => {
-    res.json({
-      success: true,
-      message: "Store API is running",
-      timestamp: new Date().toISOString(),
-      version: "1.0.0",
-      endpoints: {
-        latestOrders: "GET /api/store/orders/latest",
-        todayOrders: "GET /api/store/orders/today",
-        ordersByStatus: "GET /api/store/orders/status/:status",
-        orderDetails: "GET /api/store/orders/:id",
-        orderPrint: "GET /api/store/orders/:id/print",
-        updateStatus: "PATCH /api/store/orders/:id/status",
-        markPrinted: "PATCH /api/store/orders/:id/printed",
-        bulkStatusUpdate: "PATCH /api/store/orders/bulk/status",
-        statistics: "GET /api/store/stats",
-        websocket: "WS /ws"
-      },
-      features: [
-        "Real-time order notifications",
-        "Printer integration support",
-        "Order status management",
-        "Sales statistics",
-        "Bulk operations",
-        "Today's orders summary"
-      ]
-    });
-  });
-
+  // WebSocket Server for real-time updates
   const httpServer = createServer(app);
-  
-  // WebSocket Server for Real-time Updates
+
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  // Store connected clients
-  const connectedClients = new Set<WebSocket>();
 
-  wss.on('connection', (ws) => {
-    console.log('Store app connected to WebSocket');
-    connectedClients.add(ws);
-
-    // Send welcome message
-    ws.send(JSON.stringify({
-      type: 'CONNECTED',
-      message: 'Connected to store WebSocket',
-      timestamp: new Date().toISOString()
-    }));
-
-    ws.on('close', () => {
-      console.log('Store app disconnected from WebSocket');
-      connectedClients.delete(ws);
-    });
-
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      connectedClients.delete(ws);
-    });
-  });
-
-  // Function to broadcast messages to all connected clients
   function broadcastToClients(message: any) {
-    const messageStr = JSON.stringify(message);
-    connectedClients.forEach(client => {
+    wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(messageStr);
+        client.send(JSON.stringify(message));
       }
     });
   }
 
-  // Authentication routes
-  app.post('/api/auth/signup', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
-      }
-
-      const user = await storage.createUser({ email, passwordHash: password });
-      
-      // Set session after successful signup
-      (req as any).session = (req as any).session || {};
-      (req as any).session.userId = user.id;
-      
-      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      if (error.message?.includes('duplicate') || error.code === '23505') {
-        return res.status(409).json({ message: 'Email already exists' });
-      }
-      res.status(500).json({ message: 'Failed to create user' });
-    }
-  });
-
-  app.post('/api/auth/signin', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
-      }
-
-      const user = await storage.getUserByEmail(email);
-      if (!user || user.passwordHash !== password) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      // Store user session
-      (req as any).session = (req as any).session || {};
-      (req as any).session.userId = user.id;
-
-      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
-    } catch (error) {
-      console.error('Signin error:', error);
-      res.status(500).json({ message: 'Failed to sign in' });
-    }
-  });
-
-  app.post('/api/auth/signout', async (req, res) => {
-    try {
-      (req as any).session = null;
-      res.json({ message: 'Signed out successfully' });
-    } catch (error) {
-      console.error('Signout error:', error);
-      res.status(500).json({ message: 'Failed to sign out' });
-    }
-  });
-
-  app.get('/api/auth/session', async (req, res) => {
-    try {
-      const userId = (req as any).session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: 'Not authenticated' });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ message: 'User not found' });
-      }
-
-      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
-    } catch (error) {
-      console.error('Session check error:', error);
-      res.status(500).json({ message: 'Failed to check session' });
-    }
-  });
-
-  // Address routes
-  app.post('/api/auth/addresses', async (req, res) => {
-    try {
-      const userId = (req as any).session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: 'Not authenticated' });
-      }
-
-      const address = await storage.createUserAddress({ ...req.body, userId });
-      res.json(address);
-    } catch (error) {
-      console.error('Create address error:', error);
-      res.status(500).json({ message: 'Failed to create address' });
-    }
-  });
-
-  app.get('/api/auth/addresses/:userId', async (req, res) => {
-    try {
-      const requestedUserId = parseInt(req.params.userId);
-      const sessionUserId = (req as any).session?.userId;
-      
-      if (!sessionUserId || sessionUserId !== requestedUserId) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-
-      const addresses = await storage.getUserAddresses(requestedUserId);
-      res.json(addresses);
-    } catch (error) {
-      console.error('Get addresses error:', error);
-      res.status(500).json({ message: 'Failed to fetch addresses' });
-    }
-  });
-
-  // Make broadcast function available globally for order notifications
+  // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;
+
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected for real-time updates');
+    
+    ws.on('message', (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        console.log('Received WebSocket message:', message);
+        
+        // Echo message to all connected clients
+        broadcastToClients(message);
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+  });
 
   return httpServer;
 }
