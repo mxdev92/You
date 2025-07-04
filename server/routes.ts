@@ -101,10 +101,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cart", async (req, res) => {
     try {
       const cartItems = await storage.getCartItems();
-      console.log('Cart API - returning items:', cartItems.length, cartItems);
       res.json(cartItems);
     } catch (error) {
-      console.error('Cart API error:', error);
       res.status(500).json({ message: "Failed to fetch cart items" });
     }
   });
