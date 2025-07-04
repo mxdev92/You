@@ -15,28 +15,10 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Aggressive authentication state clearing on app initialization
-const clearAllFirebaseStorage = () => {
-  try {
-    // Clear localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.includes('firebase') || key.includes('authUser') || key.includes('persist')) {
-        localStorage.removeItem(key);
-      }
-    });
-    
-    // Clear sessionStorage
-    Object.keys(sessionStorage).forEach(key => {
-      if (key.includes('firebase') || key.includes('authUser') || key.includes('persist')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-    
-    console.log('Firebase storage cleared on initialization');
-  } catch (error) {
-    console.error('Error clearing Firebase storage:', error);
-  }
-};
+// Auth persistence configuration
+setPersistence(auth, browserSessionPersistence).catch((error) => {
+  console.error('Error setting auth persistence:', error);
+});
 
 // Allow normal Firebase auth persistence for better user experience
 // Only clear storage during explicit logout, not on initialization
@@ -59,18 +41,9 @@ export const testConnection = async () => {
 // Auth functions
 export const loginWithEmail = async (email: string, password: string) => {
   try {
-    console.log('Starting fresh login...');
-    
-    // Clear any cached authentication data first
-    clearAllFirebaseStorage();
-    
-    // Wait a moment for cleanup
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Sign in with fresh state
+    console.log('Starting login...');
     const result = await signInWithEmailAndPassword(auth, email, password);
     console.log('User signed in successfully:', result.user.email);
-    
     return result;
   } catch (error) {
     console.error('Error signing in:', error);
@@ -89,8 +62,7 @@ export const registerWithEmail = async (email: string, password: string) => {
       console.log('No existing user to sign out');
     }
     
-    // Aggressive cleanup of all Firebase data
-    clearAllFirebaseStorage();
+    // Clear any existing auth state
     
     // Wait for cleanup to complete
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -108,7 +80,7 @@ export const registerWithEmail = async (email: string, password: string) => {
     if (error.code === 'auth/email-already-in-use') {
       console.log('Email already exists, attempting to sign in instead...');
       try {
-        clearAllFirebaseStorage();
+        
         await new Promise(resolve => setTimeout(resolve, 100));
         return await signInWithEmailAndPassword(auth, email, password);
       } catch (signInError) {
@@ -129,7 +101,7 @@ export const logout = async () => {
     await signOut(auth);
     
     // Aggressive storage clearing
-    clearAllFirebaseStorage();
+    
     
     // Additional aggressive cleanup
     localStorage.clear();
@@ -209,7 +181,7 @@ export const onAuthChange = (callback: (user: User | null) => void) => {
       const expectedUser = sessionStorage.getItem('expected_user');
       if (expectedUser && expectedUser !== user.email) {
         console.log('Authentication state mismatch detected, clearing...');
-        clearAllFirebaseStorage();
+        
         signOut(auth).then(() => {
           setTimeout(() => window.location.reload(), 100);
         });
