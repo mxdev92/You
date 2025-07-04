@@ -209,7 +209,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       
       const orderData = {
         customerName: primaryAddress.fullName,
-        customerEmail: user?.email || primaryAddress.fullName + '@guest.com',
+        customerEmail: user?.email || 'guest@example.com',
         customerPhone: primaryAddress.phoneNumber,
         address: {
           governorate: primaryAddress.government,
@@ -227,7 +227,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           price: item.product.price,
           unit: item.product.unit
         })),
-        totalAmount: totalWithShipping,
+        totalAmount: Math.round(totalWithShipping),
         status: 'pending' as const,
         deliveryTime: deliveryTime,
         notes: globalDeliveryNotesRef.current || ''

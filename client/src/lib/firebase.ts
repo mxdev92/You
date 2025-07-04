@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, signInAnonymously } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, signInAnonymously, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -31,16 +31,66 @@ export const testConnection = async () => {
 };
 
 // Auth functions
-export const loginWithEmail = (email: string, password: string) => {
-  return signInWithEmailAndPassword(auth, email, password);
+export const loginWithEmail = async (email: string, password: string) => {
+  try {
+    // Clear any cached authentication data first
+    localStorage.removeItem('firebase:authUser');
+    sessionStorage.clear();
+    
+    // Sign in with fresh state
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    console.log('User signed in successfully:', result.user.email);
+    
+    return result;
+  } catch (error) {
+    console.error('Error signing in:', error);
+    throw error;
+  }
 };
 
-export const registerWithEmail = (email: string, password: string) => {
-  return createUserWithEmailAndPassword(auth, email, password);
+export const registerWithEmail = async (email: string, password: string) => {
+  try {
+    // First ensure we're signed out completely
+    await signOut(auth);
+    
+    // Clear any existing authentication data
+    localStorage.removeItem('firebase:authUser');
+    sessionStorage.clear();
+    
+    // Wait a moment for cleanup
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Create new account with fresh state
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    console.log('New account created successfully:', result.user.email);
+    
+    return result;
+  } catch (error) {
+    console.error('Error creating account:', error);
+    throw error;
+  }
 };
 
-export const logout = () => {
-  return signOut(auth);
+export const logout = async () => {
+  try {
+    // Clear any cached user data
+    localStorage.removeItem('firebase:authUser');
+    localStorage.removeItem('firebase:host');
+    sessionStorage.clear();
+    
+    // Sign out from Firebase
+    await signOut(auth);
+    
+    // Force clear auth state
+    console.log('User signed out successfully');
+    
+    // Clear any additional browser storage
+    indexedDB.deleteDatabase('firebaseLocalStorageDb');
+    
+  } catch (error) {
+    console.error('Error during logout:', error);
+    throw error;
+  }
 };
 
 export const onAuthChange = (callback: (user: User | null) => void) => {
