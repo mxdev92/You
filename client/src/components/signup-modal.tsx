@@ -221,21 +221,46 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
 
     setIsLoading(true);
     try {
-      // Save address to Firebase address store
-      await addAddress({
+      console.log('Attempting to save address:', {
         governorate: addressData.government,
         district: addressData.district,
         neighborhood: addressData.nearestLandmark,
         notes: `${addressData.fullName} - ${addressData.phoneNumber}`,
         isDefault: true,
       });
+
+      // Create a timeout promise to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('حفظ العنوان تم إيقافه بسبب انتهاء المهلة الزمنية')), 10000);
+      });
+
+      // Race between address saving and timeout
+      await Promise.race([
+        addAddress({
+          governorate: addressData.government,
+          district: addressData.district,
+          neighborhood: addressData.nearestLandmark,
+          notes: `${addressData.fullName} - ${addressData.phoneNumber}`,
+          isDefault: true,
+        }),
+        timeoutPromise
+      ]);
       
-      console.log('Address data saved:', addressData);
+      console.log('Address data saved successfully:', addressData);
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Address save error:', error);
-      alert('خطأ في حفظ العنوان: ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
+      
+      // If Firebase fails, at least complete the signup process
+      if (error instanceof Error && error.message.includes('timeout')) {
+        console.log('Firebase timeout - completing signup without address save');
+        alert('تم إنشاء الحساب بنجاح. يمكنك إضافة العنوان لاحقاً من الإعدادات.');
+        onSuccess();
+        onClose();
+      } else {
+        alert('خطأ في حفظ العنوان: ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
+      }
     } finally {
       setIsLoading(false);
     }
