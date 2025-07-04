@@ -186,6 +186,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Brother Printer PDF Generation
+  app.post('/api/generate-brother-pdf', async (req, res) => {
+    try {
+      const { orderIds } = req.body;
+      
+      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ message: "Order IDs are required" });
+      }
+
+      // Import the Brother printer generator
+      const { generateBrotherInvoicePDF } = await import('./brother-invoice-generator');
+
+      // Generate Brother printer compatible PDF
+      const pdfBuffer = await generateBrotherInvoicePDF(orderIds);
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename=brother-printer-invoices.pdf',
+        'Content-Length': pdfBuffer.length
+      });
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Error generating Brother printer PDF:', error);
+      res.status(500).json({ 
+        message: 'Failed to generate Brother printer PDF', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+
   // Orders
   app.get("/api/orders", async (req, res) => {
     try {
