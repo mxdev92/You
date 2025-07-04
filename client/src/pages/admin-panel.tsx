@@ -574,6 +574,7 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
         
         const updatedProduct = {
           name: productData.name,
+          description: productData.description || '',
           price: parseFloat(productData.price),
           // Convert category string to categoryId number
           categoryId: getCategoryId(productData.category),
@@ -635,7 +636,7 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
     if (product) {
       setFormData({
         name: product.name,
-        description: '',
+        description: product.description || '',
         price: product.price.toString(),
         category: getCategoryName(product.categoryId),
         unit: product.unit,

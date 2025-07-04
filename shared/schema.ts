@@ -33,6 +33,7 @@ export const categories = pgTable("categories", {
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  description: text("description").default(""),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   unit: text("unit").notNull(),
   imageUrl: text("image_url").notNull(),
