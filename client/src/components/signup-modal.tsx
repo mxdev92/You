@@ -2,10 +2,10 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
 import { useTranslation } from "@/hooks/use-translation";
-import { useFirebaseAddressStore } from "@/store/firebase-address-store";
-import { testFirebaseConnection } from "@/lib/firebase-test";
+import { useSupabaseAddressStore } from "@/store/supabase-address-store";
+import { testSupabaseConnection } from "@/lib/supabase";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -85,7 +85,8 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     confirmPassword: ''
   });
 
-  const { addAddress } = useFirebaseAddressStore();
+  const { addAddress } = useSupabaseAddressStore();
+  const { user, register: signUp, login: signIn } = useSupabaseAuth();
 
   const [addressData, setAddressData] = useState({
     fullName: '',
@@ -95,7 +96,7 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     nearestLandmark: ''
   });
 
-  const { login, register } = useAuth();
+
   const { t } = useTranslation();
 
   const iraqiGovernorates = [
@@ -199,17 +200,17 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     try {
       console.log('Starting auth process:', { isLogin, email: authData.email });
       if (isLogin) {
-        await login(authData.email, authData.password);
+        await signIn(authData.email, authData.password);
         console.log('Login successful');
         onSuccess();
         onClose();
       } else {
-        await register(authData.email, authData.password);
+        await signUp(authData.email, authData.password);
         console.log('Registration successful, moving to address step');
         
-        // Run Firebase diagnostic after successful auth
+        // Test Supabase connection after successful auth
         setTimeout(() => {
-          testFirebaseConnection();
+          testSupabaseConnection();
         }, 1000);
         
         setStep('address');
@@ -248,7 +249,8 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
           district: addressData.district,
           neighborhood: addressData.nearestLandmark,
           notes: `${addressData.fullName} - ${addressData.phoneNumber}`,
-          isDefault: true,
+          is_default: true,
+          user_uid: user?.id || '',
         }),
         timeoutPromise
       ]);

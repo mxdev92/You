@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, signInAnonymously, setPersistence, browserSessionPersistence, connectAuthEmulator } from "firebase/auth";
-import { initializeFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, connectFirestoreEmulator, enableNetwork, disableNetwork } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, connectFirestoreEmulator, enableNetwork, disableNetwork } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,13 +13,9 @@ const firebaseConfig = {
 // Initialize Firebase (prevent duplicate initialization)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-// Fix Firestore connection issues with force long polling
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true, // This fixes the WebChannel transport errors
-});
-
-console.log('Firestore initialized with force long polling to fix transport errors');
+console.log('Firebase initialized successfully');
 
 // Auth persistence configuration
 setPersistence(auth, browserSessionPersistence).catch((error) => {

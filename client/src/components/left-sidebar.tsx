@@ -3,10 +3,10 @@ import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, Arrow
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
-import { useAuth } from "@/hooks/use-auth";
+import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
 import { useTranslation } from "@/hooks/use-translation";
 import { useLanguage } from "@/hooks/use-language";
-import { useFirebaseAddressStore } from "@/store/firebase-address-store";
+import { useSupabaseAddressStore } from "@/store/supabase-address-store";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import SignupModal from "@/components/signup-modal";
@@ -14,9 +14,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getUserOrders, type UserOrder } from "@/lib/firebase-user-data";
 
 function OrdersHistoryContent() {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['user-orders', user?.uid],
+    queryKey: ['user-orders', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
       return await getUserOrders();
@@ -306,7 +306,7 @@ function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, 
 
 
 export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useSupabaseAuth();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -314,18 +314,15 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   const { 
     addresses: savedAddresses, 
     addAddress, 
-    loadAddresses,
-    selectAddress 
-  } = useFirebaseAddressStore();
+    getAddresses,
+    getDefaultAddress
+  } = useSupabaseAddressStore();
   const [addressData, setAddressData] = useState({
     governorate: '',
     district: '',
     neighborhood: '',
-    street: '',
-    houseNumber: '',
-    floorNumber: '',
     notes: '',
-    isDefault: false
+    is_default: false
   });
 
   // Prevent background scrolling when sidebar is open
@@ -363,7 +360,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   ];
 
   const handleLogout = async () => {
-    await signOut();
+    await logout();
     onClose();
   };
 
@@ -382,11 +379,9 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
         governorate: addressData.governorate,
         district: addressData.district,
         neighborhood: addressData.neighborhood,
-        street: addressData.street,
-        houseNumber: addressData.houseNumber,
-        floorNumber: addressData.floorNumber,
         notes: addressData.notes,
-        isDefault: addressData.isDefault || savedAddresses.length === 0, // First address is default
+        is_default: addressData.is_default || savedAddresses.length === 0,
+        user_uid: user?.id || ''
       });
       
       // Reset form and close
@@ -394,11 +389,8 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
         governorate: '',
         district: '',
         neighborhood: '',
-        street: '',
-        houseNumber: '',
-        floorNumber: '',
         notes: '',
-        isDefault: false
+        is_default: false
       });
       setShowAddressForm(false);
     } catch (error) {
@@ -544,7 +536,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       <User className="h-8 w-8 text-white" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      {user?.displayName || user?.email?.split('@')[0] || 'مستخدم'}
+                      {user?.email?.split('@')[0] || 'مستخدم'}
                     </h3>
                     <p className="text-sm text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       عضو نشط
@@ -565,7 +557,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               الاسم الكامل
                             </p>
                             <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {user?.displayName || user?.email?.split('@')[0] || 'غير محدد'}
+                              {user?.email?.split('@')[0] || 'غير محدد'}
                             </p>
                           </div>
                         </div>
@@ -607,7 +599,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               رقم الهاتف
                             </p>
                             <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {user?.phoneNumber || 'غير محدد'}
+                              {'غير محدد'}
                             </p>
                           </div>
                         </div>
@@ -693,7 +685,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               {address.neighborhood}
                             </p>
                             <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {address.street && `${address.street} - `}{address.houseNumber}
+                              {address.governorate} - {address.district}
                             </p>
                             {address.notes && (
                               <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
