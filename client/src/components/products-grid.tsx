@@ -21,7 +21,8 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    staleTime: 30000, // Cache for 30 seconds for faster switching
+    staleTime: 5000, // Reduced to 5 seconds for faster admin updates
+    refetchInterval: 10000, // Auto-refetch every 10 seconds for real-time updates
   });
 
   return (

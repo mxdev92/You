@@ -44,20 +44,28 @@ export class MemStorage implements IStorage {
   private products: Map<number, Product>;
   private cartItems: Map<number, CartItem>;
   private orders: Map<number, Order>;
+  private users: Map<number, User>;
+  private userAddresses: Map<number, UserAddress>;
   private currentCategoryId: number;
   private currentProductId: number;
   private currentCartItemId: number;
   private currentOrderId: number;
+  private currentUserId: number;
+  private currentUserAddressId: number;
 
   constructor() {
     this.categories = new Map();
     this.products = new Map();
     this.cartItems = new Map();
     this.orders = new Map();
+    this.users = new Map();
+    this.userAddresses = new Map();
     this.currentCategoryId = 1;
     this.currentProductId = 1;
     this.currentCartItemId = 1;
     this.currentOrderId = 1;
+    this.currentUserId = 1;
+    this.currentUserAddressId = 1;
 
     // Initialize with sample data
     this.initializeData();
@@ -189,6 +197,22 @@ export class MemStorage implements IStorage {
     return updatedProduct;
   }
 
+  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
+    const existingProduct = this.products.get(id);
+    if (!existingProduct) {
+      throw new Error("Product not found");
+    }
+
+    const updatedProduct: Product = {
+      ...existingProduct,
+      displayOrder,
+      id
+    };
+    
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
+
   async getCartItems(): Promise<(CartItem & { product: Product })[]> {
     const items = Array.from(this.cartItems.values());
     return items.map(item => {
@@ -241,20 +265,40 @@ export class MemStorage implements IStorage {
   async clearCart(): Promise<void> {
     this.cartItems.clear();
   }
-  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
-    const existingProduct = this.products.get(id);
-    if (!existingProduct) {
-      throw new Error("Product not found");
-    }
 
-    const updatedProduct: Product = {
-      ...existingProduct,
-      displayOrder,
-      id
+  // User authentication methods (stub implementations for MemStorage)
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const newUser: User = {
+      id,
+      ...user,
+      createdAt: new Date()
     };
-    
-    this.products.set(id, updatedProduct);
-    return updatedProduct;
+    this.users.set(id, newUser);
+    return newUser;
+  }
+
+  async getUserAddresses(userId: number): Promise<UserAddress[]> {
+    return Array.from(this.userAddresses.values()).filter(addr => addr.userId === userId);
+  }
+
+  async createUserAddress(address: InsertUserAddress): Promise<UserAddress> {
+    const id = this.currentUserAddressId++;
+    const newAddress: UserAddress = {
+      id,
+      ...address,
+      createdAt: new Date()
+    };
+    this.userAddresses.set(id, newAddress);
+    return newAddress;
   }
 
   // Orders
@@ -356,6 +400,17 @@ export class DatabaseStorage implements IStorage {
       .set(product)
       .where(eq(products.id, id))
       .returning();
+    return updated;
+  }
+
+  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
+    const [updated] = await db.update(products)
+      .set({ displayOrder })
+      .where(eq(products.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error(`Product with id ${id} not found`);
+    }
     return updated;
   }
 
