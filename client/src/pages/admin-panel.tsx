@@ -875,11 +875,7 @@ function ItemsManagement() {
     loadProducts();
   }, []);
 
-  const getCategoryName = (categoryId: number | null) => {
-    if (categoryId === 1) return 'Fruits';
-    if (categoryId === 2) return 'Vegetables';
-    return 'Other';
-  };
+
 
   const categories = [
     { id: 1, name: 'Fruits', icon: Apple, count: 3 },
