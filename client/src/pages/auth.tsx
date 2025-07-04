@@ -249,7 +249,7 @@ const AuthPage: React.FC = () => {
         governorate: signupData.governorate,
         district: signupData.district,
         neighborhood: signupData.landmark,
-        notes: `${signupData.name} - ${signupData.phone}`,
+        notes: signupData.landmark, // Only store landmark/notes, not name or phone
         isDefault: true
       };
       

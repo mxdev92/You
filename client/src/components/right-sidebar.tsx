@@ -277,15 +277,19 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     try {
       console.log('Starting order submission...');
       
+      // Extract phone number from address notes if it exists
+      const phoneMatch = primaryAddress.notes?.match(/\d{10,}/);
+      const customerPhone = phoneMatch ? phoneMatch[0] : '07501234567';
+      
       const orderData = {
         customerName: postgresUser?.email?.split('@')[0] || 'Customer',
         customerEmail: postgresUser?.email || 'guest@example.com',
-        customerPhone: primaryAddress.notes?.match(/\d{10,}/)?.[0] || '07501234567',
+        customerPhone: customerPhone,
         address: {
           governorate: primaryAddress.governorate,
           district: primaryAddress.district,
           neighborhood: primaryAddress.neighborhood,
-          notes: primaryAddress.notes || ''
+          notes: primaryAddress.neighborhood // Only store landmark/neighborhood, not phone
         },
         items: Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
           productId: item.productId,
@@ -644,7 +648,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                 {addressData.neighborhood}
               </p>
               <p className="text-sm text-gray-900 font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                07501234567
+                {primaryAddress?.notes?.match(/\d{10,}/)?.[0] || '07501234567'}
               </p>
             </div>
           )}
