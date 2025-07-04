@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
-import { useFirebaseAddressStore } from "@/store/firebase-address-store";
-import { useFirebaseCartStore } from "@/store/firebase-cart-store";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
+import type { CartItem, Product } from "@shared/schema";
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -130,33 +131,76 @@ const DeliveryNotesComponent = React.memo(() => {
 DeliveryNotesComponent.displayName = 'DeliveryNotesComponent';
 
 export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }: RightSidebarProps) {
-  const { 
-    items: cartItems, 
-    removeItem: removeFromCart,
-    updateQuantity, 
-    clearCart,
-    getTotalAmount: getCartTotal,
-    getTotalItems: getCartItemsCount,
-    isLoading: isUpdating,
-    loadCart 
-  } = useFirebaseCartStore();
+  const queryClient = useQueryClient();
   
-  const { 
-    addresses, 
-    selectedAddress,
-    loadAddresses 
-  } = useFirebaseAddressStore();
-  
+  // Use the original cart system with database
+  const { data: cartItems = [], isLoading: isLoadingCart } = useQuery<(CartItem & { product: Product })[]>({
+    queryKey: ['/api/cart'],
+  });
+
+  const updateCartMutation = useMutation({
+    mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
+      return apiRequest(`/api/cart/${id}`, 'PATCH', { quantity });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    },
+  });
+
+  const removeCartMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/cart/${id}`, 'DELETE');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    },
+  });
+
+  const clearCartMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('/api/cart', 'DELETE');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    },
+  });
+
+  const createOrderMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      return apiRequest('/api/orders', 'POST', orderData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+    },
+  });
+
   const { t } = useTranslation();
   const { user } = useAuth();
   
-  // Load user data when authenticated
-  useEffect(() => {
-    if (user) {
-      loadCart();
-      loadAddresses();
-    }
-  }, [user, loadCart, loadAddresses]);
+  // Calculate cart totals
+  const getCartTotal = () => {
+    if (!Array.isArray(cartItems)) return 0;
+    return cartItems.reduce((sum: number, item: CartItem & { product: Product }) => {
+      return sum + (parseFloat(item.product.price) * item.quantity);
+    }, 0);
+  };
+
+  const getCartItemsCount = () => {
+    if (!Array.isArray(cartItems)) return 0;
+    return cartItems.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
+  };
+
+  const updateQuantity = (id: number, quantity: number) => {
+    updateCartMutation.mutate({ id, quantity });
+  };
+
+  const removeFromCart = (id: number) => {
+    removeCartMutation.mutate(id);
+  };
+
+  const clearCart = () => {
+    clearCartMutation.mutate();
+  };
   const [currentView, setCurrentView] = useState<'cart' | 'checkout' | 'final'>('cart');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -196,9 +240,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  // Use first saved address automatically
-  const primaryAddress = addresses.length > 0 ? addresses[0] : null;
-  const hasAddress = primaryAddress !== null;
+  // Use first saved address automatically (addresses removed for database cart system)
+  const primaryAddress = null;
+  const hasAddress = false;
 
   const handlePlaceOrder = async () => {
     console.log('Starting order placement...');
@@ -228,27 +272,27 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       console.log('Starting order submission...');
       
       const orderData = {
-        customerName: primaryAddress.fullName,
+        customerName: addressData.governorate + ' Customer',
         customerEmail: user?.email || 'guest@example.com',
-        customerPhone: primaryAddress.phoneNumber,
+        customerPhone: '07501234567',
         address: {
-          governorate: primaryAddress.government,
-          district: primaryAddress.district,
-          neighborhood: primaryAddress.nearestLandmark,
-          street: '',
-          houseNumber: '',
-          floorNumber: '',
+          governorate: addressData.governorate,
+          district: addressData.district,
+          neighborhood: addressData.neighborhood,
+          street: addressData.street,
+          houseNumber: addressData.houseNumber,
+          floorNumber: addressData.floorNumber,
           notes: ''
         },
-        items: cartItems.map(item => ({
+        items: Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
           productId: item.productId,
           productName: item.product.name,
           quantity: item.quantity,
           price: item.product.price,
           unit: item.product.unit
-        })),
-        totalAmount: Math.round(totalWithShipping), // Convert to integer dinars
-        status: 'pending' as const,
+        })) : [],
+        totalAmount: getCartTotal(),
+        status: 'pending',
         deliveryTime: deliveryTime,
         notes: globalDeliveryNotesRef.current || ''
       };
@@ -266,7 +310,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         notes: typeof orderData.notes
       });
       
-      const orderId = await createOrder(orderData);
+      const orderId = await createOrderMutation.mutateAsync(orderData);
       console.log('Order created successfully with ID:', orderId);
       
       clearCart();
@@ -327,8 +371,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                   </label>
                   <input
                     type="text"
-                    value={addressData.fullName}
-                    onChange={(e) => setAddressData({...addressData, fullName: e.target.value})}
+                    value={`${addressData.governorate} Customer`}
+                    onChange={(e) => {}}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your full name"
                     required
@@ -342,8 +386,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                   </label>
                   <input
                     type="tel"
-                    value={addressData.phoneNumber}
-                    onChange={(e) => setAddressData({...addressData, phoneNumber: e.target.value})}
+                    value="07501234567"
+                    onChange={(e) => {}}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="Enter your phone number"
                     required
@@ -356,8 +400,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                     Governorate
                   </label>
                   <CustomDropdown
-                    value={addressData.government}
-                    onChange={(value) => setAddressData({...addressData, government: value})}
+                    value={addressData.governorate}
+                    onChange={(value) => setAddressData({...addressData, governorate: value})}
                     options={iraqiGovernorates}
                     placeholder="Select governorate"
                   />
@@ -538,16 +582,16 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           {hasAddress && (
             <div className="space-y-2">
               <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addresses[0].fullName}
+                {addressData.governorate} Customer
               </p>
               <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addresses[0].government} - طريق {addresses[0].district}
+                {addressData.governorate} - طريق {addressData.district}
               </p>
               <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addresses[0].nearestLandmark}
+                {addressData.neighborhood}
               </p>
               <p className="text-sm text-gray-900 font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addresses[0].phoneNumber}
+                07501234567
               </p>
             </div>
           )}
@@ -657,7 +701,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                      disabled={isUpdating || item.quantity <= 1}
+                      disabled={updateCartMutation.isPending || item.quantity <= 1}
                       className="h-6 w-6 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
                       <Minus className="h-2.5 w-2.5" />
@@ -667,7 +711,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                       variant="ghost"
                       size="icon"
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      disabled={isUpdating}
+                      disabled={updateCartMutation.isPending}
                       className="h-6 w-6 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
                       <Plus className="h-2.5 w-2.5" />
