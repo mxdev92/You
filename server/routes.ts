@@ -810,9 +810,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   <div>الاسم: ${order.customerName || 'غير محدد'}</div>
                   <div>رقم الموبايل: ${order.customerPhone || 'غير محدد'}</div>
                   <div>العنوان: (${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${
-                    address.neighborhood && address.neighborhood !== 'غير محدد' 
-                      ? address.neighborhood 
-                      : (address.landmark || (address.notes ? address.notes.replace(/\s*-\s*\d{10,}.*$/, '').trim() : 'غير محدد'))
+                    (() => {
+                      if (address.neighborhood && address.neighborhood !== 'غير محدد') {
+                        return address.neighborhood;
+                      }
+                      if (address.landmark) {
+                        return address.landmark;
+                      }
+                      if (address.notes) {
+                        // Remove any phone numbers from the notes
+                        let cleanNotes = address.notes.toString();
+                        // Split by ' - ' and filter out any parts that contain phone numbers
+                        const parts = cleanNotes.split(' - ');
+                        const filteredParts = parts.filter(part => !/\d{10,}/.test(part));
+                        return filteredParts.join(' - ') || 'غير محدد';
+                      }
+                      return 'غير محدد';
+                    })()
                   })</div>
                 </div>
               </div>
