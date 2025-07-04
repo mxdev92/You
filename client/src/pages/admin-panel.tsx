@@ -864,7 +864,7 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
 // Items Management Component
 function ItemsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(1); // Default to خضروات
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -908,12 +908,7 @@ function ItemsManagement() {
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === null || 
-      (selectedCategory === 1 && product.categoryId === 1) ||
-      (selectedCategory === 2 && product.categoryId === 2) ||
-      (selectedCategory === 3 && product.categoryId === 3) ||
-      (selectedCategory === 4 && product.categoryId === 4) ||
-      (selectedCategory === 5 && product.categoryId === 5);
+    const matchesCategory = product.categoryId === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -1038,19 +1033,6 @@ function ItemsManagement() {
       {/* Categories Section */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setSelectedCategory(null)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
-              selectedCategory === null 
-                ? 'text-white border-2 border-gray-300' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-            style={selectedCategory === null ? { backgroundColor: '#22c55e' } : {}}
-          >
-            <Package2 className="h-4 w-4" />
-            All Items
-          </button>
-          
           {categories.map((category) => {
             const IconComponent = category.icon;
             return (
