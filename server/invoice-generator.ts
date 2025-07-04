@@ -288,7 +288,7 @@ function generateInvoiceHTML(orders: any[]): string {
             <div class="customer-info">
               <div><strong>الاسم:</strong> ${order.customerName || 'غير محدد'}</div>
               <div><strong>رقم الموبايل:</strong> ${order.customerPhone || 'غير محدد'}</div>
-              <div><strong>العنوان:</strong> ${order.governorate || ''} - ${order.district || ''} - ${order.landmark || ''}</div>
+              <div><strong>العنوان:</strong> ${order.address?.governorate || ''} - ${order.address?.district || ''} - ${order.address?.neighborhood || ''}</div>
             </div>
           </div>
           
@@ -328,7 +328,7 @@ function generateInvoiceHTML(orders: any[]): string {
           <table class="totals-table">
             <tr>
               <td class="label">مجموع الطلبات الكلي:</td>
-              <td class="value">${parseFloat(order.totalAmount).toFixed(0)} دينار</td>
+              <td class="value">${Math.round(order.totalAmount).toLocaleString('ar-IQ')} دينار</td>
             </tr>
             <tr>
               <td class="label">اجور خدمة التوصيل:</td>
@@ -336,7 +336,7 @@ function generateInvoiceHTML(orders: any[]): string {
             </tr>
             <tr class="total-row">
               <td class="label">المبلغ الاجمالي:</td>
-              <td class="value">${(parseFloat(order.totalAmount) + 1000).toFixed(0)} دينار</td>
+              <td class="value">${Math.round(order.totalAmount + 1000).toLocaleString('ar-IQ')} دينار</td>
             </tr>
           </table>
         </div>
