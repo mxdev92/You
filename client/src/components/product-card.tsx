@@ -123,7 +123,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             ) : isAdding ? (
               <Check className="h-4 w-4 text-white" />
             ) : (
-              <ShoppingCart className="h-4 w-4 text-gray-700" />
+              <ShoppingCart className="h-4 w-4 text-white" />
             )}
           </Button>
         </motion.div>

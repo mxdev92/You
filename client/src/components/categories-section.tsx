@@ -106,16 +106,18 @@ export default function CategoriesSection() {
                 const IconComponent = iconMap[category.icon];
                 return IconComponent ? (
                   <IconComponent className={`w-3.5 h-3.5 ${
-                    category.isSelected ? "text-black" : "text-gray-600"
+                    category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 ) : (
                   <Apple className={`w-3.5 h-3.5 ${
-                    category.isSelected ? "text-black" : "text-gray-600"
+                    category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 );
               })()}
             </motion.div>
-            <span className="text-[10px] font-medium text-gray-700 text-center w-full">
+            <span className={`text-[10px] font-medium text-center w-full ${
+              category.isSelected ? "text-white" : "text-gray-700"
+            }`}>
               {t(getCategoryTranslationKey(category.name))}
             </span>
           </motion.div>
