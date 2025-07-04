@@ -20,36 +20,32 @@ console.log('Database URL:', firebaseConfig.databaseURL);
 export class FirebaseRealtimeStorage {
   async getCategories() {
     try {
-      const categoriesRef = ref(db, 'categories');
-      const snapshot = await get(categoriesRef);
-      
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        return Object.keys(data).map(key => ({
-          id: parseInt(key),
-          ...data[key]
-        }));
-      }
-      
-      // Initialize default categories if none exist
-      const defaultCategories = [
+      // Force reset categories to the new 4 categories
+      const newCategories = [
         { id: 1, name: "خضروات", icon: "Leaf", displayOrder: 1, isSelected: false },
-        { id: 2, name: "فواكه", icon: "Apple", displayOrder: 2, isSelected: false },
-        { id: 3, name: "مخبوزات", icon: "Wheat", displayOrder: 3, isSelected: false }
+        { id: 2, name: "فواكة", icon: "Apple", displayOrder: 2, isSelected: false },
+        { id: 3, name: "ماء", icon: "Droplets", displayOrder: 3, isSelected: false },
+        { id: 4, name: "خبز", icon: "Wheat", displayOrder: 4, isSelected: false }
       ];
       
-      // Save default categories to Firebase
-      for (const category of defaultCategories) {
+      // Clear all existing categories and set new ones
+      const categoriesRef = ref(db, 'categories');
+      await set(categoriesRef, null); // Clear all
+      
+      // Save new categories to Firebase
+      for (const category of newCategories) {
         await set(ref(db, `categories/${category.id}`), category);
       }
       
-      return defaultCategories;
+      console.log('Categories reset to new 4 categories:', newCategories);
+      return newCategories;
     } catch (error) {
       console.error('Firebase getCategories error:', error);
       return [
         { id: 1, name: "خضروات", icon: "Leaf", displayOrder: 1, isSelected: false },
-        { id: 2, name: "فواكه", icon: "Apple", displayOrder: 2, isSelected: false },
-        { id: 3, name: "مخبوزات", icon: "Wheat", displayOrder: 3, isSelected: false }
+        { id: 2, name: "فواكة", icon: "Apple", displayOrder: 2, isSelected: false },
+        { id: 3, name: "ماء", icon: "Droplets", displayOrder: 3, isSelected: false },
+        { id: 4, name: "خبز", icon: "Wheat", displayOrder: 4, isSelected: false }
       ];
     }
   }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2 } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Leaf, Droplets, Wheat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -68,25 +68,21 @@ const getCategoryId = (categoryName: string): number => {
 // Helper function to map category IDs to names
 const getCategoryName = (categoryId: number | null): string => {
   const mapping: { [key: number]: string } = {
-    1: 'Fruits',
-    2: 'Vegetables', 
-    3: 'Dairy',
-    4: 'Meat',
-    5: 'Seafood',
-    6: 'Bakery'
+    1: 'خضروات',
+    2: 'فواكة',
+    3: 'ماء',
+    4: 'خبز'
   };
-  return mapping[categoryId || 2] || 'Vegetables'; // Default to Vegetables
+  return mapping[categoryId || 2] || 'فواكة'; // Default to فواكة
 };
 
 const createProduct = async (productData: any): Promise<Product> => {
   // Map category names to category IDs
   const categoryMapping: { [key: string]: number } = {
-    'Vegetables': 2,
-    'Fruits': 1,
-    'Dairy': 4,
-    'Meat': 6,
-    'Seafood': 5,
-    'Bakery': 3
+    'خضروات': 1,
+    'فواكة': 2,
+    'ماء': 3,
+    'خبز': 4
   };
   
   const insertProduct: InsertProduct = {
@@ -94,7 +90,7 @@ const createProduct = async (productData: any): Promise<Product> => {
     price: productData.price.toString(),
     unit: productData.unit,
     imageUrl: productData.imageUrl,
-    categoryId: categoryMapping[productData.category] || 2, // Default to Vegetables
+    categoryId: categoryMapping[productData.category] || 2, // Default to فواكة
     available: productData.available,
     displayOrder: 0
   };
@@ -916,21 +912,19 @@ function ItemsManagement() {
 
 
   const categories = [
-    { id: 1, name: 'Fruits', icon: Apple, count: 3 },
-    { id: 2, name: 'Vegetables', icon: Carrot, count: 3 },
-    { id: 3, name: 'Dairy', icon: Milk, count: 0 },
-    { id: 4, name: 'Meat', icon: Beef, count: 0 }
+    { id: 1, name: 'خضروات', icon: Leaf, count: 0 },
+    { id: 2, name: 'فواكة', icon: Apple, count: 0 },
+    { id: 3, name: 'ماء', icon: Droplets, count: 0 },
+    { id: 4, name: 'خبز', icon: Wheat, count: 0 }
   ];
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === null || 
-      (selectedCategory === 1 && product.category === 'Fruits') ||
-      (selectedCategory === 2 && product.category === 'Vegetables') ||
-      (selectedCategory === 3 && product.category === 'Dairy') ||
-      (selectedCategory === 4 && product.category === 'Meat') ||
-      (selectedCategory === 5 && product.category === 'Seafood') ||
-      (selectedCategory === 6 && product.category === 'Bakery');
+      (selectedCategory === 1 && product.category === 'خضروات') ||
+      (selectedCategory === 2 && product.category === 'فواكة') ||
+      (selectedCategory === 3 && product.category === 'ماء') ||
+      (selectedCategory === 4 && product.category === 'خبز');
     return matchesSearch && matchesCategory;
   });
 
