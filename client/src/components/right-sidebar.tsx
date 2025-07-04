@@ -141,7 +141,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const updateCartMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
       console.log('Mutation: updating cart item', { id, quantity });
-      const result = await apiRequest(`/api/cart/${id}`, 'PATCH', { quantity });
+      const result = await apiRequest('PATCH', `/api/cart/${id}`, { quantity });
       console.log('Mutation result:', result);
       return result;
     },
@@ -157,7 +157,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const removeCartMutation = useMutation({
     mutationFn: async (id: number) => {
       console.log('Mutation: removing cart item', id);
-      const result = await apiRequest(`/api/cart/${id}`, 'DELETE');
+      const result = await apiRequest('DELETE', `/api/cart/${id}`);
       console.log('Remove mutation result:', result);
       return result;
     },
@@ -172,7 +172,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   const clearCartMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/cart', 'DELETE');
+      return apiRequest('DELETE', '/api/cart');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
@@ -181,7 +181,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      return apiRequest('/api/orders', 'POST', orderData);
+      return apiRequest('POST', '/api/orders', orderData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
