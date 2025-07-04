@@ -292,11 +292,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             .items-table th {
-              background: #10b981;
+              background: #000;
               color: white;
               padding: 6px 4px;
               font-weight: 600;
-              border: 1px solid #059669;
+              border: 1px solid #000;
               font-size: 10px;
             }
             
@@ -315,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .separator-line {
               width: 100%;
               height: 1px;
-              background: #10b981;
+              background: #000;
               margin: 10px 0;
             }
             
