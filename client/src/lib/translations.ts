@@ -243,7 +243,7 @@ export const translations = {
     checkout: "الدفع",
     
     // Common
-    search: "البحث في البقالة...",
+    search: "البحث في الماركت...",
     close: "إغلاق",
     cancel: "الغاء",
     save: "حفظ",
