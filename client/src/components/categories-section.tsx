@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana, CircleDot, Circle } from "lucide-react";
+import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana, CircleDot, Circle, Leaf } from "lucide-react";
 import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/hooks/use-translation";
@@ -26,6 +26,7 @@ export default function CategoriesSection() {
     Banana,
     CircleDot,
     Circle,
+    Leaf,
     // Custom tomato icon using Circle with red fill
     Tomato: ({ className }: { className?: string }) => (
       <Circle className={className} fill="currentColor" />
