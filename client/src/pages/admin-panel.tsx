@@ -1482,10 +1482,18 @@ export default function AdminPanel() {
                     checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
-                  <span className="text-sm text-gray-600">
-                    {selectedOrders.length > 0 
-                      ? `${selectedOrders.length} طلبات محددة`
-                      : 'تحديد الكل'
+                  <span className={`text-sm ${
+                    selectedOrders.length === filteredOrders.length && filteredOrders.length > 0
+                      ? 'text-green-600 font-medium'
+                      : selectedOrders.length > 0 
+                        ? 'text-blue-600 font-medium'
+                        : 'text-gray-600'
+                  }`}>
+                    {selectedOrders.length === filteredOrders.length && filteredOrders.length > 0
+                      ? `✓ تم تحديد الكل (${selectedOrders.length} طلبات)`
+                      : selectedOrders.length > 0 
+                        ? `${selectedOrders.length} طلبات محددة`
+                        : 'تحديد الكل'
                     }
                   </span>
                 </div>

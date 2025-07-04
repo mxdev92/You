@@ -116,6 +116,9 @@ July 4, 2025:
 ✓ Removed email from invoice display (email is for authentication only)
 ✓ Added aligned customer information in both PDF and admin panel invoice displays
 ✓ Enhanced address display format: (المحافظة - المنطقة - اقرب نقطة دالة)
+✓ Added visual checkmark indicator (✓) when "تحديد الكل" is selected in admin panel
+✓ Enhanced select all feedback with green color and "تم تحديد الكل" message
+✓ Improved admin panel UX with clear visual indicators for selection states
 ✓ Fixed critical address persistence issue after page refresh
 ✓ Added auto-loading of saved addresses when user is authenticated
 ✓ Integrated PostgreSQL addresses into cart checkout flow
