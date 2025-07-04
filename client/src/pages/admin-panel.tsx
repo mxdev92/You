@@ -18,34 +18,20 @@ import type { Product, InsertProduct } from '@shared/schema';
 const uploadProductImage = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = async () => {
+    reader.onload = () => {
       try {
         const imageData = reader.result as string;
-        
-        // Upload to backend
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            imageData,
-            fileName: file.name
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to upload image');
-        }
-
-        const result = await response.json();
-        resolve(result.imageUrl);
+        console.log('Image upload successful - using base64 data directly');
+        resolve(imageData);
       } catch (error) {
         console.error('Image upload failed:', error);
         reject(error);
       }
     };
-    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onerror = () => {
+      console.error('Failed to read file');
+      reject(new Error('Failed to read file'));
+    };
     reader.readAsDataURL(file);
   });
 };
@@ -55,14 +41,13 @@ const uploadProductImage = async (file: File): Promise<string> => {
 // Helper function to map category names to IDs
 const getCategoryId = (categoryName: string): number => {
   const mapping: { [key: string]: number } = {
-    'Vegetables': 2,
-    'Fruits': 1,
-    'Dairy': 3,
-    'Meat': 4,
-    'Seafood': 5,
-    'Bakery': 6
+    'خضروات': 1,
+    'فواكة': 2,
+    'ماء': 3,
+    'خبز': 4,
+    'لحوم': 5
   };
-  return mapping[categoryName] || 2; // Default to Vegetables
+  return mapping[categoryName] || 1; // Default to خضروات
 };
 
 // Helper function to map category IDs to names
@@ -82,7 +67,8 @@ const createProduct = async (productData: any): Promise<Product> => {
     'خضروات': 1,
     'فواكة': 2,
     'ماء': 3,
-    'خبز': 4
+    'خبز': 4,
+    'لحوم': 5
   };
   
   const insertProduct: InsertProduct = {
@@ -360,7 +346,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
     name: '',
     description: '',
     price: '',
-    category: 'Vegetables',
+    category: 'خضروات',
     unit: 'kg',
     available: true,
     image: null as File | null
@@ -406,7 +392,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
         name: '',
         description: '',
         price: '',
-        category: 'Vegetables',
+        category: 'خضروات',
         unit: 'kg',
         available: true,
         image: null
@@ -500,10 +486,11 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="Fruits">Fruits</SelectItem>
-                  <SelectItem value="Vegetables">Vegetables</SelectItem>
-                  <SelectItem value="Dairy">Dairy</SelectItem>
-                  <SelectItem value="Meat">Meat</SelectItem>
+                  <SelectItem value="خضروات">خضروات</SelectItem>
+                  <SelectItem value="فواكة">فواكة</SelectItem>
+                  <SelectItem value="ماء">ماء</SelectItem>
+                  <SelectItem value="خبز">خبز</SelectItem>
+                  <SelectItem value="لحوم">لحوم</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -922,10 +909,11 @@ function ItemsManagement() {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === null || 
-      (selectedCategory === 1 && product.category === 'خضروات') ||
-      (selectedCategory === 2 && product.category === 'فواكة') ||
-      (selectedCategory === 3 && product.category === 'ماء') ||
-      (selectedCategory === 4 && product.category === 'خبز');
+      (selectedCategory === 1 && product.categoryId === 1) ||
+      (selectedCategory === 2 && product.categoryId === 2) ||
+      (selectedCategory === 3 && product.categoryId === 3) ||
+      (selectedCategory === 4 && product.categoryId === 4) ||
+      (selectedCategory === 5 && product.categoryId === 5);
     return matchesSearch && matchesCategory;
   });
 
