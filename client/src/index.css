@@ -9,6 +9,18 @@
   font-family: 'Cairo', Inter, system-ui, sans-serif;
 }
 
+/* Remove all focus outlines and borders for inputs */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #d1d5db !important; /* Keep gray border on focus */
+}
+
 /* Arabic text rendering optimization - keep UI LTR */
 html[lang="ar"], 
 html[lang="ar"] * {
