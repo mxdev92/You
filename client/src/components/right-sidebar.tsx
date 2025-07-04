@@ -133,12 +133,19 @@ DeliveryNotesComponent.displayName = 'DeliveryNotesComponent';
 export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }: RightSidebarProps) {
   const queryClient = useQueryClient();
   
-  // Use the original cart system with database
-  const { data: cartItems = [], isLoading: isLoadingCart } = useQuery<(CartItem & { product: Product })[]>({
-    queryKey: ['/api/cart'],
-  });
+  // Use CartFlow store for cart data
+  const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem } = useCartFlow();
 
-  const updateCartMutation = useMutation({
+  // Use CartFlow store methods directly
+  const handleUpdateQuantity = async (id: number, quantity: number) => {
+    await updateCartQuantity(id, quantity);
+  };
+
+  const handleRemoveItem = async (id: number) => {
+    await removeCartItem(id);
+  };
+
+  const _updateCartMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
       const result = await apiRequest('PATCH', `/api/cart/${id}`, { quantity });
       return result;
@@ -235,11 +242,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   };
 
   const updateQuantity = (id: number, quantity: number) => {
-    updateCartMutation.mutate({ id, quantity });
+    handleUpdateQuantity(id, quantity);
   };
 
   const removeFromCart = (id: number) => {
-    removeCartMutation.mutate(id);
+    handleRemoveItem(id);
   };
 
   const clearCart = () => {
@@ -699,12 +706,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     </div>
   );
 
-  const CartScreen = () => {
-    console.log('CartScreen render - cartItems:', cartItems);
-    console.log('CartScreen render - isLoadingCart:', isLoadingCart);
-    console.log('CartScreen render - cartItems length:', cartItems.length);
-    
-    return (
+  const CartScreen = () => (
     <>
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -807,8 +809,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       )}
     </>
-    );
-  };
+  );
 
   return (
     <>
