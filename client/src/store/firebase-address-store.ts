@@ -1,170 +1,99 @@
 import { create } from 'zustand';
-import { 
-  getUserAddresses, 
-  addUserAddress, 
-  updateUserAddress, 
-  deleteUserAddress, 
-  setDefaultAddress,
-  type UserAddress 
-} from '@/lib/firebase-user-data';
+import { addressService, type UserAddress } from '@/lib/firebase';
 
-interface FirebaseAddressState {
+interface AddressState {
   addresses: UserAddress[];
-  selectedAddress: UserAddress | null;
-  isLoading: boolean;
+  defaultAddress: UserAddress | null;
+  loading: boolean;
   error: string | null;
-  
-  // Actions
-  loadAddresses: () => Promise<void>;
-  addAddress: (address: Omit<UserAddress, 'id' | 'uid' | 'createdAt'>) => Promise<void>;
-  updateAddress: (id: string, address: Partial<UserAddress>) => Promise<void>;
-  deleteAddress: (id: string) => Promise<void>;
-  setDefault: (id: string) => Promise<void>;
-  selectAddress: (address: UserAddress | null) => void;
-  clearAddresses: () => void;
 }
 
-export const useFirebaseAddressStore = create<FirebaseAddressState>((set, get) => ({
+interface AddressActions {
+  loadAddresses: (userId: string) => Promise<void>;
+  addAddress: (address: Omit<UserAddress, 'id' | 'createdAt'>) => Promise<void>;
+  getDefaultAddress: (userId: string) => Promise<void>;
+  clearAddresses: () => void;
+  setError: (error: string | null) => void;
+}
+
+export const useAddressStore = create<AddressState & AddressActions>((set, get) => ({
+  // State
   addresses: [],
-  selectedAddress: null,
-  isLoading: false,
+  defaultAddress: null,
+  loading: false,
   error: null,
 
-  loadAddresses: async () => {
-    set({ isLoading: true, error: null });
+  // Actions
+  loadAddresses: async (userId: string) => {
     try {
-      const addresses = await getUserAddresses();
-      const defaultAddress = addresses.find(addr => addr.isDefault) || addresses[0] || null;
+      set({ loading: true, error: null });
+      console.log('Address Store: Loading addresses for user', userId);
+      
+      const addresses = await addressService.getUserAddresses(userId);
       
       set({ 
         addresses, 
-        selectedAddress: defaultAddress,
-        isLoading: false 
+        loading: false,
+        error: null 
       });
+      
+      console.log('Address Store: Loaded', addresses.length, 'addresses');
     } catch (error: any) {
-      console.error('Error loading addresses:', error);
+      console.error('Address Store: Failed to load addresses', error);
       set({ 
-        error: error.message || 'Failed to load addresses',
-        isLoading: false 
+        loading: false, 
+        error: error.message || 'Failed to load addresses' 
       });
     }
   },
 
-  addAddress: async (addressData) => {
-    set({ isLoading: true, error: null });
+  addAddress: async (address: Omit<UserAddress, 'id' | 'createdAt'>) => {
     try {
-      console.log('Firebase Address Store: Attempting to add address', addressData);
+      set({ loading: true, error: null });
+      console.log('Address Store: Adding new address');
       
-      const newAddress = await addUserAddress(addressData);
+      const addressId = await addressService.addAddress(address);
       
-      console.log('Firebase Address Store: Address added successfully', newAddress);
-      const { addresses } = get();
+      // Reload addresses to get the updated list
+      await get().loadAddresses(address.userId);
       
-      set({ 
-        addresses: [newAddress, ...addresses],
-        selectedAddress: newAddress.isDefault ? newAddress : get().selectedAddress,
-        isLoading: false 
-      });
+      console.log('Address Store: Address added successfully', addressId);
     } catch (error: any) {
-      console.error('Error adding address:', error);
+      console.error('Address Store: Failed to add address', error);
       set({ 
-        error: error.message || 'Failed to add address',
-        isLoading: false 
+        loading: false, 
+        error: error.message || 'Failed to add address' 
       });
       throw error;
     }
   },
 
-  updateAddress: async (id, addressData) => {
-    set({ isLoading: true, error: null });
+  getDefaultAddress: async (userId: string) => {
     try {
-      await updateUserAddress(id, addressData);
-      const { addresses, selectedAddress } = get();
+      console.log('Address Store: Getting default address for user', userId);
       
-      const updatedAddresses = addresses.map(addr => 
-        addr.id === id ? { ...addr, ...addressData } : addr
-      );
+      const defaultAddress = await addressService.getDefaultAddress(userId);
       
-      const updatedSelectedAddress = selectedAddress?.id === id 
-        ? { ...selectedAddress, ...addressData }
-        : selectedAddress;
+      set({ defaultAddress });
       
-      set({ 
-        addresses: updatedAddresses,
-        selectedAddress: updatedSelectedAddress,
-        isLoading: false 
-      });
+      console.log('Address Store: Default address', defaultAddress ? 'found' : 'not found');
     } catch (error: any) {
-      console.error('Error updating address:', error);
-      set({ 
-        error: error.message || 'Failed to update address',
-        isLoading: false 
-      });
+      console.error('Address Store: Failed to get default address', error);
+      set({ error: error.message || 'Failed to get default address' });
     }
-  },
-
-  deleteAddress: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
-      await deleteUserAddress(id);
-      const { addresses, selectedAddress } = get();
-      
-      const filteredAddresses = addresses.filter(addr => addr.id !== id);
-      const newSelectedAddress = selectedAddress?.id === id 
-        ? filteredAddresses[0] || null 
-        : selectedAddress;
-      
-      set({ 
-        addresses: filteredAddresses,
-        selectedAddress: newSelectedAddress,
-        isLoading: false 
-      });
-    } catch (error: any) {
-      console.error('Error deleting address:', error);
-      set({ 
-        error: error.message || 'Failed to delete address',
-        isLoading: false 
-      });
-    }
-  },
-
-  setDefault: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
-      await setDefaultAddress(id);
-      const { addresses } = get();
-      
-      const updatedAddresses = addresses.map(addr => ({
-        ...addr,
-        isDefault: addr.id === id
-      }));
-      
-      const newDefaultAddress = updatedAddresses.find(addr => addr.id === id);
-      
-      set({ 
-        addresses: updatedAddresses,
-        selectedAddress: newDefaultAddress || get().selectedAddress,
-        isLoading: false 
-      });
-    } catch (error: any) {
-      console.error('Error setting default address:', error);
-      set({ 
-        error: error.message || 'Failed to set default address',
-        isLoading: false 
-      });
-    }
-  },
-
-  selectAddress: (address) => {
-    set({ selectedAddress: address });
   },
 
   clearAddresses: () => {
+    console.log('Address Store: Clearing address data');
     set({ 
       addresses: [], 
-      selectedAddress: null, 
-      isLoading: false, 
+      defaultAddress: null, 
+      loading: false, 
       error: null 
     });
+  },
+
+  setError: (error: string | null) => {
+    set({ error });
   }
 }));

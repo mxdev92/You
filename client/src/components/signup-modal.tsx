@@ -2,10 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useTranslation } from "@/hooks/use-translation";
-import { useSupabaseAddressStore } from "@/store/supabase-address-store";
-import { testSupabaseConnection } from "@/lib/supabase";
+import { useAddressStore } from "@/store/firebase-address-store";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -85,8 +84,8 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     confirmPassword: ''
   });
 
-  const { addAddress } = useSupabaseAddressStore();
-  const { user, register: signUp, login: signIn } = useSupabaseAuth();
+  const { addAddress } = useAddressStore();
+  const { user, register: signUp, login: signIn } = useFirebaseAuth();
 
   const [addressData, setAddressData] = useState({
     fullName: '',
@@ -208,10 +207,7 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
         await signUp(authData.email, authData.password);
         console.log('Registration successful, moving to address step');
         
-        // Test Supabase connection after successful auth
-        setTimeout(() => {
-          testSupabaseConnection();
-        }, 1000);
+        // Firebase registration successful
         
         setStep('address');
       }
@@ -245,12 +241,12 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
       // Race between address saving and timeout
       await Promise.race([
         addAddress({
+          userId: user?.uid || '',
           governorate: addressData.government,
           district: addressData.district,
           neighborhood: addressData.nearestLandmark,
           notes: `${addressData.fullName} - ${addressData.phoneNumber}`,
-          is_default: true,
-          user_uid: user?.id || '',
+          isDefault: true,
         }),
         timeoutPromise
       ]);

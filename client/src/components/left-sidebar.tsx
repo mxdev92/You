@@ -3,23 +3,23 @@ import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, Arrow
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
-import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useTranslation } from "@/hooks/use-translation";
 import { useLanguage } from "@/hooks/use-language";
-import { useSupabaseAddressStore } from "@/store/supabase-address-store";
+import { useAddressStore } from "@/store/firebase-address-store";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import SignupModal from "@/components/signup-modal";
 import { useQuery } from "@tanstack/react-query";
-import { getUserOrders, type UserOrder } from "@/lib/firebase-user-data";
+import { orderService, type Order } from "@/lib/firebase";
 
 function OrdersHistoryContent() {
-  const { user } = useSupabaseAuth();
+  const { user } = useFirebaseAuth();
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['user-orders', user?.id],
+    queryKey: ['user-orders', user?.uid],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
-      return await getUserOrders();
+      return await orderService.getUserOrders(user.uid);
     },
     enabled: !!user,
   });
@@ -69,7 +69,7 @@ function OrdersHistoryContent() {
 
   return (
     <div className="px-6 py-4 space-y-4">
-      {orders.map((order: UserOrder) => (
+      {orders.map((order: Order) => (
         <div key={order.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             {/* Order Info - Right Side */}
@@ -82,7 +82,7 @@ function OrdersHistoryContent() {
                   السعر الكلي: {order.totalAmount.toLocaleString()} د.ع
                 </p>
                 <p className="text-xs text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  التاريخ: {new Date(order.orderDate).toLocaleDateString('ar-IQ')}
+                  التاريخ: {new Date(order.createdAt).toLocaleDateString('ar-IQ')}
                 </p>
               </div>
             </div>
@@ -306,7 +306,7 @@ function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, 
 
 
 export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
-  const { user, logout } = useSupabaseAuth();
+  const { user, logout } = useFirebaseAuth();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -314,9 +314,9 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   const { 
     addresses: savedAddresses, 
     addAddress, 
-    getAddresses,
+    loadAddresses,
     getDefaultAddress
-  } = useSupabaseAddressStore();
+  } = useAddressStore();
   const [addressData, setAddressData] = useState({
     governorate: '',
     district: '',
@@ -380,8 +380,8 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
         district: addressData.district,
         neighborhood: addressData.neighborhood,
         notes: addressData.notes,
-        is_default: addressData.is_default || savedAddresses.length === 0,
-        user_uid: user?.id || ''
+        isDefault: addressData.is_default || savedAddresses.length === 0,
+        userId: user?.uid || ''
       });
       
       // Reset form and close
