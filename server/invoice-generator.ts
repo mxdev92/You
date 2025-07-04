@@ -122,20 +122,33 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
           font-size: 10px;
         }
         
+        @page {
+          size: A4;
+          margin: 8mm;
+        }
+        
+        @media print {
+          .invoice {
+            page-break-inside: avoid;
+            page-break-after: avoid;
+          }
+        }
+        
         .invoice {
           width: 210mm;
-          min-height: 297mm;
+          max-height: 280mm;
           margin: 0 auto;
-          padding: 10mm;
+          padding: 8mm;
           background: white;
           position: relative;
           direction: rtl;
+          page-break-after: avoid;
         }
         
         .logo-header {
           text-align: center;
-          margin-bottom: 15px;
-          padding-bottom: 10px;
+          margin-bottom: 10px;
+          padding-bottom: 5px;
         }
         
         .logo-header img {
@@ -148,7 +161,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 15px;
+          margin-bottom: 10px;
         }
         
         .customer-section {
@@ -285,9 +298,10 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
         }
         
         .notes-section {
-          margin-top: 15px;
+          margin-top: 8px;
           display: flex;
-          gap: 20px;
+          gap: 15px;
+          page-break-inside: avoid;
         }
         
         .notes-box, .delivery-time-box {
