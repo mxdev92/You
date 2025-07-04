@@ -107,6 +107,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/products/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      console.log('Deleting product ID:', id);
+      
+      await storage.deleteProduct(id);
+      console.log('Product deleted successfully');
+      res.status(204).send();
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      res.status(500).json({ message: "Failed to delete product" });
+    }
+  });
+
   app.patch("/api/products/:id/display-order", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

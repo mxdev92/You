@@ -1022,6 +1022,29 @@ function ItemsManagement() {
     setIsAddItemOpen(false);
   };
 
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to delete product');
+
+      // Remove product from local state
+      setProducts(prev => prev.filter(product => product.id !== productId));
+      
+      console.log('Product deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      alert('Failed to delete product. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Single App Bar - Back + Search + Add Item */}
@@ -1156,13 +1179,21 @@ function ItemsManagement() {
                   <option value={0}>Last</option>
                 </select>
 
-                {/* Edit Button */}
-                <button
-                  onClick={() => handleEditProduct(product)}
-                  className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                >
-                  <Edit className="h-3 w-3" />
-                </button>
+                {/* Edit and Delete Buttons */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleEditProduct(product)}
+                    className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

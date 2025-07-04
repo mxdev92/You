@@ -15,6 +15,7 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
   updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product>;
+  deleteProduct(id: number): Promise<void>;
 
   // Cart
   getCartItems(): Promise<(CartItem & { product: Product })[]>;
@@ -211,6 +212,10 @@ export class MemStorage implements IStorage {
     
     this.products.set(id, updatedProduct);
     return updatedProduct;
+  }
+
+  async deleteProduct(id: number): Promise<void> {
+    this.products.delete(id);
   }
 
   async getCartItems(): Promise<(CartItem & { product: Product })[]> {
@@ -412,6 +417,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`Product with id ${id} not found`);
     }
     return updated;
+  }
+
+  async deleteProduct(id: number): Promise<void> {
+    await db.delete(products).where(eq(products.id, id));
   }
 
   async getCartItems(): Promise<(CartItem & { product: Product })[]> {
