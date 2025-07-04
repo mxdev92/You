@@ -152,7 +152,8 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
           {/* Add to Cart Button */}
           <Button
             onClick={handleAddToCart}
-            className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-medium text-sm"
+            className="w-full text-white py-2 rounded-lg font-medium text-sm hover:opacity-90"
+            style={{ backgroundColor: '#FFC800' }}
           >
             {t('addToCart')}
           </Button>

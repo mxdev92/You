@@ -761,7 +761,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                         updateQuantity(item.id, Math.max(1, item.quantity - 1));
                       }}
                       disabled={item.quantity <= 1}
-                      className="h-6 w-6 bg-red-500 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center border-0 outline-0"
+                      className="h-6 w-6 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center border-0 outline-0"
+                      style={{ backgroundColor: item.quantity <= 1 ? '#fbbf24' : '#FFC800' }}
                     >
                       <Minus className="h-2.5 w-2.5" />
                     </button>
@@ -772,7 +773,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                         e.stopPropagation();
                         updateQuantity(item.id, item.quantity + 1);
                       }}
-                      className="h-6 w-6 bg-green-500 text-white rounded-full flex items-center justify-center border-0 outline-0"
+                      className="h-6 w-6 text-white rounded-full flex items-center justify-center border-0 outline-0"
+                      style={{ backgroundColor: '#FFC800' }}
                     >
                       <Plus className="h-2.5 w-2.5" />
                     </button>
