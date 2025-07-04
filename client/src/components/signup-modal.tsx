@@ -196,17 +196,20 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
 
     setIsLoading(true);
     try {
+      console.log('Starting auth process:', { isLogin, email: authData.email });
       if (isLogin) {
         await login(authData.email, authData.password);
+        console.log('Login successful');
         onSuccess();
         onClose();
       } else {
         await register(authData.email, authData.password);
+        console.log('Registration successful, moving to address step');
         setStep('address');
       }
     } catch (error) {
       console.error('Auth error:', error);
-      alert(isLogin ? 'خطأ في تسجيل الدخول' : 'خطأ في إنشاء الحساب');
+      alert(isLogin ? 'خطأ في تسجيل الدخول: ' + (error instanceof Error ? error.message : 'خطأ غير معروف') : 'خطأ في إنشاء الحساب: ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
     }
@@ -219,7 +222,7 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
     setIsLoading(true);
     try {
       // Save address to Firebase address store
-      addAddress({
+      await addAddress({
         governorate: addressData.government,
         district: addressData.district,
         neighborhood: addressData.nearestLandmark,
@@ -232,7 +235,7 @@ export default function SignupModal({ isOpen, onClose, onSuccess }: SignupModalP
       onClose();
     } catch (error) {
       console.error('Address save error:', error);
-      alert('خطأ في حفظ العنوان');
+      alert('خطأ في حفظ العنوان: ' + (error instanceof Error ? error.message : 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
     }
