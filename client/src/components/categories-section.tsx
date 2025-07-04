@@ -89,8 +89,8 @@ export default function CategoriesSection() {
   }
 
   return (
-    <section className="px-6 py-4">
-      <div className="flex justify-center space-x-6 max-w-md mx-auto">
+    <section className="px-4 py-2">
+      <div className="flex justify-center space-x-4 max-w-xs mx-auto">
         {categories?.map((category, index) => (
           <motion.div
             key={category.id}
@@ -103,27 +103,27 @@ export default function CategoriesSection() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 cursor-pointer transition-all duration-300 relative shadow-md ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 cursor-pointer transition-all duration-300 relative shadow-sm ${
                 category.isSelected
-                  ? "shadow-lg transform scale-105"
-                  : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300 hover:shadow-lg"
+                  ? "shadow-md transform scale-105"
+                  : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300 hover:shadow-md"
               }`}
               style={category.isSelected ? { backgroundColor: '#22c55e' } : {}}
             >
               {(() => {
                 const IconComponent = iconMap[category.icon];
                 return IconComponent ? (
-                  <IconComponent className={`w-7 h-7 ${
+                  <IconComponent className={`w-5 h-5 ${
                     category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 ) : (
-                  <Apple className={`w-7 h-7 ${
+                  <Apple className={`w-5 h-5 ${
                     category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 );
               })()}
             </motion.div>
-            <span className={`text-xs font-medium text-center leading-tight ${
+            <span className={`text-[10px] font-medium text-center leading-tight ${
               category.isSelected ? "text-black font-semibold" : "text-gray-700"
             }`}>
               {category.name}
