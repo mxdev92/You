@@ -919,8 +919,17 @@ function ItemsManagement() {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = product.categoryId === selectedCategory;
+    console.log('Filtering product:', {
+      productName: product.name,
+      productCategoryId: product.categoryId,
+      selectedCategory,
+      matchesCategory,
+      matchesSearch
+    });
     return matchesSearch && matchesCategory;
   });
+  
+  console.log('Final filtered products:', filteredProducts.length, 'out of', products.length);
 
   const updateProductPrice = async (id: string, newPrice: string) => {
     const numericPrice = parseFloat(newPrice);
