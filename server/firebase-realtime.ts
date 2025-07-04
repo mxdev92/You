@@ -54,17 +54,24 @@ export class FirebaseRealtimeStorage {
 
   async getProducts() {
     try {
+      console.log('Firebase getProducts: Starting fetch...');
       const productsRef = ref(db, 'products');
       const snapshot = await get(productsRef);
       
+      console.log('Firebase getProducts: Snapshot exists?', snapshot.exists());
+      
       if (snapshot.exists()) {
         const data = snapshot.val();
-        return Object.keys(data).map(key => ({
+        console.log('Firebase getProducts: Raw data:', data);
+        const products = Object.keys(data).map(key => ({
           id: parseInt(key),
           ...data[key]
         }));
+        console.log('Firebase getProducts: Mapped products:', products);
+        return products;
       }
       
+      console.log('Firebase getProducts: No products exist, creating default...');
       // Initialize default product if none exist
       const defaultProduct = {
         id: 3,

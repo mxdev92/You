@@ -884,7 +884,9 @@ function ItemsManagement() {
     queryFn: async () => {
       const response = await fetch('/api/products', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch products');
-      return response.json();
+      const products = await response.json();
+      console.log('All products from backend:', products);
+      return products;
     },
     staleTime: 0, // Always fetch fresh data
     refetchInterval: 1000, // Refetch every 1 second for real-time updates
