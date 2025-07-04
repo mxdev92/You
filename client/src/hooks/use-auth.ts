@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { onAuthChange, loginWithEmail, registerWithEmail, logout } from '@/lib/firebase';
 import { migrateUserDataOnAuth, clearUserDataOnLogout } from '@/lib/firebase-user-data';
+import { 
+  reliableLogin, 
+  reliableRegister, 
+  reliableLogout, 
+  onAuthStateChange 
+} from '@/lib/auth-utils';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -9,8 +14,7 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (user) => {
-      console.log('Auth state changed:', user ? `${user.email} (${user.uid})` : 'No user');
+    const unsubscribe = onAuthStateChange(async (user) => {
       setUser(user);
       
       if (user) {
@@ -42,18 +46,9 @@ export function useAuth() {
       setError(null);
       setLoading(true);
       
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Login timed out after 10 seconds')), 10000);
-      });
-
-      const result = await Promise.race([
-        loginWithEmail(email, password),
-        timeoutPromise
-      ]) as any;
-      
+      const result = await reliableLogin(email, password);
       console.log('Login successful:', result.user.email);
-      // Don't set loading to false here - let onAuthChange handle it
+      // Don't set loading to false here - let onAuthStateChange handle it
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message);
@@ -66,18 +61,9 @@ export function useAuth() {
       setError(null);
       setLoading(true);
       
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Registration timed out after 10 seconds')), 10000);
-      });
-
-      const result = await Promise.race([
-        registerWithEmail(email, password),
-        timeoutPromise
-      ]) as any;
-      
+      const result = await reliableRegister(email, password);
       console.log('Registration successful:', result.user.email);
-      // Don't set loading to false here - let onAuthChange handle it
+      // Don't set loading to false here - let onAuthStateChange handle it
     } catch (err: any) {
       console.error('Registration error:', err);
       setError(err.message);
@@ -92,8 +78,8 @@ export function useAuth() {
       // Clear user state immediately
       setUser(null);
       
-      // Call the complete logout function (this will reload the page)
-      await logout();
+      // Call the reliable logout function (this will reload the page)
+      await reliableLogout();
       
     } catch (err: any) {
       setError(err.message);
