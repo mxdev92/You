@@ -140,19 +140,33 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   const updateCartMutation = useMutation({
     mutationFn: async ({ id, quantity }: { id: number; quantity: number }) => {
-      return apiRequest(`/api/cart/${id}`, 'PATCH', { quantity });
+      console.log('Mutation: updating cart item', { id, quantity });
+      const result = await apiRequest(`/api/cart/${id}`, 'PATCH', { quantity });
+      console.log('Mutation result:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Update mutation success:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    },
+    onError: (error) => {
+      console.error('Update mutation error:', error);
     },
   });
 
   const removeCartMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/cart/${id}`, 'DELETE');
+      console.log('Mutation: removing cart item', id);
+      const result = await apiRequest(`/api/cart/${id}`, 'DELETE');
+      console.log('Remove mutation result:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Remove mutation success:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/cart'] });
+    },
+    onError: (error) => {
+      console.error('Remove mutation error:', error);
     },
   });
 
@@ -191,10 +205,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   };
 
   const updateQuantity = (id: number, quantity: number) => {
+    console.log('updateQuantity called with:', { id, quantity });
     updateCartMutation.mutate({ id, quantity });
   };
 
   const removeFromCart = (id: number) => {
+    console.log('removeFromCart called with id:', id);
     removeCartMutation.mutate(id);
   };
 
@@ -700,7 +716,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Decrease button clicked for item:', item.id, 'current quantity:', item.quantity);
+                        updateQuantity(item.id, Math.max(1, item.quantity - 1));
+                      }}
                       disabled={updateCartMutation.isPending || item.quantity <= 1}
                       className="h-6 w-6 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
@@ -710,7 +731,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Increase button clicked for item:', item.id, 'current quantity:', item.quantity);
+                        updateQuantity(item.id, item.quantity + 1);
+                      }}
                       disabled={updateCartMutation.isPending}
                       className="h-6 w-6 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white rounded-full touch-action-manipulation"
                     >
@@ -723,8 +749,13 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeFromCart(item.id)}
-                  disabled={false}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Delete button clicked for item:', item.id);
+                    removeFromCart(item.id);
+                  }}
+                  disabled={removeCartMutation.isPending}
                   className="hover:bg-red-50 text-red-500 hover:text-red-600 disabled:text-red-300 disabled:cursor-not-allowed touch-action-manipulation h-7 w-7 flex-shrink-0"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
