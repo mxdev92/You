@@ -97,6 +97,15 @@ Yalla JEETEK (يلا جيتك) is a modern grocery shopping web application buil
 ## Recent Changes
 
 ```
+July 4, 2025:
+✓ Fixed critical address persistence issue after page refresh
+✓ Added auto-loading of saved addresses when user is authenticated
+✓ Integrated PostgreSQL addresses into cart checkout flow
+✓ Cart now displays saved delivery address in checkout screen
+✓ Order placement uses authentic customer data from saved addresses
+✓ Session management fully operational with express-session middleware
+✓ Complete PostgreSQL authentication system working end-to-end
+
 July 3, 2025:
 ✓ Built comprehensive Store API for Expo React Native integration
 ✓ Added real-time WebSocket support for instant order notifications

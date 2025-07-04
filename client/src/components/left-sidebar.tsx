@@ -338,6 +338,14 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
+
+  // Auto-load addresses when user is authenticated
+  useEffect(() => {
+    if (user && user.id) {
+      console.log('Auto-loading addresses for user:', user.id);
+      loadAddresses(user.id);
+    }
+  }, [user, loadAddresses]);
   
   const handleMenuItemClick = (targetView: string, action?: () => void) => {
     if (!user) {
