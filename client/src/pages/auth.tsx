@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { usePostgresAuth } from '@/hooks/use-postgres-auth';
 import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
@@ -15,6 +15,80 @@ interface SignupData {
   governorate: string;
   district: string;
   landmark: string;
+}
+
+interface CustomDropdownProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+}
+
+function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full h-10 px-3 border border-gray-300 focus:border-gray-400 focus:ring-0 rounded-2xl text-right text-sm shadow-sm hover:shadow-md transition-all duration-300 bg-white flex items-center justify-between"
+        style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+      >
+        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+          {value || placeholder}
+        </span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className="w-4 h-4 text-gray-500" />
+        </motion.div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+          >
+            {options.map((option, index) => (
+              <motion.button
+                key={option}
+                type="button"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.02 }}
+                onClick={() => {
+                  onChange(option);
+                  setIsOpen(false);
+                }}
+                className="w-full px-4 py-2 text-sm text-right hover:bg-green-50 hover:text-green-600 transition-colors text-gray-700 first:rounded-t-xl last:rounded-b-xl"
+                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+              >
+                {option}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 const AuthPage: React.FC = () => {
@@ -435,25 +509,12 @@ const AuthPage: React.FC = () => {
                           <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                             تسجيل العنوان - المحافظة
                           </h3>
-                          <select
+                          <CustomDropdown
                             value={signupData.governorate}
-                            onChange={(e) => setSignupData(prev => ({ ...prev, governorate: e.target.value }))}
-                            className="w-full h-10 px-3 border border-gray-300 focus:border-gray-400 focus:ring-0 rounded-2xl text-right text-sm shadow-sm hover:shadow-md transition-all duration-300 bg-white appearance-none cursor-pointer"
-                            style={{ 
-                              fontFamily: 'Cairo, system-ui, sans-serif',
-                              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e")`,
-                              backgroundRepeat: 'no-repeat',
-                              backgroundPosition: 'left 8px center',
-                              backgroundSize: '16px',
-                              paddingLeft: '32px'
-                            }}
-                            dir="rtl"
-                          >
-                            <option value="" style={{ padding: '8px', fontSize: '14px' }}>اختر المحافظة</option>
-                            {iraqiGovernorates.map((gov) => (
-                              <option key={gov} value={gov} style={{ padding: '8px', fontSize: '14px' }}>{gov}</option>
-                            ))}
-                          </select>
+                            onChange={(value) => setSignupData(prev => ({ ...prev, governorate: value }))}
+                            options={iraqiGovernorates}
+                            placeholder="اختر المحافظة"
+                          />
                         </div>
                       )}
 
