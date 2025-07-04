@@ -249,6 +249,37 @@ input {
   border-radius: 0;
 }
 
+/* Custom Select Dropdown Styles */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Custom option styles for better mobile experience */
+select option {
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: 'Cairo', system-ui, sans-serif;
+  background-color: white;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  margin: 2px 0;
+}
+
+select option:hover,
+select option:focus {
+  background-color: #f3f4f6;
+  color: #059669;
+}
+
+select option:checked {
+  background-color: #059669;
+  color: white;
+  font-weight: 500;
+}
+
 /* Prevent zoom on iOS */
 input[type="text"],
 input[type="email"],
