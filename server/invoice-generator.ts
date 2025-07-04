@@ -13,10 +13,32 @@ export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
       throw new Error('No valid orders found');
     }
 
+    // Set environment variables to use system browser
+    process.env.PLAYWRIGHT_BROWSERS_PATH = '/usr';
+    process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1';
+
     // Launch Playwright browser
-    const browser = await chromium.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    let browser;
+    try {
+      // Try with system chromium first
+      browser = await chromium.launch({
+        executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium-browser',
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--headless'
+        ]
+      });
+    } catch (error) {
+      console.log('System chromium failed, trying Playwright default...');
+      // Fallback to default Playwright browser (if installed)
+      browser = await chromium.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+    }
     
     const page = await browser.newPage();
 

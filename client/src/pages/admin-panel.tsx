@@ -227,19 +227,7 @@ function OrderCard({ order, onStatusChange }: any) {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    orderData: {
-                      id: order.id,
-                      customerName: order.customerName,
-                      customerEmail: order.customerEmail,
-                      customerPhone: order.customerPhone,
-                      items: order.items,
-                      totalAmount: order.totalAmount,
-                      orderDate: order.orderDate,
-                      status: order.status,
-                      address: order.address,
-                      deliveryTime: order.deliveryTime,
-                      notes: order.notes
-                    }
+                    orderIds: [order.id]
                   })
                 });
 
@@ -1392,7 +1380,7 @@ export default function AdminPanel() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orderData: selectedOrder
+          orderIds: [selectedOrder.id]
         })
       });
 
