@@ -551,9 +551,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               min-height: 297mm;
               margin: 0 auto;
               padding: 20mm;
-              background: white;
+              background: #f8f9fa;
               page-break-after: always;
               position: relative;
+              direction: rtl;
+              font-family: 'Cairo', Arial, sans-serif;
             }
             
             .invoice:last-child {
@@ -573,11 +575,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               flex: 1;
               direction: rtl;
               border: 2px solid #000;
-              padding: 20px !important;
+              padding: 20px;
               margin-right: 20px;
-              border-radius: 8px;
               background: white;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
             
             .customer-title {
@@ -586,25 +586,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               margin-bottom: 15px;
               color: #000;
               text-align: center;
-              border-bottom: 1px solid #ddd;
+              border-bottom: 2px solid #000;
               padding-bottom: 10px;
             }
             
             .customer-info {
               font-size: 14px;
-              line-height: 2.0;
+              line-height: 2.2;
               direction: rtl;
               text-align: right;
             }
             
             .customer-info div {
-              margin-bottom: 8px;
+              margin-bottom: 10px;
               font-weight: 600;
-              color: #333;
-              background: transparent;
+              color: #000;
+              background: white;
               border: none;
-              padding: 5px 0;
-              border-bottom: 1px dotted #ccc;
+              padding: 8px 0;
             }
             
             .customer-info div:last-child {
@@ -614,30 +613,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .app-section {
               text-align: left;
               flex: 1;
-              padding-right: 20px;
+              padding-left: 20px;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
             }
             
             .app-name {
-              font-size: 28px;
+              font-size: 24px;
               font-weight: 800;
               color: #000;
-              margin-bottom: 15px;
+              margin-bottom: 20px;
               text-align: left;
               direction: ltr;
               letter-spacing: 1px;
             }
             
             .qr-code {
-              width: 70px;
-              height: 70px;
+              width: 80px;
+              height: 80px;
               border: 2px solid #000;
-              display: inline-flex;
+              display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 8px;
+              font-size: 10px;
               font-weight: bold;
               margin-bottom: 15px;
               text-align: center;
+              background: white;
             }
             
             .order-details {
@@ -718,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               margin-bottom: 20px;
               padding: 15px;
               border: 1px solid #000;
-              background: #fffbf0;
+              background: white;
             }
             
             .notes-title {
@@ -749,12 +752,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .items-table td {
               padding: 10px 8px;
               text-align: center;
-              border: 1px solid #d1d5db;
-              background: #fefefe;
+              border: 1px solid #000;
+              background: white;
+              color: #000;
+              font-weight: 500;
             }
             
             .items-table tr:nth-child(even) td {
-              background: #f9fafb;
+              background: white;
             }
             
             .total-section {
