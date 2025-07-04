@@ -190,10 +190,6 @@ const AuthPage: React.FC = () => {
                 />
               </div>
               
-              <h2 className="text-xl font-bold text-gray-800 mb-6 text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                تسجيل الدخول
-              </h2>
-              
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <Input
