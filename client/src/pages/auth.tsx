@@ -188,8 +188,8 @@ const AuthPage: React.FC = () => {
                   alt="PAKETY Logo" 
                   className="w-24 h-24 object-contain mb-1"
                 />
-                <h1 className="text-lg font-bold text-gray-800 text-center" style={{ fontFamily: 'Impact, Arial Black, sans-serif', letterSpacing: '1px' }}>
-                  Pakety Fast Delivery
+                <h1 className="text-lg font-black text-gray-800 text-center" style={{ fontFamily: 'Montserrat, system-ui, sans-serif', letterSpacing: '1.5px', fontWeight: '900' }}>
+                  PAKETY FAST DELIVERY
                 </h1>
               </div>
               
