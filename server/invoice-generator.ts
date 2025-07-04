@@ -166,6 +166,9 @@ function generateInvoiceHTML(orders: any[]): string {
           width: 120px;
           text-align: left;
           font-size: 9px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
         }
         
         .qr-box {
@@ -177,7 +180,16 @@ function generateInvoiceHTML(orders: any[]): string {
           align-items: center;
           justify-content: center;
           font-size: 8px;
-          margin-bottom: 5px;
+          margin-bottom: 8px;
+        }
+        
+        .order-details {
+          font-size: 9px;
+          line-height: 1.4;
+        }
+        
+        .order-details div {
+          margin-bottom: 4px;
         }
         
         .order-table {
@@ -307,8 +319,10 @@ function generateInvoiceHTML(orders: any[]): string {
           
           <div class="qr-info">
             <div class="qr-box">QR</div>
-            <div><strong>رقم الطلب:</strong> ${order.id || 'N/A'}</div>
-            <div><strong>التاريخ:</strong> ${new Date().toLocaleDateString('ar-EG')}</div>
+            <div class="order-details">
+              <div><strong>Order ID:</strong> ${order.id || 'N/A'}</div>
+              <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-US')}</div>
+            </div>
           </div>
         </div>
         
