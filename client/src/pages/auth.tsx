@@ -119,6 +119,11 @@ const AuthPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [, setLocation] = useLocation();
+  const [notification, setNotification] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'error'
+  });
   
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -138,6 +143,13 @@ const AuthPage: React.FC = () => {
 
   const { user, login, register } = usePostgresAuth();
   const { addAddress } = usePostgresAddressStore();
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'error') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: 'error' });
+    }, 3000);
+  };
 
   // Redirect if already logged in
   useEffect(() => {
@@ -161,7 +173,7 @@ const AuthPage: React.FC = () => {
       await login(loginData.email, loginData.password);
       setLocation('/');
     } catch (error: any) {
-      alert('خطأ في تسجيل الدخول: ' + (error.message || 'خطأ غير معروف'));
+      showNotification('خطأ في تسجيل الدخول: ' + (error.message || 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
     }
@@ -171,23 +183,23 @@ const AuthPage: React.FC = () => {
     const step = signupStep;
     
     if (step === 1 && !signupData.name.trim()) {
-      alert('يرجى إدخال الاسم');
+      showNotification('يرجى إدخال الاسم');
       return;
     }
     if (step === 2 && !signupData.phone.trim()) {
-      alert('يرجى إدخال رقم الموبايل');
+      showNotification('يرجى إدخال رقم الموبايل');
       return;
     }
     if (step === 3 && signupData.password.length < 6) {
-      alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
       return;
     }
     if (step === 4 && !signupData.governorate) {
-      alert('يرجى اختيار المحافظة');
+      showNotification('يرجى اختيار المحافظة');
       return;
     }
     if (step === 5 && !signupData.district.trim()) {
-      alert('يرجى إدخال المنطقة');
+      showNotification('يرجى إدخال المنطقة');
       return;
     }
     
@@ -198,7 +210,7 @@ const AuthPage: React.FC = () => {
 
   const handleSignupComplete = async () => {
     if (!signupData.landmark.trim()) {
-      alert('يرجى إدخال أقرب نقطة دالة');
+      showNotification('يرجى إدخال أقرب نقطة دالة');
       return;
     }
 
@@ -231,7 +243,7 @@ const AuthPage: React.FC = () => {
       setLocation('/');
     } catch (error: any) {
       console.error('Signup error:', error);
-      alert('خطأ في إنشاء الحساب: ' + (error.message || 'خطأ غير معروف'));
+      showNotification('خطأ في إنشاء الحساب: ' + (error.message || 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
     }
@@ -604,6 +616,52 @@ const AuthPage: React.FC = () => {
             )}
         </motion.div>
       </motion.div>
+
+      {/* Custom Notification Modal */}
+      {notification.show && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
+          onClick={() => setNotification({ show: false, message: '', type: 'error' })}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className={`bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 ${
+              notification.type === 'error' ? 'border-l-4 border-red-500' : 'border-l-4 border-green-500'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  notification.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                }`}>
+                  {notification.type === 'error' ? '⚠️' : '✅'}
+                </div>
+                <p 
+                  className="text-gray-800 dark:text-gray-200 text-sm font-medium"
+                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                >
+                  {notification.message}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setNotification({ show: false, message: '', type: 'error' })}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl text-sm font-medium transition-colors"
+                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+              >
+                حسناً
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };

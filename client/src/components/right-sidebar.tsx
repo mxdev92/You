@@ -198,6 +198,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const [currentView, setCurrentView] = useState<'cart' | 'checkout' | 'final'>('cart');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [notification, setNotification] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'error'
+  });
   const [addressData, setAddressData] = useState({
     governorate: '',
     district: '',
@@ -210,6 +215,13 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const [deliveryTime, setDeliveryTime] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const deliveryNotesRef = useRef<HTMLTextAreaElement>(null);
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'error') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: 'error' });
+    }, 3000);
+  };
 
   // Prevent background scrolling when sidebar is open
   useEffect(() => {
@@ -245,7 +257,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     console.log('primaryAddress:', primaryAddress);
     
     if (!hasAddress || !primaryAddress) {
-      alert('Please add a delivery address first.');
+      showNotification('يرجى إضافة عنوان للتوصيل أولاً');
       setIsPlacingOrder(false);
       return;
     }
@@ -256,7 +268,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     }
     
     if (!deliveryTime) {
-      alert('Please select a delivery time.');
+      showNotification('يرجى اختيار وقت التوصيل');
       setIsPlacingOrder(false);
       return;
     }
@@ -315,13 +327,13 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       queryClient.invalidateQueries({ queryKey: ['user-orders'] });
       console.log('Order history cache invalidated');
       
-      alert('تم تقديم الطلب بنجاح! يمكنك مراجعة الطلب في لوحة الإدارة.');
+      showNotification('تم تقديم الطلب بنجاح! يمكنك مراجعة الطلب في لوحة الإدارة.', 'success');
       setCurrentView('cart');
       onClose();
     } catch (error: any) {
       console.error('Error placing order:', error);
       console.error('Error details:', error.message);
-      alert(`فشل في تقديم الطلب: ${error.message || 'خطأ غير معروف'}. يرجى المحاولة مرة أخرى.`);
+      showNotification(`فشل في تقديم الطلب: ${error.message || 'خطأ غير معروف'}. يرجى المحاولة مرة أخرى.`);
     } finally {
       setIsPlacingOrder(false);
     }
@@ -835,6 +847,52 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           </div>
         )}
       </AnimatePresence>
+
+      {/* Custom Notification Modal */}
+      {notification.show && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
+          onClick={() => setNotification({ show: false, message: '', type: 'error' })}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className={`bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 ${
+              notification.type === 'error' ? 'border-l-4 border-red-500' : 'border-l-4 border-green-500'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  notification.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                }`}>
+                  {notification.type === 'error' ? '⚠️' : '✅'}
+                </div>
+                <p 
+                  className="text-gray-800 dark:text-gray-200 text-sm font-medium"
+                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                >
+                  {notification.message}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setNotification({ show: false, message: '', type: 'error' })}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-xl text-sm font-medium transition-colors"
+                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+              >
+                حسناً
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </>
   );
 }
