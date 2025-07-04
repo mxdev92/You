@@ -800,8 +800,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/orders", async (req, res) => {
     try {
-      console.log('Order creation request body:', JSON.stringify(req.body, null, 2));
-      const validatedOrder = insertOrderSchema.parse(req.body);
+      console.log('=== ORDER CREATION DEBUG ===');
+      console.log('Raw request body:', JSON.stringify(req.body, null, 2));
+      
+      // Transform the data to match schema expectations
+      const transformedOrder = {
+        customerName: String(req.body.customerName || ''),
+        customerEmail: String(req.body.customerEmail || ''),
+        customerPhone: String(req.body.customerPhone || ''),
+        address: req.body.address, // Keep as object for jsonb
+        items: req.body.items, // Keep as array for jsonb
+        totalAmount: Number(req.body.totalAmount) || 0,
+        status: String(req.body.status || 'pending'),
+        deliveryTime: req.body.deliveryTime ? String(req.body.deliveryTime) : null,
+        notes: req.body.notes ? String(req.body.notes) : null
+      };
+      
+      console.log('Transformed order data:', JSON.stringify(transformedOrder, null, 2));
+      
+      const validatedOrder = insertOrderSchema.parse(transformedOrder);
       console.log('Validated order data:', JSON.stringify(validatedOrder, null, 2));
       const order = await storage.createOrder(validatedOrder);
       
@@ -828,7 +845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(201).json(order);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating order:', error);
       if (error instanceof z.ZodError) {
         console.error('Validation errors:', error.errors);
@@ -838,7 +855,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           details: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
         });
       } else {
-        res.status(500).json({ message: "Internal server error", error: error.message });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('Non-validation error:', errorMessage);
+        res.status(500).json({ message: "Internal server error", error: errorMessage });
       }
     }
   });
