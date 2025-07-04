@@ -460,6 +460,9 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Thermal Invoices</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
       <style>
         * {
           margin: 0;
@@ -468,10 +471,10 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
         }
         
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Cairo', Arial, sans-serif;
           background: white;
           color: #000;
-          line-height: 1.2;
+          line-height: 1.3;
           direction: rtl;
           font-size: 8px;
         }
@@ -563,15 +566,7 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
           border-top: 1px solid #000;
         }
         
-        .thermal-qr {
-          text-align: center;
-          margin: 2mm 0;
-        }
-        
-        .thermal-qr img {
-          width: 20mm;
-          height: 20mm;
-        }
+
         
         .thermal-notes {
           margin-top: 2mm;
@@ -624,11 +619,12 @@ async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
     <tr>
       <td style="text-align: left;">${(parseFloat(item.price) * item.quantity).toFixed(0)} د.ع</td>
       <td>${item.quantity}</td>
-      <td>${item.name}</td>
+      <td>${item.price} د.ع</td>
+      <td>${item.productName}</td>
     </tr>
   `).join('');
 
-  const qrCodeBase64 = await generateQRCode(order.id);
+  // QR code removed as requested
   
   return `
     <div class="thermal-invoice">
@@ -652,9 +648,10 @@ async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
         <table class="thermal-table">
           <thead>
             <tr>
-              <th>المجموع</th>
+              <th>السعر الكلي</th>
               <th>الكمية</th>
-              <th>الصنف</th>
+              <th>السعر لكل كيلو</th>
+              <th>المنتج</th>
             </tr>
           </thead>
           <tbody>
@@ -678,16 +675,16 @@ async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
         </div>
       </div>
       
-      <div class="thermal-qr">
-        <img src="data:image/png;base64,${qrCodeBase64}" alt="QR Code">
-        <div style="font-size: 6px; margin-top: 1mm;">رقم الطلب: ${order.id}</div>
-      </div>
-      
       <div class="thermal-notes">
-        <div style="font-weight: bold; margin-bottom: 1mm;">ملاحظات:</div>
-        <div style="height: 8mm; border: 1px solid #ccc;"></div>
-        <div style="font-weight: bold; margin: 1mm 0;">وقت التوصيل:</div>
-        <div style="height: 8mm; border: 1px solid #ccc;"></div>
+        <div style="font-weight: bold; margin-bottom: 2mm; text-align: center;">ملاحظات:</div>
+        <div style="min-height: 10mm; border: 1px solid #000; padding: 2mm; background: #f9f9f9;">
+          ${order.notes || 'لا توجد ملاحظات'}
+        </div>
+        
+        <div style="font-weight: bold; margin: 3mm 0 2mm 0; text-align: center;">وقت التوصيل:</div>
+        <div style="min-height: 8mm; border: 1px solid #000; padding: 2mm; background: #f9f9f9; text-align: center;">
+          ${order.deliveryTime || 'سيتم التحديد لاحقاً'}
+        </div>
       </div>
     </div>
   `;
