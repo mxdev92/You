@@ -411,7 +411,7 @@ export async function generateThermalInvoicePDF(orderIds: number[], orders: any[
   console.log('🚀 Generating Thermal Invoice PDF with Playwright...');
   
   const browser = await chromium.launch({
-    executablePath: '/usr/bin/chromium-browser',
+    executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
     args: ['--no-sandbox', '--disable-dev-shm-usage']
   });
 
@@ -590,8 +590,35 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
 
 // Generate single thermal invoice HTML
 async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
-  const items = JSON.parse(order.items);
-  const customerData = JSON.parse(order.customerData);
+  console.log('Processing order for thermal PDF:', JSON.stringify(order, null, 2));
+  
+  // Use the same data structure as the regular invoice generator
+  let items;
+  let customerData;
+  
+  // Parse items - check if it's a string first
+  if (typeof order.items === 'string') {
+    try {
+      items = JSON.parse(order.items);
+    } catch (e) {
+      console.error('Failed to parse order.items string:', e);
+      items = [];
+    }
+  } else if (Array.isArray(order.items)) {
+    items = order.items;
+  } else {
+    console.error('order.items is not a string or array:', typeof order.items, order.items);
+    items = [];
+  }
+  
+  // Use direct order properties for customer data (same as regular invoice)
+  customerData = {
+    fullName: order.customerName || 'غير محدد',
+    phone: order.customerPhone || 'غير محدد',
+    governorate: order.address?.governorate || '',
+    district: order.address?.district || '',
+    landmark: order.address?.neighborhood || ''
+  };
   
   const itemsHTML = items.map((item: any) => `
     <tr>

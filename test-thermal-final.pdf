@@ -1,0 +1,1 @@
+{"message":"Failed to generate thermal PDF","error":"browserType.launch: Failed to launch chromium because executable doesn't exist at /usr/bin/chromium-browser"}
