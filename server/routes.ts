@@ -21,11 +21,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/categories/:id/select", async (req, res) => {
     try {
+      console.log('Category selection request:', req.params.id);
       const id = parseInt(req.params.id);
-      const categories = await storage.selectCategory(id);
-      res.json(categories);
+      console.log('Parsed ID:', id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      console.log('Calling updateCategorySelection with ID:', id);
+      const category = await storage.updateCategorySelection(id, true);
+      console.log('Category updated successfully:', category);
+      res.json(category);
     } catch (error) {
-      res.status(500).json({ message: "Failed to select category" });
+      console.error('Category selection error:', error);
+      res.status(500).json({ message: "Failed to select category", error: error.message });
     }
   });
 
@@ -120,9 +130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
-      const cartItem = await storage.updateCartItem(id, quantity);
+      const cartItem = await storage.updateCartItemQuantity(id, quantity);
       res.json(cartItem);
     } catch (error) {
+      console.error('Cart update error:', error);
       res.status(500).json({ message: "Failed to update cart item" });
     }
   });

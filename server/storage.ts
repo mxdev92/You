@@ -313,6 +313,11 @@ export class DatabaseStorage implements IStorage {
       .set({ isSelected })
       .where(eq(categories.id, id))
       .returning();
+    
+    if (!updated) {
+      throw new Error(`Category with id ${id} not found`);
+    }
+    
     return updated;
   }
 
