@@ -233,10 +233,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
               text-align: right;
               font-size: 11px;
               line-height: 1.4;
+              border: 1px solid #e5e7eb;
+              padding: 12px;
+              border-radius: 8px;
+              background: #fafafa;
             }
             
-            .customer-info div {
-              margin-bottom: 3px;
+            .customer-info h3 {
+              font-size: 14px;
+              font-weight: 600;
+              color: #374151;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #e5e7eb;
+              padding-bottom: 4px;
+            }
+            
+            .info-line {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 4px;
+              padding: 2px 0;
+            }
+            
+            .info-label {
+              font-weight: 600;
+              color: #374151;
+              white-space: nowrap;
+            }
+            
+            .info-value {
+              color: #1f2937;
+              text-align: left;
+              direction: ltr;
             }
             
             .left-section {
@@ -349,10 +378,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           <div class="header-section">
             <div class="customer-info">
-              <div><strong>الاسم:</strong> ${orderData.customerName}</div>
-              <div><strong>الرقم:</strong> ${orderData.customerPhone}</div>
-              <div><strong>العنوان:</strong> ${orderData.address.governorate} ${orderData.address.district}</div>
-              <div><strong>التاريخ:</strong> ${new Date(orderData.orderDate).toLocaleDateString('ar-EG')}</div>
+              <h3>معلومات العميل</h3>
+              <div class="info-line">
+                <span class="info-label">الاسم:</span>
+                <span class="info-value">${orderData.customerName}</span>
+              </div>
+              <div class="info-line">
+                <span class="info-label">رقم الموبايل:</span>
+                <span class="info-value">${orderData.customerPhone}</span>
+              </div>
+              <div class="info-line">
+                <span class="info-label">العنوان:</span>
+                <span class="info-value">(${orderData.address.governorate} - ${orderData.address.district} - ${orderData.address.landmark || orderData.address.notes || 'غير محدد'})</span>
+              </div>
+              <div class="info-line">
+                <span class="info-label">تاريخ الطلب:</span>
+                <span class="info-value">${new Date(orderData.orderDate).toLocaleDateString('ar-EG')}</span>
+              </div>
             </div>
             
             <div class="left-section">
@@ -575,6 +617,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               justify-content: space-between;
             }
             
+            .info-item.full-width {
+              grid-column: 1 / -1;
+            }
+            
             .label {
               font-weight: 600;
               color: #6b7280;
@@ -699,24 +745,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   <span class="value">${order.customerName || 'غير محدد'}</span>
                 </div>
                 <div class="info-item">
-                  <span class="label">البريد الإلكتروني:</span>
-                  <span class="value">${order.customerEmail || 'غير محدد'}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">الهاتف:</span>
+                  <span class="label">رقم الموبايل:</span>
                   <span class="value">${order.customerPhone || 'غير محدد'}</span>
                 </div>
-                <div class="info-item">
-                  <span class="label">المحافظة:</span>
-                  <span class="value">${address.governorate || 'غير محدد'}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">المدينة:</span>
-                  <span class="value">${address.city || 'غير محدد'}</span>
-                </div>
-                <div class="info-item">
+                <div class="info-item full-width">
                   <span class="label">العنوان:</span>
-                  <span class="value">${address.street || 'غير محدد'}</span>
+                  <span class="value">(${address.governorate || 'غير محدد'} - ${address.district || 'غير محدد'} - ${address.landmark || address.notes || 'غير محدد'})</span>
                 </div>
               </div>
             </div>

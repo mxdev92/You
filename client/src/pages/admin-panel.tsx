@@ -1689,20 +1689,27 @@ export default function AdminPanel() {
               </div>
 
               {/* Customer Details */}
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">معلومات العميل</h3>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">الاسم:</span> {selectedOrder.customerName}</div>
-                  <div><span className="font-medium">الهاتف:</span> {selectedOrder.customerPhone}</div>
-                  <div className="text-xs">
-                    <span className="font-medium">العنوان:</span><br />
-                    {(selectedOrder.address as any).governorate} - {(selectedOrder.address as any).district}<br />
-                    {(selectedOrder.address as any).neighborhood} - {(selectedOrder.address as any).street}<br />
-                    منزل رقم {(selectedOrder.address as any).houseNumber}
-                    {(selectedOrder.address as any).floorNumber && ` - الطابق ${(selectedOrder.address as any).floorNumber}`}
-                    {(selectedOrder.address as any).notes && <><br /><span className="text-gray-600">{(selectedOrder.address as any).notes}</span></>}
+              <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 border-b border-gray-300 pb-2">معلومات العميل</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-700">الاسم:</span>
+                    <span className="text-gray-900">{selectedOrder.customerName}</span>
                   </div>
-                  <div><span className="font-medium">تاريخ الطلب:</span> {new Date(selectedOrder.orderDate).toLocaleDateString('en-US')}</div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-700">رقم الموبايل:</span>
+                    <span className="text-gray-900">{selectedOrder.customerPhone}</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="font-medium text-gray-700">العنوان:</span>
+                    <span className="text-gray-900 text-left max-w-xs" dir="ltr">
+                      ({(selectedOrder.address as any).governorate} - {(selectedOrder.address as any).district} - {(selectedOrder.address as any).landmark || (selectedOrder.address as any).notes || 'غير محدد'})
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-700">تاريخ الطلب:</span>
+                    <span className="text-gray-900">{new Date(selectedOrder.orderDate).toLocaleDateString('ar-EG')}</span>
+                  </div>
                 </div>
               </div>
 

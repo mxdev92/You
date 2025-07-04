@@ -111,6 +111,11 @@ July 4, 2025:
 ✓ Step 3: Governorate, district, and landmark (delivery address)
 ✓ Enhanced form validation with proper email format checking
 ✓ Improved user experience with smoother flow and reduced complexity
+✓ Fixed invoice customer information formatting with proper aligned lines
+✓ Updated "معلومات العميل" section to show الاسم، رقم الموبايل، العنوان format
+✓ Removed email from invoice display (email is for authentication only)
+✓ Added aligned customer information in both PDF and admin panel invoice displays
+✓ Enhanced address display format: (المحافظة - المنطقة - اقرب نقطة دالة)
 ✓ Fixed critical address persistence issue after page refresh
 ✓ Added auto-loading of saved addresses when user is authenticated
 ✓ Integrated PostgreSQL addresses into cart checkout flow
