@@ -141,294 +141,299 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col">
+      {/* Fixed Header */}
       <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4"
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
-        {/* App Logo */}
-        <div className="text-center mb-8">
-          <motion.h1 
-            className="text-4xl font-bold text-green-600 mb-2"
+        <div className="text-center">
+          <h1 
+            className="text-lg font-bold text-green-600"
             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
           >
             PAKETY
-          </motion.h1>
-          <motion.p 
-            className="text-gray-600"
+          </h1>
+          <p 
+            className="text-xs text-gray-500 mt-1"
             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
           >
             تسوق البقالة بسهولة
-          </motion.p>
+          </p>
         </div>
+      </motion.div>
 
-        {/* Main Card */}
+      {/* Content Area */}
+      <div className="flex-1 pt-20 pb-6 px-4 flex items-center justify-center">
         <motion.div
-          className="bg-white rounded-2xl shadow-xl overflow-hidden"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-sm"
         >
-          {isLogin ? (
-            /* Login Form */
-            <div className="p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                تسجيل الدخول
-              </h2>
-              
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Input
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                    value={loginData.email}
-                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full h-12 text-right"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    dir="rtl"
-                  />
-                </div>
-                
-                <div className="relative">
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="كلمة المرور"
-                    value={loginData.password}
-                    onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full h-12 text-right pr-10"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    dir="rtl"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
-                </Button>
-              </form>
-              
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => setIsLogin(false)}
-                  className="text-green-600 hover:text-green-700 font-medium"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  إنشاء حساب جديد
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* Signup Form */
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <button
-                  onClick={() => {
-                    if (signupStep === 1) {
-                      setIsLogin(true);
-                    } else {
-                      setSignupStep(signupStep - 1);
-                    }
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full"
-                >
-                  <ArrowRight className="h-5 w-5 text-gray-600" />
-                </button>
-                
-                <h2 className="text-xl font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  إنشاء حساب جديد
+
+          {/* Main Card */}
+          <motion.div
+            className="bg-white rounded-xl shadow-lg overflow-hidden"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            {isLogin ? (
+              /* Login Form */
+              <div className="p-6">
+                <h2 className="text-lg font-bold text-gray-800 mb-4 text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                  تسجيل الدخول
                 </h2>
                 
-                <div className="w-9" /> {/* Spacer */}
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mb-6">
-                <div className="flex justify-between text-xs text-gray-500 mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  <span>الخطوة {signupStep} من 6</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <motion.div
-                    className="bg-green-600 h-2 rounded-full"
-                    initial={{ width: '16.66%' }}
-                    animate={{ width: `${(signupStep / 6) * 100}%` }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-              </div>
-
-              {/* Step Content */}
-              <div className="min-h-[200px]">
-                <AnimatePresence mode="wait" custom={signupStep}>
-                  <motion.div
-                    key={signupStep}
-                    custom={signupStep}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.3 }}
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <div>
+                    <Input
+                      type="email"
+                      placeholder="البريد الإلكتروني"
+                      value={loginData.email}
+                      onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full h-10 text-right text-sm"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                      dir="rtl"
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="كلمة المرور"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
+                      className="w-full h-10 text-right pr-8 text-sm"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                      dir="rtl"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    >
+                      {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    </button>
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-medium text-sm"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                   >
-                    {signupStep === 1 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-800 text-center mb-6" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          ما هو اسمك؟
-                        </h3>
-                        <Input
-                          type="text"
-                          placeholder="الاسم الكامل"
-                          value={signupData.name}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
-                          className="w-full h-12 text-right"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          dir="rtl"
-                        />
-                      </div>
-                    )}
+                    {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+                  </Button>
+                </form>
+                
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => setIsLogin(false)}
+                    className="text-green-600 hover:text-green-700 font-medium text-sm"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  >
+                    إنشاء حساب جديد
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Signup Form */
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    onClick={() => {
+                      if (signupStep === 1) {
+                        setIsLogin(true);
+                      } else {
+                        setSignupStep(signupStep - 1);
+                      }
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded-full"
+                  >
+                    <ArrowRight className="h-4 w-4 text-gray-600" />
+                  </button>
+                  
+                  <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    إنشاء حساب جديد
+                  </h2>
+                  
+                  <div className="w-6" /> {/* Spacer */}
+                </div>
 
-                    {signupStep === 2 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-800 text-center mb-6" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          رقم الموبايل
-                        </h3>
-                        <Input
-                          type="tel"
-                          placeholder="07xxxxxxxxx"
-                          value={signupData.phone}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full h-12 text-center"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                        />
-                      </div>
-                    )}
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    <span>الخطوة {signupStep} من 6</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <motion.div
+                      className="bg-green-600 h-1.5 rounded-full"
+                      initial={{ width: '16.66%' }}
+                      animate={{ width: `${(signupStep / 6) * 100}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                </div>
 
-                    {signupStep === 3 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-800 text-center mb-6" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          كلمة المرور
-                        </h3>
-                        <div className="relative">
+                {/* Step Content */}
+                <div className="min-h-[120px]">
+                  <AnimatePresence mode="wait" custom={signupStep}>
+                    <motion.div
+                      key={signupStep}
+                      custom={signupStep}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{ duration: 0.3 }}
+                    >
+                      {signupStep === 1 && (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            ما هو اسمك؟
+                          </h3>
                           <Input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="كلمة المرور (6 أحرف على الأقل)"
-                            value={signupData.password}
-                            onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
-                            className="w-full h-12 text-right pr-10"
+                            type="text"
+                            placeholder="الاسم الكامل"
+                            value={signupData.name}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full h-10 text-right text-sm"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </button>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {signupStep === 4 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-800 text-center mb-6" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          تسجيل العنوان - المحافظة
-                        </h3>
-                        <select
-                          value={signupData.governorate}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, governorate: e.target.value }))}
-                          className="w-full h-12 px-3 border border-gray-300 rounded-md text-right"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          dir="rtl"
-                        >
-                          <option value="">اختر المحافظة</option>
-                          {iraqiGovernorates.map((gov) => (
-                            <option key={gov} value={gov}>{gov}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                      {signupStep === 2 && (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            رقم الموبايل
+                          </h3>
+                          <Input
+                            type="tel"
+                            placeholder="07xxxxxxxxx"
+                            value={signupData.phone}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, phone: e.target.value }))}
+                            className="w-full h-10 text-center text-sm"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                          />
+                        </div>
+                      )}
 
-                    {signupStep === 5 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-800 text-center mb-6" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          المنطقة
-                        </h3>
-                        <Input
-                          type="text"
-                          placeholder="اسم المنطقة أو الحي"
-                          value={signupData.district}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, district: e.target.value }))}
-                          className="w-full h-12 text-right"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          dir="rtl"
-                        />
-                      </div>
-                    )}
+                      {signupStep === 3 && (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            كلمة المرور
+                          </h3>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? 'text' : 'password'}
+                              placeholder="كلمة المرور (6 أحرف على الأقل)"
+                              value={signupData.password}
+                              onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
+                              className="w-full h-10 text-right pr-8 text-sm"
+                              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                              dir="rtl"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                            >
+                              {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
-                    {signupStep === 6 && (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium text-gray-800 text-center mb-6" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          أقرب نقطة دالة
-                        </h3>
-                        <Input
-                          type="text"
-                          placeholder="مثال: قرب مسجد الرحمن، بجانب صيدلية الشفاء"
-                          value={signupData.landmark}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, landmark: e.target.value }))}
-                          className="w-full h-12 text-right"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          dir="rtl"
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                      {signupStep === 4 && (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            تسجيل العنوان - المحافظة
+                          </h3>
+                          <select
+                            value={signupData.governorate}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, governorate: e.target.value }))}
+                            className="w-full h-10 px-2 border border-gray-300 rounded-md text-right text-sm"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            dir="rtl"
+                          >
+                            <option value="">اختر المحافظة</option>
+                            {iraqiGovernorates.map((gov) => (
+                              <option key={gov} value={gov}>{gov}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {signupStep === 5 && (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            المنطقة
+                          </h3>
+                          <Input
+                            type="text"
+                            placeholder="اسم المنطقة أو الحي"
+                            value={signupData.district}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, district: e.target.value }))}
+                            className="w-full h-10 text-right text-sm"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            dir="rtl"
+                          />
+                        </div>
+                      )}
+
+                      {signupStep === 6 && (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            أقرب نقطة دالة
+                          </h3>
+                          <Input
+                            type="text"
+                            placeholder="مثال: قرب مسجد الرحمن، بجانب صيدلية الشفاء"
+                            value={signupData.landmark}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, landmark: e.target.value }))}
+                            className="w-full h-10 text-right text-sm"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            dir="rtl"
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                {/* Action Button */}
+                <div className="mt-4">
+                  {signupStep < 6 ? (
+                    <Button
+                      onClick={handleSignupNext}
+                      className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-medium text-sm"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    >
+                      التالي
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleSignupComplete}
+                      disabled={isLoading}
+                      className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-medium text-sm"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    >
+                      {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
+                    </Button>
+                  )}
+                </div>
               </div>
-
-              {/* Action Button */}
-              <div className="mt-6">
-                {signupStep < 6 ? (
-                  <Button
-                    onClick={handleSignupNext}
-                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  >
-                    التالي
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSignupComplete}
-                    disabled={isLoading}
-                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  >
-                    {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
+            )}
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   );
 };
