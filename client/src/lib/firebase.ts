@@ -15,7 +15,31 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Force session-only persistence to prevent cached authentication
+// Aggressive authentication state clearing on app initialization
+const clearAllFirebaseStorage = () => {
+  try {
+    // Clear localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.includes('firebase') || key.includes('authUser') || key.includes('persist')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Clear sessionStorage
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.includes('firebase') || key.includes('authUser') || key.includes('persist')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+    
+    console.log('Firebase storage cleared on initialization');
+  } catch (error) {
+    console.error('Error clearing Firebase storage:', error);
+  }
+};
+
+// Clear storage and force session-only persistence
+clearAllFirebaseStorage();
 setPersistence(auth, browserSessionPersistence).catch(console.error);
 
 // Test database connection
@@ -36,9 +60,13 @@ export const testConnection = async () => {
 // Auth functions
 export const loginWithEmail = async (email: string, password: string) => {
   try {
+    console.log('Starting fresh login...');
+    
     // Clear any cached authentication data first
-    localStorage.removeItem('firebase:authUser');
-    sessionStorage.clear();
+    clearAllFirebaseStorage();
+    
+    // Wait a moment for cleanup
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     // Sign in with fresh state
     const result = await signInWithEmailAndPassword(auth, email, password);
@@ -53,23 +81,43 @@ export const loginWithEmail = async (email: string, password: string) => {
 
 export const registerWithEmail = async (email: string, password: string) => {
   try {
-    // First ensure we're signed out completely
-    await signOut(auth);
+    console.log('Starting fresh account creation...');
     
-    // Clear any existing authentication data
-    localStorage.removeItem('firebase:authUser');
-    sessionStorage.clear();
+    // Complete authentication state clearing
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.log('No existing user to sign out');
+    }
     
-    // Wait a moment for cleanup
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Aggressive cleanup of all Firebase data
+    clearAllFirebaseStorage();
     
-    // Create new account with fresh state
+    // Wait for cleanup to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Create new account with completely fresh state
+    console.log('Creating new account for:', email);
     const result = await createUserWithEmailAndPassword(auth, email, password);
     console.log('New account created successfully:', result.user.email);
     
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating account:', error);
+    
+    // If it's an "email already in use" error, clear everything and try to sign in instead
+    if (error.code === 'auth/email-already-in-use') {
+      console.log('Email already exists, attempting to sign in instead...');
+      try {
+        clearAllFirebaseStorage();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await signInWithEmailAndPassword(auth, email, password);
+      } catch (signInError) {
+        console.error('Sign in also failed:', signInError);
+        throw new Error('Account exists but password is incorrect');
+      }
+    }
+    
     throw error;
   }
 };
@@ -81,46 +129,103 @@ export const logout = async () => {
     // Sign out from Firebase first
     await signOut(auth);
     
-    // Clear ALL possible storage locations
+    // Aggressive storage clearing
+    clearAllFirebaseStorage();
+    
+    // Additional aggressive cleanup
     localStorage.clear();
     sessionStorage.clear();
     
-    // Clear Firebase-specific storage keys
-    const firebaseKeys = [
-      'firebase:authUser',
-      'firebase:host',
-      'firebase:previous_websocket_failure'
+    // Clear all possible Firebase-related keys
+    const allFirebasePatterns = [
+      'firebase',
+      'authUser',
+      'persist',
+      'Firebase',
+      'fbase_key',
+      'fbaseuser',
+      'app-check',
+      'remoteConfig'
     ];
     
-    firebaseKeys.forEach(key => {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
+    allFirebasePatterns.forEach(pattern => {
+      Object.keys(localStorage).forEach(key => {
+        if (key.toLowerCase().includes(pattern.toLowerCase())) {
+          localStorage.removeItem(key);
+        }
+      });
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.toLowerCase().includes(pattern.toLowerCase())) {
+          sessionStorage.removeItem(key);
+        }
+      });
     });
     
     // Clear IndexedDB databases used by Firebase
     try {
-      await new Promise((resolve, reject) => {
-        const deleteReq = indexedDB.deleteDatabase('firebaseLocalStorageDb');
-        deleteReq.onsuccess = () => resolve(true);
-        deleteReq.onerror = () => reject(deleteReq.error);
-      });
+      const databases = ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'firebase-installations-database'];
+      await Promise.all(databases.map(dbName => 
+        new Promise((resolve) => {
+          const deleteReq = indexedDB.deleteDatabase(dbName);
+          deleteReq.onsuccess = () => resolve(true);
+          deleteReq.onerror = () => resolve(false);
+          // Timeout after 2 seconds
+          setTimeout(() => resolve(false), 2000);
+        })
+      ));
     } catch (err) {
       console.log('IndexedDB cleanup completed');
     }
     
+    // Clear service worker caches if they exist
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(registration => registration.unregister()));
+      }
+    } catch (err) {
+      console.log('Service worker cleanup completed');
+    }
+    
     // Force page reload to completely reset authentication state
     console.log('Authentication cleared completely. Reloading page...');
-    window.location.reload();
+    setTimeout(() => {
+      window.location.href = window.location.origin;
+    }, 100);
     
   } catch (error) {
     console.error('Error during logout:', error);
     // Force reload even if there's an error
-    window.location.reload();
+    setTimeout(() => {
+      window.location.href = window.location.origin;
+    }, 100);
   }
 };
 
 export const onAuthChange = (callback: (user: User | null) => void) => {
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(auth, (user) => {
+    // Check for inconsistent authentication state
+    if (user && user.email) {
+      // Check if this user matches what should be in storage
+      const expectedUser = sessionStorage.getItem('expected_user');
+      if (expectedUser && expectedUser !== user.email) {
+        console.log('Authentication state mismatch detected, clearing...');
+        clearAllFirebaseStorage();
+        signOut(auth).then(() => {
+          setTimeout(() => window.location.reload(), 100);
+        });
+        return;
+      }
+      
+      // Store the current authenticated user
+      sessionStorage.setItem('expected_user', user.email);
+    } else {
+      // No user, clear expected user
+      sessionStorage.removeItem('expected_user');
+    }
+    
+    callback(user);
+  });
 };
 
 // Orders Management Functions
