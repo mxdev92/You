@@ -568,39 +568,65 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
 
   const updateProductMutation = useMutation({
     mutationFn: async (productData: any) => {
-      // Use the new image URL if available, otherwise keep existing image URL
-      const imageUrl = productData.imageUrl || product?.imageUrl || '/api/placeholder/60/60';
-      
-      const updatedProduct = {
-        name: productData.name,
-        price: parseFloat(productData.price),
-        // Convert category string to categoryId number
-        categoryId: getCategoryId(productData.category),
-        unit: productData.unit,
-        available: productData.available,
-        imageUrl
-      };
+      try {
+        // Use the new image URL if available, otherwise keep existing image URL  
+        const imageUrl = productData.imageUrl || product?.imageUrl || '/api/placeholder/60/60';
+        
+        const updatedProduct = {
+          name: productData.name,
+          price: parseFloat(productData.price),
+          // Convert category string to categoryId number
+          categoryId: getCategoryId(productData.category),
+          unit: productData.unit,
+          available: productData.available,
+          imageUrl
+        };
 
-      const response = await fetch(`/api/products/${product?.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedProduct)
-      });
+        console.log('Updating product with data:', updatedProduct);
 
-      if (!response.ok) {
-        throw new Error('Failed to update product');
+        const response = await fetch(`/api/products/${product?.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedProduct)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server error response:', errorText);
+          throw new Error(`Failed to update product: ${response.status} - ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('Product updated successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('Error in updateProductMutation:', error);
+        throw error;
       }
-
-      return await response.json();
     },
     onSuccess: (updatedProduct) => {
+      console.log('Mutation onSuccess called with:', updatedProduct);
       // Invalidate and refetch products to update the UI
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       onUpdateItem(updatedProduct);
       onClose();
+      
+      // Reset form state
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        category: 'Vegetables',
+        unit: 'kg',
+        available: true,
+        image: null,
+        imageUrl: ''
+      });
+      setImagePreview(null);
     },
     onError: (error) => {
       console.error('Failed to update product:', error);
+      // You could add a toast notification here
     }
   });
 
