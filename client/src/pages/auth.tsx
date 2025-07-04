@@ -260,7 +260,7 @@ const AuthPage: React.FC = () => {
                   }}
                   className="p-2 hover:bg-gray-100 rounded-full"
                   >
-                    <ArrowRight className="h-4 w-4 text-gray-600" />
+                    <ArrowLeft className="h-4 w-4 text-gray-600" />
                   </button>
                   
                   <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
