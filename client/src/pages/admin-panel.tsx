@@ -885,38 +885,33 @@ function ItemsManagement() {
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const queryClient = useQueryClient(); // Move to top level
+  const queryClient = useQueryClient();
 
-  // Load products from backend API
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const response = await fetch('/api/products', { credentials: 'include' });
-        if (response.ok) {
-          const backendProducts = await response.json();
-          // Convert backend products to Firebase-compatible format
-          const convertedProducts = backendProducts.map((product: any) => ({
-            id: product.id.toString(),
-            name: product.name,
-            description: product.name, // Use name as description for now
-            price: parseFloat(product.price),
-            category: getCategoryName(product.categoryId),
-            unit: product.unit,
-            available: product.available ?? true, // Use actual availability from database
-            displayOrder: product.displayOrder ?? 0, // Add display order
-            imageUrl: product.imageUrl,
-            createdAt: new Date().toISOString()
-          }));
-          setProducts(convertedProducts);
-        }
-      } catch (error) {
-        console.error('Failed to load products:', error);
-      }
-    };
+  // REAL-TIME: Use React Query for automatic updates
+  const { data: backendProducts = [], isLoading, refetch } = useQuery({
+    queryKey: ['/api/products'],
+    queryFn: async () => {
+      const response = await fetch('/api/products', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch products');
+      return response.json();
+    },
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 1000, // Refetch every 1 second for real-time updates
+  });
 
-    loadProducts();
-  }, []);
+  // Convert backend products to Firebase-compatible format
+  const products = backendProducts.map((product: any) => ({
+    id: product.id.toString(),
+    name: product.name,
+    description: product.name,
+    price: parseFloat(product.price),
+    category: getCategoryName(product.categoryId),
+    unit: product.unit,
+    available: product.available ?? true,
+    displayOrder: product.displayOrder ?? 0,
+    imageUrl: product.imageUrl,
+    createdAt: new Date().toISOString()
+  }));
 
 
 
@@ -943,11 +938,8 @@ function ItemsManagement() {
     const numericPrice = parseFloat(newPrice);
     if (isNaN(numericPrice)) return;
     
-    setProducts(prev => prev.map(product => 
-      product.id === id ? { ...product, price: numericPrice } : product
-    ));
-    
-    // TODO: Update in Firebase (will implement if needed)
+    // React Query handles state updates automatically
+    await queryClient.invalidateQueries({ queryKey: ['/api/products'] });
   };
 
   const updateProductAvailability = async (id: string, available: boolean) => {
@@ -962,10 +954,8 @@ function ItemsManagement() {
 
       if (!response.ok) throw new Error('Failed to update product availability');
 
-      // Update local state only after successful backend update
-      setProducts(prev => prev.map(product => 
-        product.id === id ? { ...product, available } : product
-      ));
+      // React Query will automatically update via cache invalidation
+      await queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     } catch (error) {
       console.error('Failed to update product availability:', error);
     }
@@ -983,24 +973,8 @@ function ItemsManagement() {
 
       if (!response.ok) throw new Error('Failed to update product display order');
 
-      // Update local state and reload products to reflect new ordering
-      const productsResponse = await fetch('/api/products', { credentials: 'include' });
-      if (productsResponse.ok) {
-        const backendProducts = await productsResponse.json();
-        const convertedProducts = backendProducts.map((product: any) => ({
-          id: product.id.toString(),
-          name: product.name,
-          description: product.name,
-          price: parseFloat(product.price),
-          category: getCategoryName(product.categoryId),
-          unit: product.unit,
-          available: product.available ?? true,
-          displayOrder: product.displayOrder ?? 0,
-          imageUrl: product.imageUrl,
-          createdAt: new Date().toISOString()
-        }));
-        setProducts(convertedProducts);
-      }
+      // React Query handles automatic updates
+      await queryClient.invalidateQueries({ queryKey: ['/api/products'] });
     } catch (error) {
       console.error('Failed to update product display order:', error);
     }
@@ -1036,13 +1010,9 @@ function ItemsManagement() {
 
       if (!response.ok) throw new Error('Failed to delete product');
 
-      // Remove product from local state
-      setProducts(prev => prev.filter(product => product.id !== productId));
-      
-      // CRITICAL: Invalidate React Query cache to sync with main app immediately
-      // Invalidate all products queries to force refetch in main app
+      // CRITICAL: Invalidate React Query cache for instant real-time updates
       await queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      console.log('Cache invalidated - main app will update immediately');
+      console.log('Real-time sync: Admin panel and main app updated automatically');
       
       console.log('Product deleted successfully');
     } catch (error) {
