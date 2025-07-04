@@ -43,24 +43,18 @@ export function useAuth() {
   const signOut = async () => {
     try {
       setError(null);
-      setLoading(true);
       
       // Clear user state immediately
       setUser(null);
       
-      // Clear any local storage data
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Logout from Firebase
+      // Call the complete logout function (this will reload the page)
       await logout();
       
-      console.log('Authentication state cleared successfully');
     } catch (err: any) {
       setError(err.message);
       console.error('Error during sign out:', err);
-    } finally {
-      setLoading(false);
+      // Force reload even if there's an error
+      window.location.reload();
     }
   };
 

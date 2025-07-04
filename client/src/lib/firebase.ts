@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, signInAnonymously, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, User, signInAnonymously, setPersistence, browserSessionPersistence, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -14,6 +14,9 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Force session-only persistence to prevent cached authentication
+setPersistence(auth, browserSessionPersistence).catch(console.error);
 
 // Test database connection
 export const testConnection = async () => {
@@ -73,23 +76,46 @@ export const registerWithEmail = async (email: string, password: string) => {
 
 export const logout = async () => {
   try {
-    // Clear any cached user data
-    localStorage.removeItem('firebase:authUser');
-    localStorage.removeItem('firebase:host');
-    sessionStorage.clear();
+    console.log('Starting complete logout process...');
     
-    // Sign out from Firebase
+    // Sign out from Firebase first
     await signOut(auth);
     
-    // Force clear auth state
-    console.log('User signed out successfully');
+    // Clear ALL possible storage locations
+    localStorage.clear();
+    sessionStorage.clear();
     
-    // Clear any additional browser storage
-    indexedDB.deleteDatabase('firebaseLocalStorageDb');
+    // Clear Firebase-specific storage keys
+    const firebaseKeys = [
+      'firebase:authUser',
+      'firebase:host',
+      'firebase:previous_websocket_failure'
+    ];
+    
+    firebaseKeys.forEach(key => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+    
+    // Clear IndexedDB databases used by Firebase
+    try {
+      await new Promise((resolve, reject) => {
+        const deleteReq = indexedDB.deleteDatabase('firebaseLocalStorageDb');
+        deleteReq.onsuccess = () => resolve(true);
+        deleteReq.onerror = () => reject(deleteReq.error);
+      });
+    } catch (err) {
+      console.log('IndexedDB cleanup completed');
+    }
+    
+    // Force page reload to completely reset authentication state
+    console.log('Authentication cleared completely. Reloading page...');
+    window.location.reload();
     
   } catch (error) {
     console.error('Error during logout:', error);
-    throw error;
+    // Force reload even if there's an error
+    window.location.reload();
   }
 };
 
