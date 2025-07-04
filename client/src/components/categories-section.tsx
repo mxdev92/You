@@ -67,12 +67,12 @@ export default function CategoriesSection() {
 
   if (isLoading) {
     return (
-      <section className="px-4 py-2">
-        <div className="flex space-x-3 overflow-x-auto scrollbar-hide pb-1 touch-action-pan-x">
+      <section className="px-4 py-0.5">
+        <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex-shrink-0 flex flex-col items-center min-w-16">
-              <div className="w-14 h-14 bg-gray-200 rounded-2xl animate-pulse mb-2 shadow-sm" />
-              <div className="h-3 w-12 bg-gray-200 rounded animate-pulse" />
+            <div key={index} className="flex-shrink-0 flex flex-col items-center min-w-14">
+              <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse mb-0.5" />
+              <div className="h-3 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
         </div>
@@ -81,52 +81,41 @@ export default function CategoriesSection() {
   }
 
   return (
-    <section className="px-4 py-2">
-      <div className="flex space-x-3 overflow-x-auto scrollbar-hide pb-1 touch-action-pan-x">
+    <section className="px-4 py-0.5">
+      <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
         {categories?.map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex-shrink-0 flex flex-col items-center min-w-16"
+            className="flex-shrink-0 flex flex-col items-center min-w-14"
           >
             <motion.div
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.92 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-2 cursor-pointer transition-all duration-300 relative touch-action-manipulation min-h-14 min-w-14 shadow-sm border ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
                 category.isSelected
-                  ? "shadow-lg border-yellow-400 ring-2 ring-yellow-300 ring-opacity-50"
-                  : "bg-white hover:bg-gray-50 active:bg-gray-100 border-gray-200 hover:shadow-md"
+                  ? "shadow-lg"
+                  : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
               }`}
               style={category.isSelected ? { backgroundColor: '#FFC800' } : {}}
             >
               {(() => {
                 const IconComponent = iconMap[category.icon];
                 return IconComponent ? (
-                  <IconComponent className={`w-7 h-7 ${
+                  <IconComponent className={`w-3.5 h-3.5 ${
                     category.isSelected ? "text-black" : "text-gray-600"
                   }`} />
                 ) : (
-                  <Apple className={`w-7 h-7 ${
+                  <Apple className={`w-3.5 h-3.5 ${
                     category.isSelected ? "text-black" : "text-gray-600"
                   }`} />
                 );
               })()}
-              
-              {/* Professional highlight dot for selected state */}
-              {category.isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm flex items-center justify-center"
-                >
-                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                </motion.div>
-              )}
             </motion.div>
-            <span className="text-xs font-medium text-gray-800 text-center w-full leading-tight">
+            <span className="text-[10px] font-medium text-gray-700 text-center w-full">
               {t(getCategoryTranslationKey(category.name))}
             </span>
           </motion.div>
