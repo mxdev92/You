@@ -9,6 +9,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import type { CartItem, Product } from "@shared/schema";
 
 interface RightSidebarProps {
@@ -135,6 +137,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   
   // Use CartFlow store for cart data
   const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem } = useCartFlow();
+  
+  // PostgreSQL authentication and address integration
+  const { user: postgresUser } = usePostgresAuth();
+  const { addresses } = usePostgresAddressStore();
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {
@@ -291,9 +297,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  // Use first saved address automatically (addresses removed for database cart system)
-  const primaryAddress = null;
-  const hasAddress = false;
+  // Use first saved address automatically from PostgreSQL
+  const primaryAddress = addresses.length > 0 ? addresses[0] : null;
+  const hasAddress = addresses.length > 0 && postgresUser !== null;
 
   const handlePlaceOrder = async () => {
     console.log('Starting order placement...');
@@ -323,17 +329,14 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       console.log('Starting order submission...');
       
       const orderData = {
-        customerName: addressData.governorate + ' Customer',
-        customerEmail: user?.email || 'guest@example.com',
-        customerPhone: '07501234567',
+        customerName: postgresUser?.email?.split('@')[0] || 'Customer',
+        customerEmail: postgresUser?.email || 'guest@example.com',
+        customerPhone: primaryAddress.notes?.match(/\d{10,}/)?.[0] || '07501234567',
         address: {
-          governorate: addressData.governorate,
-          district: addressData.district,
-          neighborhood: addressData.neighborhood,
-          street: addressData.street,
-          houseNumber: addressData.houseNumber,
-          floorNumber: addressData.floorNumber,
-          notes: ''
+          governorate: primaryAddress.governorate,
+          district: primaryAddress.district,
+          neighborhood: primaryAddress.neighborhood,
+          notes: primaryAddress.notes || ''
         },
         items: Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
           productId: item.productId,
@@ -567,6 +570,27 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           ))}
         </div>
       </div>
+
+      {/* Address Section */}
+      {hasAddress && primaryAddress && (
+        <div className="px-6 py-4 border-t border-gray-100">
+          <div className="bg-white rounded-lg p-4 border border-green-200">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                عنوان التوصيل:
+              </h3>
+              <MapPin className="h-4 w-4 text-green-600" />
+            </div>
+            <div className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              <p className="font-medium">{primaryAddress.governorate} - {primaryAddress.district}</p>
+              <p>{primaryAddress.neighborhood}</p>
+              {primaryAddress.notes && (
+                <p className="text-xs text-gray-500 mt-1">{primaryAddress.notes}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Price Breakdown */}
       <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
