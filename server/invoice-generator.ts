@@ -587,59 +587,50 @@ async function generateThermalInvoiceHTML(orders: any[]): Promise<string> {
 async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
   console.log('Processing order for thermal PDF:', JSON.stringify(order, null, 2));
   
-  // Use the same data structure as the regular invoice generator
+  // Parse items correctly
   let items;
-  let customerData;
-  
-  // Parse items - check if it's a string first
   if (typeof order.items === 'string') {
     try {
       items = JSON.parse(order.items);
     } catch (e) {
-      console.error('Failed to parse order.items string:', e);
+      console.error('Failed to parse order.items:', e);
       items = [];
     }
   } else if (Array.isArray(order.items)) {
     items = order.items;
   } else {
-    console.error('order.items is not a string or array:', typeof order.items, order.items);
     items = [];
   }
-  
-  // Use direct order properties for customer data (same as regular invoice)
-  customerData = {
-    fullName: order.customerName || 'غير محدد',
-    phone: order.customerPhone || 'غير محدد',
-    governorate: order.address?.governorate || '',
-    district: order.address?.district || '',
-    landmark: order.address?.neighborhood || ''
-  };
-  
+
+  // Generate table rows with correct column order: المنتج، السعر لكل كيلو، الكمية، السعر الكلي
   const itemsHTML = items.map((item: any) => `
     <tr>
-      <td style="text-align: left;">${(parseFloat(item.price) * item.quantity).toFixed(0)} د.ع</td>
-      <td>${item.quantity}</td>
-      <td>${item.price} د.ع</td>
-      <td>${item.productName}</td>
+      <td style="text-align: right;">${item.productName || 'منتج غير محدد'}</td>
+      <td style="text-align: center;">${item.price} د.ع</td>
+      <td style="text-align: center;">${item.quantity}</td>
+      <td style="text-align: left;">${(parseFloat(item.price || 0) * (item.quantity || 0)).toFixed(0)} د.ع</td>
     </tr>
   `).join('');
 
-  // QR code removed as requested
+  // Calculate totals
+  const subtotal = items.reduce((sum: number, item: any) => sum + (parseFloat(item.price || 0) * (item.quantity || 0)), 0);
+  const deliveryFee = 2000;
+  const total = subtotal + deliveryFee;
   
   return `
     <div class="thermal-invoice">
       <div class="thermal-header">
         <div class="thermal-logo">PAKETY</div>
-        <div style="font-size: 7px;">${new Date(order.createdAt).toLocaleDateString('ar-IQ')}</div>
-        <div style="font-size: 7px;">رقم الطلب: ${order.id}</div>
+        <div style="font-size: 7px; margin-top: 2mm;">رقم الطلب: ${order.id}</div>
+        <div style="font-size: 7px;">${new Date(order.createdAt || order.orderDate).toLocaleDateString('ar-IQ')}</div>
       </div>
       
       <div class="thermal-section">
         <div class="thermal-section-title">معلومات العميل</div>
         <div class="thermal-customer-info">
-          <div>الاسم: ${customerData.fullName}</div>
-          <div>الموبايل: ${customerData.phone}</div>
-          <div>العنوان: ${customerData.governorate} - ${customerData.district} - ${customerData.landmark}</div>
+          <div>الاسم: ${order.customerName || 'غير محدد'}</div>
+          <div>الموبايل: ${order.customerPhone || 'غير محدد'}</div>
+          <div>العنوان: ${order.address?.governorate || ''} - ${order.address?.district || ''} - ${order.address?.neighborhood || ''}</div>
         </div>
       </div>
       
@@ -648,10 +639,10 @@ async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
         <table class="thermal-table">
           <thead>
             <tr>
-              <th>السعر الكلي</th>
-              <th>الكمية</th>
-              <th>السعر لكل كيلو</th>
               <th>المنتج</th>
+              <th>السعر لكل كيلو</th>
+              <th>الكمية</th>
+              <th>السعر الكلي</th>
             </tr>
           </thead>
           <tbody>
@@ -663,15 +654,15 @@ async function generateSingleThermalInvoiceHTML(order: any): Promise<string> {
       <div class="thermal-totals">
         <div class="thermal-total-row">
           <span>مجموع الطلبات:</span>
-          <span>${order.totalAmount} د.ع</span>
+          <span>${subtotal.toFixed(0)} د.ع</span>
         </div>
         <div class="thermal-total-row">
           <span>اجور التوصيل:</span>
-          <span>2000 د.ع</span>
+          <span>${deliveryFee} د.ع</span>
         </div>
         <div class="thermal-total-row final">
           <span>المبلغ الاجمالي:</span>
-          <span>${(parseFloat(order.totalAmount) + 2000).toFixed(0)} د.ع</span>
+          <span>${total.toFixed(0)} د.ع</span>
         </div>
       </div>
       
