@@ -4,11 +4,11 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
-import Login from "@/pages/login";
+import AuthPage from "@/pages/auth";
 import AdminPanel from "@/pages/admin-panel";
 import AdminLogin from "@/pages/admin-login";
 import NotFound from "@/pages/not-found";
-import { useAuth } from "@/hooks/use-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 
 // Protected Admin Route Component
 function ProtectedAdminRoute() {
@@ -23,6 +23,28 @@ function ProtectedAdminRoute() {
   return <AdminPanel />;
 }
 
+// Protected Route Component for regular users
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, loading } = usePostgresAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <AuthPage />;
+  }
+  
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -30,9 +52,8 @@ function Router() {
       <Route path="/admin" component={ProtectedAdminRoute} />
       <Route path="/admin-login" component={AdminLogin} />
       
-      {/* Regular user routes */}
-      <Route path="/login" component={Login} />
-      <Route path="/" component={Home} />
+      {/* Regular user routes - all protected */}
+      <Route path="/" component={() => <ProtectedRoute component={Home} />} />
       <Route component={NotFound} />
     </Switch>
   );
