@@ -284,6 +284,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Authentication routes
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
+      const user = await storage.createUser({ email, passwordHash: password });
+      
+      // Set session after successful signup
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = user.id;
+      
+      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      if (error.message?.includes('duplicate') || error.code === '23505') {
+        return res.status(409).json({ message: 'Email already exists' });
+      }
+      res.status(500).json({ message: 'Failed to create user' });
+    }
+  });
+
+  app.post('/api/auth/signin', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || user.passwordHash !== password) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Store user session
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = user.id;
+
+      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
+    } catch (error) {
+      console.error('Signin error:', error);
+      res.status(500).json({ message: 'Failed to sign in' });
+    }
+  });
+
+  app.post('/api/auth/signout', async (req, res) => {
+    try {
+      (req as any).session = null;
+      res.json({ message: 'Signed out successfully' });
+    } catch (error) {
+      console.error('Signout error:', error);
+      res.status(500).json({ message: 'Failed to sign out' });
+    }
+  });
+
+  app.get('/api/auth/session', async (req, res) => {
+    try {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+
+      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
+    } catch (error) {
+      console.error('Session check error:', error);
+      res.status(500).json({ message: 'Failed to check session' });
+    }
+  });
+
+  // Address routes
+  app.post('/api/auth/addresses', async (req, res) => {
+    try {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const address = await storage.createUserAddress({ ...req.body, userId });
+      res.json(address);
+    } catch (error) {
+      console.error('Create address error:', error);
+      res.status(500).json({ message: 'Failed to create address' });
+    }
+  });
+
+  app.get('/api/auth/addresses/:userId', async (req, res) => {
+    try {
+      const requestedUserId = parseInt(req.params.userId);
+      const sessionUserId = (req as any).session?.userId;
+      
+      if (!sessionUserId || sessionUserId !== requestedUserId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const addresses = await storage.getUserAddresses(requestedUserId);
+      res.json(addresses);
+    } catch (error) {
+      console.error('Get addresses error:', error);
+      res.status(500).json({ message: 'Failed to fetch addresses' });
+    }
+  });
+
   // WebSocket Server for real-time updates
   const httpServer = createServer(app);
 
