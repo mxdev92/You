@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana } from "lucide-react";
+import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana, CircleDot } from "lucide-react";
 import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/hooks/use-translation";
@@ -24,6 +24,7 @@ export default function CategoriesSection() {
     Beef,
     Cherry,
     Banana,
+    CircleDot,
   };
 
   const selectCategoryMutation = useMutation({
