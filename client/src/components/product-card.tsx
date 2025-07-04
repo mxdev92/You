@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCartFlow } from "@/store/cart-flow";
+import { useFirebaseCartStore } from "@/store/firebase-cart-store";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
@@ -19,7 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [showShimmer, setShowShimmer] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
-  const addToCart = useCartFlow(state => state.addToCart);
+  const { addItem: addToCart } = useFirebaseCartStore();
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
 
@@ -37,7 +37,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     setShowShimmer(true);
 
     try {
-      await addToCart({ productId: product.id, quantity: 1 });
+      await addToCart({ 
+        productId: product.id, 
+        productName: product.name,
+        price: product.price,
+        unit: product.unit,
+        quantity: 1 
+      });
       
       // Keep the "Added!" state for a moment
       setTimeout(() => {
@@ -49,6 +55,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         setShowShimmer(false);
       }, 1500);
     } catch (error) {
+      console.error('Error adding to cart:', error);
       setIsAdding(false);
       setShowShimmer(false);
     }

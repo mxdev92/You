@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { onAuthChange, loginWithEmail, registerWithEmail, logout } from '@/lib/firebase';
+import { migrateUserDataOnAuth, clearUserDataOnLogout } from '@/lib/firebase-user-data';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -8,9 +9,28 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange((user) => {
+    const unsubscribe = onAuthChange(async (user) => {
       console.log('Auth state changed:', user ? `${user.email} (${user.uid})` : 'No user');
       setUser(user);
+      
+      if (user) {
+        // User authenticated - migrate/setup their data
+        try {
+          await migrateUserDataOnAuth();
+          console.log('User data migration completed for:', user.email);
+        } catch (error) {
+          console.error('Error during user data migration:', error);
+        }
+      } else {
+        // User logged out - clear local caches
+        try {
+          await clearUserDataOnLogout();
+          console.log('User data cleanup completed');
+        } catch (error) {
+          console.error('Error during user data cleanup:', error);
+        }
+      }
+      
       setLoading(false);
     });
 

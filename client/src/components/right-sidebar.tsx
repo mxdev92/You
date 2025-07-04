@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
-import { useAddressStore } from "@/store/address-store";
+import { useFirebaseAddressStore } from "@/store/firebase-address-store";
+import { useFirebaseCartStore } from "@/store/firebase-cart-store";
 import { useState, useRef, useEffect } from "react";
-import { createOrder } from "@/lib/api-client";
+import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
 
 interface RightSidebarProps {
@@ -129,24 +130,43 @@ const DeliveryNotesComponent = React.memo(() => {
 DeliveryNotesComponent.displayName = 'DeliveryNotesComponent';
 
 export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }: RightSidebarProps) {
-  const cartItems = useCartFlow(state => state.cartItems);
-  const removeFromCart = useCartFlow(state => state.removeFromCart);
-  const updateQuantity = useCartFlow(state => state.updateQuantity);
-  const getCartTotal = useCartFlow(state => state.getCartTotal);
-  const clearCart = useCartFlow(state => state.clearCart);
-  const isUpdating = useCartFlow(state => state.isUpdating);
-  const cartItemsCount = useCartFlow(state => state.getCartItemsCount());
+  const { 
+    items: cartItems, 
+    removeItem: removeFromCart,
+    updateQuantity, 
+    clearCart,
+    getTotalAmount: getCartTotal,
+    getTotalItems: getCartItemsCount,
+    isLoading: isUpdating,
+    loadCart 
+  } = useFirebaseCartStore();
+  
+  const { 
+    addresses, 
+    selectedAddress,
+    loadAddresses 
+  } = useFirebaseAddressStore();
+  
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { addresses } = useAddressStore();
+  
+  // Load user data when authenticated
+  useEffect(() => {
+    if (user) {
+      loadCart();
+      loadAddresses();
+    }
+  }, [user, loadCart, loadAddresses]);
   const [currentView, setCurrentView] = useState<'cart' | 'checkout' | 'final'>('cart');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [addressData, setAddressData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    government: '',
+    governorate: '',
     district: '',
+    neighborhood: '',
+    street: '',
+    houseNumber: '',
+    floorNumber: '',
     nearestLandmark: ''
   });
   const [deliveryTime, setDeliveryTime] = useState('');

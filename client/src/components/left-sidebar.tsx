@@ -6,21 +6,22 @@ import { LanguageSelector } from "@/components/language-selector";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
 import { useLanguage } from "@/hooks/use-language";
-import { useAddressStore } from "@/store/address-store";
+import { useFirebaseAddressStore } from "@/store/firebase-address-store";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import SignupModal from "@/components/signup-modal";
 import { useQuery } from "@tanstack/react-query";
-import type { Order } from "@shared/schema";
+import { getUserOrders, type UserOrder } from "@/lib/firebase-user-data";
 
 function OrdersHistoryContent() {
+  const { user } = useAuth();
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['/api/orders'],
+    queryKey: ['user-orders', user?.uid],
     queryFn: async () => {
-      const response = await fetch('/api/orders');
-      if (!response.ok) throw new Error('Failed to fetch orders');
-      return response.json();
+      if (!user) throw new Error('User not authenticated');
+      return await getUserOrders();
     },
+    enabled: !!user,
   });
 
   const handleDownloadInvoice = async (orderId: number) => {
@@ -68,7 +69,7 @@ function OrdersHistoryContent() {
 
   return (
     <div className="px-6 py-4 space-y-4">
-      {orders.map((order: Order) => (
+      {orders.map((order: UserOrder) => (
         <div key={order.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             {/* Order Info - Right Side */}
@@ -90,7 +91,7 @@ function OrdersHistoryContent() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleDownloadInvoice(order.id)}
+              onClick={() => order.id && handleDownloadInvoice(parseInt(order.id))}
               className="text-green-600 hover:text-green-700 hover:bg-green-50 p-2"
             >
               <Download className="h-4 w-4" />
@@ -310,13 +311,21 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   const [, setLocation] = useLocation();
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
-  const { addresses: savedAddresses, addAddress } = useAddressStore();
+  const { 
+    addresses: savedAddresses, 
+    addAddress, 
+    loadAddresses,
+    selectAddress 
+  } = useFirebaseAddressStore();
   const [addressData, setAddressData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    government: '',
+    governorate: '',
     district: '',
-    nearestLandmark: ''
+    neighborhood: '',
+    street: '',
+    houseNumber: '',
+    floorNumber: '',
+    notes: '',
+    isDefault: false
   });
 
   // Prevent background scrolling when sidebar is open
@@ -364,27 +373,37 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  const handleAddressSubmit = (e: React.FormEvent) => {
+  const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Add new address using the store
-    addAddress({
-      fullName: addressData.fullName,
-      phoneNumber: addressData.phoneNumber,
-      government: addressData.government,
-      district: addressData.district,
-      nearestLandmark: addressData.nearestLandmark,
-    });
-    
-    // Reset form and close
-    setAddressData({
-      fullName: '',
-      phoneNumber: '',
-      government: '',
-      district: '',
-      nearestLandmark: ''
-    });
-    setShowAddressForm(false);
+    try {
+      // Add new address using the Firebase store
+      await addAddress({
+        governorate: addressData.governorate,
+        district: addressData.district,
+        neighborhood: addressData.neighborhood,
+        street: addressData.street,
+        houseNumber: addressData.houseNumber,
+        floorNumber: addressData.floorNumber,
+        notes: addressData.notes,
+        isDefault: addressData.isDefault || savedAddresses.length === 0, // First address is default
+      });
+      
+      // Reset form and close
+      setAddressData({
+        governorate: '',
+        district: '',
+        neighborhood: '',
+        street: '',
+        houseNumber: '',
+        floorNumber: '',
+        notes: '',
+        isDefault: false
+      });
+      setShowAddressForm(false);
+    } catch (error) {
+      console.error('Error adding address:', error);
+    }
   };
 
   return (
@@ -668,17 +687,19 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {address.fullName}
+                              {address.governorate} - {address.district}
                             </h3>
                             <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {address.phoneNumber}
+                              {address.neighborhood}
                             </p>
                             <p className="text-sm text-gray-700 mt-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {address.government}
+                              {address.street && `${address.street} - `}{address.houseNumber}
                             </p>
-                            <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {address.district}, {address.nearestLandmark}
-                            </p>
+                            {address.notes && (
+                              <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                                {address.notes}
+                              </p>
+                            )}
                           </div>
                           <MapPin className="h-5 w-5 text-green-600 mt-1" />
                         </div>
