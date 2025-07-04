@@ -9,9 +9,11 @@ import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
 
 interface SignupData {
+  email: string;
+  password: string;
+  confirmPassword: string;
   name: string;
   phone: string;
-  password: string;
   governorate: string;
   district: string;
   landmark: string;
@@ -133,9 +135,11 @@ const AuthPage: React.FC = () => {
 
   // Signup form state
   const [signupData, setSignupData] = useState<SignupData>({
+    email: '',
+    password: '',
+    confirmPassword: '',
     name: '',
     phone: '',
-    password: '',
     governorate: '',
     district: '',
     landmark: ''
@@ -182,33 +186,49 @@ const AuthPage: React.FC = () => {
   const handleSignupNext = () => {
     const step = signupStep;
     
-    if (step === 1 && !signupData.name.trim()) {
-      showNotification('يرجى إدخال الاسم');
-      return;
+    if (step === 1) {
+      if (!signupData.email.trim()) {
+        showNotification('يرجى إدخال البريد الإلكتروني');
+        return;
+      }
+      if (!signupData.email.includes('@')) {
+        showNotification('يرجى إدخال بريد إلكتروني صحيح');
+        return;
+      }
+      if (signupData.password.length < 6) {
+        showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+        return;
+      }
+      if (signupData.password !== signupData.confirmPassword) {
+        showNotification('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
+        return;
+      }
     }
-    if (step === 2 && !signupData.phone.trim()) {
-      showNotification('يرجى إدخال رقم الموبايل');
-      return;
-    }
-    if (step === 3 && signupData.password.length < 6) {
-      showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-      return;
-    }
-    if (step === 4 && !signupData.governorate) {
-      showNotification('يرجى اختيار المحافظة');
-      return;
-    }
-    if (step === 5 && !signupData.district.trim()) {
-      showNotification('يرجى إدخال المنطقة');
-      return;
+    if (step === 2) {
+      if (!signupData.name.trim()) {
+        showNotification('يرجى إدخال الاسم');
+        return;
+      }
+      if (!signupData.phone.trim()) {
+        showNotification('يرجى إدخال رقم الموبايل');
+        return;
+      }
     }
     
-    if (step < 6) {
+    if (step < 3) {
       setSignupStep(step + 1);
     }
   };
 
   const handleSignupComplete = async () => {
+    if (!signupData.governorate) {
+      showNotification('يرجى اختيار المحافظة');
+      return;
+    }
+    if (!signupData.district.trim()) {
+      showNotification('يرجى إدخال المنطقة');
+      return;
+    }
     if (!signupData.landmark.trim()) {
       showNotification('يرجى إدخال أقرب نقطة دالة');
       return;
@@ -216,8 +236,8 @@ const AuthPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Create email from phone number
-      const email = `${signupData.phone}@pakety.app`;
+      // Use the actual email from form
+      const email = signupData.email;
       
       // Register user
       const newUser = await register(email, signupData.password);
@@ -455,13 +475,13 @@ const AuthPage: React.FC = () => {
                 {/* Progress Bar */}
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-gray-500 mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                    <span>الخطوة {signupStep} من 6</span>
+                    <span>الخطوة {signupStep} من 3</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <motion.div
                       className="bg-green-600 h-1.5 rounded-full"
-                      initial={{ width: '16.66%' }}
-                      animate={{ width: `${(signupStep / 6) * 100}%` }}
+                      initial={{ width: '33.33%' }}
+                      animate={{ width: `${(signupStep / 3) * 100}%` }}
                       transition={{ duration: 0.3 }}
                     />
                   </div>
@@ -480,43 +500,19 @@ const AuthPage: React.FC = () => {
                       transition={{ duration: 0.3 }}
                     >
                       {signupStep === 1 && (
-                        <div className="space-y-3">
-                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            ما هو اسمك؟
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            بيانات الحساب
                           </h3>
                           <Input
-                            type="text"
-                            placeholder="الاسم الكامل"
-                            value={signupData.name}
-                            onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
+                            type="email"
+                            placeholder="البريد الإلكتروني"
+                            value={signupData.email}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))}
                             className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           />
-                        </div>
-                      )}
-
-                      {signupStep === 2 && (
-                        <div className="space-y-3">
-                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            رقم الموبايل
-                          </h3>
-                          <Input
-                            type="tel"
-                            placeholder="07xxxxxxxxx"
-                            value={signupData.phone}
-                            onChange={(e) => setSignupData(prev => ({ ...prev, phone: e.target.value }))}
-                            className="w-full h-12 text-center text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
-                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          />
-                        </div>
-                      )}
-
-                      {signupStep === 3 && (
-                        <div className="space-y-3">
-                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            كلمة المرور
-                          </h3>
                           <div className="relative">
                             <Input
                               type={showPassword ? 'text' : 'password'}
@@ -535,13 +531,47 @@ const AuthPage: React.FC = () => {
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
+                          <Input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="تأكيد كلمة المرور"
+                            value={signupData.confirmPassword}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            dir="rtl"
+                          />
                         </div>
                       )}
 
-                      {signupStep === 4 && (
-                        <div className="space-y-3 relative z-10" style={{ minHeight: '200px' }}>
-                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            تسجيل العنوان - المحافظة
+                      {signupStep === 2 && (
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            المعلومات الشخصية
+                          </h3>
+                          <Input
+                            type="text"
+                            placeholder="الاسم الكامل"
+                            value={signupData.name}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            dir="rtl"
+                          />
+                          <Input
+                            type="tel"
+                            placeholder="رقم الموبايل (07xxxxxxxxx)"
+                            value={signupData.phone}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, phone: e.target.value }))}
+                            className="w-full h-12 text-center text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                          />
+                        </div>
+                      )}
+
+                      {signupStep === 3 && (
+                        <div className="space-y-4 relative z-10" style={{ minHeight: '300px' }}>
+                          <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            عنوان التوصيل
                           </h3>
                           <div className="relative">
                             <CustomDropdown
@@ -551,14 +581,6 @@ const AuthPage: React.FC = () => {
                               placeholder="اختر المحافظة"
                             />
                           </div>
-                        </div>
-                      )}
-
-                      {signupStep === 5 && (
-                        <div className="space-y-3">
-                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            المنطقة
-                          </h3>
                           <Input
                             type="text"
                             placeholder="اسم المنطقة أو الحي"
@@ -568,17 +590,9 @@ const AuthPage: React.FC = () => {
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           />
-                        </div>
-                      )}
-
-                      {signupStep === 6 && (
-                        <div className="space-y-3">
-                          <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            أقرب نقطة دالة
-                          </h3>
                           <Input
                             type="text"
-                            placeholder="مثال: قرب مسجد الرحمن، بجانب صيدلية الشفاء"
+                            placeholder="أقرب نقطة دالة (مثال: قرب مسجد الرحمن)"
                             value={signupData.landmark}
                             onChange={(e) => setSignupData(prev => ({ ...prev, landmark: e.target.value }))}
                             className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
@@ -593,7 +607,7 @@ const AuthPage: React.FC = () => {
 
                 {/* Action Button */}
                 <div className="mt-6">
-                  {signupStep < 6 ? (
+                  {signupStep < 3 ? (
                     <Button
                       onClick={handleSignupNext}
                       className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
