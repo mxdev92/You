@@ -105,6 +105,18 @@ function generateInvoiceHTML(orders: any[]): string {
           direction: rtl;
         }
         
+        .logo-header {
+          text-align: center;
+          margin-bottom: 15px;
+          padding-bottom: 10px;
+        }
+        
+        .logo-header img {
+          width: 80px;
+          height: 80px;
+          object-fit: contain;
+        }
+        
         .header {
           display: flex;
           justify-content: space-between;
@@ -143,22 +155,7 @@ function generateInvoiceHTML(orders: any[]): string {
           color: #333;
         }
         
-        .logo-section {
-          flex: 1;
-          text-align: center;
-          padding-top: 10px;
-        }
-        
-        .logo {
-          width: 60px;
-          height: 60px;
-          margin: 0 auto;
-          background: #333;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+
         
         .qr-info {
           width: 120px;
@@ -266,7 +263,25 @@ function generateInvoiceHTML(orders: any[]): string {
     </head>
     <body>
       <div class="invoice">
-        <!-- Header -->
+        <!-- Logo Header -->
+        <div class="logo-header">
+          <svg width="80" height="80" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Main cube top -->
+            <path d="M50 50 L100 30 L150 50 L100 70 Z" stroke="#333" stroke-width="3" fill="none"/>
+            <!-- Main cube front -->
+            <path d="M50 50 L50 100 L100 120 L100 70 Z" stroke="#333" stroke-width="3" fill="none"/>
+            <!-- Main cube right -->
+            <path d="M100 70 L100 120 L150 100 L150 50 Z" stroke="#333" stroke-width="3" fill="none"/>
+            <!-- Bottom cube top -->
+            <path d="M50 100 L100 80 L150 100 L100 120 Z" stroke="#333" stroke-width="3" fill="none"/>
+            <!-- Bottom cube front -->
+            <path d="M50 100 L50 150 L100 170 L100 120 Z" stroke="#333" stroke-width="3" fill="none"/>
+            <!-- Bottom cube right -->
+            <path d="M100 120 L100 170 L150 150 L150 100 Z" stroke="#333" stroke-width="3" fill="none"/>
+          </svg>
+        </div>
+        
+        <!-- Header with Customer Info and QR -->
         <div class="header">
           <div class="customer-section">
             <div class="customer-title">معلومات العميل</div>
@@ -277,16 +292,7 @@ function generateInvoiceHTML(orders: any[]): string {
             </div>
           </div>
           
-          <div class="logo-section">
-            <div class="logo">
-              <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
-                <rect x="20" y="20" width="30" height="30" stroke="white" stroke-width="4" fill="none"/>
-                <rect x="20" y="55" width="30" height="25" stroke="white" stroke-width="4" fill="none"/>
-                <rect x="55" y="20" width="25" height="30" stroke="white" stroke-width="4" fill="none"/>
-                <rect x="55" y="55" width="25" height="25" stroke="white" stroke-width="4" fill="none"/>
-              </svg>
-            </div>
-          </div>
+          <div style="flex: 1;"></div>
           
           <div class="qr-info">
             <div class="qr-box">QR</div>
