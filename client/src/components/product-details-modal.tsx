@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { useCartFlow } from "@/store/cart-flow";
+import { formatPrice } from "@/lib/price-utils";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -155,10 +156,10 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
           {/* Price Display */}
           <div className="text-center py-2">
             <p className="text-xl font-bold text-green-600">
-              {totalPrice} {t('iqd')}
+              {formatPrice(totalPrice)} {t('iqd')}
             </p>
             <p className="text-xs text-gray-500">
-              {product.price} {t('iqd')}/{t('kg')}
+              {formatPrice(product.price)} {t('iqd')}/{t('kg')}
             </p>
           </div>
           

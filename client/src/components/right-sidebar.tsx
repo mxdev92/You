@@ -11,6 +11,7 @@ import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
+import { formatPrice } from "@/lib/price-utils";
 import type { CartItem, Product } from "@shared/schema";
 
 interface RightSidebarProps {
@@ -579,19 +580,19 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>السعر الكلي:</span>
-            <span className="font-medium">{getCartTotal().toFixed(0)} IQD</span>
+            <span className="font-medium">{formatPrice(getCartTotal())} IQD</span>
           </div>
           
           <div className="flex justify-between items-center">
             <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>أجور التوصيل:</span>
-            <span className="font-medium">{shippingFee.toFixed(0)} IQD</span>
+            <span className="font-medium">{formatPrice(shippingFee)} IQD</span>
           </div>
           
           <div className="border-t border-gray-200 pt-3">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الكلي:</span>
               <span className="text-xl font-bold text-fresh-green">
-                {totalWithShipping.toFixed(0)} IQD
+                {formatPrice(totalWithShipping)} IQD
               </span>
             </div>
           </div>
@@ -692,7 +693,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           </h3>
           <div className="bg-green-50 rounded-lg p-4 text-center">
             <p className="text-2xl font-bold text-green-600">
-              {totalWithShipping.toFixed(0)} IQD
+              {formatPrice(totalWithShipping)} IQD
             </p>
           </div>
         </div>
@@ -804,7 +805,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           <div className="flex justify-between items-center mb-4">
             <span className="text-lg font-semibold text-gray-800">Total:</span>
             <span className="text-xl font-bold text-fresh-green">
-              {getCartTotal().toFixed(0)} IQD
+              {formatPrice(getCartTotal())} IQD
             </span>
           </div>
           <Button 

@@ -8,6 +8,7 @@ import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useLocation } from "wouter";
+import { formatPrice } from "@/lib/price-utils";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -99,7 +100,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           })()}
         </h3>
         <p className="text-fresh-green font-bold text-sm mb-2">
-          {product.price}/{product.unit}
+          {formatPrice(product.price)}/{product.unit}
         </p>
         
         <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
