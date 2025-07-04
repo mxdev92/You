@@ -1264,6 +1264,8 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number>(1); // Default to خضروات
+  const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
