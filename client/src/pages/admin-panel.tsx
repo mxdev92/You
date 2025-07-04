@@ -1484,26 +1484,34 @@ export default function AdminPanel() {
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length}
-                    onCheckedChange={handleSelectAll}
-                  />
-                  <span className={`text-sm ${
+                <button 
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
                     selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length
-                      ? 'text-green-600 font-bold'
-                      : selectedOrders.length > 0 
-                        ? 'text-blue-600 font-medium'
-                        : 'text-gray-600'
+                      ? 'bg-green-100 border-green-300 text-green-700'
+                      : selectedOrders.length > 0
+                        ? 'bg-blue-50 border-blue-200 text-blue-700'
+                        : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => handleSelectAll(!(selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length))}
+                >
+                  <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                    selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length
+                      ? 'bg-green-600 border-green-600 text-white'
+                      : 'border-gray-400 bg-white'
                   }`}>
+                    {selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length && (
+                      <span className="text-xs">✓</span>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium">
                     {selectedOrders.length > 0 && selectedOrders.length === filteredOrders.length
-                      ? `✓ تم تحديد الكل (${selectedOrders.length} طلبات)`
+                      ? `تم تحديد الكل (${selectedOrders.length} طلبات)`
                       : selectedOrders.length > 0 
                         ? `${selectedOrders.length} طلبات محددة`
                         : 'تحديد الكل'
                     }
                   </span>
-                </div>
+                </button>
                 {selectedOrders.length > 0 && (
                   <Button
                     onClick={handleBatchPrint}
