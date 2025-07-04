@@ -888,7 +888,11 @@ function ItemsManagement() {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === null || 
       (selectedCategory === 1 && product.category === 'Fruits') ||
-      (selectedCategory === 2 && product.category === 'Vegetables');
+      (selectedCategory === 2 && product.category === 'Vegetables') ||
+      (selectedCategory === 3 && product.category === 'Dairy') ||
+      (selectedCategory === 4 && product.category === 'Meat') ||
+      (selectedCategory === 5 && product.category === 'Seafood') ||
+      (selectedCategory === 6 && product.category === 'Bakery');
     return matchesSearch && matchesCategory;
   });
 
