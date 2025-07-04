@@ -3,8 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('Supabase environment check:', {
+  url: supabaseUrl ? 'URL present' : 'URL missing',
+  key: supabaseKey ? 'Key present' : 'Key missing',
+  urlValue: supabaseUrl
+});
+
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+  throw new Error(`Missing Supabase environment variables: URL=${!!supabaseUrl}, KEY=${!!supabaseKey}`);
+}
+
+// Validate URL format
+try {
+  new URL(supabaseUrl);
+  console.log('Supabase URL validation: SUCCESS');
+} catch (error) {
+  console.error('Invalid Supabase URL format:', supabaseUrl);
+  throw new Error(`Invalid Supabase URL format: ${supabaseUrl}`);
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
