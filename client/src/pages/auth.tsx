@@ -223,8 +223,8 @@ const AuthPage: React.FC = () => {
                     placeholder="البريد الإلكتروني"
                     value={loginData.email}
                     onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl transition-all duration-300 hover:shadow-md focus:shadow-lg"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    className="w-full h-12 text-right pr-3 text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl transition-all duration-300 hover:shadow-md focus:shadow-lg"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif', paddingRight: '12px' }}
                     dir="rtl"
                   />
                 </motion.div>
@@ -240,8 +240,8 @@ const AuthPage: React.FC = () => {
                     placeholder="كلمة المرور"
                     value={loginData.password}
                     onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full h-12 text-right pr-10 text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl transition-all duration-300 hover:shadow-md focus:shadow-lg"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    className="w-full h-12 text-right pr-3 pl-10 text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl transition-all duration-300 hover:shadow-md focus:shadow-lg"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif', paddingRight: '12px' }}
                     dir="rtl"
                   />
                   <motion.button
