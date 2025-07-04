@@ -29,20 +29,39 @@ console.log('Supabase initialized successfully');
 // Authentication functions
 export const supabaseAuth = {
   signUp: async (email: string, password: string) => {
+    console.log('Attempting Supabase signup with:', { email, url: supabaseUrl });
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: undefined // Disable email confirmation for now
+      }
     });
-    if (error) throw error;
+    
+    if (error) {
+      console.error('Supabase signup error:', error);
+      throw error;
+    }
+    
+    console.log('Supabase signup success:', data);
     return data;
   },
 
   signIn: async (email: string, password: string) => {
+    console.log('Attempting Supabase signin with:', { email });
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    if (error) throw error;
+    
+    if (error) {
+      console.error('Supabase signin error:', error);
+      throw error;
+    }
+    
+    console.log('Supabase signin success:', data);
     return data;
   },
 
@@ -60,15 +79,28 @@ export const supabaseAuth = {
   }
 };
 
-// Test connection
+// Test connection and auth
 export const testSupabaseConnection = async () => {
   try {
+    console.log('Testing Supabase connection...');
+    
+    // Test 1: Basic connection
     const { data, error } = await supabase.from('user_addresses').select('count', { count: 'exact', head: true });
     if (error) {
-      console.log('Supabase connection test result:', error.message);
+      console.log('Supabase database test:', error.message);
     } else {
-      console.log('Supabase connection: SUCCESS');
+      console.log('Supabase database connection: SUCCESS');
     }
+    
+    // Test 2: Auth service availability
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError) {
+      console.log('Supabase auth test error:', authError.message);
+    } else {
+      console.log('Supabase auth service: AVAILABLE');
+      console.log('Current session:', session ? 'Active' : 'None');
+    }
+    
   } catch (error) {
     console.log('Supabase connection test failed:', error);
   }
