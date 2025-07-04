@@ -770,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <tbody>
                 ${items.map((item: any) => `
                   <tr>
-                    <td>${item.name || 'منتج غير محدد'}</td>
+                    <td>${item.productName || item.name || 'منتج غير محدد'}</td>
                     <td>${item.quantity || 1}</td>
                     <td>${Number(item.price || 0).toLocaleString('ar-EG')} د.ع</td>
                     <td>${(Number(item.price || 0) * Number(item.quantity || 1)).toLocaleString('ar-EG')} د.ع</td>
