@@ -6,7 +6,7 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
-import { useAuth } from "@/hooks/use-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import SignupModal from "./signup-modal";
 import type { Product } from "@shared/schema";
 
@@ -21,14 +21,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [showSignupModal, setShowSignupModal] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { user } = usePostgresAuth();
 
   const handleAddToCart = async () => {
     // Don't allow adding if product is not available
     if (!product.available) return;
     
     // Check if user is authenticated
-    if (!isAuthenticated) {
+    if (!user) {
       setShowSignupModal(true);
       return;
     }
