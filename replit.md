@@ -121,6 +121,10 @@ July 4, 2025:
 ✓ Implemented HereLabel Image button in admin panel for professional thermal printing
 ✓ Canvas-based image generation with Arabic RTL support and DejaVu Sans fonts
 ✓ Professional thermal invoice images compatible with HereLabel app import feature
+✓ Implemented dual table layout system for thermal invoices with 15 items per table
+✓ Automatic table splitting: items 1-15 in first table, 16-30 in second table
+✓ Compact table design with smaller fonts (9px items, 10px headers) for space efficiency
+✓ Table numbering system (جدول 1, جدول 2) for multiple table invoices
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications
 ✓ Added blur overlay (backdrop-blur-sm) with rounded-2xl edges for modern appearance  
 ✓ Implemented notification system in both auth page and cart checkout functionality

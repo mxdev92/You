@@ -82,42 +82,77 @@ export async function generateThermalImage(orderData: OrderData): Promise<Buffer
   ctx.fillText(`العنوان: ${addressText}`, width - margin, y);
   y += 25;
   
-  // Items Table Header
-  ctx.font = 'bold 12px "DejaVu Sans", Arial';
-  ctx.fillText('المنتج', width - margin, y);
-  ctx.fillText('السعر', width - 80, y);
-  ctx.fillText('الكمية', width - 130, y);
-  ctx.fillText('الإجمالي', width - 180, y);
-  y += 20;
-  
-  // Draw line under header
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(margin, y - 5);
-  ctx.lineTo(width - margin, y - 5);
-  ctx.stroke();
-  
-  // Items
-  ctx.font = '11px "DejaVu Sans", Arial';
-  if (items && Array.isArray(items)) {
-    items.forEach((item: any) => {
+  // Function to draw a table
+  const drawTable = (tableItems: any[], startY: number) => {
+    let currentY = startY;
+    
+    // Table Header
+    ctx.font = 'bold 10px "DejaVu Sans", Arial';
+    ctx.fillText('المنتج', width - margin, currentY);
+    ctx.fillText('السعر', width - 70, currentY);
+    ctx.fillText('الكمية', width - 110, currentY);
+    ctx.fillText('الإجمالي', width - 150, currentY);
+    currentY += 15;
+    
+    // Draw line under header
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(margin, currentY - 3);
+    ctx.lineTo(width - margin, currentY - 3);
+    ctx.stroke();
+    
+    // Table Items
+    ctx.font = '9px "DejaVu Sans", Arial';
+    tableItems.forEach((item: any) => {
       const itemTotal = parseFloat(item.price) * item.quantity;
       
-      ctx.fillText(item.productName || 'منتج غير محدد', width - margin, y);
-      ctx.fillText(item.price || '0', width - 80, y);
-      ctx.fillText(item.quantity?.toString() || '0', width - 130, y);
-      ctx.fillText(itemTotal.toFixed(0), width - 180, y);
-      y += lineHeight;
+      // Truncate product name if too long
+      const productName = (item.productName || 'منتج غير محدد').substring(0, 12);
+      
+      ctx.fillText(productName, width - margin, currentY);
+      ctx.fillText(item.price || '0', width - 70, currentY);
+      ctx.fillText(item.quantity?.toString() || '0', width - 110, currentY);
+      ctx.fillText(itemTotal.toFixed(0), width - 150, currentY);
+      currentY += 12;
     });
+    
+    // Draw line after table
+    ctx.beginPath();
+    ctx.moveTo(margin, currentY);
+    ctx.lineTo(width - margin, currentY);
+    ctx.stroke();
+    
+    return currentY + 10;
+  };
+
+  // Split items into tables of 15 each
+  if (items && Array.isArray(items)) {
+    const itemsPerTable = 15;
+    let currentY = y;
+    
+    for (let i = 0; i < items.length; i += itemsPerTable) {
+      const tableItems = items.slice(i, i + itemsPerTable);
+      
+      // Add table title if multiple tables
+      if (items.length > itemsPerTable) {
+        ctx.font = 'bold 11px "DejaVu Sans", Arial';
+        const tableNumber = Math.floor(i / itemsPerTable) + 1;
+        ctx.fillText(`جدول ${tableNumber}`, width - margin, currentY);
+        currentY += 15;
+      }
+      
+      currentY = drawTable(tableItems, currentY);
+      
+      // Add spacing between tables
+      if (i + itemsPerTable < items.length) {
+        currentY += 5;
+      }
+    }
+    
+    y = currentY;
   }
-  
-  // Total line
-  y += 10;
-  ctx.beginPath();
-  ctx.moveTo(margin, y - 5);
-  ctx.lineTo(width - margin, y - 5);
-  ctx.stroke();
+
   
   // Total Amount
   ctx.font = 'bold 14px "DejaVu Sans", Arial';
