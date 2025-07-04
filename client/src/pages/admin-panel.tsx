@@ -1323,77 +1323,6 @@ export default function AdminPanel() {
     }
   };
 
-  // Handle thermal printer PDF download
-  const handleBrotherPrint = async () => {
-    if (selectedOrders.length === 0) {
-      toast({
-        title: "No orders selected",
-        description: "Please select orders to download",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return;
-    }
-
-    try {
-      toast({
-        title: "Generating PDF",
-        description: `Creating ${selectedOrders.length} invoices for thermal printer...`,
-        duration: 2000,
-      });
-
-      const response = await fetch('/api/generate-brother-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderIds: selectedOrders
-        })
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        
-        // Download PDF optimized for HPRT N41BT thermal printer
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `hprt-thermal-invoices-${selectedOrders.length}-orders.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Clean up
-        window.URL.revokeObjectURL(url);
-        
-        toast({
-          title: "✅ PDF Ready for Download",
-          description: `${selectedOrders.length} invoices optimized for HPRT N41BT thermal printer`,
-          duration: 4000,
-        });
-
-        // Clear selection after successful generation
-        setSelectedOrders([]);
-      } else {
-        toast({
-          title: "❌ PDF Generation Failed",
-          description: "Failed to generate thermal printer PDF. Please try again.",
-          variant: "destructive",
-          duration: 3000,
-        });
-      }
-    } catch (error) {
-      console.error('Error generating thermal printer PDF:', error);
-      toast({
-        title: "❌ Network Error",
-        description: "Error occurred while generating PDF. Please try again.",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  };
-
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: getOrders,
@@ -1572,22 +1501,13 @@ export default function AdminPanel() {
                   </span>
                 </button>
                 {selectedOrders.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={handleBatchPrint}
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Printer className="h-4 w-4" />
-                      طباعة مجمعة ({selectedOrders.length})
-                    </Button>
-                    <Button
-                      onClick={handleBrotherPrint}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download Only ({selectedOrders.length})
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={handleBatchPrint}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Printer className="h-4 w-4" />
+                    طباعة مجمعة ({selectedOrders.length})
+                  </Button>
                 )}
               </div>
               {selectedOrders.length > 0 && (
