@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Leaf, Droplets, Wheat } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -13,26 +13,39 @@ import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-clie
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import type { Product, InsertProduct } from '@shared/schema';
-import ItemsManagement from './items-management';
 
 // Helper functions for product operations
 const uploadProductImage = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
         const imageData = reader.result as string;
-        console.log('Image upload successful - using base64 data directly');
-        resolve(imageData);
+        
+        // Upload to backend
+        const response = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            imageData,
+            fileName: file.name
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const result = await response.json();
+        resolve(result.imageUrl);
       } catch (error) {
         console.error('Image upload failed:', error);
         reject(error);
       }
     };
-    reader.onerror = () => {
-      console.error('Failed to read file');
-      reject(new Error('Failed to read file'));
-    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsDataURL(file);
   });
 };
@@ -42,34 +55,38 @@ const uploadProductImage = async (file: File): Promise<string> => {
 // Helper function to map category names to IDs
 const getCategoryId = (categoryName: string): number => {
   const mapping: { [key: string]: number } = {
-    'خضروات': 1,
-    'فواكة': 2,
-    'ماء': 3,
-    'خبز': 4,
-    'لحوم': 5
+    'Vegetables': 2,
+    'Fruits': 1,
+    'Dairy': 3,
+    'Meat': 4,
+    'Seafood': 5,
+    'Bakery': 6
   };
-  return mapping[categoryName] || 1; // Default to خضروات
+  return mapping[categoryName] || 2; // Default to Vegetables
 };
 
 // Helper function to map category IDs to names
 const getCategoryName = (categoryId: number | null): string => {
   const mapping: { [key: number]: string } = {
-    1: 'خضروات',
-    2: 'فواكة',
-    3: 'ماء',
-    4: 'خبز'
+    1: 'Fruits',
+    2: 'Vegetables', 
+    3: 'Dairy',
+    4: 'Meat',
+    5: 'Seafood',
+    6: 'Bakery'
   };
-  return mapping[categoryId || 2] || 'فواكة'; // Default to فواكة
+  return mapping[categoryId || 2] || 'Vegetables'; // Default to Vegetables
 };
 
 const createProduct = async (productData: any): Promise<Product> => {
   // Map category names to category IDs
   const categoryMapping: { [key: string]: number } = {
-    'خضروات': 1,
-    'فواكة': 2,
-    'ماء': 3,
-    'خبز': 4,
-    'لحوم': 5
+    'Vegetables': 2,
+    'Fruits': 1,
+    'Dairy': 4,
+    'Meat': 6,
+    'Seafood': 5,
+    'Bakery': 3
   };
   
   const insertProduct: InsertProduct = {
@@ -77,7 +94,7 @@ const createProduct = async (productData: any): Promise<Product> => {
     price: productData.price.toString(),
     unit: productData.unit,
     imageUrl: productData.imageUrl,
-    categoryId: categoryMapping[productData.category] || 2, // Default to فواكة
+    categoryId: categoryMapping[productData.category] || 2, // Default to Vegetables
     available: productData.available,
     displayOrder: 0
   };
@@ -347,7 +364,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
     name: '',
     description: '',
     price: '',
-    category: 'خضروات',
+    category: 'Vegetables',
     unit: 'kg',
     available: true,
     image: null as File | null
@@ -358,23 +375,15 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
     mutationFn: async (productData: any) => {
       const imageUrl = productData.image ? await uploadProductImage(productData.image) : '/api/placeholder/60/60';
       
-      const categoryId = getCategoryId(productData.category);
-      console.log('Category mapping debug:', {
-        originalCategory: productData.category,
-        mappedCategoryId: categoryId
-      });
-      
       const newProduct = {
         name: productData.name,
         description: productData.description || '',
         price: productData.price, // Keep as string for Zod validation
         unit: productData.unit,
         imageUrl,
-        categoryId,
+        categoryId: getCategoryId(productData.category),
         available: productData.available,
       };
-      
-      console.log('Sending product data to backend:', newProduct);
 
       const response = await fetch('/api/products', {
         method: 'POST',
@@ -401,7 +410,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
         name: '',
         description: '',
         price: '',
-        category: 'خضروات',
+        category: 'Vegetables',
         unit: 'kg',
         available: true,
         image: null
@@ -495,11 +504,10 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="خضروات">خضروات</SelectItem>
-                  <SelectItem value="فواكة">فواكة</SelectItem>
-                  <SelectItem value="ماء">ماء</SelectItem>
-                  <SelectItem value="خبز">خبز</SelectItem>
-                  <SelectItem value="لحوم">لحوم</SelectItem>
+                  <SelectItem value="Fruits">Fruits</SelectItem>
+                  <SelectItem value="Vegetables">Vegetables</SelectItem>
+                  <SelectItem value="Dairy">Dairy</SelectItem>
+                  <SelectItem value="Meat">Meat</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -870,10 +878,10 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
   );
 }
 
-// Placeholder function to maintain structure (OLD ITEMS MANAGEMENT REMOVED)
-function OldItemsManagement() {
+// Items Management Component
+function ItemsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(1); // Default to خضروات
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   const [isEditItemOpen, setIsEditItemOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -885,9 +893,7 @@ function OldItemsManagement() {
     queryFn: async () => {
       const response = await fetch('/api/products', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch products');
-      const products = await response.json();
-      console.log('All products from backend:', products);
-      return products;
+      return response.json();
     },
     staleTime: 0, // Always fetch fresh data
     refetchInterval: 1000, // Refetch every 1 second for real-time updates
@@ -910,35 +916,23 @@ function OldItemsManagement() {
 
 
   const categories = [
-    { id: 1, name: 'خضروات', icon: Leaf, count: 0 },
-    { id: 2, name: 'فواكة', icon: Apple, count: 0 },
-    { id: 3, name: 'ماء', icon: Droplets, count: 0 },
-    { id: 4, name: 'خبز', icon: Wheat, count: 0 },
-    { id: 5, name: 'لحوم', icon: Beef, count: 0 }
+    { id: 1, name: 'Fruits', icon: Apple, count: 3 },
+    { id: 2, name: 'Vegetables', icon: Carrot, count: 3 },
+    { id: 3, name: 'Dairy', icon: Milk, count: 0 },
+    { id: 4, name: 'Meat', icon: Beef, count: 0 }
   ];
-
-  // Debug logging before filtering
-  console.log('DEBUG: About to filter products', {
-    selectedCategory,
-    searchQuery,
-    totalProducts: products.length,
-    productsArray: products
-  });
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = product.categoryId === selectedCategory;
-    console.log('Filtering product:', {
-      productName: product.name,
-      productCategoryId: product.categoryId,
-      selectedCategory,
-      matchesCategory,
-      matchesSearch
-    });
+    const matchesCategory = selectedCategory === null || 
+      (selectedCategory === 1 && product.category === 'Fruits') ||
+      (selectedCategory === 2 && product.category === 'Vegetables') ||
+      (selectedCategory === 3 && product.category === 'Dairy') ||
+      (selectedCategory === 4 && product.category === 'Meat') ||
+      (selectedCategory === 5 && product.category === 'Seafood') ||
+      (selectedCategory === 6 && product.category === 'Bakery');
     return matchesSearch && matchesCategory;
   });
-  
-  console.log('Final filtered products:', filteredProducts.length, 'out of', products.length);
 
   const updateProductPrice = async (id: string, newPrice: string) => {
     const numericPrice = parseFloat(newPrice);
@@ -1061,6 +1055,19 @@ function OldItemsManagement() {
       {/* Categories Section */}
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
+              selectedCategory === null 
+                ? 'text-white border-2 border-gray-300' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            style={selectedCategory === null ? { backgroundColor: '#22c55e' } : {}}
+          >
+            <Package2 className="h-4 w-4" />
+            All Items
+          </button>
+          
           {categories.map((category) => {
             const IconComponent = category.icon;
             return (
@@ -1273,9 +1280,6 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<number>(1); // Default to خضروات
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders'); // Add view state
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -1415,6 +1419,7 @@ export default function AdminPanel() {
   });
 
 
+  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -1492,11 +1497,6 @@ export default function AdminPanel() {
     ? orders 
     : orders.filter(order => order.status === statusFilter);
 
-  // Return Items Management view if selected
-  if (currentView === 'items') {
-    return <ItemsManagement />;
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with List Icon */}
@@ -1510,12 +1510,9 @@ export default function AdminPanel() {
               <List className="h-5 w-5 text-gray-700" />
             </button>
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setCurrentView(currentView === 'orders' ? 'items' : 'orders')}
-                className="px-3 py-1 text-xs bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-              >
-                {currentView === 'orders' ? 'Items Management' : 'Orders Dashboard'}
-              </button>
+              <Badge variant="default" className="text-xs">
+                {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
+              </Badge>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"

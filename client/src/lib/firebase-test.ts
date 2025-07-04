@@ -1,5 +1,5 @@
 // Test Firebase connection and diagnose issues
-import { auth, database } from './firebase';
+import { auth, db } from './firebase';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 
 export const testFirebaseConnection = async () => {

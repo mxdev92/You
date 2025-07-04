@@ -12,7 +12,7 @@ import {
   setDoc,
   getDoc
 } from "firebase/firestore";
-import { auth, database } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { User } from "firebase/auth";
 
 // User Profile Data

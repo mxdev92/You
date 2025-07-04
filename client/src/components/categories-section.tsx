@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana, CircleDot, Circle, Leaf, Droplets, Wheat } from "lucide-react";
+import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana, CircleDot, Circle, Leaf } from "lucide-react";
 import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/hooks/use-translation";
@@ -27,8 +27,6 @@ export default function CategoriesSection() {
     CircleDot,
     Circle,
     Leaf,
-    Droplets,
-    Wheat,
     // Custom tomato icon using Circle with red fill
     Tomato: ({ className }: { className?: string }) => (
       <Circle className={className} fill="currentColor" />
@@ -89,44 +87,44 @@ export default function CategoriesSection() {
   }
 
   return (
-    <section className="px-4 py-2">
-      <div className="flex justify-center space-x-4 max-w-xs mx-auto">
+    <section className="px-4 py-0.5">
+      <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x">
         {categories?.map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex flex-col items-center"
+            className="flex-shrink-0 flex flex-col items-center min-w-16 w-16 h-16"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 cursor-pointer transition-all duration-300 relative shadow-sm ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
                 category.isSelected
-                  ? "shadow-md transform scale-105"
-                  : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300 hover:shadow-md"
+                  ? "shadow-lg"
+                  : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
               }`}
               style={category.isSelected ? { backgroundColor: '#22c55e' } : {}}
             >
               {(() => {
                 const IconComponent = iconMap[category.icon];
                 return IconComponent ? (
-                  <IconComponent className={`w-5 h-5 ${
+                  <IconComponent className={`w-3.5 h-3.5 ${
                     category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 ) : (
-                  <Apple className={`w-5 h-5 ${
+                  <Apple className={`w-3.5 h-3.5 ${
                     category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 );
               })()}
             </motion.div>
-            <span className={`text-[10px] font-medium text-center leading-tight ${
-              category.isSelected ? "text-black font-semibold" : "text-gray-700"
+            <span className={`text-[10px] font-medium text-center w-full leading-tight mt-1 ${
+              category.isSelected ? "text-black" : "text-gray-700"
             }`}>
-              {category.name}
+              {t(getCategoryTranslationKey(category.name))}
             </span>
           </motion.div>
         ))}

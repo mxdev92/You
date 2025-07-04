@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { firebaseStorage } from "./firebase-storage";
-import { insertProductSchema, insertOrderSchema } from "@shared/schema";
+import { storage } from "./storage";
+import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
+import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -29,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Categories
   app.get("/api/categories", async (req, res) => {
     try {
-      const categories = await firebaseStorage.getCategories();
+      const categories = await storage.getCategories();
       res.json(categories);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch categories" });
@@ -47,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('Calling updateCategorySelection with ID:', id);
-      const category = await firebaseStorage.updateCategory(id, { selected: true });
+      const category = await storage.updateCategorySelection(id, true);
       console.log('Category updated successfully:', category);
       res.json(category);
     } catch (error) {
