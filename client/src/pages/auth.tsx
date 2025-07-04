@@ -27,6 +27,8 @@ interface CustomDropdownProps {
 function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -39,24 +41,38 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
+
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-10 px-3 border border-gray-300 focus:border-gray-400 focus:ring-0 rounded-2xl text-right text-sm shadow-sm hover:shadow-md transition-all duration-300 bg-white flex items-center justify-between"
-        style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-      >
-        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
-          {value || placeholder}
-        </span>
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+    <>
+      <div className="relative" ref={dropdownRef}>
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full h-10 px-3 border border-gray-300 focus:border-gray-400 focus:ring-0 rounded-2xl text-right text-sm shadow-sm hover:shadow-md transition-all duration-300 bg-white flex items-center justify-between"
+          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
         >
-          <ChevronDown className="w-4 h-4 text-gray-500" />
-        </motion.div>
-      </button>
+          <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+            {value || placeholder}
+          </span>
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-4 h-4 text-gray-500" />
+          </motion.div>
+        </button>
+      </div>
 
       <AnimatePresence>
         {isOpen && (
@@ -65,7 +81,13 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+            className="fixed z-[100] bg-white border border-gray-200 rounded-xl shadow-xl max-h-40 overflow-y-auto"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              width: dropdownPosition.width,
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
           >
             {options.map((option, index) => (
               <motion.button
@@ -78,7 +100,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
                   onChange(option);
                   setIsOpen(false);
                 }}
-                className="w-full px-4 py-2 text-sm text-right hover:bg-green-50 hover:text-green-600 transition-colors text-gray-700 first:rounded-t-xl last:rounded-b-xl"
+                className="w-full px-3 py-2.5 text-sm text-right hover:bg-green-50 hover:text-green-600 transition-colors text-gray-700 first:rounded-t-xl last:rounded-b-xl border-b border-gray-100 last:border-b-0"
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
               >
                 {option}
@@ -87,7 +109,7 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
 
@@ -505,16 +527,18 @@ const AuthPage: React.FC = () => {
                       )}
 
                       {signupStep === 4 && (
-                        <div className="space-y-3">
+                        <div className="space-y-3 relative z-10" style={{ minHeight: '200px' }}>
                           <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                             تسجيل العنوان - المحافظة
                           </h3>
-                          <CustomDropdown
-                            value={signupData.governorate}
-                            onChange={(value) => setSignupData(prev => ({ ...prev, governorate: value }))}
-                            options={iraqiGovernorates}
-                            placeholder="اختر المحافظة"
-                          />
+                          <div className="relative">
+                            <CustomDropdown
+                              value={signupData.governorate}
+                              onChange={(value) => setSignupData(prev => ({ ...prev, governorate: value }))}
+                              options={iraqiGovernorates}
+                              placeholder="اختر المحافظة"
+                            />
+                          </div>
                         </div>
                       )}
 
