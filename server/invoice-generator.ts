@@ -71,6 +71,11 @@ function generateInvoiceHTML(orders: any[]): string {
   const order = orders[0]; // Get first order
   const items = order.items || [];
   
+  // Calculate totals explicitly
+  const subtotal = Math.round(order.totalAmount);
+  const deliveryFee = 1000;
+  const finalTotal = subtotal + deliveryFee;
+  
   return `
     <!DOCTYPE html>
     <html lang="ar" dir="rtl">
@@ -233,10 +238,16 @@ function generateInvoiceHTML(orders: any[]): string {
           background: white;
         }
         
-        .total-row {
+        .total-row td {
           background: #333 !important;
           color: white !important;
-          font-weight: 700;
+          font-weight: 700 !important;
+        }
+        
+        .total-row .value {
+          text-align: left !important;
+          background: #333 !important;
+          color: white !important;
         }
         
         .notes-section {
@@ -328,15 +339,15 @@ function generateInvoiceHTML(orders: any[]): string {
           <table class="totals-table">
             <tr>
               <td class="label">مجموع الطلبات الكلي:</td>
-              <td class="value">${Math.round(order.totalAmount).toLocaleString('ar-IQ')} دينار</td>
+              <td class="value">${subtotal.toLocaleString()} دينار</td>
             </tr>
             <tr>
               <td class="label">اجور خدمة التوصيل:</td>
-              <td class="value">1000 دينار</td>
+              <td class="value">${deliveryFee.toLocaleString()} دينار</td>
             </tr>
             <tr class="total-row">
               <td class="label">المبلغ الاجمالي:</td>
-              <td class="value">${Math.round(order.totalAmount + 1000).toLocaleString('ar-IQ')} دينار</td>
+              <td class="value">${finalTotal.toLocaleString()} دينار</td>
             </tr>
           </table>
         </div>
