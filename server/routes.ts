@@ -1499,6 +1499,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.createUser({ email, passwordHash: password });
+      
+      // Set session after successful signup
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = user.id;
+      
       res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
     } catch (error: any) {
       console.error('Signup error:', error);
