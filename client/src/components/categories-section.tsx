@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana, CircleDot, Circle, Leaf } from "lucide-react";
 import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -11,10 +12,7 @@ export default function CategoriesSection() {
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 300000, // Cache categories for 5 minutes for instant switching
-    gcTime: 600000, // Keep in cache for 10 minutes
-    refetchInterval: false, // Categories don't change often
-    refetchOnWindowFocus: false,
+    staleTime: 60000, // Cache categories for 1 minute for faster performance
   });
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -92,13 +90,18 @@ export default function CategoriesSection() {
     <section className="py-0.5">
       <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x px-4">
         {categories?.map((category, index) => (
-          <div
+          <motion.div
             key={category.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
             className="flex-shrink-0 flex flex-col items-center justify-center min-w-16 w-16 h-16"
           >
-            <div
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer relative touch-action-manipulation min-h-12 min-w-12 ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 ${
                 category.isSelected
                   ? "shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
@@ -117,13 +120,13 @@ export default function CategoriesSection() {
                   }`} />
                 );
               })()}
-            </div>
+            </motion.div>
             <span className={`text-[10px] font-medium text-center w-full leading-tight flex items-center justify-center ${
               category.isSelected ? "text-black" : "text-gray-700"
             }`}>
               {t(getCategoryTranslationKey(category.name))}
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>

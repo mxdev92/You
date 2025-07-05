@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-
+import { motion } from "framer-motion";
 import type { Product, Category } from "@shared/schema";
 import ProductCard from "./product-card";
 
@@ -10,7 +10,7 @@ export default function ProductsGrid() {
 
   const selectedCategory = categories?.find(cat => cat.isSelected);
 
-  const { data: products, isLoading, isFetching } = useQuery<Product[]>({
+  const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", selectedCategory?.id],
     queryFn: async () => {
       const url = selectedCategory 
@@ -21,35 +21,40 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    staleTime: 30000, // Cache for 30 seconds for much faster category switching
-    gcTime: 300000, // Keep in cache for 5 minutes
-    refetchInterval: false, // Disable auto-refetch for faster switching
-    placeholderData: (previousData) => previousData, // Keep showing previous data while loading new
-    refetchOnWindowFocus: false, // Disable refetch on window focus
+    staleTime: 0, // Always fresh data for real-time admin updates
+    refetchInterval: 2000, // Auto-refetch every 2 seconds for real-time updates
   });
 
   return (
     <section className="px-4 py-6">
-      <div className="grid grid-cols-3 gap-3 md:gap-4">
-        {/* Show existing products immediately */}
-        {products?.map((product, index) => (
-          <div key={product.id}>
-            <ProductCard product={product} />
-          </div>
-        ))}
-        
-        {/* Show skeleton placeholders only when initially loading */}
-        {isLoading && !products && Array.from({ length: 6 }).map((_, index) => (
-          <div key={`skeleton-${index}`} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            <div className="h-32 md:h-40 bg-gray-100" />
-            <div className="p-3 space-y-2">
-              <div className="h-4 bg-gray-100 rounded" />
-              <div className="h-4 bg-gray-100 rounded w-2/3" />
-              <div className="h-8 bg-gray-100 rounded" />
+
+      {isLoading ? (
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
+          {Array.from({ length: 9 }).map((_, index) => (
+            <div key={index} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="h-32 md:h-40 bg-gray-200 animate-pulse" />
+              <div className="p-3 space-y-2">
+                <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
+                <div className="h-8 bg-gray-200 rounded animate-pulse" />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
+          {products?.map((product, index) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <ProductCard product={product} />
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       {!isLoading && products?.length === 0 && (
         <div className="text-center py-12">

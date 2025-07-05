@@ -17,13 +17,53 @@ interface ProductCardProps {
 
 // LazyImage component for optimized loading
 function LazyImage({ src, alt, className }: { src: string; alt: string; className: string }) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleLoad = () => {
+    setIsLoaded(true);
+    console.log('Image loaded successfully for product:', alt, 'URL:', src);
+  };
+
   return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      loading="eager"
-    />
+    <div ref={imgRef} className={className}>
+      {/* Loading placeholder */}
+      {!isLoaded && (
+        <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
+          <div className="w-8 h-8 bg-gray-300 rounded"></div>
+        </div>
+      )}
+      
+      {/* Actual image - only load when in view */}
+      {isInView && (
+        <img
+          src={src}
+          alt={alt}
+          className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={handleLoad}
+          loading="lazy"
+        />
+      )}
+    </div>
   );
 }
 
