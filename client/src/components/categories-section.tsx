@@ -95,7 +95,7 @@ export default function CategoriesSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="flex-shrink-0 flex flex-col items-center min-w-16 w-16 h-16"
+            className="flex-shrink-0 flex flex-col items-center justify-center min-w-16 w-16 h-16"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -121,7 +121,7 @@ export default function CategoriesSection() {
                 );
               })()}
             </motion.div>
-            <span className={`text-[10px] font-medium text-center w-full leading-tight mt-1 ${
+            <span className={`text-[10px] font-medium text-center w-full leading-tight flex items-center justify-center ${
               category.isSelected ? "text-black" : "text-gray-700"
             }`}>
               {t(getCategoryTranslationKey(category.name))}
