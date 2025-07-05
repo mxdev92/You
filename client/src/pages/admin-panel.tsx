@@ -371,11 +371,14 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
   
   const createProductMutation = useMutation({
     mutationFn: async (productData: any) => {
-      console.log('Creating product with data:', productData);
-      console.log('Image type check:', {
+      console.log('🔥 Creating product with data:', productData);
+      console.log('🔥 Image type check:', {
         hasImage: !!productData.image,
         isFile: productData.image instanceof File,
-        imageValue: productData.image
+        imageValue: productData.image,
+        imageName: productData.image?.name,
+        imageSize: productData.image?.size,
+        imageType: productData.image?.type
       });
       
       let imageUrl = '/api/placeholder/60/60';
@@ -383,16 +386,16 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
       // Only upload if we have a proper File object
       if (productData.image && productData.image instanceof File) {
         try {
-          console.log('Uploading image file:', productData.image.name);
+          console.log('🔥 UPLOADING IMAGE FILE:', productData.image.name, 'size:', productData.image.size);
           imageUrl = await uploadProductImage(productData.image);
-          console.log('Image uploaded successfully:', imageUrl);
+          console.log('🔥 IMAGE UPLOADED SUCCESSFULLY:', imageUrl);
         } catch (error) {
-          console.error('Image upload failed:', error);
+          console.error('🔥 IMAGE UPLOAD FAILED:', error);
           // Continue with placeholder image on upload failure
           imageUrl = '/api/placeholder/60/60';
         }
       } else {
-        console.log('No image to upload, using placeholder');
+        console.log('🔥 NO IMAGE TO UPLOAD, using placeholder');
       }
       
       const newProduct = {
@@ -457,11 +460,20 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('🔥 IMAGE CHANGE DETECTED:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type
+    });
     if (file) {
+      console.log('🔥 SETTING FILE TO FORM DATA:', file);
       setFormData(prev => ({ ...prev, image: file }));
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+        const result = e.target?.result as string;
+        console.log('🔥 IMAGE PREVIEW SET:', result?.substring(0, 50) + '...');
+        setImagePreview(result);
       };
       reader.readAsDataURL(file);
     }
