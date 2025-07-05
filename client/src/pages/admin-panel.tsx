@@ -16,13 +16,16 @@ import type { Product, InsertProduct } from '@shared/schema';
 
 // Helper functions for product operations
 const uploadProductImage = async (file: File): Promise<string> => {
+  console.log('🔥 uploadProductImage called with:', file.name, file.size, file.type);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
       try {
         const imageData = reader.result as string;
+        console.log('🔥 FileReader completed, image data length:', imageData.length);
         
         // Upload to backend
+        console.log('🔥 Sending POST request to /api/upload-image...');
         const response = await fetch('/api/upload-image', {
           method: 'POST',
           headers: {
@@ -34,18 +37,27 @@ const uploadProductImage = async (file: File): Promise<string> => {
           }),
         });
 
+        console.log('🔥 Upload response status:', response.status);
+
         if (!response.ok) {
-          throw new Error('Failed to upload image');
+          const errorText = await response.text();
+          console.error('🔥 Upload failed with status:', response.status, errorText);
+          throw new Error(`Failed to upload image: ${response.status} ${errorText}`);
         }
 
         const result = await response.json();
+        console.log('🔥 Upload successful, result:', result);
         resolve(result.imageUrl);
       } catch (error) {
-        console.error('Image upload failed:', error);
+        console.error('🔥 Image upload failed:', error);
         reject(error);
       }
     };
-    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onerror = (error) => {
+      console.error('🔥 FileReader error:', error);
+      reject(new Error('Failed to read file'));
+    };
+    console.log('🔥 Starting FileReader.readAsDataURL...');
     reader.readAsDataURL(file);
   });
 };
