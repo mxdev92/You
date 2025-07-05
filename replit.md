@@ -118,6 +118,9 @@ July 5, 2025:
 ✓ SPACING FIX: Fixed unequal left/right edge spacing in categories section
 ✓ Moved padding from outer section to inner flex container for balanced margins
 ✓ Equal spacing now between left edge → خضروات and right edge → لحوم
+✓ SIZE ENHANCEMENT: Made category circles bigger for improved visibility
+✓ Increased circle size from 40px to 48px for better touch targets
+✓ Enlarged icons proportionally to match the bigger circles
 
 July 4, 2025:
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications

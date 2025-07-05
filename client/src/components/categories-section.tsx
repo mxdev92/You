@@ -77,7 +77,7 @@ export default function CategoriesSection() {
         <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x px-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex-shrink-0 flex flex-col items-center min-w-14">
-              <div className="w-10 h-10 bg-gray-200 rounded-xl animate-pulse mb-0.5" />
+              <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mb-0.5" />
               <div className="h-3 bg-gray-200 rounded animate-pulse" />
             </div>
           ))}
@@ -101,7 +101,7 @@ export default function CategoriesSection() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-10 min-w-10 ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 ${
                 category.isSelected
                   ? "shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
@@ -111,11 +111,11 @@ export default function CategoriesSection() {
               {(() => {
                 const IconComponent = iconMap[category.icon];
                 return IconComponent ? (
-                  <IconComponent className={`w-3.5 h-3.5 ${
+                  <IconComponent className={`w-4 h-4 ${
                     category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 ) : (
-                  <Apple className={`w-3.5 h-3.5 ${
+                  <Apple className={`w-4 h-4 ${
                     category.isSelected ? "text-white" : "text-gray-600"
                   }`} />
                 );
