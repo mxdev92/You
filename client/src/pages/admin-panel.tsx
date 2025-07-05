@@ -432,7 +432,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
       // Reset mutation state to clear any previous errors
       createProductMutation.reset();
     }
-  }, [isOpen, createProductMutation]);
+  }, [isOpen]); // Remove createProductMutation dependency to prevent continuous resets
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
