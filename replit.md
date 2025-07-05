@@ -127,6 +127,12 @@ July 5, 2025:
 ✓ Invoice now visually consistent with main application design
 ✓ DOMAIN UPDATE: App now deployed at https://pakety.delivery/
 ✓ Created Chrome shortcuts (.bat and .url files) for direct access to the deployed site
+✓ FIXED: Select All and Print All functionality working perfectly in admin panel
+✓ Added missing batch PDF generation endpoint (/api/generate-batch-invoices-pdf)
+✓ Batch printing now generates professional multi-page PDFs with green branding
+✓ Print All button works seamlessly for Brother DCP-T520W printer integration
+✓ ANIMATION FIX: Removed redundant second loading animation (gray placeholder squares)
+✓ Cleaner loading experience with single skeleton animation instead of double loading states
 
 July 4, 2025:
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications
