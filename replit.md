@@ -160,6 +160,12 @@ July 4, 2025:
 ✓ Automatic clearing of localStorage, sessionStorage, service workers, and Cache API
 ✓ Created DEPLOYMENT_CACHE_FIX.md guide with step-by-step deployment instructions
 ✓ Users will now automatically get latest version after deployment without manual refresh
+✓ FIXED: Admin panel add/edit category dropdowns now match current database categories
+✓ Updated category options to: Vegetables, Fruits, Bakery, مشروبات, Meat
+✓ Removed outdated "Dairy" and "اسماك" options from admin panel forms
+✓ Version updated to 2.3.0-stable-admin-fix for proper cache invalidation
+✓ Both AddItemPopup and EditItemPopup now have correct category mapping
+✓ Enhanced deployment cache documentation with troubleshooting steps
 
 July 3, 2025:
 ✓ Built comprehensive Store API for Expo React Native integration

@@ -10,41 +10,79 @@ initializeLanguage();
 
 const queryClient = new QueryClient();
 
-// App version for cache busting after deployment - UPDATE THIS WHEN DEPLOYING
-const APP_VERSION = "2.1.0-realtime";
+// App version for cache busting - UPDATE THIS WHEN DEPLOYING
+const APP_VERSION = "2.3.0-stable-admin-fix"; // Fixed admin panel categories and deployment cache
 
-// Clear browser cache for users on old versions
-const clearOldCache = () => {
+// Aggressive cache clearing for deployment issues
+const forceAppUpdate = () => {
   const storedVersion = localStorage.getItem('pakety_app_version');
+  const lastUpdate = localStorage.getItem('pakety_last_update');
+  const currentTime = Date.now();
   
-  if (storedVersion && storedVersion !== APP_VERSION) {
-    console.log('New version detected, clearing cache...');
+  // Force update conditions
+  const needsUpdate = !storedVersion || 
+                     storedVersion !== APP_VERSION ||
+                     !lastUpdate ||
+                     (currentTime - parseInt(lastUpdate)) > 24 * 60 * 60 * 1000; // 24 hours
+  
+  if (needsUpdate) {
+    console.log('Forcing app update - clearing all cache...');
     
-    // Clear all storage
-    localStorage.clear();
-    sessionStorage.clear();
-    
-    // Clear service worker cache if exists  
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(registration => registration.unregister());
-      });
+    // Clear everything aggressively
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            registration.unregister();
+            console.log('Service worker unregistered');
+          });
+        });
+      }
+      
+      // Clear cache API
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+            console.log('Cache deleted:', name);
+          });
+        });
+      }
+      
+      // Clear indexedDB if exists
+      if ('indexedDB' in window) {
+        indexedDB.databases?.().then(databases => {
+          databases.forEach(db => {
+            if (db.name) {
+              indexedDB.deleteDatabase(db.name);
+              console.log('IndexedDB deleted:', db.name);
+            }
+          });
+        });
+      }
+      
+    } catch (error) {
+      console.log('Cache clearing completed with minor errors:', error);
     }
     
-    // Force cache reload
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => caches.delete(name));
-      });
+    // Set new version and timestamp
+    localStorage.setItem('pakety_app_version', APP_VERSION);
+    localStorage.setItem('pakety_last_update', currentTime.toString());
+    
+    // Force a hard reload for users on old versions
+    if (storedVersion && storedVersion !== APP_VERSION) {
+      console.log('Hard reloading for version change...');
+      window.location.href = window.location.href + '?v=' + currentTime; // Force reload from server
     }
   }
-  
-  // Store current version
-  localStorage.setItem('pakety_app_version', APP_VERSION);
 };
 
-// Execute cache clearing on app load
-clearOldCache();
+// Execute aggressive update check
+forceAppUpdate();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

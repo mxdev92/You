@@ -67,7 +67,7 @@ const clearOldCache = () => {
 ### Step 1: Update Version
 Before each deployment, update the APP_VERSION in `client/src/main.tsx`:
 ```javascript
-const APP_VERSION = "2.2.0"; // Change this number
+const APP_VERSION = "2.3.0-stable-admin-fix"; // Change this number
 ```
 
 ### Step 2: Deploy

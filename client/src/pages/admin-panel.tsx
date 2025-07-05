@@ -52,41 +52,38 @@ const uploadProductImage = async (file: File): Promise<string> => {
 
 
 
-// Helper function to map category names to IDs
+// Helper function to map category names to IDs (UPDATED TO MATCH DATABASE)
 const getCategoryId = (categoryName: string): number => {
   const mapping: { [key: string]: number } = {
     'Vegetables': 2,
     'Fruits': 1,
-    'Dairy': 3,
-    'Meat': 4,
-    'Seafood': 5,
-    'Bakery': 6
+    'مشروبات': 3,
+    'Bakery': 4,
+    'Meat': 6
   };
   return mapping[categoryName] || 2; // Default to Vegetables
 };
 
-// Helper function to map category IDs to names
+// Helper function to map category IDs to names (UPDATED TO MATCH DATABASE)
 const getCategoryName = (categoryId: number | null): string => {
   const mapping: { [key: number]: string } = {
     1: 'Fruits',
     2: 'Vegetables', 
-    3: 'Dairy',
-    4: 'Meat',
-    5: 'Seafood',
-    6: 'Bakery'
+    3: 'مشروبات',
+    4: 'Bakery',
+    6: 'Meat'
   };
   return mapping[categoryId || 2] || 'Vegetables'; // Default to Vegetables
 };
 
 const createProduct = async (productData: any): Promise<Product> => {
-  // Map category names to category IDs
+  // Map category names to category IDs (UPDATED TO MATCH DATABASE)
   const categoryMapping: { [key: string]: number } = {
     'Vegetables': 2,
     'Fruits': 1,
-    'Dairy': 4,
-    'Meat': 6,
-    'Seafood': 5,
-    'Bakery': 3
+    'مشروبات': 3,
+    'Bakery': 4,
+    'Meat': 6
   };
   
   const insertProduct: InsertProduct = {
@@ -99,7 +96,8 @@ const createProduct = async (productData: any): Promise<Product> => {
     displayOrder: 0
   };
   
-  return await apiRequest('POST', '/api/products', insertProduct);
+  const response = await apiRequest('POST', '/api/products', insertProduct);
+  return await response.json();
 };
 
 // Mock orders data
@@ -506,7 +504,8 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
                 <SelectContent className="rounded-xl">
                   <SelectItem value="Fruits">Fruits</SelectItem>
                   <SelectItem value="Vegetables">Vegetables</SelectItem>
-                  <SelectItem value="Dairy">Dairy</SelectItem>
+                  <SelectItem value="مشروبات">مشروبات</SelectItem>
+                  <SelectItem value="Bakery">Bakery</SelectItem>
                   <SelectItem value="Meat">Meat</SelectItem>
                 </SelectContent>
               </Select>
@@ -790,7 +789,8 @@ function EditItemPopup({ isOpen, onClose, onUpdateItem, product }: {
                 <SelectContent className="rounded-xl">
                   <SelectItem value="Fruits">Fruits</SelectItem>
                   <SelectItem value="Vegetables">Vegetables</SelectItem>
-                  <SelectItem value="Dairy">Dairy</SelectItem>
+                  <SelectItem value="مشروبات">مشروبات</SelectItem>
+                  <SelectItem value="Bakery">Bakery</SelectItem>
                   <SelectItem value="Meat">Meat</SelectItem>
                 </SelectContent>
               </Select>
