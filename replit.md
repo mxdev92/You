@@ -97,6 +97,13 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 5, 2025:
+✓ FIXED: Image upload file size limit issue causing intermittent failures
+✓ Increased Express.js request limit from default 1MB to 10MB for image uploads
+✓ Resolved "request entity too large" error (413) that blocked larger image uploads
+✓ System now consistently handles all image sizes from small thumbnails to high-resolution photos
+✓ Image upload functionality fully stable and working for all image types and sizes
+
 July 4, 2025:
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications
 ✓ Added blur overlay (backdrop-blur-sm) with rounded-2xl edges for modern appearance  
