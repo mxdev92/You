@@ -369,23 +369,6 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
-  // Reset form when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      console.log('Dialog opened, resetting form');
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        category: 'Vegetables',
-        unit: 'kg',
-        available: true,
-        image: null
-      });
-      setImagePreview(null);
-    }
-  }, [isOpen]);
-  
   const createProductMutation = useMutation({
     mutationFn: async (productData: any) => {
       console.log('Creating product with data:', productData);
@@ -420,11 +403,22 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
     },
     onSuccess: (savedProduct) => {
       console.log('Product created successfully:', savedProduct);
+      
       // Invalidate and refetch products to update the UI
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       onAddItem(savedProduct);
-      
-      // Reset form first, then close
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Error creating product:', error);
+      alert('Failed to create product. Please try again.');
+    }
+  });
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('Dialog opened, resetting form and mutation state');
       setFormData({
         name: '',
         description: '',
@@ -435,12 +429,10 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
         image: null
       });
       setImagePreview(null);
-      onClose();
-    },
-    onError: (error) => {
-      console.error('Error creating product:', error);
+      // Reset mutation state to clear any previous errors
+      createProductMutation.reset();
     }
-  });
+  }, [isOpen, createProductMutation]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
