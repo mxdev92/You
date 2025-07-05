@@ -990,10 +990,11 @@ function ItemsManagement() {
 
 
   const categories = [
-    { id: 1, name: 'Fruits', icon: Apple, count: 3 },
-    { id: 2, name: 'Vegetables', icon: Carrot, count: 3 },
-    { id: 3, name: 'Dairy', icon: Milk, count: 0 },
-    { id: 4, name: 'Meat', icon: Beef, count: 0 }
+    { id: 1, name: 'Fruits', icon: Apple, count: products.filter(p => p.category === 'Fruits').length },
+    { id: 2, name: 'Vegetables', icon: Carrot, count: products.filter(p => p.category === 'Vegetables').length },
+    { id: 3, name: 'مشروبات', icon: Milk, count: products.filter(p => p.category === 'مشروبات').length },
+    { id: 4, name: 'Bakery', icon: Package2, count: products.filter(p => p.category === 'Bakery').length },
+    { id: 6, name: 'Meat', icon: Beef, count: products.filter(p => p.category === 'Meat').length }
   ];
 
   const filteredProducts = products.filter(product => {
@@ -1001,10 +1002,9 @@ function ItemsManagement() {
     const matchesCategory = selectedCategory === null || 
       (selectedCategory === 1 && product.category === 'Fruits') ||
       (selectedCategory === 2 && product.category === 'Vegetables') ||
-      (selectedCategory === 3 && product.category === 'Dairy') ||
-      (selectedCategory === 4 && product.category === 'Meat') ||
-      (selectedCategory === 5 && product.category === 'Seafood') ||
-      (selectedCategory === 6 && product.category === 'Bakery');
+      (selectedCategory === 3 && product.category === 'مشروبات') ||
+      (selectedCategory === 4 && product.category === 'Bakery') ||
+      (selectedCategory === 6 && product.category === 'Meat');
     return matchesSearch && matchesCategory;
   });
 
