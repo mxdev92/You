@@ -177,7 +177,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
           margin-bottom: 8px;
           color: white;
           text-align: center;
-          background: #333;
+          background: #22c55e;
           padding: 4px;
           margin: -8px -8px 8px -8px;
         }
@@ -209,7 +209,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
         .qr-box {
           width: 50px;
           height: 50px;
-          border: 2px solid #333;
+          border: 2px solid #22c55e;
           background: #f8f9fa;
           display: flex;
           align-items: center;
@@ -235,12 +235,12 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
         }
         
         .order-table th {
-          background: #333;
+          background: #22c55e;
           color: white;
           padding: 6px 4px;
           text-align: center;
           font-weight: 600;
-          border: 1px solid #333;
+          border: 1px solid #22c55e;
           font-size: 9px;
         }
         
@@ -286,14 +286,14 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
         }
         
         .total-row td {
-          background: #333 !important;
+          background: #22c55e !important;
           color: white !important;
           font-weight: 700 !important;
         }
         
         .total-row .value {
           text-align: left !important;
-          background: #333 !important;
+          background: #22c55e !important;
           color: white !important;
         }
         
@@ -324,7 +324,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
       <div class="invoice">
         <!-- Company Name Header -->
         <div class="logo-header">
-          <h1 style="font-size: 24px; font-weight: bold; color: #333; margin: 0; text-align: center;">PAKETY</h1>
+          <h1 style="font-size: 24px; font-weight: bold; color: #22c55e; margin: 0; text-align: center;">PAKETY</h1>
         </div>
         
         <!-- Header with Customer Info and QR -->
@@ -341,7 +341,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
           <div style="flex: 1;"></div>
           
           <div class="qr-info">
-            ${qrCodeDataURL ? `<img src="${qrCodeDataURL}" alt="QR Code" style="width: 80px; height: 80px; border: 2px solid #333; margin-bottom: 8px;">` : '<div class="qr-box">QR</div>'}
+            ${qrCodeDataURL ? `<img src="${qrCodeDataURL}" alt="QR Code" style="width: 80px; height: 80px; border: 2px solid #22c55e; margin-bottom: 8px;">` : '<div class="qr-box">QR</div>'}
             <div class="order-details">
               <div><strong>Order ID:</strong> ${order.id || 'N/A'}</div>
               <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-US')}</div>

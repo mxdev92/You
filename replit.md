@@ -121,6 +121,10 @@ July 5, 2025:
 ✓ SIZE ENHANCEMENT: Made category circles bigger for improved visibility
 ✓ Increased circle size from 40px to 48px for better touch targets
 ✓ Enlarged icons proportionally to match the bigger circles
+✓ PDF DESIGN UPDATE: Changed invoice colors from black to app green (#22c55e)
+✓ Updated customer section header, table headers, and totals to use green branding
+✓ Changed PAKETY logo text and QR code borders to match app's green theme
+✓ Invoice now visually consistent with main application design
 
 July 4, 2025:
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications
