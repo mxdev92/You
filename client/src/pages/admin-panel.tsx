@@ -369,8 +369,26 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('Dialog opened, resetting form');
+      setFormData({
+        name: '',
+        description: '',
+        price: '',
+        category: 'Vegetables',
+        unit: 'kg',
+        available: true,
+        image: null
+      });
+      setImagePreview(null);
+    }
+  }, [isOpen]);
+  
   const createProductMutation = useMutation({
     mutationFn: async (productData: any) => {
+      console.log('Creating product with data:', productData);
       const imageUrl = productData.image ? await uploadProductImage(productData.image) : '/api/placeholder/60/60';
       
       const newProduct = {
@@ -383,6 +401,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
         available: productData.available,
       };
 
+      console.log('Sending product to API:', newProduct);
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
@@ -392,18 +411,20 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create product');
+        const errorText = await response.text();
+        console.error('API response error:', errorText);
+        throw new Error(`Failed to create product: ${response.status} ${errorText}`);
       }
 
       return response.json();
     },
     onSuccess: (savedProduct) => {
+      console.log('Product created successfully:', savedProduct);
       // Invalidate and refetch products to update the UI
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       onAddItem(savedProduct);
-      onClose();
       
-      // Reset form
+      // Reset form first, then close
       setFormData({
         name: '',
         description: '',
@@ -414,6 +435,7 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
         image: null
       });
       setImagePreview(null);
+      onClose();
     },
     onError: (error) => {
       console.error('Error creating product:', error);
@@ -434,7 +456,17 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.price) return;
+    console.log('Form submitted with data:', formData);
+    
+    if (!formData.name || !formData.price) {
+      console.log('Form validation failed - missing name or price');
+      return;
+    }
+    
+    if (createProductMutation.isPending) {
+      console.log('Mutation already in progress, skipping');
+      return;
+    }
     
     createProductMutation.mutate(formData);
   };
@@ -887,6 +919,11 @@ function ItemsManagement() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const queryClient = useQueryClient();
 
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log('isAddItemOpen state changed to:', isAddItemOpen);
+  }, [isAddItemOpen]);
+
   // REAL-TIME: Use React Query for automatic updates
   const { data: backendProducts = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/products'],
@@ -1042,7 +1079,10 @@ function ItemsManagement() {
 
           {/* Add Item Button */}
           <Button
-            onClick={() => setIsAddItemOpen(true)}
+            onClick={() => {
+              console.log('Add Item button clicked, opening dialog');
+              setIsAddItemOpen(true);
+            }}
             size="sm"
             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 h-auto text-xs rounded-full"
           >
@@ -1193,7 +1233,10 @@ function ItemsManagement() {
       {/* Add Item Popup */}
       <AddItemPopup 
         isOpen={isAddItemOpen}
-        onClose={() => setIsAddItemOpen(false)}
+        onClose={() => {
+          console.log('AddItemPopup onClose called, setting isAddItemOpen to false');
+          setIsAddItemOpen(false);
+        }}
         onAddItem={handleAddItem}
       />
 
