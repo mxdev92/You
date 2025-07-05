@@ -1154,11 +1154,19 @@ function ItemsManagement() {
             <div key={product.id} className="bg-white rounded-lg border border-gray-200 p-2 hover:shadow-sm transition-shadow">
               <div className="flex items-center gap-2">
                 {/* Product Image */}
-                <div className="w-10 h-10 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden border border-gray-200">
                   <img 
                     src={product.imageUrl} 
                     alt={product.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log('Image load error for product:', product.name, 'URL:', product.imageUrl);
+                      // Set a fallback gray background on error
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully for product:', product.name, 'URL:', product.imageUrl);
+                    }}
                   />
                 </div>
                 
