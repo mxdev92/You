@@ -46,19 +46,12 @@ function LazyImage({ src, alt, className }: { src: string; alt: string; classNam
 
   return (
     <div ref={imgRef} className={className}>
-      {/* Loading placeholder */}
-      {!isLoaded && (
-        <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
-          <div className="w-8 h-8 bg-gray-300 rounded"></div>
-        </div>
-      )}
-      
       {/* Actual image - only load when in view */}
       {isInView && (
         <img
           src={src}
           alt={alt}
-          className={`${className} transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`${className} transition-opacity duration-200 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={handleLoad}
           loading="lazy"
         />

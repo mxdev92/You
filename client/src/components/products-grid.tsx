@@ -21,8 +21,8 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    staleTime: 0, // Always fresh data for real-time admin updates
-    refetchInterval: 2000, // Auto-refetch every 2 seconds for real-time updates
+    staleTime: 1000, // Cache for 1 second to prevent excessive requests
+    refetchInterval: 3000, // Auto-refetch every 3 seconds for real-time updates
   });
 
   return (
@@ -30,13 +30,13 @@ export default function ProductsGrid() {
 
       {isLoading ? (
         <div className="grid grid-cols-3 gap-3 md:gap-4">
-          {Array.from({ length: 9 }).map((_, index) => (
+          {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="h-32 md:h-40 bg-gray-200 animate-pulse" />
+              <div className="h-32 md:h-40 bg-gray-100" />
               <div className="p-3 space-y-2">
-                <div className="h-4 bg-gray-200 rounded animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
-                <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 bg-gray-100 rounded" />
+                <div className="h-4 bg-gray-100 rounded w-2/3" />
+                <div className="h-8 bg-gray-100 rounded" />
               </div>
             </div>
           ))}
@@ -46,9 +46,9 @@ export default function ProductsGrid() {
           {products?.map((product, index) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.02, duration: 0.2 }}
             >
               <ProductCard product={product} />
             </motion.div>
