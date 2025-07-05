@@ -109,6 +109,9 @@ July 5, 2025:
 ✓ App now loads instantly without waiting for all images to download
 ✓ Optimized bandwidth usage with on-demand image loading as user scrolls
 ✓ Enhanced category display with perfect circular backgrounds (rounded-full)
+✓ FIXED: Duplicate "فواكه" category display issue
+✓ Added proper mapping for "مشروبات" category to display correctly as beverages/drinks
+✓ Updated category translation fallback to prevent unknown categories from showing as fruits
 
 July 4, 2025:
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications

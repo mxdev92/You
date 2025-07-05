@@ -9,6 +9,7 @@ export const categoryNameToKey: Record<string, TranslationKey> = {
   'Seafood': 'seafood',
   'Meat': 'meat',
   'Beverages': 'beverages',
+  'مشروبات': 'beverages',
   'Snacks': 'snacks',
   'Frozen': 'frozen',
   'Pantry': 'pantry',
@@ -49,7 +50,7 @@ export const productNameToKey: Record<string, TranslationKey> = {
 
 // Get translation key for category name
 export const getCategoryTranslationKey = (categoryName: string): TranslationKey => {
-  return categoryNameToKey[categoryName] || 'fruits';
+  return categoryNameToKey[categoryName] || 'vegetables';
 };
 
 // Get translation key for product name
