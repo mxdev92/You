@@ -125,6 +125,8 @@ July 5, 2025:
 ✓ Updated customer section header, table headers, and totals to use green branding
 ✓ Changed PAKETY logo text and QR code borders to match app's green theme
 ✓ Invoice now visually consistent with main application design
+✓ DOMAIN UPDATE: App now deployed at https://pakety.delivery/
+✓ Created Chrome shortcuts (.bat and .url files) for direct access to the deployed site
 
 July 4, 2025:
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications
