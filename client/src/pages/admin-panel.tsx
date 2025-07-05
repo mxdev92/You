@@ -372,7 +372,28 @@ function AddItemPopup({ isOpen, onClose, onAddItem }: {
   const createProductMutation = useMutation({
     mutationFn: async (productData: any) => {
       console.log('Creating product with data:', productData);
-      const imageUrl = productData.image ? await uploadProductImage(productData.image) : '/api/placeholder/60/60';
+      console.log('Image type check:', {
+        hasImage: !!productData.image,
+        isFile: productData.image instanceof File,
+        imageValue: productData.image
+      });
+      
+      let imageUrl = '/api/placeholder/60/60';
+      
+      // Only upload if we have a proper File object
+      if (productData.image && productData.image instanceof File) {
+        try {
+          console.log('Uploading image file:', productData.image.name);
+          imageUrl = await uploadProductImage(productData.image);
+          console.log('Image uploaded successfully:', imageUrl);
+        } catch (error) {
+          console.error('Image upload failed:', error);
+          // Continue with placeholder image on upload failure
+          imageUrl = '/api/placeholder/60/60';
+        }
+      } else {
+        console.log('No image to upload, using placeholder');
+      }
       
       const newProduct = {
         name: productData.name,
