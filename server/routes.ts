@@ -34,19 +34,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const w = parseInt(width) || 60;
     const h = parseInt(height) || 60;
     
-    // Create a simple SVG placeholder
-    const svg = `
-      <svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100%" height="100%" fill="#f3f4f6"/>
-        <text x="50%" y="50%" text-anchor="middle" dy="0.3em" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af">
-          ${w}x${h}
-        </text>
-      </svg>
-    `;
+    // Create a simple gray JPEG placeholder image
+    // This is a minimal 1x1 gray JPEG that browsers will scale
+    const grayJpegBase64 = '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCs/9k=';
     
-    res.setHeader('Content-Type', 'image/svg+xml');
+    const imageBuffer = Buffer.from(grayJpegBase64, 'base64');
+    
+    res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    res.send(svg);
+    res.send(imageBuffer);
   });
 
   // Categories
