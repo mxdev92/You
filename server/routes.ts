@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
+import { generateInvoicePDF } from "./invoice-generator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -495,6 +496,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get addresses error:', error);
       res.status(500).json({ message: 'Failed to fetch addresses' });
+    }
+  });
+
+  // PDF Generation endpoint for single invoice
+  app.post('/api/generate-invoice-pdf', async (req, res) => {
+    try {
+      const { orderData } = req.body;
+      
+      if (!orderData) {
+        return res.status(400).json({ error: 'Order data is required' });
+      }
+
+      console.log('🚀 Generating Professional Invoice PDF with Playwright...');
+
+      const pdf = await generateInvoicePDF([orderData.id], [orderData]);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="invoice-${orderData.id}.pdf"`);
+      res.send(pdf);
+
+      console.log('✅ Professional Arabic RTL PDF generated successfully');
+    } catch (error) {
+      console.error('❌ PDF generation error:', error);
+      res.status(500).json({ message: "Failed to generate PDF" });
+    }
+  });
+
+  // Batch PDF Generation endpoint for multiple invoices
+  app.post('/api/generate-batch-invoices-pdf', async (req, res) => {
+    try {
+      const { orderIds } = req.body;
+      
+      if (!Array.isArray(orderIds) || orderIds.length === 0) {
+        return res.status(400).json({ error: 'Order IDs array is required' });
+      }
+
+      console.log('🚀 Generating Batch Invoice PDF with Playwright...');
+
+      // Fetch all orders from database
+      const allOrders = await storage.getOrders();
+      const validOrders = orderIds
+        .map((id: number) => allOrders.find(order => order.id === id))
+        .filter(order => order !== undefined);
+
+      if (validOrders.length === 0) {
+        return res.status(404).json({ error: 'No valid orders found' });
+      }
+
+      const pdf = await generateInvoicePDF(orderIds, validOrders);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="batch-invoices-${validOrders.length}-orders.pdf"`);
+      res.send(pdf);
+
+      console.log(`✅ Batch PDF with ${validOrders.length} invoices generated successfully`);
+    } catch (error) {
+      console.error('❌ Batch PDF generation error:', error);
+      res.status(500).json({ message: "Failed to generate batch PDF" });
     }
   });
 

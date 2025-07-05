@@ -360,7 +360,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
             </tr>
           </thead>
           <tbody>
-            ${items.slice(0, 25).map(item => `
+            ${items.slice(0, 25).map((item: any) => `
               <tr>
                 <td>${item.productName}</td>
                 <td>${item.price} دينار</td>
