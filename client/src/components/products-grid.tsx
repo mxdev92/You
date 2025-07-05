@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+
 import type { Product, Category } from "@shared/schema";
 import ProductCard from "./product-card";
 
@@ -21,8 +21,8 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    staleTime: 1000, // Cache for 1 second to prevent excessive requests
-    refetchInterval: 3000, // Auto-refetch every 3 seconds for real-time updates
+    staleTime: 2000, // Cache for 2 seconds 
+    refetchInterval: 5000, // Auto-refetch every 5 seconds for real-time updates
   });
 
   return (
@@ -44,14 +44,9 @@ export default function ProductsGrid() {
       ) : (
         <div className="grid grid-cols-3 gap-3 md:gap-4">
           {products?.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.02, duration: 0.2 }}
-            >
+            <div key={product.id}>
               <ProductCard product={product} />
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
