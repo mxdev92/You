@@ -278,12 +278,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     try {
       console.log('Starting order submission...');
       
-      // Extract phone number from address notes if it exists
-      const phoneMatch = primaryAddress.notes?.match(/\d{10,}/);
-      const customerPhone = phoneMatch ? phoneMatch[0] : '07501234567';
+      // Use phone from user profile, fallback to extracting from notes if not available
+      const customerPhone = postgresUser?.phone || '07501234567';
+      const customerName = postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'Customer';
       
       const orderData = {
-        customerName: postgresUser?.email?.split('@')[0] || 'Customer',
+        customerName: customerName,
         customerEmail: postgresUser?.email || 'guest@example.com',
         customerPhone: customerPhone,
         address: {
@@ -550,7 +550,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <div className="flex items-start gap-2">
                 <span className="text-xs font-medium text-gray-500 min-w-[40px]">الاسم:</span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {primaryAddress.notes ? primaryAddress.notes.split(' - ')[0] || 'غير محدد' : 'غير محدد'}
+                  {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'غير محدد'}
                 </span>
               </div>
               
@@ -558,7 +558,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <div className="flex items-start gap-2">
                 <span className="text-xs font-medium text-gray-500 min-w-[40px]">الرقم:</span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {primaryAddress.notes ? primaryAddress.notes.split(' - ')[1] || 'غير محدد' : 'غير محدد'}
+                  {postgresUser?.phone || 'غير محدد'}
                 </span>
               </div>
               
@@ -640,13 +640,13 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           {hasAddress && (
             <div className="space-y-2">
               <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addressData.governorate} Customer
+                {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'عميل'}
               </p>
               <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addressData.governorate} - طريق {addressData.district}
+                {primaryAddress?.governorate} - {primaryAddress?.district}
               </p>
               <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {addressData.neighborhood}
+                {primaryAddress?.neighborhood}
               </p>
               <p className="text-sm text-gray-900 font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 {primaryAddress?.notes?.match(/\d{10,}/)?.[0] || '07501234567'}

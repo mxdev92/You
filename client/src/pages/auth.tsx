@@ -239,8 +239,8 @@ const AuthPage: React.FC = () => {
       // Use the actual email from form
       const email = signupData.email;
       
-      // Register user
-      const newUser = await register(email, signupData.password);
+      // Register user with full name and phone
+      const newUser = await register(email, signupData.password, signupData.name, signupData.phone);
       console.log('User registered successfully:', newUser);
       
       // Create address record from signup data

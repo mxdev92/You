@@ -2,6 +2,8 @@
 export interface AuthUser {
   id: number;
   email: string;
+  fullName?: string;
+  phone?: string;
   createdAt: string;
 }
 
@@ -21,13 +23,13 @@ class PostgresAuthService {
   private authListeners: ((user: AuthUser | null) => void)[] = [];
 
   // Authentication methods
-  async signUp(email: string, password: string): Promise<AuthUser> {
+  async signUp(email: string, password: string, fullName?: string, phone?: string): Promise<AuthUser> {
     console.log('PostgreSQL Auth: Creating account for', email);
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, fullName, phone }),
       });
 
       if (!response.ok) {

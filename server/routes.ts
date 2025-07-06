@@ -391,19 +391,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post('/api/auth/signup', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, fullName, phone } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ message: 'Email and password are required' });
       }
 
-      const user = await storage.createUser({ email, passwordHash: password });
+      const user = await storage.createUser({ 
+        email, 
+        passwordHash: password, 
+        fullName: fullName || null,
+        phone: phone || null
+      });
       
       // Set session after successful signup
       (req as any).session = (req as any).session || {};
       (req as any).session.userId = user.id;
       
-      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          fullName: user.fullName,
+          phone: user.phone,
+          createdAt: user.createdAt.toISOString() 
+        } 
+      });
     } catch (error: any) {
       console.error('Signup error:', error);
       if (error.message?.includes('duplicate') || error.code === '23505') {
@@ -430,7 +443,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (req as any).session = (req as any).session || {};
       (req as any).session.userId = user.id;
 
-      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          fullName: user.fullName,
+          phone: user.phone,
+          createdAt: user.createdAt.toISOString() 
+        } 
+      });
     } catch (error) {
       console.error('Signin error:', error);
       res.status(500).json({ message: 'Failed to sign in' });
@@ -459,7 +480,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'User not found' });
       }
 
-      res.json({ user: { id: user.id, email: user.email, createdAt: user.createdAt.toISOString() } });
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          fullName: user.fullName,
+          phone: user.phone,
+          createdAt: user.createdAt.toISOString() 
+        } 
+      });
     } catch (error) {
       console.error('Session check error:', error);
       res.status(500).json({ message: 'Failed to check session' });

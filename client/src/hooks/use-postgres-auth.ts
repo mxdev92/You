@@ -29,11 +29,11 @@ export const usePostgresAuth = () => {
     return unsubscribe.unsubscribe;
   }, []);
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, fullName?: string, phone?: string) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     try {
       console.log('Starting PostgreSQL auth process:', { isLogin: false, email });
-      const user = await postgresAuth.signUp(email, password);
+      const user = await postgresAuth.signUp(email, password, fullName, phone);
       setAuthState(prev => ({ ...prev, user, loading: false }));
       console.log('PostgreSQL registration completed successfully for:', user.email);
       return user;
