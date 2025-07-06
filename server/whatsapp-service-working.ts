@@ -12,6 +12,7 @@ export class WhatsAppService {
   private qrCodeData = '';
   private otpStore = new Map<string, OTPData>();
   private connectionPromise: Promise<void> | null = null;
+  private readonly FIXED_ADMIN_WHATSAPP = '07710155333';
 
   constructor() {
     console.log('🚀 Starting WhatsApp service initialization...');
@@ -301,6 +302,49 @@ export class WhatsAppService {
       console.log(`✅ Invoice sent successfully to ${phoneNumber}`);
     } catch (error) {
       console.error(`❌ Failed to send invoice to ${phoneNumber}:`, error);
+      throw error;
+    }
+  }
+
+  async sendInvoiceToAdmin(order: any, pdfBuffer: Buffer): Promise<void> {
+    if (!this.isReady) {
+      throw new Error('WhatsApp service is not ready');
+    }
+    
+    try {
+      console.log(`📱 Sending admin copy of invoice for order ${order.id} to ${this.FIXED_ADMIN_WHATSAPP}`);
+      
+      const wwebjs = require('whatsapp-web.js');
+      const { MessageMedia } = wwebjs;
+      
+      // Format admin phone number for WhatsApp
+      const adminChatId = this.formatPhoneNumber(this.FIXED_ADMIN_WHATSAPP);
+      
+      // Create admin notification message
+      const message = `🔔 *طلب جديد - نسخة إدارية*
+
+📋 طلب رقم: #${order.id}
+👤 اسم العميل: ${order.customerName}
+📱 رقم العميل: ${order.customerPhone}
+💰 المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
+📦 عدد الأصناف: ${order.items.length} صنف
+🕐 وقت الطلب: ${new Date(order.orderDate).toLocaleString('ar-IQ')}
+🚚 وقت التوصيل: ${order.deliveryTime || 'لم يحدد'}
+
+📄 فاتورة الطلب مرفقة أدناه`;
+
+      // Send text message first
+      await this.client.sendMessage(adminChatId, message);
+      
+      // Send PDF invoice as attachment
+      const media = new MessageMedia('application/pdf', pdfBuffer.toString('base64'), `Admin_Copy_Order_${order.id}.pdf`);
+      await this.client.sendMessage(adminChatId, media, {
+        caption: `نسخة إدارية - فاتورة الطلب رقم #${order.id} 📄`
+      });
+      
+      console.log(`✅ Admin invoice copy sent successfully to ${this.FIXED_ADMIN_WHATSAPP}`);
+    } catch (error) {
+      console.error(`❌ Failed to send admin invoice copy:`, error);
       throw error;
     }
   }

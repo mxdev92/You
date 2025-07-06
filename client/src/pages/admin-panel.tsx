@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2 } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1364,8 +1364,173 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
   );
 }
 
+// Users Management Component
+function UsersManagement() {
+  const { data: users = [], isLoading, error } = useQuery({
+    queryKey: ['/api/users'],
+    queryFn: () => fetch('/api/users').then(res => res.json()),
+    refetchInterval: 3000 // Real-time updates every 3 seconds
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg p-12 text-center">
+        <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">خطأ في تحميل المستخدمين</h3>
+        <p className="text-gray-600">فشل في تحميل قائمة المستخدمين. حاول مرة أخرى.</p>
+      </div>
+    );
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ar-IQ', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">إدارة المستخدمين</h1>
+        <p className="text-gray-600">إدارة حسابات العملاء المسجلين - الأحدث أولاً</p>
+      </div>
+
+      {/* Users Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <div className="text-2xl font-bold">{users.length}</div>
+                <p className="text-sm text-gray-600">إجمالي المستخدمين</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Clock className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <div className="text-2xl font-bold">
+                  {users.filter(user => {
+                    const today = new Date();
+                    const userDate = new Date(user.createdAt);
+                    return userDate.toDateString() === today.toDateString();
+                  }).length}
+                </div>
+                <p className="text-sm text-gray-600">مستخدمين جدد اليوم</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <div className="text-2xl font-bold">
+                  {users.filter(user => {
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return new Date(user.createdAt) > weekAgo;
+                  }).length}
+                </div>
+                <p className="text-sm text-gray-600">مستخدمين جدد هذا الأسبوع</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Users List */}
+      <div className="space-y-4">
+        {users.length === 0 ? (
+          <div className="bg-white rounded-lg p-12 text-center">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد مستخدمين</h3>
+            <p className="text-gray-600">لم يتم العثور على مستخدمين مسجلين حتى الآن.</p>
+          </div>
+        ) : (
+          users.map((user: any) => (
+            <div key={user.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {user.fullName || 'غير محدد'}
+                      </h3>
+                      <Badge variant="secondary" className="text-xs">
+                        المستخدم #{user.id}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        <span>{user.email}</span>
+                      </div>
+                      {user.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          <span>{user.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>تاريخ التسجيل: {formatDate(user.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 mb-1">آخر نشاط</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {formatDate(user.createdAt)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Main Admin Panel Component
 export default function AdminPanel() {
+  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const queryClient = useQueryClient();
@@ -1484,7 +1649,8 @@ export default function AdminPanel() {
   const { data: orders = [], isLoading, error } = useQuery({
     queryKey: ['/api/orders'],
     queryFn: getOrders,
-    refetchInterval: 5000
+    refetchInterval: 1000, // Real-time updates every 1 second for new orders
+    staleTime: 0 // Always fetch fresh data
   });
 
   const updateOrderMutation = useMutation({
@@ -1598,9 +1764,39 @@ export default function AdminPanel() {
               <List className="h-5 w-5 text-gray-700" />
             </button>
             <div className="flex items-center gap-3">
-              <Badge variant="default" className="text-xs">
-                {currentView === 'orders' ? 'Orders Dashboard' : 'Items Management'}
-              </Badge>
+              {/* Tab Navigation */}
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    activeTab === 'orders'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  طلبات
+                </button>
+                <button
+                  onClick={() => setActiveTab('items')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    activeTab === 'items'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  منتجات
+                </button>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    activeTab === 'users'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  مستخدمين
+                </button>
+              </div>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -1615,7 +1811,11 @@ export default function AdminPanel() {
       </div>
 
       {/* Content Area */}
-      {currentView === 'orders' ? (
+      {activeTab === 'users' ? (
+        <div className="max-w-7xl mx-auto p-6">
+          <UsersManagement />
+        </div>
+      ) : activeTab === 'orders' ? (
         <div className="max-w-7xl mx-auto p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Orders</h1>

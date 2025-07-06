@@ -333,8 +333,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send WhatsApp notifications if service is connected
       if (whatsappService.isConnected()) {
         try {
-          // 1. Send customer confirmation
+          // Generate PDF invoice once for both customer and admin
           const pdfBuffer = await generateInvoicePDF(order);
+          
+          // 1. Send customer confirmation
           await whatsappService.sendCustomerInvoice(
             order.customerPhone, 
             order.customerName, 
@@ -342,15 +344,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pdfBuffer
           );
 
-          // 2. Send store preparation alert (using demo store phone)
+          // 2. Send admin copy to fixed admin WhatsApp (07710155333)
+          await whatsappService.sendInvoiceToAdmin(order, pdfBuffer);
+
+          // 3. Send store preparation alert (using demo store phone)
           const storePhone = '07701234567'; // Replace with actual store phone
           await whatsappService.sendStorePreparationAlert(storePhone, order);
 
-          // 3. Send driver notification (using demo driver phone)
+          // 4. Send driver notification (using demo driver phone)
           const driverPhone = '07709876543'; // Replace with actual driver phone
           await whatsappService.sendDriverNotification(driverPhone, order);
 
-          console.log(`📱 WhatsApp notifications sent for order #${order.id}`);
+          console.log(`📱 WhatsApp notifications sent for order #${order.id} (customer + admin copy)`);
         } catch (whatsappError) {
           console.error('WhatsApp notification failed (order created successfully):', whatsappError);
         }
@@ -544,6 +549,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Session check error:', error);
       res.status(500).json({ message: 'Failed to check session' });
+    }
+  });
+
+  // Users management route
+  app.get('/api/users', async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users.map(user => ({
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        createdAt: user.createdAt.toISOString()
+      })));
+    } catch (error) {
+      console.error('Get users error:', error);
+      res.status(500).json({ message: 'Failed to fetch users' });
     }
   });
 
