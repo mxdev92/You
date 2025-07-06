@@ -247,40 +247,154 @@ export class WhatsAppService {
   }
 
   // Other messaging methods...
-  async sendCustomerInvoice(orderId: number): Promise<void> {
+  async sendCustomerInvoice(phoneNumber: string, customerName: string, order: any, pdfBuffer: Buffer): Promise<void> {
     if (!this.isReady) {
       throw new Error('WhatsApp service is not ready');
     }
     
-    // Implementation for invoice sending
-    console.log(`📄 Sending invoice for order ${orderId}`);
+    try {
+      console.log(`📄 Sending invoice to ${phoneNumber} for order ${order.id}`);
+      
+      const wwebjs = require('whatsapp-web.js');
+      const { MessageMedia } = wwebjs;
+      
+      // Format phone number for WhatsApp
+      const chatId = this.formatPhoneNumber(phoneNumber);
+      
+      // Create the success message
+      const message = `🎉 *تم استلام طلبك بنجاح*
+
+مرحباً ${customerName} 👋
+
+✅ تم تأكيد طلبك رقم: #${order.id}
+💰 المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
+📦 عدد الأصناف: ${order.items.length} صنف
+🚚 وقت التوصيل: ${order.deliveryTime || 'سيتم تحديده قريباً'}
+
+📄 فاتورة الطلب مرفقة في الأسفل
+
+شكراً لاختيارك PAKETY 💚
+سنتواصل معك قريباً لتأكيد موعد التوصيل`;
+
+      // Send text message first
+      await this.client.sendMessage(chatId, message);
+      
+      // Send PDF invoice as attachment
+      const media = new MessageMedia('application/pdf', pdfBuffer.toString('base64'), `Invoice_Order_${order.id}.pdf`);
+      await this.client.sendMessage(chatId, media, {
+        caption: `فاتورة الطلب رقم #${order.id} 📄`
+      });
+      
+      console.log(`✅ Invoice sent successfully to ${phoneNumber}`);
+    } catch (error) {
+      console.error(`❌ Failed to send invoice to ${phoneNumber}:`, error);
+      throw error;
+    }
   }
 
-  async sendDriverNotification(orderId: number): Promise<void> {
+  async sendDriverNotification(driverPhone: string, order: any): Promise<void> {
     if (!this.isReady) {
       throw new Error('WhatsApp service is not ready');
     }
     
-    // Implementation for driver notification
-    console.log(`🚗 Sending driver notification for order ${orderId}`);
+    try {
+      console.log(`🚗 Sending driver notification for order ${order.id}`);
+      
+      const chatId = this.formatPhoneNumber(driverPhone);
+      
+      const message = `🚚 *طلب جديد للتوصيل*
+
+📦 رقم الطلب: #${order.id}
+👤 اسم العميل: ${order.customerName}
+📱 رقم العميل: ${order.customerPhone}
+🏠 العنوان: ${order.address.governorate} - ${order.address.district}
+📍 النقطة الدالة: ${order.address.neighborhood}
+
+💰 المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
+⏰ وقت التوصيل المطلوب: ${order.deliveryTime || 'حسب التوفر'}
+
+📝 ملاحظات إضافية: ${order.notes || 'لا توجد ملاحظات'}
+
+🔔 يرجى التجهز للتوصيل`;
+
+      await this.client.sendMessage(chatId, message);
+      console.log(`✅ Driver notification sent successfully`);
+    } catch (error) {
+      console.error(`❌ Failed to send driver notification:`, error);
+      throw error;
+    }
   }
 
-  async sendStoreAlert(orderId: number): Promise<void> {
+  async sendStorePreparationAlert(storePhone: string, order: any): Promise<void> {
     if (!this.isReady) {
       throw new Error('WhatsApp service is not ready');
     }
     
-    // Implementation for store alert
-    console.log(`🏪 Sending store alert for order ${orderId}`);
+    try {
+      console.log(`🏪 Sending store preparation alert for order ${order.id}`);
+      
+      const chatId = this.formatPhoneNumber(storePhone);
+      
+      const itemsList = order.items.map((item: any) => 
+        `• ${item.productName} - ${item.quantity} ${item.unit} - ${parseFloat(item.price).toLocaleString()} د.ع`
+      ).join('\n');
+      
+      const message = `🏪 *طلب جديد للتحضير*
+
+📦 رقم الطلب: #${order.id}
+👤 العميل: ${order.customerName}
+📱 الموبايل: ${order.customerPhone}
+
+📋 *قائمة الأصناف:*
+${itemsList}
+
+💰 المجموع: ${order.totalAmount.toLocaleString()} د.ع
+⏰ موعد التوصيل: ${order.deliveryTime || 'حسب التوفر'}
+
+📝 ملاحظات: ${order.notes || 'لا توجد ملاحظات'}
+
+🔔 يرجى تحضير الطلب`;
+
+      await this.client.sendMessage(chatId, message);
+      console.log(`✅ Store alert sent successfully`);
+    } catch (error) {
+      console.error(`❌ Failed to send store alert:`, error);
+      throw error;
+    }
   }
 
-  async sendStatusUpdate(orderId: number, status: string): Promise<void> {
+  async sendStatusUpdate(customerPhone: string, orderId: number, status: string): Promise<void> {
     if (!this.isReady) {
       throw new Error('WhatsApp service is not ready');
     }
     
-    // Implementation for status update
-    console.log(`📊 Sending status update for order ${orderId}: ${status}`);
+    try {
+      console.log(`📊 Sending status update for order ${orderId}: ${status}`);
+      
+      const chatId = this.formatPhoneNumber(customerPhone);
+      
+      const statusMessages = {
+        'confirmed': '✅ تم تأكيد طلبك وجاري التحضير',
+        'preparing': '👨‍🍳 جاري تحضير طلبك الآن',
+        'out-for-delivery': '🚚 طلبك في الطريق إليك',
+        'delivered': '🎉 تم توصيل طلبك بنجاح',
+        'cancelled': '❌ تم إلغاء طلبك'
+      };
+      
+      const statusText = statusMessages[status as keyof typeof statusMessages] || `حالة الطلب: ${status}`;
+      
+      const message = `📦 *تحديث حالة الطلب #${orderId}*
+
+${statusText}
+
+شكراً لاختيارك PAKETY 💚`;
+
+      await this.client.sendMessage(chatId, message);
+      console.log(`✅ Status update sent successfully`);
+    } catch (error) {
+      console.error(`❌ Failed to send status update:`, error);
+      throw error;
+    }
   }
 }
 
