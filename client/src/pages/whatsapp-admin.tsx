@@ -238,11 +238,6 @@ const WhatsAppAdmin: React.FC = () => {
                 {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
               </Button>
             )}
-            
-            {/* Debug info - remove later */}
-            <div className="text-xs text-gray-500 mt-2">
-              Status: {whatsappStatus} | Loading: {isLoading.toString()}
-            </div>
           </div>
         </div>
 
