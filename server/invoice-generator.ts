@@ -1,7 +1,24 @@
 import { chromium } from 'playwright';
 import QRCode from 'qrcode';
 
-export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
+// Single order PDF generation (for WhatsApp delivery)
+export async function generateInvoicePDF(order: any): Promise<Buffer> {
+  try {
+    console.log('🚀 Generating Professional Invoice PDF with Playwright...');
+
+    if (!order || !order.items) {
+      throw new Error('Invalid order data provided');
+    }
+
+    return await generateSingleOrderPDF(order);
+  } catch (error) {
+    console.error('❌ Error in generateInvoicePDF:', error);
+    throw error;
+  }
+}
+
+// Batch orders PDF generation (for admin panel)
+export async function generateBatchInvoicePDF(orderIds: number[], orders: any[]) {
   try {
     console.log('🚀 Generating Professional Invoice PDF with Playwright...');
 
@@ -14,6 +31,15 @@ export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
       throw new Error('No valid orders found');
     }
 
+    return await generateMultiOrderPDF(validOrders);
+  } catch (error) {
+    console.error('❌ Error in generateBatchInvoicePDF:', error);
+    throw error;
+  }
+}
+
+async function generateSingleOrderPDF(order: any): Promise<Buffer> {
+  try {
     // Set environment variables to use system browser
     process.env.PLAYWRIGHT_BROWSERS_PATH = '/usr';
     process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1';
@@ -44,7 +70,7 @@ export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
     const page = await browser.newPage();
 
     // Build complete HTML with professional black/gray design and real QR code
-    const htmlContent = await generateInvoiceHTML(validOrders);
+    const htmlContent = await generateInvoiceHTML([order]);
     
     // Set content and generate PDF
     await page.setContent(htmlContent, { 
@@ -66,6 +92,56 @@ export async function generateInvoicePDF(orderIds: number[], orders: any[]) {
     console.error('❌ Error generating invoice PDF:', error);
     throw error;
   }
+}
+
+async function generateMultiOrderPDF(validOrders: any[]): Promise<Buffer> {
+  // Set environment variables to use system browser
+  process.env.PLAYWRIGHT_BROWSERS_PATH = '/usr';
+  process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1';
+
+  // Launch Playwright browser
+  let browser;
+  try {
+    // Try with system chromium first
+    browser = await chromium.launch({
+      executablePath: '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium-browser',
+      args: [
+        '--no-sandbox', 
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--headless'
+      ]
+    });
+  } catch (error) {
+    console.log('System chromium failed, trying Playwright default...');
+    // Fallback to default Playwright browser (if installed)
+    browser = await chromium.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+  }
+  
+  const page = await browser.newPage();
+
+  // Build complete HTML with professional black/gray design and real QR code
+  const htmlContent = await generateInvoiceHTML(validOrders);
+  
+  // Set content and generate PDF
+  await page.setContent(htmlContent, { 
+    waitUntil: 'networkidle' 
+  });
+
+  const pdfBuffer = await page.pdf({
+    format: 'A4',
+    printBackground: true,
+    margin: { top: '5mm', right: '5mm', bottom: '5mm', left: '5mm' }
+  });
+
+  await browser.close();
+
+  console.log('✅ Professional Arabic RTL PDF generated successfully');
+  return pdfBuffer;
 }
 
 async function generateQRCode(orderId: number): Promise<string> {

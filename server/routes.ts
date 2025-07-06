@@ -7,7 +7,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
-import { generateInvoicePDF } from "./invoice-generator";
+import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import whatsappService from "./whatsapp-service-working.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Import the new invoice generator
-      const { generateInvoicePDF } = await import('./invoice-generator');
+      const { generateBatchInvoicePDF } = await import('./invoice-generator');
 
       // Fetch orders from database
       const orders = await db.select().from(ordersTable).where(
@@ -253,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate PDF
-      const pdfBuffer = await generateInvoicePDF(orderIds, orders);
+      const pdfBuffer = await generateBatchInvoicePDF(orderIds, orders);
 
       res.set({
         'Content-Type': 'application/pdf',
@@ -584,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('🚀 Generating Professional Invoice PDF with Playwright...');
 
-      const pdf = await generateInvoicePDF([orderData.id], [orderData]);
+      const pdf = await generateBatchInvoicePDF([orderData.id], [orderData]);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="invoice-${orderData.id}.pdf"`);
@@ -618,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'No valid orders found' });
       }
 
-      const pdf = await generateInvoicePDF(orderIds, validOrders);
+      const pdf = await generateBatchInvoicePDF(orderIds, validOrders);
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="batch-invoices-${validOrders.length}-orders.pdf"`);
