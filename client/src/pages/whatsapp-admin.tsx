@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Phone, User, Package, Store, Truck, CheckCircle } from 'lucide-react';
 
 const WhatsAppAdmin: React.FC = () => {
-  const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
+  const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'disconnected' | 'connecting' | 'loading'>('loading');
   const [testData, setTestData] = useState({
     phoneNumber: '07701234567',
     fullName: 'احمد محمد',
@@ -29,7 +29,13 @@ const WhatsAppAdmin: React.FC = () => {
     try {
       const response = await fetch('/api/whatsapp/status');
       const data = await response.json();
-      setWhatsappStatus(data.connected ? 'connected' : 'disconnected');
+      if (data.connected) {
+        setWhatsappStatus('connected');
+      } else if (data.status === 'connecting') {
+        setWhatsappStatus('connecting');
+      } else {
+        setWhatsappStatus('disconnected');
+      }
     } catch (error) {
       setWhatsappStatus('disconnected');
     }
@@ -221,10 +227,10 @@ const WhatsAppAdmin: React.FC = () => {
                 حالة الاتصال:
               </span>
               <Badge 
-                variant={whatsappStatus === 'connected' ? 'default' : 'destructive'}
-                className={whatsappStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}
+                variant={whatsappStatus === 'connected' ? 'default' : whatsappStatus === 'connecting' ? 'secondary' : 'destructive'}
+                className={whatsappStatus === 'connected' ? 'bg-green-500' : whatsappStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}
               >
-                {whatsappStatus === 'connected' ? 'متصل' : whatsappStatus === 'loading' ? 'جاري التحقق...' : 'غير متصل'}
+                {whatsappStatus === 'connected' ? 'متصل' : whatsappStatus === 'connecting' ? 'جاري الاتصال...' : whatsappStatus === 'loading' ? 'جاري التحقق...' : 'غير متصل'}
               </Badge>
             </div>
             
