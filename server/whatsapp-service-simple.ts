@@ -17,6 +17,8 @@ class WhatsAppService {
       const whatsappModule = await import('whatsapp-web.js');
       const { Client, LocalAuth, MessageMedia } = whatsappModule;
 
+      console.log('✅ WhatsApp module imported successfully');
+
       this.client = new Client({
         authStrategy: new LocalAuth(),
         puppeteer: {

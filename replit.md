@@ -112,6 +112,10 @@ July 6, 2025:
 ✓ Free solution using WhatsApp Web - no API costs or monthly fees required
 ✓ Integrated with existing order flow - notifications sent automatically
 ✓ Support for PDF invoice attachments and rich message formatting
+✓ FIXED: Added WhatsApp connection button to admin panel
+✓ Added /api/whatsapp/initialize endpoint for manual connection setup
+✓ QR code will display in server console when connection button is clicked
+✓ Enhanced WhatsApp admin UI with proper connection status and initialization
 
 July 5, 2025:
 ✓ FIXED: Image upload file size limit issue causing intermittent failures

@@ -35,6 +35,27 @@ const WhatsAppAdmin: React.FC = () => {
     }
   };
 
+  const initializeWhatsApp = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/whatsapp/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        addMessage('success', 'تم بدء عملية الاتصال - تحقق من وحدة التحكم لرؤية رمز QR');
+      } else {
+        addMessage('error', `فشل في الاتصال: ${data.error}`);
+      }
+    } catch (error) {
+      addMessage('error', 'خطأ في تهيئة WhatsApp');
+    }
+    setIsLoading(false);
+  };
+
   const addMessage = (type: 'success' | 'error', text: string) => {
     const newMessage = {
       type,
@@ -194,16 +215,29 @@ const WhatsAppAdmin: React.FC = () => {
           </div>
           
           {/* Connection Status */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              حالة الاتصال:
-            </span>
-            <Badge 
-              variant={whatsappStatus === 'connected' ? 'default' : 'destructive'}
-              className={whatsappStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}
-            >
-              {whatsappStatus === 'connected' ? 'متصل' : whatsappStatus === 'loading' ? 'جاري التحقق...' : 'غير متصل'}
-            </Badge>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                حالة الاتصال:
+              </span>
+              <Badge 
+                variant={whatsappStatus === 'connected' ? 'default' : 'destructive'}
+                className={whatsappStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}
+              >
+                {whatsappStatus === 'connected' ? 'متصل' : whatsappStatus === 'loading' ? 'جاري التحقق...' : 'غير متصل'}
+              </Badge>
+            </div>
+            
+            {whatsappStatus === 'disconnected' && (
+              <Button
+                onClick={initializeWhatsApp}
+                disabled={isLoading}
+                className="bg-green-600 hover:bg-green-700"
+                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+              >
+                {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
+              </Button>
+            )}
           </div>
         </div>
 
