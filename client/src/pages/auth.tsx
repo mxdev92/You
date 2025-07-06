@@ -191,7 +191,7 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setOtpSent(true);
-        showNotification('تم إرسال رمز التحقق عبر WhatsApp', 'success');
+        showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp - تحقق من رسائل WhatsApp الخاصة بك', 'success');
       } else {
         showNotification('فشل في إرسال رمز التحقق: ' + data.message);
       }
@@ -264,7 +264,7 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setWhatsappVerification(prev => ({ ...prev, otpSent: true }));
-        showNotification('تم إرسال رمز التحقق عبر WhatsApp', 'success');
+        showNotification('📱 تم إرسال رمز التحقق إلى WhatsApp - افتح تطبيق WhatsApp للحصول على الرمز', 'success');
       } else {
         showNotification('فشل في إرسال رمز التحقق: ' + data.message);
       }
@@ -736,6 +736,9 @@ const AuthPage: React.FC = () => {
                             </Button>
                           ) : (
                             <div className="space-y-3">
+                              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 text-center">
+                                📱 تحقق من تطبيق WhatsApp للحصول على رمز التأكيد
+                              </div>
                               <Input
                                 type="text"
                                 placeholder="ادخل رمز التأكيد (6 أرقام)"
