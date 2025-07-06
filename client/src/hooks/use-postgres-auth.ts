@@ -26,6 +26,18 @@ export const usePostgresAuth = () => {
       }));
     });
 
+    // Force session check on mount to ensure auth state is current
+    const initializeAuth = async () => {
+      try {
+        await postgresAuth.checkSession();
+      } catch (error) {
+        console.warn('Failed to check session on mount:', error);
+        setAuthState(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    initializeAuth();
+
     return unsubscribe.unsubscribe;
   }, []);
 

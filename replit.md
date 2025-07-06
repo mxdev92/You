@@ -102,6 +102,12 @@ July 6, 2025:
 ✓ CART FIX: Cart now properly empty on first app load for anonymous users
 ✓ Enhanced cart initialization to only load cart data for authenticated users
 ✓ Updated default category to Vegetables (خضروات) per user preference for better shopping experience
+✓ FIXED: Persistent session management prevents automatic user/admin logout
+✓ Enhanced session configuration with 1-year expiration and rolling renewal on activity
+✓ Improved PostgreSQL auth with proper session destruction and credential handling
+✓ Fixed client-side authentication to include credentials for all API calls
+✓ Sessions now maintain login state through page refreshes and time periods
+✓ Users and admins stay logged in permanently until manual logout
 ✓ CRITICAL FIX: WhatsApp OTP delivery confirmed working for ALL new user numbers
 ✓ Successfully tested OTP delivery to multiple new Iraqi phone numbers (07901234567, 07812345678)
 ✓ ENHANCED DEBUGGING: Added comprehensive OTP logging and fallback systems for troubleshooting

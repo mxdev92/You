@@ -29,6 +29,7 @@ class PostgresAuthService {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password, fullName, phone }),
       });
 
@@ -54,6 +55,7 @@ class PostgresAuthService {
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -78,6 +80,7 @@ class PostgresAuthService {
     try {
       await fetch('/api/auth/signout', {
         method: 'POST',
+        credentials: 'include',
       });
 
       this.currentUser = null;
@@ -101,6 +104,7 @@ class PostgresAuthService {
       const response = await fetch('/api/auth/addresses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(address),
       });
 
@@ -122,7 +126,9 @@ class PostgresAuthService {
     try {
       console.log('PostgreSQL Auth: Fetching addresses for user', userId);
       
-      const response = await fetch(`/api/auth/addresses/${userId}`);
+      const response = await fetch(`/api/auth/addresses/${userId}`, {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         const error = await response.json();
@@ -191,21 +197,51 @@ class PostgresAuthService {
   // Session management
   async checkSession(): Promise<void> {
     try {
-      const response = await fetch('/api/auth/session');
+      const response = await fetch('/api/auth/session', {
+        credentials: 'include', // Ensure cookies are sent
+      });
       if (response.ok) {
         const { user } = await response.json();
         this.currentUser = user;
         this.notifyListeners();
+        console.log('PostgreSQL Auth: Session restored for user:', user.email);
+      } else {
+        // Session expired or invalid
+        this.currentUser = null;
+        this.notifyListeners();
+        console.log('PostgreSQL Auth: No valid session found');
       }
     } catch (error) {
       console.warn('PostgreSQL Auth: Failed to check session', error);
+      this.currentUser = null;
+      this.notifyListeners();
     }
+  }
+
+  // Enhanced session restoration with retry mechanism
+  async initializeAuth(): Promise<void> {
+    console.log('PostgreSQL Auth: Initializing authentication...');
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await this.checkSession();
+        console.log('PostgreSQL Auth: Authentication initialized successfully');
+        return;
+      } catch (error) {
+        retries--;
+        console.warn(`PostgreSQL Auth: Initialization attempt failed, ${retries} retries left`, error);
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+        }
+      }
+    }
+    console.warn('PostgreSQL Auth: Failed to initialize authentication after all retries');
   }
 }
 
 export const postgresAuth = new PostgresAuthService();
 
-// Initialize session on load
-postgresAuth.checkSession();
+// Initialize authentication with enhanced session restoration
+postgresAuth.initializeAuth();
 
 console.log('PostgreSQL authentication system initialized successfully');

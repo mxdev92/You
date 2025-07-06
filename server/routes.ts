@@ -505,7 +505,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/signout', async (req, res) => {
     try {
-      (req as any).session = null;
+      // Properly destroy the session instead of setting to null
+      if ((req as any).session) {
+        (req as any).session.destroy((err: any) => {
+          if (err) {
+            console.error('Session destruction error:', err);
+          }
+        });
+      }
       res.json({ message: 'Signed out successfully' });
     } catch (error) {
       console.error('Signout error:', error);
