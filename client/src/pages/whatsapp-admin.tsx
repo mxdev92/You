@@ -228,16 +228,21 @@ const WhatsAppAdmin: React.FC = () => {
               </Badge>
             </div>
             
-            {whatsappStatus === 'disconnected' && (
+            {(whatsappStatus === 'disconnected' || whatsappStatus === 'loading') && (
               <Button
                 onClick={initializeWhatsApp}
                 disabled={isLoading}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 text-white"
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
               >
                 {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
               </Button>
             )}
+            
+            {/* Debug info - remove later */}
+            <div className="text-xs text-gray-500 mt-2">
+              Status: {whatsappStatus} | Loading: {isLoading.toString()}
+            </div>
           </div>
         </div>
 
