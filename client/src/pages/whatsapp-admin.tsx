@@ -108,9 +108,21 @@ const WhatsAppAdmin: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        addMessage('success', `تم إرسال رمز OTP: ${data.otp}`);
+        
+        // Update the OTP field automatically
+        setTestData(prev => ({ ...prev, otp: data.otp }));
+        
+        if (data.note) {
+          // Fallback mode
+          addMessage('success', `تم توليد OTP (عدم توفر WhatsApp): ${data.otp}`);
+          addMessage('success', `استخدم هذا الرمز للتحقق: ${data.otp}`);
+        } else {
+          // Normal WhatsApp delivery
+          addMessage('success', `تم إرسال رمز OTP عبر WhatsApp: ${data.otp}`);
+        }
       } else {
-        addMessage('error', 'فشل في إرسال OTP');
+        const errorData = await response.json();
+        addMessage('error', `فشل في إرسال OTP: ${errorData.message}`);
       }
     } catch (error) {
       addMessage('error', 'خطأ في الاتصال');
