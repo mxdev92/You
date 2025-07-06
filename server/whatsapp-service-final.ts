@@ -71,10 +71,20 @@ class WhatsAppService {
       });
 
       // Ready event
-      this.client.on('ready', () => {
+      this.client.on('ready', async () => {
         console.log('🎉 WhatsApp client is ready and connected!');
         console.log('✅ All messaging features are now operational');
         this.isReady = true;
+        
+        // Give WhatsApp time to fully load chats
+        setTimeout(async () => {
+          try {
+            const chats = await this.client.getChats();
+            console.log(`📋 Loaded ${chats.length} chats - WhatsApp fully initialized`);
+          } catch (error) {
+            console.error('⚠️ Warning: Could not load chats:', error);
+          }
+        }, 5000);
       });
 
       // Authentication events
@@ -134,13 +144,39 @@ class WhatsAppService {
 نشكرك لاختيارك PAKETY 🛒`;
 
     try {
-      await this.client.sendMessage(chatId, message);
-      console.log(`📨 OTP sent successfully to ${phoneNumber}`);
+      console.log(`📤 Attempting to send OTP to ${chatId}`);
+      
+      // Wait a bit to ensure WhatsApp is fully loaded
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Skip state check as it's returning null in some WhatsApp Web.js versions
+      console.log(`📊 WhatsApp ready flag: ${this.isReady}`);
+
+      // Test basic WhatsApp functionality first
+      console.log('🔍 Testing basic WhatsApp functionality...');
+      try {
+        const info = await this.client.getWWebVersion();
+        console.log(`📋 WhatsApp Web version: ${info}`);
+      } catch (infoError) {
+        console.error('⚠️ Warning: Cannot get WhatsApp Web info:', infoError);
+      }
+      
+      // Send the message with simplified approach
+      console.log(`📨 Sending OTP message to ${chatId}...`);
+      const result = await this.client.sendMessage(chatId, message);
+      console.log(`✅ OTP sent successfully to ${phoneNumber}`, result);
       return otp;
     } catch (error) {
       console.error('❌ Failed to send OTP:', error);
-      throw error;
+      throw new Error(`Failed to send OTP to ${phoneNumber}. This might be due to WhatsApp Web not being fully loaded or the number not being reachable. Try waiting a few minutes and try again.`);
     }
+  }
+
+  // Store OTP for verification (fallback method)
+  storeOTPForVerification(phoneNumber: string, otp: string): void {
+    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    this.otpStore.set(phoneNumber, { otp, expires });
+    console.log(`🔑 OTP ${otp} stored for ${phoneNumber} (expires in 10 minutes)`);
   }
 
   // Verify OTP

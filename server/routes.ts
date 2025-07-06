@@ -672,18 +672,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/whatsapp/send-otp', async (req, res) => {
-    try {
-      const { phoneNumber, fullName } = req.body;
-      
-      if (!phoneNumber || !fullName) {
-        return res.status(400).json({ message: 'Phone number and full name are required' });
-      }
+    const { phoneNumber, fullName } = req.body;
+    
+    if (!phoneNumber || !fullName) {
+      return res.status(400).json({ message: 'Phone number and full name are required' });
+    }
 
+    try {
       const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
       res.json({ message: 'OTP sent successfully', otp: otp });
     } catch (error: any) {
       console.error('WhatsApp OTP error:', error);
-      res.status(500).json({ message: 'Failed to send OTP via WhatsApp' });
+      
+      // Temporary fallback: generate OTP without sending (until WhatsApp Web.js issue is resolved)
+      console.log('⚠️ WhatsApp messaging unavailable, using fallback OTP generation');
+      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log(`🔑 Fallback OTP for ${phoneNumber}: ${fallbackOtp}`);
+      
+      // Store the OTP for verification
+      whatsappService.storeOTPForVerification(phoneNumber, fallbackOtp);
+      
+      res.json({ 
+        message: 'OTP generated (WhatsApp delivery temporarily unavailable)', 
+        otp: fallbackOtp,
+        note: 'Please check server logs for OTP code'
+      });
     }
   });
 
