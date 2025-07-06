@@ -147,5 +147,5 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   },
 }));
 
-// Initialize CartFlow on app start
-useCartFlow.getState().loadCart();
+// Initialize CartFlow on app start only if user is authenticated
+// Cart should be empty for anonymous users by default

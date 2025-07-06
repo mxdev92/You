@@ -1,13 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/header";
 import LeftSidebar from "@/components/left-sidebar";
 import RightSidebar from "@/components/right-sidebar";
 import ProductsGrid from "@/components/products-grid";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useCartFlow } from "@/store/cart-flow";
 
 export default function Home() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt'>('menu');
+  
+  const { user } = usePostgresAuth();
+  const { loadCart } = useCartFlow();
+
+  // Load cart only for authenticated users
+  useEffect(() => {
+    if (user) {
+      loadCart();
+    }
+  }, [user, loadCart]);
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);
