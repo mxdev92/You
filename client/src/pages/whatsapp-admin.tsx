@@ -85,7 +85,7 @@ const WhatsAppAdmin: React.FC = () => {
     setIsLoading(false);
   };
 
-  const addMessage = (type: 'success' | 'error', text: string) => {
+  const addMessage = (type: 'success' | 'error' | 'info', text: string) => {
     const newMessage = {
       type,
       text,
@@ -109,16 +109,16 @@ const WhatsAppAdmin: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // Update the OTP field automatically
-        setTestData(prev => ({ ...prev, otp: data.otp }));
+        // NEVER auto-fill OTP - user must enter it manually
+        setTestData(prev => ({ ...prev, otp: '' }));
         
         if (data.note) {
-          // Fallback mode
-          addMessage('success', `تم توليد OTP (عدم توفر WhatsApp): ${data.otp}`);
-          addMessage('success', `استخدم هذا الرمز للتحقق: ${data.otp}`);
+          // Fallback mode - WhatsApp delivery failed
+          addMessage('error', `⚠️ فشل إرسال OTP عبر WhatsApp - يرجى إرسال هذا الرمز يدوياً للمستخدم: ${data.otp}`);
+          addMessage('info', `الرمز: ${data.otp} (صالح لمدة 10 دقائق)`);
         } else {
           // Normal WhatsApp delivery
-          addMessage('success', `تم إرسال رمز OTP عبر WhatsApp: ${data.otp}`);
+          addMessage('success', `تم إرسال رمز OTP عبر WhatsApp إلى ${testData.phoneNumber}`);
         }
       } else {
         const errorData = await response.json();
@@ -510,6 +510,8 @@ const WhatsAppAdmin: React.FC = () => {
                     className={`p-3 rounded-lg ${
                       message.type === 'success' 
                         ? 'bg-green-50 border border-green-200 text-green-800' 
+                        : message.type === 'info'
+                        ? 'bg-blue-50 border border-blue-200 text-blue-800'
                         : 'bg-red-50 border border-red-200 text-red-800'
                     }`}
                   >
