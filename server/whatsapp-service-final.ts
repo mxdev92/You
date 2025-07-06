@@ -8,7 +8,10 @@ class WhatsAppService {
   private client: any = null;
 
   constructor() {
-    // Don't initialize automatically
+    // Auto-initialize on startup (non-blocking)
+    setTimeout(() => {
+      this.initialize().catch(console.error);
+    }, 1000);
   }
 
   async initialize() {
@@ -328,11 +331,16 @@ ${orderData.items.map((item: any, index: number) => `${index + 1}. ${item.produc
   }
 
   isConnected(): boolean {
-    return this.isReady;
+    return this.client && this.isReady;
   }
 
   getStatus(): string {
-    return this.isReady ? 'connected' : 'disconnected';
+    if (this.client && this.isReady) {
+      return 'connected';
+    } else if (this.client) {
+      return 'connecting';
+    }
+    return 'disconnected';
   }
 
   async destroy(): Promise<void> {
