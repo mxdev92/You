@@ -98,10 +98,10 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 6, 2025:
-✓ UX ENHANCEMENT: Set Meat as default category when app opens (category ID: 6)
+✓ UX ENHANCEMENT: Set Vegetables as default category when app opens (category ID: 2)
 ✓ CART FIX: Cart now properly empty on first app load for anonymous users
 ✓ Enhanced cart initialization to only load cart data for authenticated users
-✓ Updated default category to Meat (لحوم) per user preference for better shopping experience
+✓ Updated default category to Vegetables (خضروات) per user preference for better shopping experience
 ✓ CRITICAL FIX: WhatsApp OTP delivery confirmed working for ALL new user numbers
 ✓ Successfully tested OTP delivery to multiple new Iraqi phone numbers (07901234567, 07812345678)
 ✓ ENHANCED DEBUGGING: Added comprehensive OTP logging and fallback systems for troubleshooting

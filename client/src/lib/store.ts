@@ -9,7 +9,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   searchQuery: '',
-  selectedCategoryId: 6, // Default to Meat category (ID: 6)
+  selectedCategoryId: 2, // Default to Vegetables category (ID: 2)
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedCategoryId: (id) => set({ selectedCategoryId: id }),
 }));
