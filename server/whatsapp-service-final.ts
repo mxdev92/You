@@ -146,29 +146,76 @@ class WhatsAppService {
     try {
       console.log(`📤 Attempting to send OTP to ${chatId}`);
       
-      // Wait a bit to ensure WhatsApp is fully loaded
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait for WhatsApp to be fully ready
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Skip state check as it's returning null in some WhatsApp Web.js versions
       console.log(`📊 WhatsApp ready flag: ${this.isReady}`);
 
-      // Test basic WhatsApp functionality first
-      console.log('🔍 Testing basic WhatsApp functionality...');
+      // Try multiple approaches to send the message
+      console.log(`📨 Sending OTP message to ${chatId}...`);
+      
+      // Approach 1: Direct sendMessage
       try {
-        const info = await this.client.getWWebVersion();
-        console.log(`📋 WhatsApp Web version: ${info}`);
-      } catch (infoError) {
-        console.error('⚠️ Warning: Cannot get WhatsApp Web info:', infoError);
+        const result = await this.client.sendMessage(chatId, message);
+        console.log(`✅ OTP sent successfully to ${phoneNumber} via direct method`, result);
+        return otp;
+      } catch (directError) {
+        console.log('🔄 Direct method failed, trying contact-based approach...');
       }
       
-      // Send the message with simplified approach
-      console.log(`📨 Sending OTP message to ${chatId}...`);
-      const result = await this.client.sendMessage(chatId, message);
-      console.log(`✅ OTP sent successfully to ${phoneNumber}`, result);
-      return otp;
+      // Approach 2: Via contact and chat
+      try {
+        const contact = await this.client.getContactById(chatId);
+        if (contact) {
+          const chat = await contact.getChat();
+          if (chat) {
+            const result = await chat.sendMessage(message);
+            console.log(`✅ OTP sent successfully to ${phoneNumber} via contact method`, result);
+            return otp;
+          }
+        }
+      } catch (contactError) {
+        console.log('🔄 Contact method failed, trying number ID approach...');
+      }
+      
+      // Approach 3: Via number ID
+      try {
+        const numberId = await this.client.getNumberId(chatId);
+        if (numberId) {
+          const result = await this.client.sendMessage(numberId._serialized, message);
+          console.log(`✅ OTP sent successfully to ${phoneNumber} via number ID method`, result);
+          return otp;
+        }
+      } catch (numberIdError) {
+        console.log('🔄 Number ID method failed, trying chat creation...');
+      }
+      
+      // Approach 4: Force create chat
+      try {
+        const chats = await this.client.getChats();
+        console.log(`📋 Found ${chats.length} existing chats`);
+        
+        // Look for existing chat
+        const existingChat = chats.find(chat => 
+          chat.id._serialized === chatId || 
+          chat.id._serialized.includes(phoneNumber.replace(/\D/g, ''))
+        );
+        
+        if (existingChat) {
+          const result = await existingChat.sendMessage(message);
+          console.log(`✅ OTP sent successfully to ${phoneNumber} via existing chat`, result);
+          return otp;
+        }
+      } catch (chatError) {
+        console.log('🔄 All WhatsApp messaging approaches failed');
+      }
+      
+      // If all approaches fail, throw error to trigger fallback
+      throw new Error('All WhatsApp messaging methods failed');
+      
     } catch (error) {
-      console.error('❌ Failed to send OTP:', error);
-      throw new Error(`Failed to send OTP to ${phoneNumber}. This might be due to WhatsApp Web not being fully loaded or the number not being reachable. Try waiting a few minutes and try again.`);
+      console.error('❌ Failed to send OTP via WhatsApp:', error);
+      throw new Error(`Failed to send OTP to ${phoneNumber}. WhatsApp messaging unavailable.`);
     }
   }
 
