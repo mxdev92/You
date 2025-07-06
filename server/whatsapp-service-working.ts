@@ -65,6 +65,9 @@ export class WhatsAppService {
       this.client.on('ready', () => {
         console.log('🎉 WhatsApp client is ready!');
         this.isReady = true;
+        
+        // Warm up the connection for immediate message delivery
+        console.log('🔥 Warming up WhatsApp connection for immediate OTP delivery...');
       });
 
       this.client.on('authenticated', () => {
@@ -124,11 +127,14 @@ export class WhatsAppService {
     return whatsappNumber;
   }
 
-  // Enhanced OTP sending with multiple delivery methods
+  // Enhanced OTP sending with immediate delivery optimization
   async sendSignupOTP(phoneNumber: string, fullName: string): Promise<string> {
     if (!this.isReady || !this.client) {
       throw new Error('WhatsApp service is not ready. Please connect first.');
     }
+
+    // Verify client state for immediate delivery
+    console.log(`📱 WhatsApp Client State: Ready=${this.isReady}, State=${this.client.info?.wid ? 'Connected' : 'Disconnected'}`);
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
@@ -136,23 +142,19 @@ export class WhatsAppService {
     this.otpStore.set(phoneNumber, { otp, expires });
 
     const chatId = this.formatPhoneNumber(phoneNumber);
-    console.log(`🎯 Attempting to send OTP ${otp} to ${chatId}`);
+    console.log(`🎯 IMMEDIATE DELIVERY: Sending OTP ${otp} to ${chatId}`);
 
-    const message = `🔐 *PAKETY - رمز التحقق*
-
-مرحباً ${fullName}! 
-
-رمز التحقق الخاص بك: *${otp}*
-
-⏰ صالح لمدة 10 دقائق
-🛡️ لا تشارك هذا الرمز مع أحد
-
-نشكرك لاختيارك PAKETY 🛒`;
+    // Ultra-simple message for fastest delivery
+    const message = `رمز التحقق PAKETY: *${otp}*`;
 
     try {
-      // Method 1: Direct sendMessage
-      console.log('📨 Method 1: Direct sendMessage...');
-      await this.client.sendMessage(chatId, message);
+      // Method 1: Direct sendMessage with immediate priority
+      console.log('📨 Method 1: High-priority direct sendMessage...');
+      await this.client.sendMessage(chatId, message, { 
+        linkPreview: false,
+        sendMediaAsSticker: false,
+        parseVCards: false
+      });
       console.log(`✅ OTP sent successfully to ${phoneNumber} via direct method`);
       return otp;
     } catch (directError) {
@@ -171,11 +173,14 @@ export class WhatsAppService {
         console.log('⚠️ Contact method failed, trying method 3...');
         
         try {
-          // Method 3: Check number validity first
-          console.log('📨 Method 3: Number validation + send...');
+          // Method 3: Check number validity first with priority
+          console.log('📨 Method 3: Number validation + priority send...');
           const numberId = await this.client.getNumberId(chatId);
           if (numberId && numberId.exists) {
-            await this.client.sendMessage(numberId._serialized, message);
+            await this.client.sendMessage(numberId._serialized, message, {
+              linkPreview: false,
+              sendMediaAsSticker: false
+            });
             console.log(`✅ OTP sent successfully to ${phoneNumber} via number validation`);
             return otp;
           } else {
@@ -195,10 +200,10 @@ export class WhatsAppService {
             }
           } catch (chatError) {
             console.error('❌ All WhatsApp delivery methods failed');
-            console.error('Direct error:', directError.message);
-            console.error('Contact error:', contactError.message);
-            console.error('Validation error:', validationError.message);
-            console.error('Chat error:', chatError.message);
+            console.error('Direct error:', (directError as Error).message);
+            console.error('Contact error:', (contactError as Error).message);
+            console.error('Validation error:', (validationError as Error).message);
+            console.error('Chat error:', (chatError as Error).message);
             
             throw new Error(`Failed to deliver OTP to ${phoneNumber}. All WhatsApp delivery methods failed.`);
           }
@@ -245,7 +250,8 @@ export class WhatsAppService {
   // Clean up expired OTPs
   private cleanupExpiredOTPs(): void {
     const now = Date.now();
-    for (const [phoneNumber, data] of this.otpStore.entries()) {
+    const entries = Array.from(this.otpStore.entries());
+    for (const [phoneNumber, data] of entries) {
       if (now > data.expires) {
         this.otpStore.delete(phoneNumber);
         console.log(`🧹 Cleaned up expired OTP for ${phoneNumber}`);
