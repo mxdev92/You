@@ -138,6 +138,12 @@ July 5, 2025:
 ✓ Admin panel now shows products correctly with proper category counts
 ✓ FRESH START: Cleared all existing products (37 items) from database
 ✓ Database reset complete - ready for new product entries from admin panel
+✓ SHIMMER OPTIMIZATION: Made shimmer effects fast and responsive
+✓ Reduced shimmer animation from 2s infinite to 0.6s single run for instant feedback
+✓ Optimized lazy loading with 50px preload margin and faster transitions (150ms)
+✓ PDF PRICE FORMAT: Updated invoice prices to use comma separators (1,000 format)
+✓ Changed delivery fee from 1,500 to fixed 2,000 IQD across app and PDF invoices
+✓ All prices now display with proper formatting: 1,000, 10,000, 100,000 etc.
 
 July 4, 2025:
 ✓ Replaced all native browser alert() dialogs with professional custom modal notifications

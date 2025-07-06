@@ -92,7 +92,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
   
   // Calculate totals explicitly
   const subtotal = Math.round(order.totalAmount);
-  const deliveryFee = 1000;
+  const deliveryFee = 2000; // Fixed delivery fee of 2,000 IQD
   const finalTotal = subtotal + deliveryFee;
   
   // Generate QR code for order ID
@@ -363,9 +363,9 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
             ${items.slice(0, 25).map((item: any) => `
               <tr>
                 <td>${item.productName}</td>
-                <td>${item.price} دينار</td>
+                <td>${parseInt(item.price).toLocaleString('en-US')} دينار</td>
                 <td>${item.quantity} ${item.unit}</td>
-                <td>${(parseFloat(item.price) * item.quantity).toFixed(0)} دينار</td>
+                <td>${(parseFloat(item.price) * item.quantity).toLocaleString('en-US')} دينار</td>
               </tr>
             `).join('')}
           </tbody>
@@ -376,15 +376,15 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
           <table class="totals-table">
             <tr>
               <td class="label">مجموع الطلبات الكلي:</td>
-              <td class="value">${subtotal.toLocaleString()} دينار</td>
+              <td class="value">${subtotal.toLocaleString('en-US')} دينار</td>
             </tr>
             <tr>
-              <td class="label">اجور خدمة التوصيل:</td>
-              <td class="value">${deliveryFee.toLocaleString()} دينار</td>
+              <td class="label">اجور التوصيل:</td>
+              <td class="value">${deliveryFee.toLocaleString('en-US')} دينار</td>
             </tr>
             <tr class="total-row">
               <td class="label">المبلغ الاجمالي:</td>
-              <td class="value">${finalTotal.toLocaleString()} دينار</td>
+              <td class="value">${finalTotal.toLocaleString('en-US')} دينار</td>
             </tr>
           </table>
         </div>

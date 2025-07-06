@@ -10,7 +10,7 @@ export function formatPrice(price: number | string): string {
     return '0';
   }
   
-  // Format with comma separators
+  // Format with comma separators (1,000 format)
   return numPrice.toLocaleString('en-US', {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0

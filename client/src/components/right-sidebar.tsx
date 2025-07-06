@@ -238,7 +238,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     };
   }, [isOpen]);
 
-  const shippingFee = 1500; // Fixed shipping fee in IQD
+  const shippingFee = 2000; // Fixed delivery fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
 
   const iraqiGovernorates = [
