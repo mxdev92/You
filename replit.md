@@ -97,6 +97,22 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 6, 2025:
+✓ WHATSAPP INTEGRATION: Complete WhatsApp Business API integration using whatsapp-web.js
+✓ Added 4 core WhatsApp messaging features for complete customer communication
+✓ Signup OTP verification via WhatsApp instead of SMS for better delivery in Iraq
+✓ Automatic customer invoice delivery with PDF attachment after order placement
+✓ Driver notifications with pickup details, customer info, and delivery instructions
+✓ Store preparation alerts with order items and timing for kitchen workflow
+✓ Order status updates sent automatically when admin changes order status
+✓ Professional Arabic messages with emojis and proper formatting
+✓ WhatsApp admin panel at /whatsapp-admin for testing all messaging features
+✓ Real-time connection status monitoring and message logging
+✓ Automatic phone number formatting for Iraq country code (+964)
+✓ Free solution using WhatsApp Web - no API costs or monthly fees required
+✓ Integrated with existing order flow - notifications sent automatically
+✓ Support for PDF invoice attachments and rich message formatting
+
 July 5, 2025:
 ✓ FIXED: Image upload file size limit issue causing intermittent failures
 ✓ Increased Express.js request limit from default 1MB to 10MB for image uploads

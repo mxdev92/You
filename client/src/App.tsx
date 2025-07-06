@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import AuthPage from "@/pages/auth";
 import AdminPanel from "@/pages/admin-panel";
 import AdminLogin from "@/pages/admin-login";
+import WhatsAppAdmin from "@/pages/whatsapp-admin";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 
@@ -51,6 +52,7 @@ function Router() {
       {/* Admin routes - separate authentication */}
       <Route path="/admin" component={ProtectedAdminRoute} />
       <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/whatsapp-admin" component={WhatsAppAdmin} />
       
       {/* Home page - allows anonymous browsing */}
       <Route path="/" component={Home} />

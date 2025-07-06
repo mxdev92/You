@@ -8,6 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF } from "./invoice-generator";
+import { whatsappService } from "./whatsapp-service-simple";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -328,6 +329,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (broadcastError) {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
+
+      // Send WhatsApp notifications if service is connected
+      if (whatsappService.isConnected()) {
+        try {
+          // 1. Send customer confirmation
+          const pdfBuffer = await generateInvoicePDF(order);
+          await whatsappService.sendCustomerInvoice(
+            order.customerPhone, 
+            order.customerName, 
+            order, 
+            pdfBuffer
+          );
+
+          // 2. Send store preparation alert (using demo store phone)
+          const storePhone = '07701234567'; // Replace with actual store phone
+          await whatsappService.sendStorePreparationAlert(storePhone, order);
+
+          // 3. Send driver notification (using demo driver phone)
+          const driverPhone = '07709876543'; // Replace with actual driver phone
+          await whatsappService.sendDriverNotification(driverPhone, order);
+
+          console.log(`📱 WhatsApp notifications sent for order #${order.id}`);
+        } catch (whatsappError) {
+          console.error('WhatsApp notification failed (order created successfully):', whatsappError);
+        }
+      } else {
+        console.log('📱 WhatsApp service not connected - notifications skipped');
+      }
       
       res.status(201).json(order);
     } catch (error: any) {
@@ -352,6 +381,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { status } = req.body;
       const order = await storage.updateOrderStatus(id, status);
+      
+      // Send WhatsApp status update notification
+      if (whatsappService.isConnected() && order.customerPhone) {
+        try {
+          await whatsappService.sendOrderStatusUpdate(
+            order.customerPhone,
+            order.customerName,
+            order,
+            status
+          );
+          console.log(`📱 WhatsApp status update sent for order #${order.id}: ${status}`);
+        } catch (whatsappError) {
+          console.error('WhatsApp status update failed:', whatsappError);
+        }
+      }
+      
       res.json(order);
     } catch (error) {
       res.status(404).json({ message: "Order not found" });
@@ -598,6 +643,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   }
+
+  // WhatsApp API routes
+  app.get('/api/whatsapp/status', (req, res) => {
+    res.json({ 
+      status: whatsappService.getStatus(),
+      connected: whatsappService.isConnected()
+    });
+  });
+
+  app.post('/api/whatsapp/send-otp', async (req, res) => {
+    try {
+      const { phoneNumber, fullName } = req.body;
+      
+      if (!phoneNumber || !fullName) {
+        return res.status(400).json({ message: 'Phone number and full name are required' });
+      }
+
+      const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
+      res.json({ message: 'OTP sent successfully', otp: otp });
+    } catch (error: any) {
+      console.error('WhatsApp OTP error:', error);
+      res.status(500).json({ message: 'Failed to send OTP via WhatsApp' });
+    }
+  });
+
+  app.post('/api/whatsapp/verify-otp', (req, res) => {
+    try {
+      const { phoneNumber, otp } = req.body;
+      
+      if (!phoneNumber || !otp) {
+        return res.status(400).json({ message: 'Phone number and OTP are required' });
+      }
+
+      const isValid = whatsappService.verifyOTP(phoneNumber, otp);
+      
+      if (isValid) {
+        res.json({ message: 'OTP verified successfully', valid: true });
+      } else {
+        res.status(400).json({ message: 'Invalid or expired OTP', valid: false });
+      }
+    } catch (error: any) {
+      console.error('WhatsApp OTP verification error:', error);
+      res.status(500).json({ message: 'Failed to verify OTP' });
+    }
+  });
+
+  app.post('/api/whatsapp/send-customer-invoice', async (req, res) => {
+    try {
+      const { orderId } = req.body;
+      
+      if (!orderId) {
+        return res.status(400).json({ message: 'Order ID is required' });
+      }
+
+      // Get order details
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Generate PDF
+      const pdfBuffer = await generateInvoicePDF(order);
+      
+      // Send via WhatsApp
+      await whatsappService.sendCustomerInvoice(
+        order.customerPhone, 
+        order.customerName, 
+        order, 
+        pdfBuffer
+      );
+
+      res.json({ message: 'Customer invoice sent via WhatsApp successfully' });
+    } catch (error: any) {
+      console.error('WhatsApp customer invoice error:', error);
+      res.status(500).json({ message: 'Failed to send customer invoice via WhatsApp' });
+    }
+  });
+
+  app.post('/api/whatsapp/send-driver-notification', async (req, res) => {
+    try {
+      const { orderId, driverPhone } = req.body;
+      
+      if (!orderId || !driverPhone) {
+        return res.status(400).json({ message: 'Order ID and driver phone are required' });
+      }
+
+      // Get order details
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Send driver notification
+      await whatsappService.sendDriverNotification(driverPhone, order);
+
+      res.json({ message: 'Driver notification sent via WhatsApp successfully' });
+    } catch (error: any) {
+      console.error('WhatsApp driver notification error:', error);
+      res.status(500).json({ message: 'Failed to send driver notification via WhatsApp' });
+    }
+  });
+
+  app.post('/api/whatsapp/send-store-alert', async (req, res) => {
+    try {
+      const { orderId, storePhone } = req.body;
+      
+      if (!orderId || !storePhone) {
+        return res.status(400).json({ message: 'Order ID and store phone are required' });
+      }
+
+      // Get order details  
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Send store preparation alert
+      await whatsappService.sendStorePreparationAlert(storePhone, order);
+
+      res.json({ message: 'Store preparation alert sent via WhatsApp successfully' });
+    } catch (error: any) {
+      console.error('WhatsApp store alert error:', error);
+      res.status(500).json({ message: 'Failed to send store alert via WhatsApp' });
+    }
+  });
+
+  app.post('/api/whatsapp/send-status-update', async (req, res) => {
+    try {
+      const { orderId, status } = req.body;
+      
+      if (!orderId || !status) {
+        return res.status(400).json({ message: 'Order ID and status are required' });
+      }
+
+      // Get order details
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Send status update
+      await whatsappService.sendOrderStatusUpdate(
+        order.customerPhone, 
+        order.customerName, 
+        order, 
+        status
+      );
+
+      res.json({ message: 'Status update sent via WhatsApp successfully' });
+    } catch (error: any) {
+      console.error('WhatsApp status update error:', error);
+      res.status(500).json({ message: 'Failed to send status update via WhatsApp' });
+    }
+  });
 
   // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;
