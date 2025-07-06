@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Send, Phone, User, Package, Store, Truck, CheckCircle } from 'lucide-react';
+import { MessageCircle, Send, Phone, User, Package, Store, Truck, CheckCircle, QrCode } from 'lucide-react';
+import QRCodeGenerator from 'qrcode';
 
 const WhatsAppAdmin: React.FC = () => {
   const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'disconnected' | 'connecting' | 'loading'>('loading');
+  const [qrCode, setQrCode] = useState<string>('');
   const [testData, setTestData] = useState({
     phoneNumber: '07701234567',
     fullName: 'احمد محمد',
@@ -25,6 +27,14 @@ const WhatsAppAdmin: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (whatsappStatus === 'connecting') {
+      fetchQRCode();
+      const qrInterval = setInterval(fetchQRCode, 10000); // Fetch QR every 10 seconds
+      return () => clearInterval(qrInterval);
+    }
+  }, [whatsappStatus]);
+
   const checkWhatsAppStatus = async () => {
     try {
       const response = await fetch('/api/whatsapp/status');
@@ -38,6 +48,19 @@ const WhatsAppAdmin: React.FC = () => {
       }
     } catch (error) {
       setWhatsappStatus('disconnected');
+    }
+  };
+
+  const fetchQRCode = async () => {
+    try {
+      const response = await fetch('/api/whatsapp/qr');
+      const data = await response.json();
+      if (data.qr) {
+        const qrDataURL = await QRCodeGenerator.toDataURL(data.qr);
+        setQrCode(qrDataURL);
+      }
+    } catch (error) {
+      console.error('Failed to fetch QR code:', error);
     }
   };
 
@@ -246,6 +269,37 @@ const WhatsAppAdmin: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* QR Code Display */}
+        {whatsappStatus === 'connecting' && qrCode && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                <QrCode className="h-5 w-5 text-green-600" />
+                رمز QR للاتصال بـ WhatsApp Business
+              </CardTitle>
+              <CardDescription style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                امسح هذا الرمز بتطبيق WhatsApp Business من هاتفك لتفعيل جميع ميزات المراسلة
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center">
+              <div className="p-4 bg-white rounded-lg border-2 border-gray-200 mb-4">
+                <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                  📱 افتح WhatsApp Business على هاتفك
+                </p>
+                <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                  ⚙️ اذهب إلى الإعدادات ← الأجهزة المرتبطة ← ربط جهاز
+                </p>
+                <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                  📸 امسح الرمز أعلاه
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* OTP Testing */}

@@ -652,6 +652,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.get('/api/whatsapp/qr', (req, res) => {
+    try {
+      const qrCode = whatsappService.getQRCode();
+      res.json({ qr: qrCode });
+    } catch (error: any) {
+      res.status(500).json({ message: 'Error getting QR code' });
+    }
+  });
+
   app.post('/api/whatsapp/initialize', async (req, res) => {
     try {
       await whatsappService.initialize();

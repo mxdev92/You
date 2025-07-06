@@ -6,6 +6,7 @@ class WhatsAppService {
   private isReady: boolean = false;
   private otpStore: Map<string, { otp: string; expires: number }> = new Map();
   private client: any = null;
+  private currentQR: string = '';
 
   constructor() {
     // Auto-initialize on startup (non-blocking)
@@ -59,6 +60,7 @@ class WhatsAppService {
       
       // QR Code event
       this.client.on('qr', (qr: string) => {
+        this.currentQR = qr;
         console.log('\n🔗 WhatsApp QR Code Generated!');
         console.log('━'.repeat(60));
         QRCode.generate(qr, { small: true });
@@ -341,6 +343,10 @@ ${orderData.items.map((item: any, index: number) => `${index + 1}. ${item.produc
       return 'connecting';
     }
     return 'disconnected';
+  }
+
+  getQRCode(): string {
+    return this.currentQR;
   }
 
   async destroy(): Promise<void> {
