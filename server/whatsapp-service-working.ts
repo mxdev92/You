@@ -210,6 +210,13 @@ export class WhatsAppService {
     throw new Error('Unexpected error in OTP delivery');
   }
 
+  // Store OTP for verification (fallback method)
+  storeOTPForVerification(phoneNumber: string, otp: string): void {
+    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    this.otpStore.set(phoneNumber, { otp, expires });
+    console.log(`🔑 Stored fallback OTP ${otp} for ${phoneNumber}`);
+  }
+
   // Verify OTP
   verifyOTP(phoneNumber: string, providedOTP: string): boolean {
     const stored = this.otpStore.get(phoneNumber);
