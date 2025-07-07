@@ -13,6 +13,7 @@ import { Boom } from '@hapi/boom';
 import * as fs from 'fs';
 import * as path from 'path';
 import QRCode from 'qrcode';
+import { WhatsAppQueueManager } from './whatsapp-queue-manager.js';
 
 interface OTPSession {
   phoneNumber: string;
@@ -43,6 +44,16 @@ export class BaileysWhatsAppService {
     if (!fs.existsSync(this.authPath)) {
       fs.mkdirSync(this.authPath, { recursive: true });
     }
+    
+    // Initialize queue manager for reliable message delivery
+    this.queueManager = new WhatsAppQueueManager();
+    
+    // Process queue when connection becomes available
+    this.queueManager.on('processQueue', () => {
+      if (this.isConnected && this.socket) {
+        this.queueManager.processQueue(this);
+      }
+    });
   }
 
   async initialize(): Promise<void> {
@@ -91,15 +102,17 @@ export class BaileysWhatsAppService {
         logger: logger,
         syncFullHistory: false,
         markOnlineOnConnect: false, // Keep false for production stability
-        defaultQueryTimeoutMs: 60000, // Increase timeout to 60 seconds
-        connectTimeoutMs: 60000, // Increase connection timeout
-        keepAliveIntervalMs: 30000, // Optimized keep-alive interval
-        retryRequestDelayMs: 1000, // Increase retry delay
-        maxMsgRetryCount: 3, // Reduce retries to prevent timeout
-        qrTimeout: 120000, // Increase QR timeout to 2 minutes
-        browser: ['PAKETY', 'Desktop', '3.0'], // Stable browser info
-        fireInitQueries: false, // Disable initial queries that can cause timeouts
-        emitOwnEvents: false, // Disable own events to reduce load
+        defaultQueryTimeoutMs: 90000, // Extended timeout for stability
+        connectTimeoutMs: 90000, // Extended connection timeout
+        keepAliveIntervalMs: 60000, // Longer keep-alive to reduce server load
+        retryRequestDelayMs: 2000, // Longer retry delay for stability
+        maxMsgRetryCount: 1, // Minimal retries to prevent timeout cascade
+        qrTimeout: 180000, // Extended QR timeout
+        browser: ['PAKETY-Business', 'Chrome', '3.0'], // Professional browser identity
+        fireInitQueries: false,
+        emitOwnEvents: false,
+        shouldSyncHistoryMessage: () => false, // Disable history sync for stability
+        shouldIgnoreJid: () => false,
         getMessage: async (key) => {
           return {
             conversation: 'Baileys message placeholder'
@@ -124,7 +137,7 @@ export class BaileysWhatsAppService {
         if (connection === 'close') {
           const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
           
-          // Enhanced handling for production stability
+          // ULTRA-AGGRESSIVE stability handling for production
           const shouldReconnect = statusCode !== DisconnectReason.loggedOut && 
                                  statusCode !== DisconnectReason.badSession;
           
@@ -136,19 +149,26 @@ export class BaileysWhatsAppService {
           this.stopHeartbeat();
           
           if (shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
-            // Enhanced delay calculation for 440 errors
             const isTimeoutError = statusCode === 440;
-            let delay = 1000; // Start with 1 second for all errors
+            let delay = 5000; // Start with minimum 5 seconds
             
-            // For persistent 440 errors, implement progressive backoff
-            if (isTimeoutError && this.reconnectAttempts > 3) {
-              delay = Math.min(10000, 1000 + (this.reconnectAttempts * 500)); // Cap at 10 seconds
-            } else if (!isTimeoutError) {
-              delay = Math.min(30000, 3000 * Math.pow(2, Math.min(this.reconnectAttempts, 4))); // Exponential backoff
+            // ULTRA-AGGRESSIVE backoff for 440 errors 
+            if (isTimeoutError) {
+              // For persistent 440 errors, use massive delays to give WhatsApp servers a break
+              delay = Math.min(120000, 10000 + (this.reconnectAttempts * 10000)); // 10s, 20s, 30s... up to 2 minutes
+              console.log(`⚠️ WhatsApp server timeout (440) - using extended delay to reduce server pressure`);
+            } else {
+              delay = Math.min(60000, 5000 * Math.pow(2, Math.min(this.reconnectAttempts, 4))); // 5s, 10s, 20s, 40s, 80s
             }
             
             console.log(`⏳ Reconnecting in ${delay/1000} seconds... (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
             this.reconnectAttempts++;
+            
+            // Reset attempts after longer delays to prevent permanent disconnection
+            if (delay > 30000 && this.reconnectAttempts > 10) {
+              console.log('🔄 Resetting reconnection attempts to prevent permanent disconnection');
+              this.reconnectAttempts = 5; // Reset but keep some backoff
+            }
             
             setTimeout(() => {
               this.isReconnecting = false;
@@ -226,10 +246,15 @@ export class BaileysWhatsAppService {
 ⏰ صالح لمدة 10 دقائق فقط
 🚚 مرحباً بك في PAKETY - التوصيل السريع!`;
 
-      // Send with timeout protection
+      // Enhanced message sending with connection verification
+      if (!this.socket || !this.isConnected) {
+        throw new Error('Connection lost during send');
+      }
+
+      // Send with extended timeout and connection check
       const sendPromise = this.socket.sendMessage(formattedNumber, { text: message });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Send timeout')), 8000)
+        setTimeout(() => reject(new Error('Send timeout after 15s')), 15000)
       );
       
       await Promise.race([sendPromise, timeoutPromise]);
