@@ -814,19 +814,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (result.success) {
         console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
         
+        // NEVER send OTP code in response - only confirmation
         res.json({ 
-          message: result.message,
+          message: 'تم إرسال رمز التحقق إلى WhatsApp الخاص بك',
           phoneNumber: result.phoneNumber,
           success: true,
-          deliveryMethod: result.deliveryMethod
+          deliveryMethod: 'whatsapp'
         });
       } else {
         console.log(`❌ WhatsApp OTP failed for ${phoneNumber}: ${result.message}`);
         
         res.status(503).json({ 
-          message: result.message,
+          message: 'WhatsApp غير متصل. يجب ربط WhatsApp أولاً لإرسال رمز التحقق',
           success: false,
-          error: result.error,
+          error: 'WhatsApp connection required',
           phoneNumber: phoneNumber,
           requiresConnection: true
         });

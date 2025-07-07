@@ -134,17 +134,10 @@ const WhatsAppAdmin: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // NEVER auto-fill OTP - user must enter it manually
+        // OTP sent successfully to customer WhatsApp - never show code
         setTestData(prev => ({ ...prev, otp: '' }));
-        
-        if (data.note) {
-          // Fallback mode - WhatsApp delivery failed
-          addMessage('error', `⚠️ فشل إرسال OTP عبر WhatsApp - يرجى إرسال هذا الرمز يدوياً للمستخدم: ${data.otp}`);
-          addMessage('info', `الرمز: ${data.otp} (صالح لمدة 10 دقائق)`);
-        } else {
-          // Normal WhatsApp delivery
-          addMessage('success', `تم إرسال رمز OTP عبر WhatsApp إلى ${testData.phoneNumber}`);
-        }
+        addMessage('success', `✅ تم إرسال رمز OTP عبر WhatsApp إلى ${testData.phoneNumber}`);
+        addMessage('info', `العميل سيحصل على الرمز في WhatsApp الخاص به`);
       } else {
         const errorData = await response.json();
         addMessage('error', `فشل في إرسال OTP: ${errorData.message}`);

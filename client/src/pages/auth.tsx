@@ -279,16 +279,13 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setWhatsappVerification(prev => ({ ...prev, otpSent: true }));
-        showNotification('✅ تم إرسال رمز التحقق بنجاح إلى WhatsApp! افتح تطبيق WhatsApp الآن للحصول على الرمز المكون من 6 أرقام', 'success');
-        console.log('✅ OTP Response:', data);
-        console.log(`🔑 OTP Code for ${data.phoneNumber}: ${data.otp}`);
-        console.log('📱 Please check your WhatsApp for the verification message!');
+        showNotification('✅ تم إرسال رمز التحقق إلى WhatsApp الخاص بك! تحقق من رسائل WhatsApp', 'success');
       } else {
         console.error('❌ OTP Send Error:', data);
-        showNotification('فشل في إرسال رمز التحقق: ' + data.message);
-        if (data.otp) {
-          console.log(`🔑 Fallback OTP Code: ${data.otp}`);
-          showNotification(`رمز التحقق الاحتياطي: ${data.otp}`, 'success');
+        if (data.requiresConnection) {
+          showNotification('WhatsApp غير متصل. يجب على الإدارة ربط WhatsApp أولاً');
+        } else {
+          showNotification('فشل في إرسال رمز التحقق: ' + data.message);
         }
       }
     } catch (error) {

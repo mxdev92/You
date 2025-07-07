@@ -1,13 +1,13 @@
-2025/07/07-05:45:23.192 342a Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/07/07-05:45:23.193 342a Recovering log #310
-2025/07/07-05:45:23.203 342a Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000310.log 
-2025/07/07-05:45:23.984 342a Level-0 table #315: started
-2025/07/07-05:45:24.004 342a Level-0 table #315: 154129 bytes OK
-2025/07/07-05:45:24.019 342a Delete type=0 #310
-2025/07/07-05:45:24.020 342a Manual compaction at level-0 from '\x00r\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00s\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-05:45:26.458 3427 Compacting 1@1 + 1@2 files
-2025/07/07-05:45:26.594 3427 Generated table #316@1: 34228 keys, 1232995 bytes
-2025/07/07-05:45:26.594 3427 Compacted 1@1 + 1@2 files => 1232995 bytes
-2025/07/07-05:45:26.602 3427 compacted to: files[ 0 0 1 0 0 0 0 ]
-2025/07/07-05:45:26.602 3427 Delete type=2 #312
-2025/07/07-05:45:26.602 3427 Delete type=2 #315
+2025/07/07-05:46:20.818 35bb Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/07/07-05:46:20.819 35bb Recovering log #314
+2025/07/07-05:46:20.825 35bb Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000314.log 
+2025/07/07-05:46:21.335 35f1 Level-0 table #319: started
+2025/07/07-05:46:21.353 35f1 Level-0 table #319: 125281 bytes OK
+2025/07/07-05:46:21.370 35f1 Delete type=0 #314
+2025/07/07-05:46:21.374 35f1 Manual compaction at level-0 from '\x00s\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00t\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/07-05:46:21.493 35c2 Compacting 1@1 + 1@2 files
+2025/07/07-05:46:21.575 35c2 Generated table #320@1: 34575 keys, 1236454 bytes
+2025/07/07-05:46:21.575 35c2 Compacted 1@1 + 1@2 files => 1236454 bytes
+2025/07/07-05:46:21.585 35c2 compacted to: files[ 0 0 1 0 0 0 0 ]
+2025/07/07-05:46:21.585 35c2 Delete type=2 #316
+2025/07/07-05:46:21.586 35c2 Delete type=2 #319
