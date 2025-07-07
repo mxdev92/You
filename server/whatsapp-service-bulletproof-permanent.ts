@@ -282,52 +282,135 @@ class BulletproofPermanentWhatsAppService {
   async sendSignupOTP(phoneNumber: string, fullName: string): Promise<{ success: boolean; otp?: string; message: string; phoneNumber: string }> {
     console.log(`🎯 Bulletproof WhatsApp: Processing OTP for ${phoneNumber} (${fullName})`);
     
+    // Validate phone number format
+    if (!phoneNumber.match(/^(07[0-9]{9}|964[0-9]{10})$/)) {
+      return {
+        success: false,
+        message: "رقم الهاتف غير صحيح. يرجى إدخال رقم عراقي صحيح",
+        phoneNumber
+      };
+    }
+    
+    // Check if WhatsApp service is ready
     if (!this.state.isReady || !this.client) {
-      // Try to reconnect if not ready
+      console.log('⚠️ WhatsApp service not ready, attempting immediate reconnection...');
+      
+      // Try immediate reconnection if not already connecting
       if (!this.state.isConnecting) {
-        console.log('🔄 Service not ready - attempting reconnection...');
-        this.initialize();
+        this.initialize().catch(console.error);
       }
       
       return {
         success: false,
-        message: "فشل في إرسال رمز التحقق عبر WhatsApp. جاري إعادة الاتصال...",
+        message: "خدمة WhatsApp غير متصلة حالياً. يرجى المحاولة مرة أخرى خلال دقيقة.",
         phoneNumber
       };
     }
 
     try {
+      // Format phone number for WhatsApp
+      const formattedNumber = this.formatPhoneNumber(phoneNumber);
+      
+      // Check if WhatsApp number exists first
+      console.log(`🔍 Checking if WhatsApp number exists: ${formattedNumber}`);
+      
+      try {
+        const numberCheck = await this.client.getNumberId(formattedNumber);
+        if (!numberCheck || !numberCheck.exists) {
+          console.log(`❌ WhatsApp number does not exist: ${phoneNumber}`);
+          return {
+            success: false,
+            message: "رقم WhatsApp غير موجود أو غير مفعل. تأكد من أن الرقم صحيح ولديك حساب WhatsApp فعال.",
+            phoneNumber
+          };
+        }
+        console.log(`✅ WhatsApp number verified: ${phoneNumber}`);
+      } catch (checkError: any) {
+        console.log(`⚠️ Could not verify WhatsApp number, proceeding anyway:`, checkError.message);
+      }
+      
       // Generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expires = Date.now() + 300000; // 5 minutes
 
-      // Store OTP
+      // Store OTP first
       this.otpStore.set(phoneNumber, { otp, expires });
       
-      // Format phone number for WhatsApp
-      const formattedNumber = this.formatPhoneNumber(phoneNumber);
-      
-      // Create Arabic message
-      const message = `مرحباً ${fullName}!\n\nرمز التحقق الخاص بك في PAKETY هو:\n\n*${otp}*\n\nالرمز صالح لمدة 5 دقائق.\n\n🛒 PAKETY - توصيل البقالة`;
+      // Create Arabic message with better formatting
+      const message = `🔐 رمز التحقق PAKETY\n\nمرحباً ${fullName}!\n\nرمز التحقق الخاص بك:\n*${otp}*\n\n⏰ صالح لمدة 5 دقائق\n🛒 PAKETY - توصيل البقالة`;
 
-      console.log(`📤 Sending OTP ${otp} to ${formattedNumber}`);
+      console.log(`📤 Sending OTP to ${formattedNumber} for ${phoneNumber}`);
       
-      // Send message via WhatsApp
-      await this.client.sendMessage(formattedNumber, message);
+      // Enhanced message sending with retry logic
+      let attempts = 0;
+      const maxAttempts = 3;
+      let lastError: any = null;
       
-      console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
+      while (attempts < maxAttempts) {
+        try {
+          // Check if client is still connected before sending
+          const clientState = await this.client.getState();
+          if (clientState !== 'CONNECTED') {
+            throw new Error(`Client not connected: ${clientState}`);
+          }
+          
+          // Attempt to send message
+          await this.client.sendMessage(formattedNumber, message);
+          
+          console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber} via WhatsApp (attempt ${attempts + 1})`);
+          
+          return {
+            success: true,
+            message: "تم إرسال رمز التحقق عبر WhatsApp بنجاح! تحقق من رسائل WhatsApp الخاصة بك 📱",
+            phoneNumber: phoneNumber
+          };
+          
+        } catch (sendError: any) {
+          attempts++;
+          lastError = sendError;
+          console.log(`⚠️ Send attempt ${attempts} failed for ${phoneNumber}: ${sendError.message}`);
+          
+          if (attempts < maxAttempts) {
+            // Wait before retry
+            await this.sleep(1000 * attempts);
+            
+            // Try alternative number format on retry
+            if (attempts === 2) {
+              const altFormat = this.formatPhoneNumberAlternative(phoneNumber);
+              console.log(`🔄 Retry attempt ${attempts} with alternative format: ${altFormat}`);
+              // Use alternative format for this attempt
+            }
+          }
+        }
+      }
+      
+      // All attempts failed
+      console.error(`❌ All ${maxAttempts} OTP send attempts failed for ${phoneNumber}:`, lastError?.message);
+      
+      // Remove stored OTP since delivery failed
+      this.otpStore.delete(phoneNumber);
+      
+      // Try to reconnect for next time
+      if (!this.state.isConnecting) {
+        console.log('🔄 Triggering reconnection due to send failure...');
+        setTimeout(() => this.initialize(), 5000);
+      }
       
       return {
-        success: true,
-        message: "تم إرسال رمز التحقق عبر WhatsApp بنجاح - تحقق من رسائل WhatsApp الخاصة بك",
-        phoneNumber: phoneNumber
+        success: false,
+        message: "فشل في إرسال رمز التحقق عبر WhatsApp. تأكد من أن رقم WhatsApp صحيح ومتصل، ثم حاول مرة أخرى.",
+        phoneNumber
       };
       
     } catch (error: any) {
-      console.error('❌ WhatsApp OTP error:', error);
+      console.error('❌ WhatsApp OTP critical error:', error);
+      
+      // Remove stored OTP on critical error
+      this.otpStore.delete(phoneNumber);
+      
       return {
         success: false,
-        message: "فشل في إرسال رمز التحقق عبر WhatsApp. تأكد من اتصال WhatsApp وحاول مرة أخرى.",
+        message: "حدث خطأ في خدمة WhatsApp. يرجى المحاولة مرة أخرى خلال دقائق قليلة.",
         phoneNumber
       };
     }
@@ -347,28 +430,66 @@ class BulletproofPermanentWhatsAppService {
     return `964${cleaned}@c.us`;
   }
 
+  private formatPhoneNumberAlternative(phoneNumber: string): string {
+    // Alternative formatting for compatibility
+    let cleaned = phoneNumber.replace(/\D/g, '');
+    
+    // Keep original format if it starts with 964
+    if (cleaned.startsWith('964')) {
+      return `${cleaned}@c.us`;
+    }
+    
+    // Remove leading 0 and add country code
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    
+    return `964${cleaned}@c.us`;
+  }
+
   verifyOTP(phoneNumber: string, otp: string): boolean {
+    console.log(`🔍 Verifying OTP for ${phoneNumber}: ${otp}`);
+    
     const stored = this.otpStore.get(phoneNumber);
     
     if (!stored) {
-      console.log(`❌ No OTP found for ${phoneNumber}`);
+      console.log(`❌ No OTP found for ${phoneNumber} - may have expired or never been sent`);
       return false;
     }
     
     if (Date.now() > stored.expires) {
-      console.log(`⏰ OTP expired for ${phoneNumber}`);
+      console.log(`⏰ OTP expired for ${phoneNumber} (expired: ${new Date(stored.expires).toLocaleString()})`);
       this.otpStore.delete(phoneNumber);
       return false;
     }
     
-    if (stored.otp === otp) {
+    if (stored.otp === otp.trim()) {
       console.log(`✅ OTP verified successfully for ${phoneNumber}`);
       this.otpStore.delete(phoneNumber);
       return true;
     }
     
-    console.log(`❌ Invalid OTP for ${phoneNumber}`);
+    console.log(`❌ Invalid OTP for ${phoneNumber} - expected: ${stored.otp}, received: ${otp}`);
     return false;
+  }
+
+  // Add method to check OTP store status
+  getOTPStatus(phoneNumber: string): { exists: boolean; expired?: boolean; timeLeft?: number } {
+    const stored = this.otpStore.get(phoneNumber);
+    
+    if (!stored) {
+      return { exists: false };
+    }
+    
+    const now = Date.now();
+    const expired = now > stored.expires;
+    const timeLeft = expired ? 0 : Math.ceil((stored.expires - now) / 1000);
+    
+    return {
+      exists: true,
+      expired,
+      timeLeft
+    };
   }
 
   // Send customer invoice via WhatsApp

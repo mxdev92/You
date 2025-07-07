@@ -786,30 +786,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { phoneNumber, fullName } = req.body;
     
     if (!phoneNumber || !fullName) {
-      return res.status(400).json({ message: 'Phone number and full name are required' });
+      return res.status(400).json({ 
+        message: 'رقم الهاتف والاسم الكامل مطلوبان',
+        success: false 
+      });
+    }
+
+    // Phone number validation before sending OTP
+    if (!phoneNumber.match(/^(07[0-9]{9}|964[0-9]{10})$/)) {
+      return res.status(400).json({
+        message: 'رقم الهاتف غير صحيح. يرجى إدخال رقم عراقي صحيح (مثال: 07XXXXXXXXX)',
+        success: false
+      });
     }
 
     try {
-      const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
-      const status = whatsappService.getStatus();
+      console.log(`📱 Processing OTP request for ${phoneNumber} (${fullName})`);
       
-      console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
+      const result = await whatsappService.sendSignupOTP(phoneNumber, fullName);
       
-      // Only respond with success if WhatsApp delivery was successful
-      res.json({ 
-        message: 'تم إرسال رمز التحقق عبر WhatsApp بنجاح - تحقق من رسائل WhatsApp الخاصة بك', 
-        phoneNumber: phoneNumber,
-        success: true,
-        deliveryMethod: 'whatsapp'
-      });
+      if (result.success) {
+        console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
+        
+        res.json({ 
+          message: result.message || 'تم إرسال رمز التحقق عبر WhatsApp بنجاح - تحقق من رسائل WhatsApp الخاصة بك',
+          phoneNumber: phoneNumber,
+          success: true,
+          deliveryMethod: 'whatsapp'
+        });
+      } else {
+        console.error(`❌ OTP sending failed for ${phoneNumber}: ${result.message}`);
+        
+        res.status(500).json({ 
+          message: result.message || 'فشل في إرسال رمز التحقق عبر WhatsApp',
+          success: false,
+          phoneNumber: phoneNumber
+        });
+      }
       
     } catch (error: any) {
       console.error('❌ WhatsApp OTP error:', error);
       
-      // Return error - no fallback, OTP must only go to WhatsApp
       res.status(500).json({ 
         message: 'فشل في إرسال رمز التحقق عبر WhatsApp. تأكد من اتصال WhatsApp وحاول مرة أخرى.', 
-        error: 'WhatsApp service unavailable',
+        error: error.message || 'WhatsApp service unavailable',
         success: false,
         phoneNumber: phoneNumber
       });

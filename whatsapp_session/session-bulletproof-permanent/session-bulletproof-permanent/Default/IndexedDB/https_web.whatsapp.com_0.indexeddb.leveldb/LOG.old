@@ -1,13 +1,13 @@
-2025/07/07-04:03:30.007 657 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/07/07-04:03:30.008 657 Recovering log #670
-2025/07/07-04:03:30.009 657 Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000670.log 
-2025/07/07-04:03:30.461 656 Level-0 table #675: started
-2025/07/07-04:03:30.471 656 Level-0 table #675: 20417 bytes OK
-2025/07/07-04:03:30.478 656 Delete type=0 #670
-2025/07/07-04:03:30.479 656 Manual compaction at level-0 from '\x00\xfd\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\xfe\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-04:03:30.538 656 Compacting 1@1 + 1@2 files
-2025/07/07-04:03:30.586 656 Generated table #676@1: 18955 keys, 701815 bytes
-2025/07/07-04:03:30.586 656 Compacted 1@1 + 1@2 files => 701815 bytes
-2025/07/07-04:03:30.598 656 compacted to: files[ 0 0 1 0 0 0 0 ]
-2025/07/07-04:03:30.598 656 Delete type=2 #672
-2025/07/07-04:03:30.598 656 Delete type=2 #675
+2025/07/07-04:23:35.589 db3 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/07/07-04:23:35.589 db3 Recovering log #678
+2025/07/07-04:23:35.602 db3 Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000678.log 
+2025/07/07-04:23:36.166 db9 Level-0 table #683: started
+2025/07/07-04:23:36.176 db9 Level-0 table #683: 121201 bytes OK
+2025/07/07-04:23:36.187 db9 Delete type=0 #678
+2025/07/07-04:23:36.188 db9 Manual compaction at level-0 from '\x00\xff\x00\x00\x00' @ 72057594037927935 : 1 .. ' \x00\x01\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/07-04:23:36.215 db2 Compacting 1@1 + 1@2 files
+2025/07/07-04:23:36.296 db2 Generated table #684@1: 21516 keys, 789586 bytes
+2025/07/07-04:23:36.296 db2 Compacted 1@1 + 1@2 files => 789586 bytes
+2025/07/07-04:23:36.304 db2 compacted to: files[ 0 0 1 0 0 0 0 ]
+2025/07/07-04:23:36.304 db2 Delete type=2 #680
+2025/07/07-04:23:36.305 db2 Delete type=2 #683
