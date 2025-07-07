@@ -327,20 +327,20 @@ const AuthPage: React.FC = () => {
         showNotification('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
         return;
       }
+      // Move to next step after validation passes
+      setSignupStep(2);
     }
-    if (step === 2) {
+    else if (step === 2) {
       // Step 2 is WhatsApp verification - handled separately
       return;
     }
-    if (step === 3) {
+    else if (step === 3) {
       if (!signupData.name.trim()) {
         showNotification('يرجى إدخال الاسم الكامل');
         return;
       }
-    }
-    
-    if (step < 4) {
-      setSignupStep(step + 1);
+      // Move to next step after validation passes
+      setSignupStep(4);
     }
   };
 
