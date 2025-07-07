@@ -7,8 +7,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
-import { createUserOrder } from "@/lib/firebase-user-data";
-import { useAuth } from "@/hooks/use-auth";
+// Removed deprecated Firebase imports
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/price-utils";
@@ -173,7 +172,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   });
 
   const { t } = useTranslation();
-  const { user } = useAuth();
+  // Using PostgreSQL auth instead of deprecated Firebase auth
   
   // Calculate cart totals
   const getCartTotal = () => {
