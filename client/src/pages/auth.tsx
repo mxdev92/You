@@ -557,7 +557,7 @@ const AuthPage: React.FC = () => {
                   className="text-green-600 hover:text-green-700 text-sm font-medium"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                 >
-                  لا تملك حساباً؟ أنشئ حساباً جديداً
+                  انشاء حساب
                 </button>
               </div>
             </div>
@@ -598,8 +598,8 @@ const AuthPage: React.FC = () => {
                     className="absolute inset-0"
                   >
                     {signupStep === 1 && (
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-gray-800 text-center mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                           بيانات الحساب
                         </h3>
                         <Input
@@ -759,7 +759,7 @@ const AuthPage: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-6 space-y-3">
+              <div className="mt-4 space-y-3">
                 {signupStep === 1 ? (
                   <Button
                     onClick={handleSignupNext}
