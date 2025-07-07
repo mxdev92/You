@@ -242,6 +242,9 @@ July 6, 2025:
 ✓ Removed excessive auto-refetch interval (2 seconds) from ProductsGrid component
 ✓ Fixed useEffect dependency arrays in Home and RightSidebar components
 ✓ Cart now stable with proper caching (5 minutes) instead of constant API calls
+✓ CART STARTUP: Cart now clears automatically when app opens
+✓ Fresh start experience with empty cart on every app launch
+✓ Cart only loads existing data for authenticated users after clearing
 ✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
 ✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
 ✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)

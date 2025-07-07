@@ -12,14 +12,18 @@ export default function Home() {
   const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt'>('menu');
   
   const { user } = usePostgresAuth();
-  const { loadCart } = useCartFlow();
+  const { loadCart, clearCart } = useCartFlow();
 
-  // Load cart only for authenticated users
+  // Clear cart on app startup, then load only for authenticated users
   useEffect(() => {
+    // Always clear cart when app starts
+    clearCart();
+    
+    // Only load cart data if user is authenticated
     if (user) {
       loadCart();
     }
-  }, [user?.id]); // Only depend on user ID, not the loadCart function
+  }, [user?.id]); // Only depend on user ID, not the function references
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);
