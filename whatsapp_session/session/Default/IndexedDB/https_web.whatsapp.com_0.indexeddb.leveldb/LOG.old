@@ -1,12 +1,15 @@
-2025/07/07-03:20:44.889 1cc2 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/07/07-03:20:44.889 1cc2 Recovering log #683
-2025/07/07-03:20:44.893 1cc2 Reusing old log /home/runner/workspace/whatsapp_session/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000683.log 
-2025/07/07-03:20:46.259 1cc4 Level-0 table #690: started
-2025/07/07-03:20:46.271 1cc4 Level-0 table #690: 129614 bytes OK
-2025/07/07-03:20:46.282 1cc4 Delete type=0 #683
-2025/07/07-03:20:46.282 1cc4 Manual compaction at level-0 from '\x00\xd8\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\xd9\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-03:20:48.129 1cc4 Compacting 1@1 + 2@2 files
-2025/07/07-03:20:49.032 1cc4 Generated table #691@1: 64409 keys, 2214629 bytes
-2025/07/07-03:20:49.132 1cc4 Generated table #692@1: 23095 keys, 499625 bytes
-2025/07/07-03:20:49.132 1cc4 Compacted 1@1 + 2@2 files => 2714254 bytes
-2025/07/07-03:20:49.169 1cc4 compacted to: files[ 0 0 2 0 0 0 0 ]
+2025/07/07-03:22:37.799 1efb Reusing MANIFEST /home/runner/workspace/whatsapp_session/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/07/07-03:22:37.799 1efb Recovering log #694
+2025/07/07-03:22:37.805 1efb Reusing old log /home/runner/workspace/whatsapp_session/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000694.log 
+2025/07/07-03:22:39.301 1efb Level-0 table #700: started
+2025/07/07-03:22:39.317 1efb Level-0 table #700: 127290 bytes OK
+2025/07/07-03:22:39.326 1efb Delete type=0 #694
+2025/07/07-03:22:39.327 1efb Manual compaction at level-0 from '\x00\xda\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\xdb\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/07-03:22:41.247 1f04 Compacting 1@1 + 2@2 files
+2025/07/07-03:22:41.389 1f04 Generated table #701@1: 64396 keys, 2216590 bytes
+2025/07/07-03:22:41.458 1f04 Generated table #702@1: 24252 keys, 524602 bytes
+2025/07/07-03:22:41.459 1f04 Compacted 1@1 + 2@2 files => 2741192 bytes
+2025/07/07-03:22:41.471 1f04 compacted to: files[ 0 0 2 0 0 0 0 ]
+2025/07/07-03:22:41.472 1f04 Delete type=2 #696
+2025/07/07-03:22:41.472 1f04 Delete type=2 #697
+2025/07/07-03:22:41.472 1f04 Delete type=2 #700

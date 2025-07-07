@@ -115,6 +115,7 @@ class PermanentWhatsAppService extends EventEmitter {
       
       this.startHeartbeat();
       console.log('✅ WhatsApp OTP service is now PERMANENTLY OPERATIONAL');
+      console.log('🔐 Session saved permanently - will reconnect automatically on restart');
     });
 
     this.client.on('disconnected', (reason: string) => {
@@ -183,7 +184,14 @@ class PermanentWhatsAppService extends EventEmitter {
     console.log(`🎯 Permanent WhatsApp: Processing OTP for ${phoneNumber} (${fullName})`);
     
     if (!this.state.isReady || !this.client) {
-      console.log('❌ WhatsApp service not ready');
+      console.log('❌ WhatsApp service not ready - checking connection...');
+      
+      // Try to reinitialize if not ready
+      if (!this.state.isConnecting && this.state.connectionAttempts < 3) {
+        console.log('🔄 Attempting to reconnect WhatsApp...');
+        this.initialize();
+      }
+      
       return {
         success: false,
         message: "فشل في إرسال رمز التحقق عبر WhatsApp. تأكد من اتصال WhatsApp وحاول مرة أخرى.",
