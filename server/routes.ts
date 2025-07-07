@@ -8,15 +8,15 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import StableWhatsAppService from './whatsapp-service-stable';
+import BaileysWhatsAppService from './baileys-whatsapp-service';
 
-const whatsappService = new StableWhatsAppService();
+const whatsappService = new BaileysWhatsAppService();
 
-// Initialize WhatsApp service on startup
+// Initialize Baileys WhatsApp service on startup
 whatsappService.initialize().then(() => {
-  console.log('🎯 WhatsApp stable service initialized on server startup');
+  console.log('🎯 Baileys WhatsApp service initialized on server startup');
 }).catch((error) => {
-  console.error('⚠️ WhatsApp failed to initialize on startup:', error);
+  console.error('⚠️ Baileys WhatsApp failed to initialize on startup:', error);
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -685,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WhatsApp API routes
   app.get('/api/whatsapp/status', (req, res) => {
     try {
-      const status = whatsappService.getConnectionStatus();
+      const status = whatsappService.getStatus();
       res.json(status);
     } catch (error) {
       res.status(500).json({ error: "Failed to get WhatsApp status" });
@@ -695,7 +695,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/whatsapp/qr', (req, res) => {
     try {
       const qrCode = whatsappService.getQRCode();
-      res.json({ qr: qrCode });
+      if (qrCode) {
+        res.json({ qr: qrCode, available: true });
+      } else {
+        res.json({ qr: null, available: false });
+      }
     } catch (error: any) {
       res.status(500).json({ message: 'Error getting QR code' });
     }
@@ -729,34 +733,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
-      console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber} via WhatsApp`);
-      res.json({ 
-        message: 'OTP sent successfully to WhatsApp', 
-        otp: otp,
-        phoneNumber: phoneNumber,
-        success: true 
-      });
+      const result = await whatsappService.sendOTP(phoneNumber, fullName);
+      
+      if (result.note) {
+        // Fallback mode - WhatsApp not connected
+        console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${result.otp}`);
+        res.json({
+          success: true,
+          message: 'OTP generated (WhatsApp offline)',
+          otp: result.otp,
+          note: result.note
+        });
+      } else {
+        // Normal delivery via Baileys - OTP sent to customer WhatsApp only
+        console.log(`✅ OTP sent successfully to ${phoneNumber} via Baileys WhatsApp`);
+        res.json({
+          success: true,
+          message: `OTP sent successfully to ${phoneNumber} via WhatsApp`
+        });
+      }
     } catch (error: any) {
-      console.error('❌ WhatsApp OTP error:', error);
-      
-      // Fallback: generate OTP and show in logs for debugging
-      console.log('⚠️ WhatsApp messaging failed, generating fallback OTP');
-      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${fallbackOtp}`);
-      console.log(`📱 User should check WhatsApp for the actual message, or use fallback OTP: ${fallbackOtp}`);
-      
-      // Store the OTP for verification
-      whatsappService.storeOTPForVerification(phoneNumber, fallbackOtp);
-      
-      res.json({ 
-        message: 'OTP generation failed - check server logs for fallback code', 
-        otp: fallbackOtp,
-        phoneNumber: phoneNumber,
-        success: false,
-        error: error.message,
-        note: 'Please check WhatsApp app or server console logs for OTP code'
-      });
+      console.error('❌ Baileys WhatsApp OTP error:', error);
+      res.status(500).json({ message: 'Failed to send OTP' });
     }
   });
 
@@ -768,15 +766,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Phone number and OTP are required' });
       }
 
-      const isValid = whatsappService.verifyOTP(phoneNumber, otp);
+      const result = whatsappService.verifyOTP(phoneNumber, otp);
       
-      if (isValid) {
-        res.json({ message: 'OTP verified successfully', valid: true });
+      if (result.valid) {
+        res.json({ message: result.message, valid: true });
       } else {
-        res.status(400).json({ message: 'Invalid or expired OTP', valid: false });
+        res.status(400).json({ message: result.message, valid: false });
       }
     } catch (error: any) {
-      console.error('WhatsApp OTP verification error:', error);
+      console.error('Baileys WhatsApp OTP verification error:', error);
       res.status(500).json({ message: 'Failed to verify OTP' });
     }
   });

@@ -3,7 +3,7 @@ import session from "express-session";
 import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import whatsappService from "./whatsapp-service-working.js";
+// WhatsApp service is now handled in routes.ts with Baileys
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -56,15 +56,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize WhatsApp service
-  try {
-    console.log('🚀 Starting WhatsApp service initialization...');
-    await whatsappService.initialize();
-    console.log('✅ WhatsApp service initialized successfully');
-  } catch (error) {
-    console.error('❌ WhatsApp service initialization failed:', error);
-    console.log('📱 WhatsApp features will be disabled until connected');
-  }
+  // WhatsApp service is initialized in routes.ts using Baileys
 
   const server = await registerRoutes(app);
 
