@@ -1476,6 +1476,21 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
                 variant="ghost"
                 className="w-full justify-start p-3 h-auto rounded-xl"
                 onClick={() => {
+                  window.open('/whatsapp-admin', '_blank');
+                  onClose();
+                }}
+              >
+                <MessageCircle className="h-5 w-5 mr-3 text-green-600" />
+                <div className="text-left">
+                  <div className="font-medium">WhatsApp System</div>
+                  <div className="text-sm text-gray-500">Manage WhatsApp integration</div>
+                </div>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="w-full justify-start p-3 h-auto rounded-xl"
+                onClick={() => {
                   setShowMetaPixelDialog(true);
                 }}
               >
