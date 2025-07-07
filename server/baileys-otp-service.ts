@@ -262,6 +262,7 @@ class BaileysOTPService {
         if (qr) {
           console.log('📱 QR Code generated - scan with WhatsApp to connect');
           console.log('📱 QR expires in 30 seconds, new QR will be generated automatically');
+          console.log('📱 QR Code available for /api/baileys/qr endpoint');
           this.currentQR = qr;
           this.qrExpiry = Date.now() + 30000; // 30 seconds
         }

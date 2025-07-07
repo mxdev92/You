@@ -53,11 +53,40 @@ const WhatsAppAdmin: React.FC = () => {
 
   const fetchQRCode = async () => {
     try {
+      // Try Baileys QR first (new system)
+      const baileysResponse = await fetch('/api/baileys/qr');
+      if (baileysResponse.ok) {
+        const baileysData = await baileysResponse.json();
+        if (baileysData.qr) {
+          console.log('📱 Baileys QR code received - generating visual QR');
+          const qrDataURL = await QRCodeGenerator.toDataURL(baileysData.qr, { 
+            width: 256,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          });
+          setQrCode(qrDataURL);
+          return;
+        }
+      }
+      
+      // Fallback to old WhatsApp service
       const response = await fetch('/api/whatsapp/qr');
-      const data = await response.json();
-      if (data.qr) {
-        const qrDataURL = await QRCodeGenerator.toDataURL(data.qr);
-        setQrCode(qrDataURL);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.qr) {
+          const qrDataURL = await QRCodeGenerator.toDataURL(data.qr, { 
+            width: 256,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          });
+          setQrCode(qrDataURL);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch QR code:', error);
@@ -82,6 +111,30 @@ const WhatsAppAdmin: React.FC = () => {
       }
     } catch (error) {
       addMessage('error', 'خطأ في تهيئة WhatsApp');
+    }
+    setIsLoading(false);
+  };
+
+  const forceNewQR = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/baileys/force-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        addMessage('success', 'تم إنشاء رمز QR جديد - سيظهر خلال 5 ثواني');
+        setTimeout(() => {
+          fetchQRCode();
+        }, 5000);
+      } else {
+        addMessage('error', `فشل في إنشاء رمز QR جديد: ${data.message}`);
+      }
+    } catch (error) {
+      addMessage('error', 'خطأ في إنشاء رمز QR جديد');
     }
     setIsLoading(false);
   };
@@ -299,14 +352,14 @@ const WhatsAppAdmin: React.FC = () => {
                 </Button>
               )}
               <Button
-                onClick={reconnectWhatsApp}
+                onClick={forceNewQR}
                 disabled={isLoading}
                 variant="outline"
                 className="border-green-600 text-green-600 hover:bg-green-50"
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
               >
                 <QrCode className="h-4 w-4 mr-2" />
-                {isLoading ? 'جاري إعادة الاتصال...' : 'إنشاء QR جديد'}
+                {isLoading ? 'جاري إنشاء QR...' : 'إنشاء QR جديد'}
               </Button>
             </div>
           </div>
