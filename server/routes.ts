@@ -9,8 +9,10 @@ import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import BaileysWhatsAppService from './baileys-whatsapp-service';
+import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
 
 const whatsappService = new BaileysWhatsAppService();
+const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
 
 // Initialize Baileys WhatsApp service on startup
 whatsappService.initialize().then(() => {
