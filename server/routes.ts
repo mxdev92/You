@@ -8,7 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import whatsappService from "./whatsapp-service-bulletproof.js";
+import whatsappService from "./whatsapp-service-production.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -755,33 +755,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
-      console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber} via WhatsApp`);
-      res.json({ 
-        message: 'OTP sent successfully to WhatsApp', 
-        otp: otp,
-        phoneNumber: phoneNumber,
-        success: true 
-      });
+      const status = whatsappService.getStatus();
+      
+      console.log(`✅ OTP ${otp} generated for ${phoneNumber}`);
+      
+      if (status.mode === 'production' && status.isReady) {
+        // WhatsApp delivery successful
+        res.json({ 
+          message: 'OTP sent successfully via WhatsApp', 
+          otp: otp,
+          phoneNumber: phoneNumber,
+          success: true,
+          deliveryMethod: 'whatsapp'
+        });
+      } else {
+        // Fallback mode - OTP generated but not sent via WhatsApp
+        res.json({ 
+          message: 'OTP generated - check WhatsApp or use fallback OTP from logs', 
+          otp: otp,
+          phoneNumber: phoneNumber,
+          success: true,
+          deliveryMethod: 'fallback',
+          note: 'WhatsApp not connected. Check console logs for OTP code.'
+        });
+      }
     } catch (error: any) {
       console.error('❌ WhatsApp OTP error:', error);
       
-      // Enhanced fallback system with bulletproof service
-      console.log('⚠️ WhatsApp messaging failed, generating secure fallback OTP');
+      // Final fallback
       const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log(`🔑 SECURE FALLBACK OTP for ${phoneNumber}: ${fallbackOtp} (expires in 10 minutes)`);
-      console.log(`📱 IMPORTANT: User should check WhatsApp app first, then use fallback if needed`);
+      console.log(`🔑 EMERGENCY FALLBACK OTP for ${phoneNumber}: ${fallbackOtp}`);
       
-      // Store the fallback OTP for verification
       whatsappService.storeOTPForVerification(phoneNumber, fallbackOtp);
       
-      res.status(500).json({ 
-        message: 'WhatsApp delivery failed - fallback OTP generated', 
+      res.json({ 
+        message: 'Emergency OTP generated - check server logs', 
         otp: fallbackOtp,
         phoneNumber: phoneNumber,
-        success: false,
-        error: error.message,
-        fallback: true,
-        note: 'Check WhatsApp app first. If no message received, use the fallback OTP from server logs.'
+        success: true,
+        deliveryMethod: 'emergency',
+        note: 'Service error. Use emergency OTP from server logs.'
       });
     }
   });

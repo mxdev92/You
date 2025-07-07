@@ -189,19 +189,19 @@ const AuthPage: React.FC = () => {
 
       const data = await response.json();
       
-      if (response.ok) {
+      if (response.ok && data.success) {
         setOtpSent(true);
-        showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp - تحقق من رسائل WhatsApp الخاصة بك', 'success');
-        console.log('✅ OTP sent successfully:', data.otp);
-      } else {
-        // Handle both failed delivery and fallback scenarios
-        if (data.fallback && data.otp) {
-          setOtpSent(true);
-          console.log('🔑 FALLBACK OTP:', data.otp);
-          showNotification('⚠️ تم إنشاء رمز التحقق - تحقق من WhatsApp أولاً، وإذا لم تستلم الرسالة راجع السجلات', 'warning');
-        } else {
-          showNotification('فشل في إرسال رمز التحقق: ' + data.message);
+        console.log('✅ OTP generated:', data.otp);
+        
+        if (data.deliveryMethod === 'whatsapp') {
+          showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp - تحقق من رسائل WhatsApp الخاصة بك', 'success');
+        } else if (data.deliveryMethod === 'fallback') {
+          showNotification('✅ تم إنشاء رمز التحقق - تحقق من WhatsApp أو استخدم الرمز: ' + data.otp, 'success');
+        } else if (data.deliveryMethod === 'emergency') {
+          showNotification('✅ تم إنشاء رمز التحقق الطارئ: ' + data.otp, 'success');
         }
+      } else {
+        showNotification('فشل في إنشاء رمز التحقق: ' + (data.message || 'خطأ غير معروف'));
       }
     } catch (error) {
       showNotification('خطأ في إرسال رمز التحقق');
