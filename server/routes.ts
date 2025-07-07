@@ -8,7 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import whatsappService from "./whatsapp-service-working.js";
+import whatsappService from "./whatsapp-service-bulletproof.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -765,22 +765,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('❌ WhatsApp OTP error:', error);
       
-      // Fallback: generate OTP and show in logs for debugging
-      console.log('⚠️ WhatsApp messaging failed, generating fallback OTP');
+      // Enhanced fallback system with bulletproof service
+      console.log('⚠️ WhatsApp messaging failed, generating secure fallback OTP');
       const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${fallbackOtp}`);
-      console.log(`📱 User should check WhatsApp for the actual message, or use fallback OTP: ${fallbackOtp}`);
+      console.log(`🔑 SECURE FALLBACK OTP for ${phoneNumber}: ${fallbackOtp} (expires in 10 minutes)`);
+      console.log(`📱 IMPORTANT: User should check WhatsApp app first, then use fallback if needed`);
       
-      // Store the OTP for verification
+      // Store the fallback OTP for verification
       whatsappService.storeOTPForVerification(phoneNumber, fallbackOtp);
       
-      res.json({ 
-        message: 'OTP generation failed - check server logs for fallback code', 
+      res.status(500).json({ 
+        message: 'WhatsApp delivery failed - fallback OTP generated', 
         otp: fallbackOtp,
         phoneNumber: phoneNumber,
         success: false,
         error: error.message,
-        note: 'Please check WhatsApp app or server console logs for OTP code'
+        fallback: true,
+        note: 'Check WhatsApp app first. If no message received, use the fallback OTP from server logs.'
       });
     }
   });
@@ -954,6 +955,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Meta Pixel status error:', error);
       res.status(500).json({ message: 'Failed to get Meta Pixel status' });
+    }
+  });
+
+  // Email and Phone uniqueness check endpoints
+  app.post('/api/auth/check-email', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      
+      const existingUser = await storage.getUserByEmail(email);
+      res.json({ exists: !!existingUser });
+    } catch (error: any) {
+      console.error('Email check error:', error);
+      res.status(500).json({ message: 'Failed to check email availability' });
+    }
+  });
+
+  app.post('/api/auth/check-phone', async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ message: 'Phone number is required' });
+      }
+      
+      const existingUser = await storage.getUserByPhone(phone);
+      res.json({ exists: !!existingUser });
+    } catch (error: any) {
+      console.error('Phone check error:', error);
+      res.status(500).json({ message: 'Failed to check phone availability' });
+    }
+  });
+
+  // WhatsApp health check endpoint
+  app.get('/api/whatsapp/status', (req, res) => {
+    try {
+      const status = whatsappService.getStatus();
+      const health = whatsappService.isHealthy();
+      res.json({ 
+        ...status, 
+        healthy: health,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: 'Failed to get WhatsApp status', 
+        error: error.message,
+        healthy: false,
+        timestamp: new Date().toISOString()
+      });
     }
   });
 

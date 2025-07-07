@@ -525,6 +525,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkEmailExists(email: string): Promise<boolean> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return !!user;
+  }
+
+  async checkPhoneExists(phone: string): Promise<boolean> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return !!user;
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return user || undefined;
+  }
+
+  async checkEmailExists(email: string): Promise<boolean> {
     const user = await this.getUserByEmail(email);
     return !!user;
   }
