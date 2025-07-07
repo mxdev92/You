@@ -97,6 +97,15 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 7, 2025:
+✓ DEPLOYMENT FIX: Applied critical server startup fixes for production deployment
+✓ Server now binds to 0.0.0.0:5000 and starts listening before WhatsApp initialization
+✓ Added /health endpoint for deployment verification and monitoring
+✓ WhatsApp service initialization moved to post-startup with 30-second timeout
+✓ Enhanced error handling prevents WhatsApp issues from blocking server startup
+✓ Non-blocking architecture ensures server responds immediately on port 5000
+✓ Deployment-ready configuration with proper host binding and health checks
+
 July 6, 2025:
 ✓ UX ENHANCEMENT: Set Vegetables as default category when app opens (category ID: 2)
 ✓ CART FIX: Cart now properly empty on first app load for anonymous users

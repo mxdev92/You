@@ -9,6 +9,15 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// Health check endpoint for deployment
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Configure session middleware with persistent sessions
 app.use(session({
   secret: process.env.SESSION_SECRET || 'yalla-jeetek-secret-key-12345',
@@ -56,16 +65,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize WhatsApp service
-  try {
-    console.log('🚀 Starting WhatsApp service initialization...');
-    await whatsappService.initialize();
-    console.log('✅ WhatsApp service initialized successfully');
-  } catch (error) {
-    console.error('❌ WhatsApp service initialization failed:', error);
-    console.log('📱 WhatsApp features will be disabled until connected');
-  }
-
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -89,11 +88,30 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
+    
+    // Initialize WhatsApp service AFTER server is listening
+    initializeWhatsAppService();
   });
 })();
+
+// Initialize WhatsApp service with timeout and error handling
+async function initializeWhatsAppService() {
+  try {
+    console.log('🚀 Starting WhatsApp service initialization...');
+    
+    // Add timeout to prevent blocking
+    const initPromise = whatsappService.initialize();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('WhatsApp initialization timeout')), 30000)
+    );
+    
+    await Promise.race([initPromise, timeoutPromise]);
+    console.log('✅ WhatsApp service initialized successfully');
+  } catch (error) {
+    console.error('❌ WhatsApp service initialization failed:', error);
+    console.log('📱 WhatsApp features will be disabled until connected');
+    console.log('📱 Server is running normally without WhatsApp functionality');
+  }
+}
