@@ -254,6 +254,19 @@ const AuthPage: React.FC = () => {
     setWhatsappVerification(prev => ({ ...prev, isLoading: true }));
     
     try {
+      // CRITICAL FIX: Check if phone number is already registered BEFORE sending OTP
+      console.log('🔍 Checking phone availability before sending OTP:', whatsappVerification.phone);
+      
+      const phoneAvailable = await checkPhoneAvailability(whatsappVerification.phone);
+      
+      if (!phoneAvailable) {
+        setWhatsappVerification(prev => ({ ...prev, isLoading: false }));
+        showNotification('رقم الواتساب هذا مستخدم من قبل، يرجى استخدام رقم آخر');
+        return;
+      }
+      
+      console.log('✅ Phone number available, proceeding with OTP send');
+      
       const response = await fetch('/api/whatsapp/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
