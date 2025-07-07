@@ -1,20 +1,12 @@
+import P from 'pino';
 import { Boom } from '@hapi/boom';
-import makeWASocket, { 
-  DisconnectReason, 
-  useMultiFileAuthState, 
-  WAMessage, 
-  WASocket,
-  proto,
-  MessageType,
-  fetchLatestBaileysVersion
-} from '@whiskeysockets/baileys';
 import { randomInt } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
 // Baileys WhatsApp OTP Service - Ultra Stable Implementation
 class BaileysOTPService {
-  private sock: WASocket | null = null;
+  private sock: any = null;
   private isConnected = false;
   private isConnecting = false;
   private otpStorage = new Map<string, { code: string; expires: Date; attempts: number }>();
@@ -63,6 +55,11 @@ class BaileysOTPService {
     console.log('🚀 Initializing Baileys WhatsApp OTP Service...');
 
     try {
+      // Dynamic import of Baileys
+      const baileysModule = await import('@whiskeysockets/baileys');
+      const makeWASocket = baileysModule.default;
+      const { DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, Browsers } = baileysModule;
+
       // Get latest Baileys version
       const { version } = await fetchLatestBaileysVersion();
       console.log(`📱 Using Baileys version: ${version}`);
@@ -75,14 +72,10 @@ class BaileysOTPService {
         version,
         auth: state,
         printQRInTerminal: true,
-        logger: {
-          level: 'warn',
-          trace: () => {},
-          debug: () => {},
-          info: (msg) => console.log('📱 Baileys Info:', msg),
-          warn: (msg) => console.warn('⚠️ Baileys Warning:', msg),
-          error: (msg) => console.error('❌ Baileys Error:', msg),
-          fatal: (msg) => console.error('💀 Baileys Fatal:', msg)
+        browser: Browsers.ubuntu('Chrome'),
+        logger: P({ level: 'silent' }),
+        getMessage: async (key) => {
+          return { conversation: 'Hello' }; // Simple message placeholder
         }
       });
 
@@ -95,6 +88,7 @@ class BaileysOTPService {
         }
 
         if (connection === 'close') {
+          const { DisconnectReason } = await import('@whiskeysockets/baileys');
           const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
           
           console.log('❌ WhatsApp connection closed. Reconnecting:', shouldReconnect);
