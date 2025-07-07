@@ -308,38 +308,51 @@ const AuthPage: React.FC = () => {
   };
 
   const handleSignupNext = () => {
+    console.log('🔍 handleSignupNext called, current step:', signupStep);
+    console.log('🔍 signupData:', signupData);
+    
     const step = signupStep;
     
     if (step === 1) {
+      console.log('📝 Validating step 1 data');
       if (!signupData.email.trim()) {
+        console.log('❌ Email is empty');
         showNotification('يرجى إدخال البريد الإلكتروني');
         return;
       }
       if (!signupData.email.includes('@')) {
+        console.log('❌ Email format invalid');
         showNotification('يرجى إدخال بريد إلكتروني صحيح');
         return;
       }
       if (signupData.password.length < 6) {
+        console.log('❌ Password too short');
         showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
         return;
       }
       if (signupData.password !== signupData.confirmPassword) {
+        console.log('❌ Passwords do not match');
         showNotification('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
         return;
       }
       // Move to next step after validation passes
+      console.log('✅ Step 1 validation passed, moving to step 2');
       setSignupStep(2);
     }
     else if (step === 2) {
       // Step 2 is WhatsApp verification - handled separately
+      console.log('⚠️ Step 2 - WhatsApp verification handled separately');
       return;
     }
     else if (step === 3) {
+      console.log('📝 Validating step 3 data');
       if (!signupData.name.trim()) {
+        console.log('❌ Name is empty');
         showNotification('يرجى إدخال الاسم الكامل');
         return;
       }
       // Move to next step after validation passes
+      console.log('✅ Step 3 validation passed, moving to step 4');
       setSignupStep(4);
     }
   };
