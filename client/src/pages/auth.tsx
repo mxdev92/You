@@ -198,7 +198,7 @@ const AuthPage: React.FC = () => {
 
       // Phone number is available, proceed with OTP sending
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // Reduced to 8 second timeout for faster response
       
       const response = await fetch('/api/whatsapp/send-otp', {
         method: 'POST',

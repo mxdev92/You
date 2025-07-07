@@ -210,8 +210,8 @@ export class BaileysWhatsAppService {
   }
 
   async sendOTP(phoneNumber: string, fullName: string, retryCount: number = 0): Promise<{ success: boolean; otp?: string; note?: string }> {
-    const maxRetries = 3;
-    const retryDelay = 2000;
+    const maxRetries = 2; // Reduced from 3 to 2 for faster response
+    const retryDelay = 1000; // Reduced from 2000ms to 1000ms 
     
     // Generate OTP once and reuse for retries
     const otp = retryCount === 0 ? this.generateOTP() : this.getStoredOTP(phoneNumber);
@@ -222,13 +222,14 @@ export class BaileysWhatsAppService {
     if (!this.isConnected || !this.socket) {
       console.log(`⚠️ WhatsApp not connected (attempt ${retryCount + 1})`);
       
-      // If reconnecting, wait and retry
+      // Quick retry only if reconnecting and under max retries
       if (this.isReconnecting && retryCount < maxRetries) {
-        console.log(`🔄 Waiting for reconnection, retrying OTP in ${retryDelay/1000}s...`);
+        console.log(`🔄 Quick retry in ${retryDelay/1000}s...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         return this.sendOTP(phoneNumber, fullName, retryCount + 1);
       }
       
+      // Return fallback OTP immediately instead of waiting
       return {
         success: true,
         otp,
@@ -252,10 +253,10 @@ export class BaileysWhatsAppService {
         throw new Error('Connection lost during send');
       }
 
-      // Send with reduced timeout for faster response
+      // Send with aggressive timeout for faster response
       const sendPromise = this.socket.sendMessage(formattedNumber, { text: message });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Send timeout after 8s')), 8000)
+        setTimeout(() => reject(new Error('Send timeout after 3s')), 3000) // Reduced from 8s to 3s
       );
       
       await Promise.race([sendPromise, timeoutPromise]);
