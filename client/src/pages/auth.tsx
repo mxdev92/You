@@ -621,17 +621,17 @@ const AuthPage: React.FC = () => {
                           </div>
                           <Input
                             type="tel"
-                            placeholder="00000000"
+                            placeholder="000000000"
                             value={signupData.phone.startsWith('7') ? signupData.phone.substring(1) : signupData.phone}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, '');
-                              if (value.length <= 8) {
+                              if (value.length <= 9) {
                                 setSignupData(prev => ({ ...prev, phone: '7' + value }));
                               }
                             }}
                             className="flex-1 h-full text-left border-0 focus:ring-0 focus:outline-none bg-transparent pl-0 text-gray-800"
                             style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '18px', lineHeight: '1', fontWeight: 'normal' }}
-                            maxLength={8}
+                            maxLength={9}
                           />
                         </div>
                         {!otpSent ? (
