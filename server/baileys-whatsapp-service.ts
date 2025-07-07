@@ -30,6 +30,10 @@ export class BaileysWhatsAppService {
   private otpSessions: Map<string, OTPSession> = new Map();
   private readonly OTP_EXPIRY_MINUTES = 10;
   private readonly authPath = './whatsapp_session';
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 10;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private lastHeartbeat: number = 0;
 
   constructor() {
     // Ensure auth directory exists
@@ -41,6 +45,11 @@ export class BaileysWhatsAppService {
   async initialize(): Promise<void> {
     if (this.isConnecting || this.isConnected) {
       console.log('🔄 Baileys WhatsApp already initializing or connected');
+      return;
+    }
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.log('🚫 Maximum reconnection attempts reached. Stopping.');
       return;
     }
 
@@ -67,7 +76,7 @@ export class BaileysWhatsAppService {
         fatal: () => {}
       };
 
-      // Create socket
+      // Create socket with enhanced stability settings
       this.socket = makeWASocket({
         version,
         auth: {
@@ -75,13 +84,25 @@ export class BaileysWhatsAppService {
           keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
         printQRInTerminal: false,
-        generateHighQualityLinkPreview: true,
+        generateHighQualityLinkPreview: false, // Disable to reduce bandwidth
         logger: logger,
         syncFullHistory: false,
-        markOnlineOnConnect: true
+        markOnlineOnConnect: true,
+        defaultQueryTimeoutMs: 60000, // Increase timeout to 60 seconds
+        connectTimeoutMs: 60000, // Increase connection timeout
+        keepAliveIntervalMs: 30000, // Send keep-alive every 30 seconds
+        retryRequestDelayMs: 250, // Retry delay
+        maxMsgRetryCount: 5, // Max message retries
+        qrTimeout: 60000, // QR timeout
+        browser: ['PAKETY', 'Desktop', '3.0'], // Stable browser info
+        getMessage: async (key) => {
+          return {
+            conversation: 'Baileys message placeholder'
+          }
+        }
       });
 
-      // Handle connection updates
+      // Handle connection updates with enhanced stability
       this.socket.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
@@ -96,20 +117,37 @@ export class BaileysWhatsAppService {
         }
 
         if (connection === 'close') {
-          const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-          console.log('🔌 Connection closed. Reconnecting:', shouldReconnect);
+          const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+          const shouldReconnect = statusCode !== DisconnectReason.loggedOut && 
+                                 statusCode !== DisconnectReason.badSession;
+          
+          console.log(`🔌 Connection closed. Status: ${statusCode}, Reconnecting: ${shouldReconnect}`);
           
           this.isConnected = false;
           this.isConnecting = false;
+          this.stopHeartbeat(); // Stop heartbeat when disconnected
           
           if (shouldReconnect) {
-            setTimeout(() => this.initialize(), 3000);
+            // Use exponential backoff for reconnection
+            const delay = Math.min(30000, Math.max(3000, (this.reconnectAttempts || 0) * 2000));
+            console.log(`⏳ Reconnecting in ${delay/1000} seconds...`);
+            this.reconnectAttempts = (this.reconnectAttempts || 0) + 1;
+            setTimeout(() => this.initialize(), delay);
+          } else {
+            console.log('🚫 Not reconnecting due to logout or bad session');
+            this.reconnectAttempts = 0;
           }
         } else if (connection === 'open') {
           console.log('✅ Baileys WhatsApp connected successfully!');
           this.isConnected = true;
           this.isConnecting = false;
           this.qrCode = null; // Clear QR once connected
+          this.reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+          this.startHeartbeat(); // Start heartbeat monitoring
+        } else if (connection === 'connecting') {
+          console.log('🔄 WhatsApp connecting...');
+          this.isConnecting = true;
+          this.isConnected = false;
         }
       });
 
@@ -353,6 +391,32 @@ export class BaileysWhatsAppService {
 
   getQRCode(): string | null {
     return this.qrCode;
+  }
+
+  private startHeartbeat(): void {
+    this.stopHeartbeat(); // Clear any existing heartbeat
+    
+    this.heartbeatInterval = setInterval(() => {
+      if (this.isConnected && this.socket) {
+        this.lastHeartbeat = Date.now();
+        // Send a lightweight ping to keep connection alive
+        try {
+          this.socket.sendPresenceUpdate('available');
+        } catch (error) {
+          console.log('⚠️ Heartbeat failed, connection may be lost');
+        }
+      }
+    }, 30000); // Heartbeat every 30 seconds
+    
+    console.log('💓 Heartbeat monitoring started');
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+      console.log('💔 Heartbeat monitoring stopped');
+    }
   }
 
   private async sendMessage(phoneNumber: string, message: string): Promise<boolean> {

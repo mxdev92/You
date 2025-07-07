@@ -23,7 +23,7 @@ const WhatsAppAdmin: React.FC = () => {
 
   useEffect(() => {
     checkWhatsAppStatus();
-    const interval = setInterval(checkWhatsAppStatus, 5000);
+    const interval = setInterval(checkWhatsAppStatus, 15000); // Check every 15 seconds instead of 5
     return () => clearInterval(interval);
   }, []);
 
@@ -41,6 +41,8 @@ const WhatsAppAdmin: React.FC = () => {
       const data = await response.json();
       if (data.connected) {
         setWhatsappStatus('connected');
+        // Clear any error messages when connected
+        setMessages(prev => prev.filter(msg => msg.type !== 'error'));
       } else if (data.status === 'connecting') {
         setWhatsappStatus('connecting');
       } else {
@@ -263,22 +265,19 @@ const WhatsAppAdmin: React.FC = () => {
               </span>
               <Badge 
                 variant={whatsappStatus === 'connected' ? 'default' : whatsappStatus === 'connecting' ? 'secondary' : 'destructive'}
-                className={whatsappStatus === 'connected' ? 'bg-green-500' : whatsappStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}
+                className={`${whatsappStatus === 'connected' ? 'bg-green-500 text-white' : whatsappStatus === 'connecting' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'} font-semibold`}
               >
-                {whatsappStatus === 'connected' ? 'متصل' : whatsappStatus === 'connecting' ? 'جاري الاتصال...' : whatsappStatus === 'loading' ? 'جاري التحقق...' : 'غير متصل'}
+                {whatsappStatus === 'connected' ? '🟢 متصل و مستقر' : whatsappStatus === 'connecting' ? '🟡 جاري الاتصال...' : whatsappStatus === 'loading' ? '⏳ جاري التحقق...' : '🔴 غير متصل'}
               </Badge>
             </div>
             
-            {(whatsappStatus === 'disconnected' || whatsappStatus === 'loading') && (
-              <Button
-                onClick={initializeWhatsApp}
-                disabled={isLoading}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-              >
-                {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
-              </Button>
+            {whatsappStatus === 'connected' && (
+              <div className="text-sm text-green-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                ✅ جاهز لإرسال الرسائل
+              </div>
             )}
+            
+            {/* Connection initializes automatically - no manual restart needed */}
           </div>
         </div>
 
