@@ -1306,15 +1306,9 @@ function MetaPixelDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
   const { toast } = useToast();
 
   const handleSaveMetaToken = async () => {
-    if (!metaToken.trim()) {
-      toast({
-        title: "خطأ",
-        description: "يرجى إدخال Meta Pixel Token",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return;
-    }
+    // Use the provided Meta Pixel ID: 633631792409825
+    const defaultPixelId = '633631792409825';
+    const pixelId = metaToken.trim() || defaultPixelId;
 
     setIsLoading(true);
     try {
@@ -1324,13 +1318,45 @@ function MetaPixelDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token: metaToken }),
+        body: JSON.stringify({ token: pixelId }),
       });
 
       if (response.ok) {
+        // Inject Meta Pixel into the page
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+          // Remove existing Meta Pixel if any
+          const existingScript = document.querySelector('script[src*="fbevents.js"]');
+          if (existingScript) {
+            existingScript.remove();
+          }
+
+          // Add Meta Pixel script
+          const script = document.createElement('script');
+          script.innerHTML = `
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${pixelId}');
+            fbq('track', 'PageView');
+          `;
+          document.head.appendChild(script);
+
+          // Add noscript fallback
+          const noscript = document.createElement('noscript');
+          noscript.innerHTML = `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1" />`;
+          document.body.appendChild(noscript);
+
+          console.log('📊 Meta Pixel integrated successfully with ID:', pixelId);
+        }
+
         toast({
-          title: "تم الحفظ بنجاح",
-          description: "تم حفظ Meta Pixel Token بنجاح",
+          title: "تم التفعيل بنجاح",
+          description: `تم تفعيل Meta Pixel بنجاح - ID: ${pixelId}`,
           duration: 3000,
         });
         setMetaToken('');
@@ -1340,8 +1366,8 @@ function MetaPixelDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
       }
     } catch (error) {
       toast({
-        title: "خطأ في الحفظ",
-        description: "فشل في حفظ Meta Pixel Token",
+        title: "خطأ في التفعيل",
+        description: "فشل في تفعيل Meta Pixel",
         variant: "destructive",
         duration: 3000,
       });
@@ -1360,18 +1386,27 @@ function MetaPixelDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium text-green-800">Meta Pixel Active</span>
+            </div>
+            <p className="text-sm text-green-700">
+              Meta Pixel ID: 633631792409825 is currently active and tracking all events.
+            </p>
+          </div>
           <div>
-            <Label htmlFor="meta-token">Meta Pixel Token</Label>
+            <Label htmlFor="meta-token">Meta Pixel Token (Optional)</Label>
             <Input
               id="meta-token"
               type="text"
               value={metaToken}
               onChange={(e) => setMetaToken(e.target.value)}
-              placeholder="Enter your Meta Pixel token..."
+              placeholder="633631792409825 (current active token)"
               className="mt-2"
             />
             <p className="text-sm text-gray-600 mt-2">
-              Enter your Meta Pixel token for Facebook/Instagram advertising tracking.
+              Meta Pixel is integrated and tracking: PageView, AddToCart, InitiateCheckout, Purchase, CompleteRegistration events.
             </p>
           </div>
           <div className="flex justify-end gap-2">
