@@ -32,10 +32,15 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   loadCart: async () => {
     set({ isLoading: true });
     try {
-      const response = await fetch("/api/cart");
+      const response = await fetch("/api/cart", {
+        credentials: "include" // Include session cookies for authentication
+      });
       if (response.ok) {
         const items = await response.json();
         set({ cartItems: items });
+      } else if (response.status === 401) {
+        // User not authenticated, clear cart
+        set({ cartItems: [] });
       }
     } catch (error) {
       console.error("CartFlow: Failed to load cart:", error);
@@ -49,6 +54,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       const response = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include session cookies for authentication
         body: JSON.stringify(item),
       });
       
@@ -56,7 +62,8 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
         // Reload cart to get updated data with product details
         get().loadCart();
       } else {
-        throw new Error("Failed to add item");
+        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+        throw new Error(errorData.message || "Failed to add item");
       }
     } catch (error) {
       console.error("CartFlow: Failed to add item:", error);
@@ -73,6 +80,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
 
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "DELETE",
+        credentials: "include", // Include session cookies for authentication
       });
       
       if (!response.ok) {
@@ -101,6 +109,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include session cookies for authentication
         body: JSON.stringify({ quantity }),
       });
       
@@ -121,7 +130,10 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   clearCart: async () => {
     try {
       set({ cartItems: [] });
-      const response = await fetch("/api/cart", { method: "DELETE" });
+      const response = await fetch("/api/cart", { 
+        method: "DELETE",
+        credentials: "include" // Include session cookies for authentication
+      });
       
       if (!response.ok) {
         get().loadCart();
