@@ -166,9 +166,9 @@ const AuthPage: React.FC = () => {
       return;
     }
 
-    // Validate phone number format (must be 10 digits starting with 7)
-    if (signupData.phone.length !== 10 || !signupData.phone.startsWith('7')) {
-      showNotification('يرجى إدخال رقم موبايل صحيح (7xxxxxxxxx)');
+    // Validate phone number format (must be 11 digits starting with 07)
+    if (signupData.phone.length !== 11 || !signupData.phone.startsWith('07')) {
+      showNotification('يرجى إدخال رقم موبايل صحيح (07xxxxxxxxx)');
       return;
     }
 
