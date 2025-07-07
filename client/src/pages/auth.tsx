@@ -622,7 +622,7 @@ const AuthPage: React.FC = () => {
                           <Input
                             type="tel"
                             placeholder="00000000"
-                            value={signupData.phone.replace(/^7/, '')}
+                            value={signupData.phone.startsWith('7') ? signupData.phone.substring(1) : signupData.phone}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, '');
                               if (value.length <= 8) {
