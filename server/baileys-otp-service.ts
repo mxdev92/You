@@ -159,6 +159,33 @@ class BaileysOTPService {
     return `${formatted}@s.whatsapp.net`;
   }
 
+  // Force generate new QR code by clearing session
+  async forceNewQR(): Promise<void> {
+    console.log('🔄 Forcing new QR generation...');
+    
+    // Stop current connection
+    await this.disconnect();
+    
+    // Clear session files to force QR generation
+    if (fs.existsSync(this.sessionPath)) {
+      console.log('🗑️ Clearing old session for fresh QR...');
+      fs.rmSync(this.sessionPath, { recursive: true, force: true });
+      fs.mkdirSync(this.sessionPath, { recursive: true, mode: 0o755 });
+    }
+    
+    // Reset all connection state
+    this.isConnected = false;
+    this.isConnecting = false;
+    this.reconnectAttempts = 0;
+    this.currentQR = null;
+    this.qrExpiry = 0;
+    
+    // Wait a moment then start fresh
+    setTimeout(() => {
+      this.initialize();
+    }, 1000);
+  }
+
   // Professional WhatsApp initialization with enhanced stability
   async initialize(): Promise<void> {
     if (this.isConnecting) {

@@ -1076,6 +1076,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Force new QR generation endpoint
+  app.post('/api/baileys/force-qr', async (req, res) => {
+    try {
+      console.log('📱 Force QR generation requested via API');
+      await baileysOTPService.forceNewQR();
+      res.json({ 
+        success: true, 
+        message: 'New QR generation initiated - check status in 5 seconds',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false,
+        message: 'Error generating new QR', 
+        error: error.message 
+      });
+    }
+  });
+
   // Get Meta Pixel status endpoint
   app.get("/api/meta-pixel", async (req, res) => {
     try {
