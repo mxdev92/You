@@ -4,6 +4,7 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import whatsappService from "./whatsapp-service-bulletproof-permanent.js";
+import baileysOTPService from "./baileys-otp-service.js";
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -91,8 +92,9 @@ app.use((req, res, next) => {
   server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
     
-    // Initialize WhatsApp service AFTER server is listening
+    // Initialize WhatsApp services AFTER server is listening
     initializeWhatsAppService();
+    initializeBaileysOTPService();
   });
 })();
 
@@ -114,4 +116,26 @@ async function initializeWhatsAppService() {
     console.log('📱 WhatsApp features will be disabled until connected');
     console.log('📱 Server is running normally without WhatsApp functionality');
   }
+}
+
+// Initialize Baileys OTP service with timeout and error handling
+async function initializeBaileysOTPService() {
+  // Add delay to avoid conflicts
+  setTimeout(async () => {
+    try {
+      console.log('🚀 Starting Baileys WhatsApp OTP service...');
+      
+      // Add timeout to prevent blocking
+      const initPromise = baileysOTPService.initialize();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Baileys OTP initialization timeout')), 30000)
+      );
+      
+      await Promise.race([initPromise, timeoutPromise]);
+      console.log('✅ Baileys WhatsApp OTP service ready');
+    } catch (error) {
+      console.error('❌ Baileys OTP service initialization failed:', error);
+      console.log('📱 OTP will use manual fallback when needed');
+    }
+  }, 7000); // Start 7 seconds after server start
 }

@@ -10,6 +10,7 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import whatsappService from "./whatsapp-service-bulletproof-permanent.js";
 import stableOTPService from "./stable-otp-service.js";
+import baileysOTPService from "./baileys-otp-service.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -723,11 +724,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WhatsApp API routes
   app.get('/api/whatsapp/status', (req, res) => {
     try {
-      const status = whatsappService.getStatus();
-      res.json(status);
+      const baileysStatus = baileysOTPService.getStatus();
+      res.json({
+        ...baileysStatus,
+        service: 'baileys_whatsapp_otp',
+        healthy: baileysStatus.connected
+      });
     } catch (error: any) {
       res.status(500).json({ 
-        message: 'Failed to get WhatsApp status', 
+        message: 'Failed to get Baileys WhatsApp status', 
         error: error.message,
         connected: false,
         status: 'error',
@@ -783,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stable OTP sending with multiple professional providers
+  // Baileys WhatsApp OTP sending (Ultra Stable)
   app.post('/api/whatsapp/send-otp', async (req, res) => {
     const { phoneNumber, fullName, email } = req.body;
     
@@ -803,54 +808,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      console.log(`📱 Processing stable OTP request for ${phoneNumber} (${fullName})`);
+      console.log(`📱 Processing Baileys WhatsApp OTP request for ${phoneNumber} (${fullName})`);
       
-      // Use the new stable OTP service with multiple providers
-      const result = await stableOTPService.sendOTP(phoneNumber, email);
+      // Use Baileys WhatsApp OTP service
+      const result = await baileysOTPService.sendOTP(phoneNumber, fullName);
       
       if (result.success) {
-        console.log(`✅ OTP sent successfully to ${phoneNumber} via ${result.method}`);
-        
-        const methodMessages = {
-          'BulkSMSIraq': 'تم إرسال رمز التحقق عبر الرسائل النصية بنجاح',
-          'OTPIQ': 'تم إرسال رمز التحقق عبر خدمة OTPIQ بنجاح',
-          'Twilio': 'تم إرسال رمز التحقق عبر Twilio بنجاح',
-          'Email': 'تم إرسال رمز التحقق عبر البريد الإلكتروني بنجاح'
-        };
+        console.log(`✅ OTP sent successfully to ${phoneNumber} via Baileys WhatsApp`);
         
         res.json({ 
-          message: methodMessages[result.method] || 'تم إرسال رمز التحقق بنجاح',
+          message: result.message,
           phoneNumber: phoneNumber,
           success: true,
-          deliveryMethod: result.method.toLowerCase()
+          deliveryMethod: 'baileys_whatsapp'
         });
       } else {
-        // Even if all providers fail, provide manual OTP
-        console.log(`⚠️ All providers failed for ${phoneNumber}, providing manual OTP: ${result.code}`);
+        // Provide manual OTP when WhatsApp fails
+        console.log(`⚠️ Baileys WhatsApp failed for ${phoneNumber}, providing manual OTP`);
         
         res.json({ 
-          message: 'تم إنشاء رمز التحقق. استخدم الرمز التالي:',
+          message: result.message,
           otp: result.code,
           phoneNumber: phoneNumber,
           success: true,
           deliveryMethod: 'manual',
-          note: 'جميع خدمات الإرسال غير متاحة حالياً. يرجى إدخال الرمز المعروض أعلاه.'
+          note: 'WhatsApp غير متصل حالياً. يرجى إدخال الرمز المعروض أعلاه.'
         });
       }
       
     } catch (error: any) {
-      console.error('❌ Stable OTP service error:', error);
+      console.error('❌ Baileys OTP service error:', error);
       
       res.status(500).json({ 
         message: 'فشل في إرسال رمز التحقق. يرجى المحاولة مرة أخرى.', 
-        error: error.message || 'OTP service unavailable',
+        error: error.message || 'WhatsApp OTP service unavailable',
         success: false,
         phoneNumber: phoneNumber
       });
     }
   });
 
-  // Stable OTP verification
+  // Baileys WhatsApp OTP verification
   app.post('/api/whatsapp/verify-otp', async (req, res) => {
     try {
       const { phoneNumber, otp } = req.body;
@@ -862,7 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const result = await stableOTPService.verifyOTP(phoneNumber, otp);
+      const result = await baileysOTPService.verifyOTP(phoneNumber, otp);
       
       if (result.success) {
         console.log(`✅ OTP verified successfully for ${phoneNumber}`);
@@ -880,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error: any) {
-      console.error('Stable OTP verification error:', error);
+      console.error('Baileys OTP verification error:', error);
       res.status(500).json({ 
         message: 'فشل في التحقق من الرمز',
         valid: false,
