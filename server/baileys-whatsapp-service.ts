@@ -418,9 +418,12 @@ export class BaileysWhatsAppService {
     // Remove any non-digit characters
     let cleaned = phoneNumber.replace(/\D/g, '');
     
-    // Handle Iraqi numbers starting with 07
+    // Handle Iraqi numbers starting with 07 or just 7
     if (cleaned.startsWith('07')) {
       cleaned = '964' + cleaned.substring(1);
+    } else if (cleaned.startsWith('7') && cleaned.length === 10) {
+      // Handle 10-digit numbers starting with 7 (like 7757250444)
+      cleaned = '964' + cleaned;
     }
     
     // Add @s.whatsapp.net suffix
