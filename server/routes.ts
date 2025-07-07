@@ -755,6 +755,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/whatsapp/reconnect', async (req, res) => {
+    try {
+      console.log('🔄 Manual WhatsApp reconnection requested');
+      
+      // Destroy existing connection
+      await whatsappService.destroy();
+      
+      // Wait a moment then reinitialize
+      setTimeout(async () => {
+        console.log('🚀 Starting fresh WhatsApp connection...');
+        await whatsappService.initialize();
+      }, 2000);
+      
+      res.json({ 
+        success: true, 
+        message: 'WhatsApp reconnection started - new QR code will be generated in a few seconds' 
+      });
+    } catch (error: any) {
+      console.error('WhatsApp reconnection failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message, 
+        message: 'Failed to reconnect WhatsApp service' 
+      });
+    }
+  });
+
   app.post('/api/whatsapp/send-otp', async (req, res) => {
     const { phoneNumber, fullName } = req.body;
     
