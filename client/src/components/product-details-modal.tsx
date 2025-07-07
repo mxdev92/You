@@ -7,6 +7,7 @@ import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { useCartFlow } from "@/store/cart-flow";
 import { formatPrice } from "@/lib/price-utils";
+import { MetaPixel } from "@/lib/meta-pixel";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -49,6 +50,9 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
         productId: product.id,
         quantity: selectedQuantity,
       });
+      
+      // Track add to cart event with Meta Pixel
+      MetaPixel.trackAddToCart(displayName, product.price);
       
       // Keep the "Added!" state for a moment
       setTimeout(() => {

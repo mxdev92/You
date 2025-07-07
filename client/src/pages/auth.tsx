@@ -7,6 +7,7 @@ import { usePostgresAuth } from '@/hooks/use-postgres-auth';
 import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
+import { MetaPixel } from '@/lib/meta-pixel';
 
 interface SignupData {
   email: string;
@@ -294,6 +295,10 @@ const AuthPage: React.FC = () => {
     setIsLoading(true);
     try {
       await login(loginData.email, loginData.password);
+      
+      // Track successful login with Meta Pixel
+      MetaPixel.trackLogin();
+      
       setLocation('/');
     } catch (error: any) {
       showNotification('خطأ في تسجيل الدخول: ' + (error.message || 'خطأ غير معروف'));
@@ -425,6 +430,9 @@ const AuthPage: React.FC = () => {
       
       // Send welcome messages - Arabic alert + WhatsApp message
       const welcomeMessage = 'اهلا وسهلا بك في تطبيق باكيتي للتوصيل السريع\nتم انشاء حسابك بنجاح';
+      
+      // Track successful registration with Meta Pixel
+      MetaPixel.trackCompleteRegistration();
       
       // Show Arabic welcome alert
       showNotification(welcomeMessage, 'success');

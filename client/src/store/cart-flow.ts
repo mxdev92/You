@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
+import { MetaPixel } from "@/lib/meta-pixel";
 
 type CartItemWithProduct = CartItem & { product: Product };
 

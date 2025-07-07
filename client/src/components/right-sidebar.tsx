@@ -13,6 +13,7 @@ import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/price-utils";
 import type { CartItem, Product } from "@shared/schema";
+import { MetaPixel } from "@/lib/meta-pixel";
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -320,6 +321,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       
       const orderId = await createOrderMutation.mutateAsync(orderData);
       console.log('Order created successfully with ID:', orderId);
+      
+      // Track successful purchase with Meta Pixel
+      MetaPixel.trackPurchase(orderData.totalAmount + 2000, orderId.toString()); // Include delivery fee
       
       // Clear cart using CartFlow store for immediate UI update
       await clearCartFlow();
@@ -809,7 +813,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             </span>
           </div>
           <Button 
-            onClick={() => setCurrentView('checkout')}
+            onClick={() => {
+              // Track checkout initiation with Meta Pixel
+              MetaPixel.trackInitiateCheckout(getCartTotal() + 2000); // Include delivery fee
+              setCurrentView('checkout');
+            }}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
           >
