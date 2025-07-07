@@ -889,6 +889,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WhatsApp Welcome Message Endpoint
+  app.post('/api/whatsapp/send-welcome-message', async (req, res) => {
+    try {
+      const { phone, name } = req.body;
+      
+      if (!phone || !name) {
+        return res.status(400).json({ message: 'Phone number and name are required' });
+      }
+
+      // Check if WhatsApp service is connected
+      if (!whatsappService.getConnectionStatus().connected) {
+        console.log('WhatsApp not connected - skipping welcome message');
+        return res.status(503).json({ message: 'WhatsApp service not available' });
+      }
+
+      // Format the Arabic welcome message
+      const welcomeMessage = `🎉 اهلا وسهلا بك في تطبيق باكيتي للتوصيل السريع
+
+مرحباً ${name}! 
+
+تم انشاء حسابك بنجاح ✅
+
+نحن سعداء بانضمامك لعائلة باكيتي. يمكنك الآن:
+🛒 تصفح المنتجات الطازجة
+🚚 طلب التوصيل السريع 
+📱 متابعة طلباتك بسهولة
+
+شكراً لثقتكم بنا 🙏
+فريق باكيتي`;
+
+      // Send welcome message via WhatsApp
+      await whatsappService.sendOTP(phone, welcomeMessage);
+      
+      console.log(`✅ Welcome WhatsApp message sent to ${phone} for user ${name}`);
+      res.json({ 
+        success: true, 
+        message: 'Welcome message sent via WhatsApp successfully' 
+      });
+      
+    } catch (error: any) {
+      console.error('WhatsApp welcome message error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send welcome message via WhatsApp' 
+      });
+    }
+  });
+
   // Admin notification testing endpoint
   app.post('/api/admin/test-notification', async (req, res) => {
     try {
