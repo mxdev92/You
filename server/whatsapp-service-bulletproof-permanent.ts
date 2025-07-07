@@ -311,23 +311,11 @@ class BulletproofPermanentWhatsAppService {
       // Format phone number for WhatsApp
       const formattedNumber = this.formatPhoneNumber(phoneNumber);
       
-      // Check if WhatsApp number exists first
-      console.log(`🔍 Checking if WhatsApp number exists: ${formattedNumber}`);
+      // Skip WhatsApp number existence check for now - send directly and let WhatsApp handle delivery
+      console.log(`📋 Attempting to send OTP to: ${formattedNumber} (bypassing existence check)`);
       
-      try {
-        const numberCheck = await this.client.getNumberId(formattedNumber);
-        if (!numberCheck || !numberCheck.exists) {
-          console.log(`❌ WhatsApp number does not exist: ${phoneNumber}`);
-          return {
-            success: false,
-            message: "رقم WhatsApp غير موجود أو غير مفعل. تأكد من أن الرقم صحيح ولديك حساب WhatsApp فعال.",
-            phoneNumber
-          };
-        }
-        console.log(`✅ WhatsApp number verified: ${phoneNumber}`);
-      } catch (checkError: any) {
-        console.log(`⚠️ Could not verify WhatsApp number, proceeding anyway:`, checkError.message);
-      }
+      // Note: WhatsApp number existence checking can be unreliable
+      // We'll attempt direct delivery and handle any failures gracefully
       
       // Generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -369,6 +357,7 @@ class BulletproofPermanentWhatsAppService {
           attempts++;
           lastError = sendError;
           console.log(`⚠️ Send attempt ${attempts} failed for ${phoneNumber}: ${sendError.message}`);
+          console.log(`🔍 Error details:`, sendError);
           
           if (attempts < maxAttempts) {
             // Wait before retry
@@ -378,7 +367,7 @@ class BulletproofPermanentWhatsAppService {
             if (attempts === 2) {
               const altFormat = this.formatPhoneNumberAlternative(phoneNumber);
               console.log(`🔄 Retry attempt ${attempts} with alternative format: ${altFormat}`);
-              // Use alternative format for this attempt
+              formattedNumber = altFormat; // Actually use the alternative format
             }
           }
         }
