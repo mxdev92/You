@@ -4,7 +4,7 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 
 export default function Login() {
@@ -14,7 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  const { login, register, loading, error } = usePostgresAuth();
+  const { login, register, loading, error } = useAuth();
   const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +32,7 @@ export default function Login() {
       }
       setLocation("/");
     } catch (err) {
-      // Error is handled by usePostgresAuth hook
+      // Error is handled by useAuth hook
     }
   };
 

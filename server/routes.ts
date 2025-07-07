@@ -8,9 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import whatsappService from "./whatsapp-service-bulletproof-permanent.js";
-import stableOTPService from "./stable-otp-service.js";
-import baileysOTPService from "./baileys-otp-service.js";
+import whatsappService from "./whatsapp-service-working.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -440,66 +438,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check email availability endpoint
-  app.post('/api/auth/check-email', async (req, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
-      }
-
-      const emailExists = await storage.checkEmailExists(email);
-      res.json({ exists: emailExists });
-    } catch (error: any) {
-      console.error('Email check error:', error);
-      res.status(500).json({ message: 'Failed to check email availability' });
-    }
-  });
-
-  // Check phone availability endpoint
-  app.post('/api/auth/check-phone', async (req, res) => {
-    try {
-      const { phone } = req.body;
-      
-      if (!phone) {
-        return res.status(400).json({ message: 'Phone number is required' });
-      }
-
-      const phoneExists = await storage.checkPhoneExists(phone);
-      res.json({ exists: phoneExists });
-    } catch (error: any) {
-      console.error('Phone check error:', error);
-      res.status(500).json({ message: 'Failed to check phone availability' });
-    }
-  });
-
-  // Authentication routes - STRICT VALIDATION: Account only created after completing ALL steps
+  // Authentication routes
   app.post('/api/auth/signup', async (req, res) => {
     try {
       const { email, password, fullName, phone } = req.body;
       
-      if (!email || !password || !fullName || !phone) {
-        return res.status(400).json({ message: 'All fields are required: email, password, fullName, phone' });
-      }
-
-      // STRICT VALIDATION: Check email uniqueness
-      const emailExists = await storage.checkEmailExists(email);
-      if (emailExists) {
-        return res.status(409).json({ message: 'هذا البريد الإلكتروني مستخدم من قبل، يرجى استخدام بريد آخر' });
-      }
-
-      // STRICT VALIDATION: Check phone uniqueness  
-      const phoneExists = await storage.checkPhoneExists(phone);
-      if (phoneExists) {
-        return res.status(409).json({ message: 'رقم الواتساب هذا مستخدم من قبل، يرجى استخدام رقم آخر' });
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
       }
 
       const user = await storage.createUser({ 
         email, 
         passwordHash: password, 
-        fullName,
-        phone
+        fullName: fullName || null,
+        phone: phone || null
       });
       
       // Set session after successful signup
@@ -723,25 +675,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // WhatsApp API routes
   app.get('/api/whatsapp/status', (req, res) => {
-    try {
-      const baileysStatus = baileysOTPService.getStatus();
-      res.json({
-        ...baileysStatus,
-        service: 'baileys_whatsapp_otp_professional',
-        healthy: baileysStatus.connected,
-        version: '2.0.0-professional'
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        message: 'Failed to get Professional Baileys WhatsApp status', 
-        error: error.message,
-        connected: false,
-        status: 'error',
-        healthy: false,
-        professional: false,
-        timestamp: new Date().toISOString()
-      });
-    }
+    res.json({ 
+      status: whatsappService.getStatus(),
+      connected: whatsappService.isConnected()
+    });
   });
 
   app.get('/api/whatsapp/qr', (req, res) => {
@@ -763,124 +700,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/whatsapp/reconnect', async (req, res) => {
-    try {
-      console.log('🔄 Professional WhatsApp reconnection requested');
-      
-      // Use the professional Baileys reconnection
-      await baileysOTPService.forceReconnect();
-      
-      res.json({ 
-        success: true, 
-        message: 'Professional WhatsApp reconnection initiated - enhanced stability active',
-        professional: true,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      console.error('Professional WhatsApp reconnection failed:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message, 
-        message: 'Failed to reconnect Professional WhatsApp service' 
-      });
-    }
-  });
-
-  // Baileys WhatsApp OTP sending (Ultra Stable)
   app.post('/api/whatsapp/send-otp', async (req, res) => {
-    const { phoneNumber, fullName, email } = req.body;
+    const { phoneNumber, fullName } = req.body;
     
     if (!phoneNumber || !fullName) {
-      return res.status(400).json({ 
-        message: 'رقم الهاتف والاسم الكامل مطلوبان',
-        success: false 
-      });
-    }
-
-    // Phone number validation before sending OTP
-    if (!phoneNumber.match(/^(07[0-9]{9}|964[0-9]{10})$/)) {
-      return res.status(400).json({
-        message: 'رقم الهاتف غير صحيح. يرجى إدخال رقم عراقي صحيح (مثال: 07XXXXXXXXX)',
-        success: false
-      });
+      return res.status(400).json({ message: 'Phone number and full name are required' });
     }
 
     try {
-      console.log(`📱 Processing Baileys WhatsApp OTP request for ${phoneNumber} (${fullName})`);
-      
-      // Use professional Baileys WhatsApp OTP service
-      const result = await baileysOTPService.sendOTP(phoneNumber, fullName);
-      
-      if (result.success) {
-        console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
-        
-        // NEVER send OTP code in response - only confirmation
-        res.json({ 
-          message: 'تم إرسال رمز التحقق إلى WhatsApp الخاص بك',
-          phoneNumber: result.phoneNumber,
-          success: true,
-          deliveryMethod: 'whatsapp'
-        });
-      } else {
-        console.log(`❌ WhatsApp OTP failed for ${phoneNumber}: ${result.message}`);
-        
-        res.status(503).json({ 
-          message: 'WhatsApp غير متصل. يجب ربط WhatsApp أولاً لإرسال رمز التحقق',
-          success: false,
-          error: 'WhatsApp connection required',
-          phoneNumber: phoneNumber,
-          requiresConnection: true
-        });
-      }
-      
+      const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
+      console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber} via WhatsApp`);
+      res.json({ 
+        message: 'OTP sent successfully to WhatsApp', 
+        otp: otp,
+        phoneNumber: phoneNumber,
+        success: true 
+      });
     } catch (error: any) {
-      console.error('❌ Baileys OTP service error:', error);
+      console.error('❌ WhatsApp OTP error:', error);
       
-      res.status(500).json({ 
-        message: 'فشل في إرسال رمز التحقق. يرجى المحاولة مرة أخرى.', 
-        error: error.message || 'WhatsApp OTP service unavailable',
+      // Fallback: generate OTP and show in logs for debugging
+      console.log('⚠️ WhatsApp messaging failed, generating fallback OTP');
+      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${fallbackOtp}`);
+      console.log(`📱 User should check WhatsApp for the actual message, or use fallback OTP: ${fallbackOtp}`);
+      
+      // Store the OTP for verification
+      whatsappService.storeOTPForVerification(phoneNumber, fallbackOtp);
+      
+      res.json({ 
+        message: 'OTP generation failed - check server logs for fallback code', 
+        otp: fallbackOtp,
+        phoneNumber: phoneNumber,
         success: false,
-        phoneNumber: phoneNumber
+        error: error.message,
+        note: 'Please check WhatsApp app or server console logs for OTP code'
       });
     }
   });
 
-  // Baileys WhatsApp OTP verification
-  app.post('/api/whatsapp/verify-otp', async (req, res) => {
+  app.post('/api/whatsapp/verify-otp', (req, res) => {
     try {
       const { phoneNumber, otp } = req.body;
       
       if (!phoneNumber || !otp) {
-        return res.status(400).json({ 
-          message: 'رقم الهاتف ورمز التحقق مطلوبان',
-          valid: false 
-        });
+        return res.status(400).json({ message: 'Phone number and OTP are required' });
       }
 
-      const result = await baileysOTPService.verifyOTP(phoneNumber, otp);
+      const isValid = whatsappService.verifyOTP(phoneNumber, otp);
       
-      if (result.success) {
-        console.log(`✅ OTP verified successfully for ${phoneNumber}`);
-        res.json({ 
-          message: result.message,
-          valid: true,
-          success: true
-        });
+      if (isValid) {
+        res.json({ message: 'OTP verified successfully', valid: true });
       } else {
-        console.log(`❌ OTP verification failed for ${phoneNumber}: ${result.message}`);
-        res.status(400).json({ 
-          message: result.message,
-          valid: false,
-          success: false
-        });
+        res.status(400).json({ message: 'Invalid or expired OTP', valid: false });
       }
     } catch (error: any) {
-      console.error('Baileys OTP verification error:', error);
-      res.status(500).json({ 
-        message: 'فشل في التحقق من الرمز',
-        valid: false,
-        success: false
-      });
+      console.error('WhatsApp OTP verification error:', error);
+      res.status(500).json({ message: 'Failed to verify OTP' });
     }
   });
 
@@ -992,157 +868,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to send status update via WhatsApp' });
     }
   });
-
-  // Meta Pixel Integration Endpoint
-  app.post("/api/meta-pixel", async (req, res) => {
-    try {
-      const { token } = req.body;
-      
-      if (!token || typeof token !== 'string') {
-        return res.status(400).json({ message: 'Meta Pixel token is required' });
-      }
-
-      // Store Meta Pixel token in environment variable or database
-      // For now, we'll store it in a simple file system or log it
-      console.log('📊 Meta Pixel Token saved:', token.substring(0, 10) + '...');
-      
-      // In a real implementation, you would:
-      // 1. Validate the token format
-      // 2. Store it securely in database or environment
-      // 3. Integrate with Meta Pixel API for tracking
-      
-      res.json({ 
-        message: 'Meta Pixel token saved successfully',
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Meta Pixel integration error:', error);
-      res.status(500).json({ message: 'Failed to save Meta Pixel token' });
-    }
-  });
-
-  // Professional Baileys OTP service management endpoints
-  app.get('/api/baileys/status', (req, res) => {
-    try {
-      const status = baileysOTPService.getStatus();
-      res.json({
-        ...status,
-        message: 'Baileys OTP service status retrieved successfully'
-      });
-    } catch (error: any) {
-      console.error('Baileys status error:', error);
-      res.status(500).json({ 
-        message: 'Failed to get Baileys OTP service status',
-        error: error.message
-      });
-    }
-  });
-
-  app.post('/api/baileys/force-reconnect', async (req, res) => {
-    try {
-      console.log('🔄 Manual force reconnection requested via API');
-      await baileysOTPService.forceReconnect();
-      res.json({ 
-        success: true, 
-        message: 'Force reconnection initiated successfully',
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      console.error('Force reconnection error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message, 
-        message: 'Failed to initiate force reconnection' 
-      });
-    }
-  });
-
-  app.post('/api/baileys/initialize', async (req, res) => {
-    try {
-      console.log('🚀 Manual initialization requested via API');
-      await baileysOTPService.initialize();
-      res.json({ 
-        success: true, 
-        message: 'Baileys initialization started successfully',
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      console.error('Manual initialization error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message, 
-        message: 'Failed to start initialization' 
-      });
-    }
-  });
-
-  // Force new QR generation endpoint
-  app.post('/api/baileys/force-qr', async (req, res) => {
-    try {
-      console.log('📱 Force QR generation requested via API');
-      await baileysOTPService.forceNewQR();
-      res.json({ 
-        success: true, 
-        message: 'New QR generation initiated - check status in 5 seconds',
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false,
-        message: 'Error generating new QR', 
-        error: error.message 
-      });
-    }
-  });
-
-  // Get Meta Pixel status endpoint
-  app.get("/api/meta-pixel", async (req, res) => {
-    try {
-      // Return Meta Pixel integration status
-      res.json({ 
-        integrated: true, // You would check actual token existence here
-        lastUpdated: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Meta Pixel status error:', error);
-      res.status(500).json({ message: 'Failed to get Meta Pixel status' });
-    }
-  });
-
-  // Email and Phone uniqueness check endpoints
-  app.post('/api/auth/check-email', async (req, res) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
-      }
-      
-      const existingUser = await storage.getUserByEmail(email);
-      res.json({ exists: !!existingUser });
-    } catch (error: any) {
-      console.error('Email check error:', error);
-      res.status(500).json({ message: 'Failed to check email availability' });
-    }
-  });
-
-  app.post('/api/auth/check-phone', async (req, res) => {
-    try {
-      const { phone } = req.body;
-      
-      if (!phone) {
-        return res.status(400).json({ message: 'Phone number is required' });
-      }
-      
-      const existingUser = await storage.getUserByPhone(phone);
-      res.json({ exists: !!existingUser });
-    } catch (error: any) {
-      console.error('Phone check error:', error);
-      res.status(500).json({ message: 'Failed to check phone availability' });
-    }
-  });
-
-
 
   // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;

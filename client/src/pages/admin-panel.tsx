@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Menu, Code, Settings } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1299,142 +1299,12 @@ function ItemsManagement() {
   );
 }
 
-// Meta Pixel Dialog Component  
-function MetaPixelDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [metaToken, setMetaToken] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  const handleSaveMetaToken = async () => {
-    // Use the provided Meta Pixel ID: 633631792409825
-    const defaultPixelId = '633631792409825';
-    const pixelId = metaToken.trim() || defaultPixelId;
-
-    setIsLoading(true);
-    try {
-      // Save Meta Pixel token
-      const response = await fetch('/api/meta-pixel', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: pixelId }),
-      });
-
-      if (response.ok) {
-        // Inject Meta Pixel into the page
-        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-          // Remove existing Meta Pixel if any
-          const existingScript = document.querySelector('script[src*="fbevents.js"]');
-          if (existingScript) {
-            existingScript.remove();
-          }
-
-          // Add Meta Pixel script
-          const script = document.createElement('script');
-          script.innerHTML = `
-            !function(f,b,e,v,n,t,s)
-            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${pixelId}');
-            fbq('track', 'PageView');
-          `;
-          document.head.appendChild(script);
-
-          // Add noscript fallback
-          const noscript = document.createElement('noscript');
-          noscript.innerHTML = `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1" />`;
-          document.body.appendChild(noscript);
-
-          console.log('📊 Meta Pixel integrated successfully with ID:', pixelId);
-        }
-
-        toast({
-          title: "تم التفعيل بنجاح",
-          description: `تم تفعيل Meta Pixel بنجاح - ID: ${pixelId}`,
-          duration: 3000,
-        });
-        setMetaToken('');
-        onClose();
-      } else {
-        throw new Error('Failed to save token');
-      }
-    } catch (error) {
-      toast({
-        title: "خطأ في التفعيل",
-        description: "فشل في تفعيل Meta Pixel",
-        variant: "destructive",
-        duration: 3000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Code className="h-5 w-5" />
-            Meta Pixel Integration
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-green-800">Meta Pixel Active</span>
-            </div>
-            <p className="text-sm text-green-700">
-              Meta Pixel ID: 882358434043824 is currently active and tracking all events.
-            </p>
-          </div>
-          <div>
-            <Label htmlFor="meta-token">Meta Pixel Token (Optional)</Label>
-            <Input
-              id="meta-token"
-              type="text"
-              value={metaToken}
-              onChange={(e) => setMetaToken(e.target.value)}
-              placeholder="882358434043824 (current active token)"
-              className="mt-2"
-            />
-            <p className="text-sm text-gray-600 mt-2">
-              Meta Pixel is integrated and tracking: PageView, AddToCart, InitiateCheckout, Purchase, CompleteRegistration events.
-            </p>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveMetaToken}
-              disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? 'Saving...' : 'Save Token'}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // Admin Sidebar Component
 function AdminSidebar({ isOpen, onClose, setCurrentView }: { 
   isOpen: boolean; 
   onClose: () => void; 
   setCurrentView: (view: 'orders' | 'items') => void;
 }) {
-  const [showMetaPixelDialog, setShowMetaPixelDialog] = useState(false);
-
   return (
     <>
       {/* Backdrop */}
@@ -1487,49 +1357,9 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
                 <div className="text-sm text-gray-500">Manage products and inventory</div>
               </div>
             </Button>
-
-            {/* Meta Pixel Integration */}
-            <Button
-              variant="ghost"
-              className="w-full justify-start p-3 h-auto rounded-xl"
-              onClick={() => {
-                setShowMetaPixelDialog(true);
-                onClose();
-              }}
-            >
-              <Code className="h-5 w-5 mr-3" />
-              <div className="text-left">
-                <div className="font-medium">Meta Pixel Integrate</div>
-                <div className="text-sm text-gray-500">Configure Facebook advertising</div>
-              </div>
-            </Button>
-
-            {/* Settings Section */}
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Settings</p>
-              <Button
-                variant="ghost"
-                className="w-full justify-start p-3 h-auto rounded-xl"
-                onClick={() => {
-                  setShowMetaPixelDialog(true);
-                }}
-              >
-                <Settings className="h-5 w-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">Integrations</div>
-                  <div className="text-sm text-gray-500">Manage external services</div>
-                </div>
-              </Button>
-            </div>
           </div>
         </div>
       </div>
-
-      {/* Meta Pixel Dialog */}
-      <MetaPixelDialog 
-        isOpen={showMetaPixelDialog} 
-        onClose={() => setShowMetaPixelDialog(false)} 
-      />
     </>
   );
 }

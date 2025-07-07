@@ -53,40 +53,11 @@ const WhatsAppAdmin: React.FC = () => {
 
   const fetchQRCode = async () => {
     try {
-      // Try Baileys QR first (new system)
-      const baileysResponse = await fetch('/api/baileys/qr');
-      if (baileysResponse.ok) {
-        const baileysData = await baileysResponse.json();
-        if (baileysData.qr) {
-          console.log('📱 Baileys QR code received - generating visual QR');
-          const qrDataURL = await QRCodeGenerator.toDataURL(baileysData.qr, { 
-            width: 256,
-            margin: 2,
-            color: {
-              dark: '#000000',
-              light: '#FFFFFF'
-            }
-          });
-          setQrCode(qrDataURL);
-          return;
-        }
-      }
-      
-      // Fallback to old WhatsApp service
       const response = await fetch('/api/whatsapp/qr');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.qr) {
-          const qrDataURL = await QRCodeGenerator.toDataURL(data.qr, { 
-            width: 256,
-            margin: 2,
-            color: {
-              dark: '#000000',
-              light: '#FFFFFF'
-            }
-          });
-          setQrCode(qrDataURL);
-        }
+      const data = await response.json();
+      if (data.qr) {
+        const qrDataURL = await QRCodeGenerator.toDataURL(data.qr);
+        setQrCode(qrDataURL);
       }
     } catch (error) {
       console.error('Failed to fetch QR code:', error);
@@ -105,7 +76,6 @@ const WhatsAppAdmin: React.FC = () => {
       
       if (data.success) {
         addMessage('success', 'تم بدء عملية الاتصال - تحقق من وحدة التحكم لرؤية رمز QR');
-        setWhatsappStatus('connecting');
       } else {
         addMessage('error', `فشل في الاتصال: ${data.error}`);
       }
@@ -113,54 +83,6 @@ const WhatsAppAdmin: React.FC = () => {
       addMessage('error', 'خطأ في تهيئة WhatsApp');
     }
     setIsLoading(false);
-  };
-
-  const forceNewQR = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/baileys/force-qr', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        addMessage('success', 'تم إنشاء رمز QR جديد - سيظهر خلال 5 ثواني');
-        setTimeout(() => {
-          fetchQRCode();
-        }, 5000);
-      } else {
-        addMessage('error', `فشل في إنشاء رمز QR جديد: ${data.message}`);
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في إنشاء رمز QR جديد');
-    }
-    setIsLoading(false);
-  };
-
-  const reconnectWhatsApp = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/reconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        addMessage('success', 'تم بدء إعادة الاتصال - سيتم إنشاء رمز QR جديد خلال ثواني');
-        setWhatsappStatus('connecting');
-        setQrCode(''); // Clear old QR code
-      } else {
-        addMessage('error', `فشل في إعادة الاتصال: ${data.error}`);
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في إعادة الاتصال بـ WhatsApp');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const addMessage = (type: 'success' | 'error' | 'info', text: string) => {
@@ -187,10 +109,17 @@ const WhatsAppAdmin: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // OTP sent successfully to customer WhatsApp - never show code
+        // NEVER auto-fill OTP - user must enter it manually
         setTestData(prev => ({ ...prev, otp: '' }));
-        addMessage('success', `✅ تم إرسال رمز OTP عبر WhatsApp إلى ${testData.phoneNumber}`);
-        addMessage('info', `العميل سيحصل على الرمز في WhatsApp الخاص به`);
+        
+        if (data.note) {
+          // Fallback mode - WhatsApp delivery failed
+          addMessage('error', `⚠️ فشل إرسال OTP عبر WhatsApp - يرجى إرسال هذا الرمز يدوياً للمستخدم: ${data.otp}`);
+          addMessage('info', `الرمز: ${data.otp} (صالح لمدة 10 دقائق)`);
+        } else {
+          // Normal WhatsApp delivery
+          addMessage('success', `تم إرسال رمز OTP عبر WhatsApp إلى ${testData.phoneNumber}`);
+        }
       } else {
         const errorData = await response.json();
         addMessage('error', `فشل في إرسال OTP: ${errorData.message}`);
@@ -340,28 +269,16 @@ const WhatsAppAdmin: React.FC = () => {
               </Badge>
             </div>
             
-            <div className="flex gap-2">
-              {(whatsappStatus === 'disconnected' || whatsappStatus === 'loading') && (
-                <Button
-                  onClick={initializeWhatsApp}
-                  disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
-                </Button>
-              )}
+            {(whatsappStatus === 'disconnected' || whatsappStatus === 'loading') && (
               <Button
-                onClick={forceNewQR}
+                onClick={initializeWhatsApp}
                 disabled={isLoading}
-                variant="outline"
-                className="border-green-600 text-green-600 hover:bg-green-50"
+                className="bg-green-600 hover:bg-green-700 text-white"
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
               >
-                <QrCode className="h-4 w-4 mr-2" />
-                {isLoading ? 'جاري إنشاء QR...' : 'إنشاء QR جديد'}
+                {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
               </Button>
-            </div>
+            )}
           </div>
         </div>
 

@@ -7,11 +7,11 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
-// Removed deprecated Firebase imports
+import { createUserOrder } from "@/lib/firebase-user-data";
+import { useAuth } from "@/hooks/use-auth";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/price-utils";
-import MetaPixelTracker from "@/lib/meta-pixel";
 import type { CartItem, Product } from "@shared/schema";
 
 interface RightSidebarProps {
@@ -172,7 +172,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   });
 
   const { t } = useTranslation();
-  // Using PostgreSQL auth instead of deprecated Firebase auth
+  const { user } = useAuth();
   
   // Calculate cart totals
   const getCartTotal = () => {
@@ -320,13 +320,6 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       
       const orderId = await createOrderMutation.mutateAsync(orderData);
       console.log('Order created successfully with ID:', orderId);
-      
-      // Track Meta Pixel Purchase event
-      const cartTotal = cartItems.reduce((total, item) => {
-        return total + (parseFloat(item.product?.price || '0') * item.quantity);
-      }, 0);
-      const totalWithDelivery = cartTotal + 2000; // Add delivery fee
-      MetaPixelTracker.trackPurchase(totalWithDelivery, orderId.toString(), cartItems.length);
       
       // Clear cart using CartFlow store for immediate UI update
       await clearCartFlow();
@@ -627,14 +620,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            setCurrentView('checkout');
-            // Track Meta Pixel InitiateCheckout event
-            const cartTotal = cartItems.reduce((total, item) => {
-              return total + (parseFloat(item.product?.price || '0') * item.quantity);
-            }, 0);
-            MetaPixelTracker.trackInitiateCheckout(cartTotal + 2000, cartItems.length); // +2000 for delivery fee
-          }}
+          onClick={() => setCurrentView('checkout')}
           className="hover:bg-gray-100 p-2"
         >
           <ArrowLeft className="h-5 w-5 rotate-180" />

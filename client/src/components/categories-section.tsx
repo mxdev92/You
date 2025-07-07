@@ -5,45 +5,15 @@ import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/hooks/use-translation";
 import { getCategoryTranslationKey } from "@/lib/category-mapping";
-import { useEffect } from "react";
 
 export default function CategoriesSection() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   
-  const { data: categories, isLoading, error } = useQuery<Category[]>({
+  const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    queryFn: async () => {
-      console.log('Fetching categories from API...');
-      const response = await fetch('/api/categories');
-      console.log('Categories response status:', response.status);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch categories: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('Categories data received:', data);
-      return data;
-    },
-    staleTime: 0, // Always fetch fresh
-    retry: 3,
-    retryDelay: 1000,
+    staleTime: 60000, // Cache categories for 1 minute for faster performance
   });
-
-  // Debug logging
-  console.log('Categories query state:', { categories, isLoading, error });
-  
-  // Force re-fetch if no categories and not loading
-  useEffect(() => {
-    if (!isLoading && !categories) {
-      console.log('Force refetching categories because no data...');
-      queryClient.refetchQueries({ queryKey: ["/api/categories"] });
-    }
-  }, [isLoading, categories, queryClient]);
-  
-  // If there's an error, show fallback
-  if (error) {
-    console.error('Categories error:', error);
-  }
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     Apple,
@@ -116,16 +86,10 @@ export default function CategoriesSection() {
     );
   }
 
-  // If categories failed to load or empty, don't render anything
-  if (!categories || categories.length === 0) {
-    console.log('No categories to display, categories:', categories);
-    return null;
-  }
-
   return (
     <section className="py-0.5">
       <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x px-4">
-        {categories.map((category, index) => (
+        {categories?.map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}

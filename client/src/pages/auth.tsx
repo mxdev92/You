@@ -189,13 +189,11 @@ const AuthPage: React.FC = () => {
 
       const data = await response.json();
       
-      if (response.ok && data.success) {
+      if (response.ok) {
         setOtpSent(true);
-        // OTP sent to WhatsApp only - no logging of OTP value
-        
         showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp - تحقق من رسائل WhatsApp الخاصة بك', 'success');
       } else {
-        showNotification('❌ ' + (data.message || 'فشل في إرسال رمز التحقق عبر WhatsApp'), 'error');
+        showNotification('فشل في إرسال رمز التحقق: ' + data.message);
       }
     } catch (error) {
       showNotification('خطأ في إرسال رمز التحقق');
@@ -253,19 +251,6 @@ const AuthPage: React.FC = () => {
     setWhatsappVerification(prev => ({ ...prev, isLoading: true }));
     
     try {
-      // CRITICAL FIX: Check if phone number is already registered BEFORE sending OTP
-      console.log('🔍 Checking phone availability before sending OTP:', whatsappVerification.phone);
-      
-      const phoneAvailable = await checkPhoneAvailability(whatsappVerification.phone);
-      
-      if (!phoneAvailable) {
-        setWhatsappVerification(prev => ({ ...prev, isLoading: false }));
-        showNotification('رقم الواتساب هذا مستخدم من قبل، يرجى استخدام رقم آخر');
-        return;
-      }
-      
-      console.log('✅ Phone number available, proceeding with OTP send');
-      
       const response = await fetch('/api/whatsapp/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -279,13 +264,16 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setWhatsappVerification(prev => ({ ...prev, otpSent: true }));
-        showNotification('✅ تم إرسال رمز التحقق إلى WhatsApp الخاص بك! تحقق من رسائل WhatsApp', 'success');
+        showNotification('✅ تم إرسال رمز التحقق بنجاح إلى WhatsApp! افتح تطبيق WhatsApp الآن للحصول على الرمز المكون من 6 أرقام', 'success');
+        console.log('✅ OTP Response:', data);
+        console.log(`🔑 OTP Code for ${data.phoneNumber}: ${data.otp}`);
+        console.log('📱 Please check your WhatsApp for the verification message!');
       } else {
         console.error('❌ OTP Send Error:', data);
-        if (data.requiresConnection) {
-          showNotification('WhatsApp غير متصل. يجب على الإدارة ربط WhatsApp أولاً');
-        } else {
-          showNotification('فشل في إرسال رمز التحقق: ' + data.message);
+        showNotification('فشل في إرسال رمز التحقق: ' + data.message);
+        if (data.otp) {
+          console.log(`🔑 Fallback OTP Code: ${data.otp}`);
+          showNotification(`رمز التحقق الاحتياطي: ${data.otp}`, 'success');
         }
       }
     } catch (error) {
@@ -362,47 +350,7 @@ const AuthPage: React.FC = () => {
     }
   };
 
-  // Check email availability
-  const checkEmailAvailability = async (email: string): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email }),
-      });
-      
-      if (!response.ok) throw new Error('Failed to check email');
-      
-      const { exists } = await response.json();
-      return !exists; // Return true if available (not exists)
-    } catch (error) {
-      console.error('Email check error:', error);
-      return false;
-    }
-  };
-
-  // Check phone availability
-  const checkPhoneAvailability = async (phone: string): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/check-phone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ phone }),
-      });
-      
-      if (!response.ok) throw new Error('Failed to check phone');
-      
-      const { exists } = await response.json();
-      return !exists; // Return true if available (not exists)
-    } catch (error) {
-      console.error('Phone check error:', error);
-      return false;
-    }
-  };
-
-  const handleSignupNext = async () => {
+  const handleSignupNext = () => {
     const step = signupStep;
     
     if (step === 1) {
@@ -422,16 +370,6 @@ const AuthPage: React.FC = () => {
         showNotification('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
         return;
       }
-      
-      // STRICT VALIDATION: Check email uniqueness
-      setIsLoading(true);
-      const emailAvailable = await checkEmailAvailability(signupData.email);
-      setIsLoading(false);
-      
-      if (!emailAvailable) {
-        showNotification('هذا البريد الإلكتروني مستخدم من قبل، يرجى استخدام بريد آخر');
-        return;
-      }
     }
     if (step === 2) {
       // Step 2 is WhatsApp verification - handled separately
@@ -440,20 +378,6 @@ const AuthPage: React.FC = () => {
     if (step === 3) {
       if (!signupData.name.trim()) {
         showNotification('يرجى إدخال الاسم الكامل');
-        return;
-      }
-      if (!signupData.phone.trim()) {
-        showNotification('يرجى إدخال رقم الواتساب');
-        return;
-      }
-      
-      // STRICT VALIDATION: Check phone uniqueness
-      setIsLoading(true);
-      const phoneAvailable = await checkPhoneAvailability(signupData.phone);
-      setIsLoading(false);
-      
-      if (!phoneAvailable) {
-        showNotification('رقم الواتساب هذا مستخدم من قبل، يرجى استخدام رقم آخر');
         return;
       }
     }
@@ -904,22 +828,20 @@ const AuthPage: React.FC = () => {
                   {signupStep === 1 ? (
                     <Button
                       onClick={handleSignupNext}
-                      disabled={isLoading}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg disabled:opacity-50"
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
-                      {isLoading ? 'جاري التحقق...' : 'التالي'}
+                      التالي
                     </Button>
                   ) : signupStep === 2 ? (
                     null // Step 2 has its own buttons for OTP
                   ) : signupStep === 3 ? (
                     <Button
                       onClick={handleSignupNext}
-                      disabled={isLoading}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg disabled:opacity-50"
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
-                      {isLoading ? 'جاري التحقق...' : 'التالي'}
+                      التالي
                     </Button>
                   ) : (
                     <Button

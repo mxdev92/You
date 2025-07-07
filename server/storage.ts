@@ -33,9 +33,6 @@ export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByPhone(phone: string): Promise<User | undefined>;
-  checkEmailExists(email: string): Promise<boolean>;
-  checkPhoneExists(phone: string): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
 
@@ -196,6 +193,22 @@ export class MemStorage implements IStorage {
       ...updateData,
       id, // Ensure ID stays the same
       categoryId: updateData.categoryId ?? existingProduct.categoryId
+    };
+    
+    this.products.set(id, updatedProduct);
+    return updatedProduct;
+  }
+
+  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
+    const existingProduct = this.products.get(id);
+    if (!existingProduct) {
+      throw new Error("Product not found");
+    }
+
+    const updatedProduct: Product = {
+      ...existingProduct,
+      displayOrder,
+      id
     };
     
     this.products.set(id, updatedProduct);
@@ -461,7 +474,13 @@ export class DatabaseStorage implements IStorage {
     await db.delete(cartItems);
   }
 
-
+  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
+    const [updated] = await db.update(products)
+      .set({ displayOrder })
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
+  }
 
   // Orders
   async getOrders(): Promise<Order[]> {
@@ -495,21 +514,6 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
-  }
-
-  async getUserByPhone(phone: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.phone, phone));
-    return user || undefined;
-  }
-
-  async checkEmailExists(email: string): Promise<boolean> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return !!user;
-  }
-
-  async checkPhoneExists(phone: string): Promise<boolean> {
-    const [user] = await db.select().from(users).where(eq(users.phone, phone));
-    return !!user;
   }
 
   async getAllUsers(): Promise<User[]> {
