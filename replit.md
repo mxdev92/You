@@ -232,6 +232,10 @@ July 6, 2025:
 ✓ DEFAULT CATEGORY: Set خضروات (Vegetables) as default category on app startup
 ✓ Auto-selection logic ensures Vegetables category is always selected when no category is chosen
 ✓ Improved UX by showing relevant products immediately instead of empty state
+✓ UI TEXT UPDATE: Changed signup link text from "لا تملك حساباً؟ أنشئ حساباً جديداً" to "انشاء حساب"
+✓ SPACING FIX: Eliminated gaps in signup form step 1 between password field and next button
+✓ Optimized form spacing from space-y-4 to space-y-2 and button margin from mt-4 to mt-1
+✓ Enhanced signup UX with tighter, more professional layout and shorter action text
 
 July 5, 2025:
 ✓ FIXED: Image upload file size limit issue causing intermittent failures
