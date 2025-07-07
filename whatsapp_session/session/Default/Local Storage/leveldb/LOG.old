@@ -1,3 +1,2 @@
-2025/07/06-19:25:45.918 5e6d Reusing MANIFEST /home/runner/workspace/whatsapp_session/session/Default/Local Storage/leveldb/MANIFEST-000001
-2025/07/06-19:25:45.927 5e6d Recovering log #7
-2025/07/06-19:25:45.935 5e6d Reusing old log /home/runner/workspace/whatsapp_session/session/Default/Local Storage/leveldb/000007.log 
+2025/07/07-06:08:43.044 44d5 Creating DB /home/runner/workspace/whatsapp_session/session/Default/Local Storage/leveldb since it was missing.
+2025/07/07-06:08:43.091 44d5 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session/Default/Local Storage/leveldb/MANIFEST-000001

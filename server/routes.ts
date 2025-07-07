@@ -8,7 +8,16 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import whatsappService from "./whatsapp-service-working.js";
+import StableWhatsAppService from './whatsapp-service-stable';
+
+const whatsappService = new StableWhatsAppService();
+
+// Initialize WhatsApp service on startup
+whatsappService.initialize().then(() => {
+  console.log('🎯 WhatsApp stable service initialized on server startup');
+}).catch((error) => {
+  console.error('⚠️ WhatsApp failed to initialize on startup:', error);
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -331,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Send WhatsApp notifications if service is connected
-      if (whatsappService.isConnected()) {
+      if (whatsappService.getConnectionStatus().connected) {
         try {
           // Generate PDF invoice once for both customer and admin
           const pdfBuffer = await generateInvoicePDF(order);
@@ -388,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.updateOrderStatus(id, status);
       
       // Send WhatsApp status update notification
-      if (whatsappService.isConnected() && order.customerPhone) {
+      if (whatsappService.getConnectionStatus().connected && order.customerPhone) {
         try {
           await whatsappService.sendOrderStatusUpdate(
             order.customerPhone,
@@ -675,10 +684,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // WhatsApp API routes
   app.get('/api/whatsapp/status', (req, res) => {
-    res.json({ 
-      status: whatsappService.getStatus(),
-      connected: whatsappService.isConnected()
-    });
+    try {
+      const status = whatsappService.getConnectionStatus();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get WhatsApp status" });
+    }
   });
 
   app.get('/api/whatsapp/qr', (req, res) => {
@@ -696,6 +707,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: 'WhatsApp initialization started. Check console for QR code.' });
     } catch (error: any) {
       console.error('WhatsApp initialization failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post('/api/whatsapp/reset-session', async (req, res) => {
+    try {
+      await whatsappService.resetSession();
+      res.json({ success: true, message: 'WhatsApp session reset successfully' });
+    } catch (error: any) {
+      console.error('WhatsApp reset failed:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
