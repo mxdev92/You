@@ -233,6 +233,8 @@ July 6, 2025:
 ✓ When user adds same product multiple times, quantity increases rather than creating duplicate entries
 ✓ Updated DatabaseStorage addToCart method to check for existing items and merge quantities
 ✓ Cart now displays single item per product with correct total quantity (e.g., "2 kg" instead of two separate entries)
+✓ CART BADGE FIX: Cart badge now shows number of different items instead of total quantity
+✓ Badge displays count of unique products in cart (e.g., "2" for cucumber + tomato) not sum of quantities
 ✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
 ✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
 ✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)
