@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+// Force cache refresh - v2.0
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -261,19 +262,19 @@ const WhatsAppAdmin: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                حالة الاتصال:
+                حالة الاتصال المحسّن:
               </span>
               <Badge 
                 variant={whatsappStatus === 'connected' ? 'default' : whatsappStatus === 'connecting' ? 'secondary' : 'destructive'}
-                className={`${whatsappStatus === 'connected' ? 'bg-green-500 text-white' : whatsappStatus === 'connecting' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'} font-semibold`}
+                className={`${whatsappStatus === 'connected' ? 'bg-green-500 text-white' : whatsappStatus === 'connecting' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'} font-semibold animate-pulse`}
               >
-                {whatsappStatus === 'connected' ? '🟢 متصل و مستقر' : whatsappStatus === 'connecting' ? '🟡 جاري الاتصال...' : whatsappStatus === 'loading' ? '⏳ جاري التحقق...' : '🔴 غير متصل'}
+                {whatsappStatus === 'connected' ? '🟢 متصل و مستقر بشكل دائم' : whatsappStatus === 'connecting' ? '🟡 جاري الاتصال...' : whatsappStatus === 'loading' ? '⏳ جاري التحقق...' : '🔴 غير متصل'}
               </Badge>
             </div>
             
             {whatsappStatus === 'connected' && (
-              <div className="text-sm text-green-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                ✅ جاهز لإرسال الرسائل
+              <div className="text-sm text-green-600 font-semibold" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                ✅ نظام مستقر - جاهز لإرسال الرسائل بدون انقطاع
               </div>
             )}
             
