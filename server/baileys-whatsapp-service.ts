@@ -252,10 +252,10 @@ export class BaileysWhatsAppService {
         throw new Error('Connection lost during send');
       }
 
-      // Send with extended timeout and connection check
+      // Send with reduced timeout for faster response
       const sendPromise = this.socket.sendMessage(formattedNumber, { text: message });
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Send timeout after 15s')), 15000)
+        setTimeout(() => reject(new Error('Send timeout after 8s')), 8000)
       );
       
       await Promise.race([sendPromise, timeoutPromise]);
