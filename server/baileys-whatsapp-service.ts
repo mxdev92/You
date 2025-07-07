@@ -31,9 +31,12 @@ export class BaileysWhatsAppService {
   private readonly OTP_EXPIRY_MINUTES = 10;
   private readonly authPath = './whatsapp_session';
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 50; // Increase max attempts for better persistence
+  private maxReconnectAttempts: number = 50;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private lastHeartbeat: number = 0;
+  private connectionStabilityInterval: NodeJS.Timeout | null = null;
+  private reconnectDelay: number = 1000;
+  private isReconnecting: boolean = false;
 
   constructor() {
     // Ensure auth directory exists
@@ -87,10 +90,10 @@ export class BaileysWhatsAppService {
         generateHighQualityLinkPreview: false, // Disable to reduce bandwidth
         logger: logger,
         syncFullHistory: false,
-        markOnlineOnConnect: true,
+        markOnlineOnConnect: false, // Keep false for production stability
         defaultQueryTimeoutMs: 60000, // Increase timeout to 60 seconds
         connectTimeoutMs: 60000, // Increase connection timeout
-        keepAliveIntervalMs: 25000, // Send keep-alive every 25 seconds
+        keepAliveIntervalMs: 30000, // Optimized keep-alive interval
         retryRequestDelayMs: 1000, // Increase retry delay
         maxMsgRetryCount: 3, // Reduce retries to prevent timeout
         qrTimeout: 120000, // Increase QR timeout to 2 minutes
@@ -121,7 +124,7 @@ export class BaileysWhatsAppService {
         if (connection === 'close') {
           const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
           
-          // Handle 440 timeout errors more gracefully - these are often temporary
+          // Enhanced handling for production stability
           const shouldReconnect = statusCode !== DisconnectReason.loggedOut && 
                                  statusCode !== DisconnectReason.badSession;
           
@@ -129,20 +132,32 @@ export class BaileysWhatsAppService {
           
           this.isConnected = false;
           this.isConnecting = false;
-          this.stopHeartbeat(); // Stop heartbeat when disconnected
+          this.isReconnecting = true;
+          this.stopHeartbeat();
           
           if (shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
-            // For 440 timeout errors, use shorter delays since they're often temporary
+            // Enhanced delay calculation for 440 errors
             const isTimeoutError = statusCode === 440;
-            const baseDelay = isTimeoutError ? 1000 : 3000;
-            const delay = Math.min(30000, Math.max(baseDelay, this.reconnectAttempts * baseDelay));
+            let delay = 1000; // Start with 1 second for all errors
+            
+            // For persistent 440 errors, implement progressive backoff
+            if (isTimeoutError && this.reconnectAttempts > 3) {
+              delay = Math.min(10000, 1000 + (this.reconnectAttempts * 500)); // Cap at 10 seconds
+            } else if (!isTimeoutError) {
+              delay = Math.min(30000, 3000 * Math.pow(2, Math.min(this.reconnectAttempts, 4))); // Exponential backoff
+            }
             
             console.log(`⏳ Reconnecting in ${delay/1000} seconds... (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
-            this.reconnectAttempts = this.reconnectAttempts + 1;
-            setTimeout(() => this.initialize(), delay);
+            this.reconnectAttempts++;
+            
+            setTimeout(() => {
+              this.isReconnecting = false;
+              this.initialize();
+            }, delay);
           } else {
             console.log('🚫 Not reconnecting - max attempts reached or logout/bad session');
             this.reconnectAttempts = 0;
+            this.isReconnecting = false;
           }
         } else if (connection === 'open') {
           console.log('✅ Baileys WhatsApp connected successfully!');
@@ -173,25 +188,35 @@ export class BaileysWhatsAppService {
     }
   }
 
-  async sendOTP(phoneNumber: string, fullName: string): Promise<{ success: boolean; otp?: string; note?: string }> {
-    if (!this.isConnected || !this.socket) {
-      console.log('⚠️ WhatsApp not connected, generating fallback OTP');
-      const otp = this.generateOTP();
+  async sendOTP(phoneNumber: string, fullName: string, retryCount: number = 0): Promise<{ success: boolean; otp?: string; note?: string }> {
+    const maxRetries = 3;
+    const retryDelay = 2000;
+    
+    // Generate OTP once and reuse for retries
+    const otp = retryCount === 0 ? this.generateOTP() : this.getStoredOTP(phoneNumber);
+    if (retryCount === 0) {
       this.storeOTPSession(phoneNumber, otp, fullName);
+    }
+
+    if (!this.isConnected || !this.socket) {
+      console.log(`⚠️ WhatsApp not connected (attempt ${retryCount + 1})`);
+      
+      // If reconnecting, wait and retry
+      if (this.isReconnecting && retryCount < maxRetries) {
+        console.log(`🔄 Waiting for reconnection, retrying OTP in ${retryDelay/1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return this.sendOTP(phoneNumber, fullName, retryCount + 1);
+      }
+      
       return {
         success: true,
         otp,
-        note: 'WhatsApp not connected - use this OTP code manually'
+        note: 'WhatsApp disconnected - use this OTP code manually'
       };
     }
 
     try {
-      const otp = this.generateOTP();
-      this.storeOTPSession(phoneNumber, otp, fullName);
-
-      // Format phone number for WhatsApp (Iraq: +964 -> 964)
       const formattedNumber = this.formatPhoneNumber(phoneNumber);
-      
       const message = `مرحباً ${fullName}! 👋
 
 رمز التحقق الخاص بك في تطبيق PAKETY هو:
@@ -201,23 +226,40 @@ export class BaileysWhatsAppService {
 ⏰ صالح لمدة 10 دقائق فقط
 🚚 مرحباً بك في PAKETY - التوصيل السريع!`;
 
-      await this.socket.sendMessage(formattedNumber, { text: message });
+      // Send with timeout protection
+      const sendPromise = this.socket.sendMessage(formattedNumber, { text: message });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Send timeout')), 8000)
+      );
       
-      console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber}`);
+      await Promise.race([sendPromise, timeoutPromise]);
+      
+      console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber} (attempt ${retryCount + 1})`);
       return { success: true };
 
     } catch (error) {
-      console.error('❌ Failed to send OTP via Baileys:', error);
+      console.error(`❌ Failed to send OTP (attempt ${retryCount + 1}):`, error);
       
-      // Fallback - return OTP for manual delivery
-      const otp = this.generateOTP();
-      this.storeOTPSession(phoneNumber, otp, fullName);
+      // Retry logic
+      if (retryCount < maxRetries) {
+        console.log(`🔄 Retrying OTP send in ${retryDelay/1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return this.sendOTP(phoneNumber, fullName, retryCount + 1);
+      }
+      
+      console.log(`📝 All retries failed. OTP for manual verification: ${otp}`);
       return {
         success: true,
         otp,
-        note: 'WhatsApp delivery failed - use this OTP code manually'
+        note: 'WhatsApp delivery failed after retries - use this OTP manually'
       };
     }
+  }
+
+  // Helper method to get stored OTP for retries
+  private getStoredOTP(phoneNumber: string): string {
+    const session = this.otpSessions.get(phoneNumber);
+    return session ? session.otp : this.generateOTP();
   }
 
   async sendOrderInvoice(phoneNumber: string, pdfBuffer: Buffer, orderData: any): Promise<boolean> {
