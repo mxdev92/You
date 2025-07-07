@@ -634,10 +634,17 @@ const AuthPage: React.FC = () => {
                           placeholder="تأكيد كلمة المرور"
                           value={signupData.confirmPassword}
                           onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                          className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                          className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl mb-3"
                           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                           dir="rtl"
                         />
+                        <Button
+                          onClick={handleSignupNext}
+                          className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
+                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                        >
+                          التالي
+                        </Button>
                       </div>
                     )}
 
@@ -760,15 +767,7 @@ const AuthPage: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="mt-1 space-y-3">
-                {signupStep === 1 ? (
-                  <Button
-                    onClick={handleSignupNext}
-                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  >
-                    التالي
-                  </Button>
-                ) : signupStep === 2 ? (
+                {signupStep === 2 ? (
                   <div></div>
                 ) : signupStep === 3 ? (
                   <Button
