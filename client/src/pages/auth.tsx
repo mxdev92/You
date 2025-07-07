@@ -485,7 +485,7 @@ const AuthPage: React.FC = () => {
                     placeholder="كلمة المرور"
                     value={loginData.password}
                     onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
-                    className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl pr-12"
+                    className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl pr-4 pl-12"
                     style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     dir="rtl"
                   />
@@ -573,7 +573,7 @@ const AuthPage: React.FC = () => {
                             placeholder="كلمة المرور"
                             value={signupData.password}
                             onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
-                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl pr-12"
+                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl pr-4 pl-12"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             dir="rtl"
                           />
