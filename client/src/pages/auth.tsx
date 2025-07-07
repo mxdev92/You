@@ -195,8 +195,7 @@ const AuthPage: React.FC = () => {
         
         showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp - تحقق من رسائل WhatsApp الخاصة بك', 'success');
       } else {
-        const errorData = await response.json();
-        showNotification('❌ ' + (errorData.message || 'فشل في إرسال رمز التحقق عبر WhatsApp'), 'error');
+        showNotification('❌ ' + (data.message || 'فشل في إرسال رمز التحقق عبر WhatsApp'), 'error');
       }
     } catch (error) {
       showNotification('خطأ في إرسال رمز التحقق');
