@@ -616,22 +616,22 @@ const AuthPage: React.FC = () => {
                           <div className="flex items-center px-3 text-gray-600 border-r border-gray-300" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                             <span className="text-sm font-medium">+964</span>
                           </div>
-                          <div className="flex items-center px-2 text-gray-600">
+                          <div className="flex items-center pl-3 text-gray-600">
                             <span className="text-sm font-medium">7</span>
                           </div>
                           <Input
                             type="tel"
-                            placeholder="00 000 0000"
+                            placeholder="00000000"
                             value={signupData.phone.replace(/^7/, '')}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, '');
-                              if (value.length <= 9) {
+                              if (value.length <= 8) {
                                 setSignupData(prev => ({ ...prev, phone: '7' + value }));
                               }
                             }}
-                            className="flex-1 h-full text-left text-sm border-0 focus:ring-0 focus:outline-none bg-transparent"
+                            className="flex-1 h-full text-left text-sm border-0 focus:ring-0 focus:outline-none bg-transparent pl-0"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                            maxLength={11}
+                            maxLength={8}
                           />
                         </div>
                         {!otpSent ? (
