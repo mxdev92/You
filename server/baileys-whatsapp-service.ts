@@ -355,12 +355,6 @@ export class BaileysWhatsAppService {
     return this.qrCode;
   }
 
-  // Admin notification methods
-  async sendAdminNotification(message: string): Promise<boolean> {
-    const adminNumber = '07710155333'; // Admin WhatsApp number
-    return await this.sendMessage(adminNumber, message);
-  }
-
   private async sendMessage(phoneNumber: string, message: string): Promise<boolean> {
     if (!this.isConnected || !this.socket) {
       console.log('⚠️ WhatsApp not connected');
