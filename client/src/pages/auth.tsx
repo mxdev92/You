@@ -612,14 +612,28 @@ const AuthPage: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <Input
-                          type="tel"
-                          placeholder="رقم الموبايل (07xxxxxxxxx)"
-                          value={signupData.phone}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, phone: e.target.value }))}
-                          className="w-full h-12 text-center text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                        />
+                        <div className="flex items-center border border-gray-300 rounded-xl focus-within:border-gray-400 h-12">
+                          <div className="flex items-center px-3 text-gray-600 border-r border-gray-300" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            <span className="text-sm font-medium">+964</span>
+                          </div>
+                          <div className="flex items-center px-2 text-gray-600">
+                            <span className="text-sm font-medium">7</span>
+                          </div>
+                          <Input
+                            type="tel"
+                            placeholder="00 000 0000"
+                            value={signupData.phone.replace(/^7/, '')}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              if (value.length <= 9) {
+                                setSignupData(prev => ({ ...prev, phone: '7' + value }));
+                              }
+                            }}
+                            className="flex-1 h-full text-left text-sm border-0 focus:ring-0 focus:outline-none bg-transparent"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            maxLength={11}
+                          />
+                        </div>
                         {!otpSent ? (
                           <Button
                             onClick={sendOTP}
