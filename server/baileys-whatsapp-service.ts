@@ -601,6 +601,15 @@ export class BaileysWhatsAppService {
       return false;
     }
   }
+
+  getConnectionStatus() {
+    return {
+      connected: this.isConnected,
+      isConnecting: this.isConnecting,
+      qrCode: this.qrCode,
+      reconnectAttempts: this.reconnectAttempts
+    };
+  }
 }
 
 export default BaileysWhatsAppService;

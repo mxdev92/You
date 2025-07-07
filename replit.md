@@ -235,6 +235,9 @@ July 6, 2025:
 ✓ Cart now displays single item per product with correct total quantity (e.g., "2 kg" instead of two separate entries)
 ✓ CART BADGE FIX: Cart badge now shows number of different items instead of total quantity
 ✓ Badge displays count of unique products in cart (e.g., "2" for cucumber + tomato) not sum of quantities
+✓ ORDER SUBMISSION FIX: Fixed critical error "whatsappService.getConnectionStatus is not a function"
+✓ Added missing getConnectionStatus method to BaileysWhatsAppService class
+✓ Order submission now works properly with WhatsApp integration enabled
 ✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
 ✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
 ✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)
