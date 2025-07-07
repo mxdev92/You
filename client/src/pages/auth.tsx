@@ -713,81 +713,33 @@ const AuthPage: React.FC = () => {
               {/* Action Buttons */}
               <div className="mt-6 space-y-3">
                 {signupStep === 1 ? (
-                  <>
-                    <Button
-                      onClick={handleSignupNext}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      التالي
-                    </Button>
-                    <Button
-                      onClick={handleSignupCancel}
-                      variant="outline"
-                      className="w-full h-12 border-gray-300 text-gray-600 hover:bg-gray-50 font-medium text-sm rounded-xl"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      إلغاء
-                    </Button>
-                  </>
-                ) : signupStep === 2 ? (
                   <Button
-                    onClick={handleSignupCancel}
-                    variant="outline"
-                    className="w-full h-12 border-gray-300 text-gray-600 hover:bg-gray-50 font-medium text-sm rounded-xl"
+                    onClick={handleSignupNext}
+                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                     style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                   >
-                    إلغاء التسجيل
+                    التالي
                   </Button>
+                ) : signupStep === 2 ? (
+                  <div></div>
                 ) : signupStep === 3 ? (
-                  <>
-                    <Button
-                      onClick={handleSignupNext}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      التالي
-                    </Button>
-                    <Button
-                      onClick={handleSignupCancel}
-                      variant="outline"
-                      className="w-full h-12 border-gray-300 text-gray-600 hover:bg-gray-50 font-medium text-sm rounded-xl"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      إلغاء التسجيل
-                    </Button>
-                  </>
+                  <Button
+                    onClick={handleSignupNext}
+                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  >
+                    التالي
+                  </Button>
                 ) : (
-                  <>
-                    <Button
-                      onClick={handleSignupComplete}
-                      disabled={isLoading}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
-                    </Button>
-                    <Button
-                      onClick={handleSignupCancel}
-                      variant="outline"
-                      disabled={isLoading}
-                      className="w-full h-12 border-gray-300 text-gray-600 hover:bg-gray-50 font-medium text-sm rounded-xl"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      إلغاء التسجيل
-                    </Button>
-                  </>
+                  <Button
+                    onClick={handleSignupComplete}
+                    disabled={isLoading}
+                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  >
+                    {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
+                  </Button>
                 )}
-              </div>
-
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => setIsLogin(true)}
-                  className="text-green-600 hover:text-green-700 text-sm font-medium"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  تملك حساباً؟ سجل دخولك
-                </button>
               </div>
             </div>
           )}
