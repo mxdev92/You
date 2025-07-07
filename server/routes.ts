@@ -8,7 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import whatsappService from "./whatsapp-service-ultra-stable.js";
+import whatsappService from "./whatsapp-service-permanent.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -723,19 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/whatsapp/status', (req, res) => {
     try {
       const status = whatsappService.getStatus();
-      const healthy = whatsappService.isHealthy();
-      
-      res.json({ 
-        connected: status.isReady && status.isAuthenticated,
-        status: status.isReady ? 'connected' : (status.isConnecting ? 'connecting' : 'disconnected'),
-        mode: status.mode || 'console',
-        healthy: healthy,
-        isReady: status.isReady,
-        isAuthenticated: status.isAuthenticated,
-        qrCode: status.qrCode,
-        lastError: status.lastError,
-        timestamp: new Date().toISOString()
-      });
+      res.json(status);
     } catch (error: any) {
       res.status(500).json({ 
         message: 'Failed to get WhatsApp status', 
@@ -1006,25 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // WhatsApp health check endpoint
-  app.get('/api/whatsapp/status', (req, res) => {
-    try {
-      const status = whatsappService.getStatus();
-      const health = whatsappService.isHealthy();
-      res.json({ 
-        ...status, 
-        healthy: health,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        message: 'Failed to get WhatsApp status', 
-        error: error.message,
-        healthy: false,
-        timestamp: new Date().toISOString()
-      });
-    }
-  });
+
 
   // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;

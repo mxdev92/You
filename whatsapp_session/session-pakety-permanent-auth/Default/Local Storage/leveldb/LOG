@@ -1,4 +1,0 @@
-2025/07/07-03:04:37.090 17c8 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-pakety-permanent-auth/Default/Local Storage/leveldb/MANIFEST-000001
-2025/07/07-03:04:37.098 17c8 Recovering log #3
-2025/07/07-03:04:37.099 17c8 (ignoring error) /home/runner/workspace/whatsapp_session/session-pakety-permanent-auth/Default/Local Storage/leveldb/000003.log: dropping 5322 bytes; Corruption: checksum mismatch
-2025/07/07-03:04:37.099 17c8 Reusing old log /home/runner/workspace/whatsapp_session/session-pakety-permanent-auth/Default/Local Storage/leveldb/000003.log 
