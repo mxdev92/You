@@ -1392,7 +1392,7 @@ function MetaPixelDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               <span className="text-sm font-medium text-green-800">Meta Pixel Active</span>
             </div>
             <p className="text-sm text-green-700">
-              Meta Pixel ID: 633631792409825 is currently active and tracking all events.
+              Meta Pixel ID: 882358434043824 is currently active and tracking all events.
             </p>
           </div>
           <div>
@@ -1402,7 +1402,7 @@ function MetaPixelDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               type="text"
               value={metaToken}
               onChange={(e) => setMetaToken(e.target.value)}
-              placeholder="633631792409825 (current active token)"
+              placeholder="882358434043824 (current active token)"
               className="mt-2"
             />
             <p className="text-sm text-gray-600 mt-2">

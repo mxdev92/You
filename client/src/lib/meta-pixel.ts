@@ -1,5 +1,5 @@
 // Meta Pixel tracking utilities for PAKETY
-// Pixel ID: 633631792409825
+// Pixel ID: 882358434043824
 
 declare global {
   interface Window {
@@ -8,7 +8,7 @@ declare global {
 }
 
 export class MetaPixelTracker {
-  private static pixelId = '633631792409825';
+  private static pixelId = '882358434043824';
   
   // Check if Meta Pixel is loaded
   private static isLoaded(): boolean {

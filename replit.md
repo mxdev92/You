@@ -126,7 +126,7 @@ July 6, 2025:
 ✓ When tap left corner (List icon) in admin panel, sidebar appears with integration options
 ✓ Meta Pixel dialog opens with token input for Facebook advertising tracking
 ✓ Backend API endpoints created for Meta Pixel token storage and management
-✓ META PIXEL COMPLETE INTEGRATION: Pixel ID 633631792409825 actively tracking all events
+✓ META PIXEL COMPLETE INTEGRATION: Pixel ID 882358434043824 actively tracking all events
 ✓ Meta Pixel automatically tracks PageView, AddToCart, InitiateCheckout, Purchase, CompleteRegistration
 ✓ Added comprehensive Meta Pixel utility class with all ecommerce event tracking functions
 ✓ Registration completion tracking integrated into PostgreSQL auth system  
