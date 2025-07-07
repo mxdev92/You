@@ -8,7 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import whatsappService from "./whatsapp-service-production.js";
+import whatsappService from "./whatsapp-service-simple-stable.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -759,42 +759,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`✅ OTP ${otp} generated for ${phoneNumber}`);
       
-      if (status.mode === 'production' && status.isReady) {
+      if (status.mode === 'whatsapp' && status.isReady) {
         // WhatsApp delivery successful
         res.json({ 
-          message: 'OTP sent successfully via WhatsApp', 
+          message: 'تم إرسال رمز التحقق عبر WhatsApp بنجاح', 
           otp: otp,
           phoneNumber: phoneNumber,
           success: true,
           deliveryMethod: 'whatsapp'
         });
       } else {
-        // Fallback mode - OTP generated but not sent via WhatsApp
+        // Console mode - OTP displayed in server logs
         res.json({ 
-          message: 'OTP generated - check WhatsApp or use fallback OTP from logs', 
+          message: 'تم إنشاء رمز التحقق - تحقق من WhatsApp أو استخدم الرمز المعروض في الخادم', 
           otp: otp,
           phoneNumber: phoneNumber,
           success: true,
-          deliveryMethod: 'fallback',
-          note: 'WhatsApp not connected. Check console logs for OTP code.'
+          deliveryMethod: 'console',
+          note: 'WhatsApp غير متصل. استخدم رمز التحقق المعروض في سجلات الخادم.'
         });
       }
     } catch (error: any) {
       console.error('❌ WhatsApp OTP error:', error);
       
-      // Final fallback
-      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log(`🔑 EMERGENCY FALLBACK OTP for ${phoneNumber}: ${fallbackOtp}`);
+      // Final emergency fallback
+      const emergencyOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log('');
+      console.log('════════════════════════════════════════');
+      console.log(`🚨 EMERGENCY OTP للمستخدم: ${phoneNumber}`);
+      console.log(`🔑 رمز التحقق الطارئ: ${emergencyOtp}`);
+      console.log(`⏰ صالح لمدة: 10 دقائق`);
+      console.log('════════════════════════════════════════');
+      console.log('');
       
-      whatsappService.storeOTPForVerification(phoneNumber, fallbackOtp);
+      whatsappService.storeOTPForVerification(phoneNumber, emergencyOtp);
       
       res.json({ 
-        message: 'Emergency OTP generated - check server logs', 
-        otp: fallbackOtp,
+        message: 'تم إنشاء رمز التحقق الطارئ - راجع سجلات الخادم', 
+        otp: emergencyOtp,
         phoneNumber: phoneNumber,
         success: true,
         deliveryMethod: 'emergency',
-        note: 'Service error. Use emergency OTP from server logs.'
+        note: 'خطأ في الخدمة. استخدم رمز التحقق الطارئ من سجلات الخادم.'
       });
     }
   });

@@ -195,8 +195,8 @@ const AuthPage: React.FC = () => {
         
         if (data.deliveryMethod === 'whatsapp') {
           showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp - تحقق من رسائل WhatsApp الخاصة بك', 'success');
-        } else if (data.deliveryMethod === 'fallback') {
-          showNotification('✅ تم إنشاء رمز التحقق - تحقق من WhatsApp أو استخدم الرمز: ' + data.otp, 'success');
+        } else if (data.deliveryMethod === 'console') {
+          showNotification('✅ تم إنشاء رمز التحقق: ' + data.otp + ' - استخدم هذا الرمز للتحقق', 'success');
         } else if (data.deliveryMethod === 'emergency') {
           showNotification('✅ تم إنشاء رمز التحقق الطارئ: ' + data.otp, 'success');
         }
