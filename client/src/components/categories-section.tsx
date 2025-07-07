@@ -10,10 +10,16 @@ export default function CategoriesSection() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   
-  const { data: categories, isLoading } = useQuery<Category[]>({
+  const { data: categories, isLoading, error } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 60000, // Cache categories for 1 minute for faster performance
+    staleTime: 0, // Force fresh data
+    gcTime: 0, // Don't cache
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
+
+  // Debug logging
+  console.log('Categories query state:', { categories, isLoading, error });
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     Apple,
