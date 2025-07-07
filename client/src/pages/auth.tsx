@@ -612,12 +612,12 @@ const AuthPage: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center border border-gray-300 rounded-xl focus-within:border-gray-400 h-12">
-                          <div className="flex items-center px-3 text-gray-700 border-r border-gray-300" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            <span className="text-base font-medium">+964</span>
+                        <div className="flex items-center border border-gray-300 rounded-xl focus-within:border-gray-400 h-12" style={{ fontFamily: 'SFMono-Regular, "Roboto Mono", Consolas, "Liberation Mono", Menlo, Courier, monospace' }}>
+                          <div className="flex items-center px-3 text-gray-800 border-r border-gray-300">
+                            <span className="text-base font-normal">+964</span>
                           </div>
-                          <div className="flex items-center pl-3 text-gray-700">
-                            <span className="text-base font-medium">7</span>
+                          <div className="flex items-center pl-3 text-gray-800">
+                            <span className="text-base font-normal">7</span>
                           </div>
                           <Input
                             type="tel"
@@ -629,8 +629,8 @@ const AuthPage: React.FC = () => {
                                 setSignupData(prev => ({ ...prev, phone: '7' + value }));
                               }
                             }}
-                            className="flex-1 h-full text-left text-base border-0 focus:ring-0 focus:outline-none bg-transparent pl-0 text-gray-700"
-                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            className="flex-1 h-full text-left text-base font-normal border-0 focus:ring-0 focus:outline-none bg-transparent pl-0 text-gray-800"
+                            style={{ fontFamily: 'inherit' }}
                             maxLength={8}
                           />
                         </div>
