@@ -199,6 +199,8 @@ July 6, 2025:
 ✓ Professional 3-second delay before redirect allows users to read welcome message
 ✓ CRITICAL FIX: Fixed signup progression bug where step 1 wouldn't advance to step 2
 ✓ Added proper step advancement logic after email/password validation passes
+✓ MAJOR BUG FIX: Removed useEffect dependency causing data reset on step changes
+✓ Fixed cleanup function that was incorrectly triggering and clearing signup data
 ✓ Signup workflow now flows smoothly: Step 1 → Step 2 → Step 3 → Step 4 → Account Creation
 
 July 5, 2025:

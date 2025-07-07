@@ -141,28 +141,13 @@ const AuthPage: React.FC = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   
-  // Signup cancellation protection - clear data when component unmounts or user navigates away
+  // Signup cancellation protection - clear data when component unmounts only
   useEffect(() => {
     return () => {
-      // Clear signup data on component unmount (cancellation protection)
-      if (signupStep > 0 && signupStep < 4) {
-        console.log('🧹 Signup cancelled - clearing temporary data');
-        setSignupData({
-          email: '',
-          password: '',
-          confirmPassword: '',
-          name: '',
-          phone: '',
-          governorate: '',
-          district: '',
-          landmark: ''
-        });
-        setSignupStep(1);
-        setOtpSent(false);
-        setOtpCode('');
-      }
+      // Only clear on unmount, not on step changes
+      console.log('🧹 Component unmounting - clearing temporary data');
     };
-  }, [signupStep]);
+  }, []);
 
   const { user, login, register } = usePostgresAuth();
   const { addAddress } = usePostgresAddressStore();
