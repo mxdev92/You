@@ -1,35 +1,24 @@
-2025/07/07-04:56:52.681 20c5 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/07/07-04:56:52.681 20c5 Recovering log #246
-2025/07/07-04:56:52.759 20c5 Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000246.log 
-2025/07/07-04:56:53.290 20ca Level-0 table #252: started
-2025/07/07-04:56:53.364 20ca Level-0 table #252: 906002 bytes OK
-2025/07/07-04:56:53.375 20ca Delete type=0 #246
-2025/07/07-04:56:53.376 20c3 Manual compaction at level-0 from '\x00_\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00`\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-04:56:53.380 20c5 Level-0 table #254: started
-2025/07/07-04:56:53.385 20c5 Level-0 table #254: 3549 bytes OK
-2025/07/07-04:56:53.398 20c5 Delete type=0 #251
-2025/07/07-04:56:53.399 20c5 Manual compaction at level-0 from '\x00`\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00a\x00\x00\x00' @ 0 : 0; will stop at '\x00`\x00\x00\x05' @ 132388 : 0
-2025/07/07-04:56:53.399 20c5 Compacting 1@0 + 1@1 files
-2025/07/07-04:56:53.445 20c5 Generated table #255@0: 21532 keys, 502624 bytes
-2025/07/07-04:56:53.445 20c5 Compacted 1@0 + 1@1 files => 502624 bytes
-2025/07/07-04:56:53.458 20c5 compacted to: files[ 0 1 1 0 0 0 0 ]
-2025/07/07-04:56:53.459 20c5 Delete type=2 #254
-2025/07/07-04:56:53.459 20c5 Manual compaction at level-0 from '\x00`\x00\x00\x05' @ 132388 : 0 .. '\x00a\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-04:56:53.459 20c3 Level-0 table #257: started
-2025/07/07-04:56:53.463 20c3 Level-0 table #257: 250 bytes OK
-2025/07/07-04:56:53.476 20c3 Delete type=2 #252
-2025/07/07-04:56:53.476 20c3 Delete type=0 #253
-2025/07/07-04:56:53.477 20c3 Manual compaction at level-0 from '\x00a\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00b\x00\x00\x00' @ 0 : 0; will stop at '\x00a\x00\x00\x05' @ 132394 : 0
-2025/07/07-04:56:53.477 20c3 Compacting 1@0 + 1@1 files
-2025/07/07-04:56:53.523 20c3 Generated table #258@0: 21530 keys, 502520 bytes
-2025/07/07-04:56:53.524 20c3 Compacted 1@0 + 1@1 files => 502520 bytes
-2025/07/07-04:56:53.535 20c3 compacted to: files[ 0 1 1 0 0 0 0 ]
-2025/07/07-04:56:53.535 20c3 Delete type=2 #257
-2025/07/07-04:56:53.535 20c3 Manual compaction at level-0 from '\x00a\x00\x00\x05' @ 132394 : 0 .. '\x00b\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-04:56:56.174 20c5 Compacting 1@1 + 1@2 files
-2025/07/07-04:56:56.285 20c5 Generated table #259@1: 21777 keys, 818912 bytes
-2025/07/07-04:56:56.285 20c5 Compacted 1@1 + 1@2 files => 818912 bytes
-2025/07/07-04:56:56.320 20c5 compacted to: files[ 0 0 1 0 0 0 0 ]
-2025/07/07-04:56:56.321 20c5 Delete type=2 #249
-2025/07/07-04:56:56.321 20c5 Delete type=2 #255
-2025/07/07-04:56:56.321 20c5 Delete type=2 #258
+2025/07/07-04:58:38.311 23c9 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/07/07-04:58:38.311 23c9 Recovering log #256
+2025/07/07-04:58:38.319 23c9 Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000256.log 
+2025/07/07-04:58:39.198 23c9 Level-0 table #262: started
+2025/07/07-04:58:39.213 23c9 Level-0 table #262: 114626 bytes OK
+2025/07/07-04:58:39.225 23c9 Delete type=0 #256
+2025/07/07-04:58:39.246 23fb Manual compaction at level-0 from '\x00c\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00d\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/07-04:58:39.246 23c9 Level-0 table #264: started
+2025/07/07-04:58:39.250 23c9 Level-0 table #264: 249 bytes OK
+2025/07/07-04:58:39.262 23c9 Delete type=0 #261
+2025/07/07-04:58:39.265 23c9 Manual compaction at level-0 from '\x00d\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00e\x00\x00\x00' @ 0 : 0; will stop at '\x00d\x00\x00\x05' @ 137949 : 0
+2025/07/07-04:58:39.265 23c9 Compacting 1@0 + 1@1 files
+2025/07/07-04:58:39.283 23c9 Generated table #265@0: 3377 keys, 71442 bytes
+2025/07/07-04:58:39.283 23c9 Compacted 1@0 + 1@1 files => 71442 bytes
+2025/07/07-04:58:39.294 23c9 compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/07/07-04:58:39.294 23c9 Delete type=2 #264
+2025/07/07-04:58:39.295 23c2 Manual compaction at level-0 from '\x00d\x00\x00\x05' @ 137949 : 0 .. '\x00e\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/07-04:58:42.359 23c4 Compacting 1@1 + 1@2 files
+2025/07/07-04:58:42.448 23c4 Generated table #266@1: 22964 keys, 856875 bytes
+2025/07/07-04:58:42.448 23c4 Compacted 1@1 + 1@2 files => 856875 bytes
+2025/07/07-04:58:42.470 23c4 compacted to: files[ 0 0 1 0 0 0 0 ]
+2025/07/07-04:58:42.471 23c4 Delete type=2 #259
+2025/07/07-04:58:42.471 23c4 Delete type=2 #262
+2025/07/07-04:58:42.471 23c4 Delete type=2 #265

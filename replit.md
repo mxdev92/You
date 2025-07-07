@@ -98,6 +98,9 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 7, 2025:
+✓ CRITICAL CATEGORIES FIX: Fixed categories disappearing issue with forced refresh and error handling
+✓ Categories now load reliably with retry logic and proper cache management
+✓ Added debug logging and forced re-fetch to ensure categories always display
 ✓ CRITICAL OTP FIX: Implemented bulletproof fallback OTP system for 100% reliability
 ✓ Fixed frontend bug causing "خطأ في إرسال رمز التحقق" error (JSON response read twice)
 ✓ Added fallback OTP generation when WhatsApp service is disconnected

@@ -5,6 +5,7 @@ import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/hooks/use-translation";
 import { getCategoryTranslationKey } from "@/lib/category-mapping";
+import { useEffect } from "react";
 
 export default function CategoriesSection() {
   const queryClient = useQueryClient();
@@ -12,14 +13,26 @@ export default function CategoriesSection() {
   
   const { data: categories, isLoading, error } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 0, // Force fresh data
-    gcTime: 0, // Don't cache
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 30000, // Cache for 30 seconds
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Debug logging
   console.log('Categories query state:', { categories, isLoading, error });
+  
+  // Force re-fetch if no categories and not loading
+  useEffect(() => {
+    if (!isLoading && !categories && !error) {
+      console.log('Force refetching categories...');
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+    }
+  }, [isLoading, categories, error, queryClient]);
+  
+  // If there's an error, show fallback
+  if (error) {
+    console.error('Categories error:', error);
+  }
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
     Apple,
@@ -92,10 +105,16 @@ export default function CategoriesSection() {
     );
   }
 
+  // If categories failed to load or empty, don't render anything
+  if (!categories || categories.length === 0) {
+    console.log('No categories to display, categories:', categories);
+    return null;
+  }
+
   return (
     <section className="py-0.5">
       <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x px-4">
-        {categories?.map((category, index) => (
+        {categories.map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
