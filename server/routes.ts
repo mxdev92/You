@@ -195,12 +195,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cart", async (req, res) => {
     try {
       // Get user from session
-      const user = req.session?.user;
-      if (!user) {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      const cartItems = await storage.getCartItems(user.id);
+      const cartItems = await storage.getCartItems(userId);
       res.json(cartItems);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cart items" });
@@ -211,24 +211,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('=== ADD TO CART DEBUG ===');
       console.log('Session ID:', req.session?.id);
-      console.log('Session user:', req.session?.user);
+      console.log('Full session:', (req as any).session);
+      console.log('Session userId:', (req as any).session?.userId);
       console.log('Request body:', req.body);
-      console.log('Headers:', req.headers);
       
       // Get user from session
-      const user = req.session?.user;
-      if (!user) {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
         console.log('❌ No user in session');
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      console.log('✅ User authenticated:', user.email);
+      console.log('✅ User authenticated, userId:', userId);
       const validatedData = insertCartItemSchema.parse(req.body);
       console.log('✅ Data validated:', validatedData);
       
       const cartItem = await storage.addToCart({
         ...validatedData,
-        userId: user.id // Add authenticated user ID to cart item
+        userId: userId // Add authenticated user ID to cart item
       });
       
       console.log('✅ Cart item added:', cartItem);
@@ -264,12 +264,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/cart", async (req, res) => {
     try {
       // Get user from session
-      const user = req.session?.user;
-      if (!user) {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      await storage.clearCart(user.id);
+      await storage.clearCart(userId);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to clear cart" });
