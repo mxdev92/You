@@ -448,20 +448,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Phone number validation endpoint
+  app.post('/api/auth/validate-phone', async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ message: 'Phone number is required' });
+      }
+
+      const existingUser = await storage.getUserByPhone(phone);
+      
+      if (existingUser) {
+        return res.status(409).json({ 
+          message: 'هذا الرقم مستخدم بالفعل. كل رقم واتساب يحتاج حساب واحد فقط.',
+          isUsed: true 
+        });
+      }
+      
+      res.json({ 
+        message: 'Phone number is available',
+        isUsed: false 
+      });
+    } catch (error: any) {
+      console.error('Phone validation error:', error);
+      res.status(500).json({ message: 'Failed to validate phone number' });
+    }
+  });
+
   // Authentication routes
   app.post('/api/auth/signup', async (req, res) => {
     try {
       const { email, password, fullName, phone } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+      if (!email || !password || !phone) {
+        return res.status(400).json({ message: 'Email, password, and phone are required' });
+      }
+
+      // Check if phone is already used
+      const existingPhone = await storage.getUserByPhone(phone);
+      if (existingPhone) {
+        return res.status(409).json({ message: 'Phone number already exists' });
       }
 
       const user = await storage.createUser({ 
         email, 
         passwordHash: password, 
         fullName: fullName || null,
-        phone: phone || null
+        phone: phone
       });
       
       // Set session after successful signup
@@ -480,6 +514,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Signup error:', error);
       if (error.message?.includes('duplicate') || error.code === '23505') {
+        if (error.message?.includes('phone')) {
+          return res.status(409).json({ message: 'Phone number already exists' });
+        }
         return res.status(409).json({ message: 'Email already exists' });
       }
       res.status(500).json({ message: 'Failed to create user' });

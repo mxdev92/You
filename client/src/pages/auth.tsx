@@ -166,10 +166,37 @@ const AuthPage: React.FC = () => {
       return;
     }
 
+    // Validate phone number format (must be 10 digits starting with 7)
+    if (signupData.phone.length !== 10 || !signupData.phone.startsWith('7')) {
+      showNotification('يرجى إدخال رقم موبايل صحيح (7xxxxxxxxx)');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Add timeout to prevent indefinite waiting
+      // First validate if phone number is already used
+      const phoneValidationResponse = await fetch('/api/auth/validate-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: signupData.phone })
+      });
+
+      const phoneValidationData = await phoneValidationResponse.json();
+      
+      if (phoneValidationResponse.status === 409) {
+        showNotification(phoneValidationData.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!phoneValidationResponse.ok) {
+        showNotification('خطأ في التحقق من رقم الهاتف');
+        setIsLoading(false);
+        return;
+      }
+
+      // Phone number is available, proceed with OTP sending
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
