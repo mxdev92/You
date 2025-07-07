@@ -33,6 +33,9 @@ export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByPhone(phone: string): Promise<User | undefined>;
+  checkEmailExists(email: string): Promise<boolean>;
+  checkPhoneExists(phone: string): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
 
@@ -514,6 +517,36 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return user || undefined;
+  }
+
+  async checkEmailExists(email: string): Promise<boolean> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return !!user;
+  }
+
+  async checkPhoneExists(phone: string): Promise<boolean> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return !!user;
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.phone, phone));
+    return user || undefined;
+  }
+
+  async checkEmailExists(email: string): Promise<boolean> {
+    const user = await this.getUserByEmail(email);
+    return !!user;
+  }
+
+  async checkPhoneExists(phone: string): Promise<boolean> {
+    const user = await this.getUserByPhone(phone);
+    return !!user;
   }
 
   async getAllUsers(): Promise<User[]> {

@@ -8,7 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import whatsappService from "./whatsapp-service-working.js";
+import whatsappService from "./whatsapp-service-bulletproof-permanent.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -438,20 +438,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Authentication routes
+  // Check email availability endpoint
+  app.post('/api/auth/check-email', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+
+      const emailExists = await storage.checkEmailExists(email);
+      res.json({ exists: emailExists });
+    } catch (error: any) {
+      console.error('Email check error:', error);
+      res.status(500).json({ message: 'Failed to check email availability' });
+    }
+  });
+
+  // Check phone availability endpoint
+  app.post('/api/auth/check-phone', async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ message: 'Phone number is required' });
+      }
+
+      const phoneExists = await storage.checkPhoneExists(phone);
+      res.json({ exists: phoneExists });
+    } catch (error: any) {
+      console.error('Phone check error:', error);
+      res.status(500).json({ message: 'Failed to check phone availability' });
+    }
+  });
+
+  // Authentication routes - STRICT VALIDATION: Account only created after completing ALL steps
   app.post('/api/auth/signup', async (req, res) => {
     try {
       const { email, password, fullName, phone } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+      if (!email || !password || !fullName || !phone) {
+        return res.status(400).json({ message: 'All fields are required: email, password, fullName, phone' });
+      }
+
+      // STRICT VALIDATION: Check email uniqueness
+      const emailExists = await storage.checkEmailExists(email);
+      if (emailExists) {
+        return res.status(409).json({ message: 'هذا البريد الإلكتروني مستخدم من قبل، يرجى استخدام بريد آخر' });
+      }
+
+      // STRICT VALIDATION: Check phone uniqueness  
+      const phoneExists = await storage.checkPhoneExists(phone);
+      if (phoneExists) {
+        return res.status(409).json({ message: 'رقم الواتساب هذا مستخدم من قبل، يرجى استخدام رقم آخر' });
       }
 
       const user = await storage.createUser({ 
         email, 
         passwordHash: password, 
-        fullName: fullName || null,
-        phone: phone || null
+        fullName,
+        phone
       });
       
       // Set session after successful signup
@@ -675,10 +721,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // WhatsApp API routes
   app.get('/api/whatsapp/status', (req, res) => {
-    res.json({ 
-      status: whatsappService.getStatus(),
-      connected: whatsappService.isConnected()
-    });
+    try {
+      const status = whatsappService.getStatus();
+      res.json(status);
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: 'Failed to get WhatsApp status', 
+        error: error.message,
+        connected: false,
+        status: 'error',
+        healthy: false,
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   app.get('/api/whatsapp/qr', (req, res) => {
@@ -700,6 +755,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/whatsapp/reconnect', async (req, res) => {
+    try {
+      console.log('🔄 Manual WhatsApp reconnection requested');
+      
+      // Destroy existing connection
+      await whatsappService.destroy();
+      
+      // Wait a moment then reinitialize
+      setTimeout(async () => {
+        console.log('🚀 Starting fresh WhatsApp connection...');
+        await whatsappService.initialize();
+      }, 2000);
+      
+      res.json({ 
+        success: true, 
+        message: 'WhatsApp reconnection started - new QR code will be generated in a few seconds' 
+      });
+    } catch (error: any) {
+      console.error('WhatsApp reconnection failed:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message, 
+        message: 'Failed to reconnect WhatsApp service' 
+      });
+    }
+  });
+
   app.post('/api/whatsapp/send-otp', async (req, res) => {
     const { phoneNumber, fullName } = req.body;
     
@@ -709,32 +791,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
-      console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber} via WhatsApp`);
+      const status = whatsappService.getStatus();
+      
+      console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
+      
+      // Only respond with success if WhatsApp delivery was successful
       res.json({ 
-        message: 'OTP sent successfully to WhatsApp', 
-        otp: otp,
+        message: 'تم إرسال رمز التحقق عبر WhatsApp بنجاح - تحقق من رسائل WhatsApp الخاصة بك', 
         phoneNumber: phoneNumber,
-        success: true 
+        success: true,
+        deliveryMethod: 'whatsapp'
       });
+      
     } catch (error: any) {
       console.error('❌ WhatsApp OTP error:', error);
       
-      // Fallback: generate OTP and show in logs for debugging
-      console.log('⚠️ WhatsApp messaging failed, generating fallback OTP');
-      const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${fallbackOtp}`);
-      console.log(`📱 User should check WhatsApp for the actual message, or use fallback OTP: ${fallbackOtp}`);
-      
-      // Store the OTP for verification
-      whatsappService.storeOTPForVerification(phoneNumber, fallbackOtp);
-      
-      res.json({ 
-        message: 'OTP generation failed - check server logs for fallback code', 
-        otp: fallbackOtp,
-        phoneNumber: phoneNumber,
+      // Return error - no fallback, OTP must only go to WhatsApp
+      res.status(500).json({ 
+        message: 'فشل في إرسال رمز التحقق عبر WhatsApp. تأكد من اتصال WhatsApp وحاول مرة أخرى.', 
+        error: 'WhatsApp service unavailable',
         success: false,
-        error: error.message,
-        note: 'Please check WhatsApp app or server console logs for OTP code'
+        phoneNumber: phoneNumber
       });
     }
   });
@@ -910,6 +987,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to get Meta Pixel status' });
     }
   });
+
+  // Email and Phone uniqueness check endpoints
+  app.post('/api/auth/check-email', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      
+      const existingUser = await storage.getUserByEmail(email);
+      res.json({ exists: !!existingUser });
+    } catch (error: any) {
+      console.error('Email check error:', error);
+      res.status(500).json({ message: 'Failed to check email availability' });
+    }
+  });
+
+  app.post('/api/auth/check-phone', async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ message: 'Phone number is required' });
+      }
+      
+      const existingUser = await storage.getUserByPhone(phone);
+      res.json({ exists: !!existingUser });
+    } catch (error: any) {
+      console.error('Phone check error:', error);
+      res.status(500).json({ message: 'Failed to check phone availability' });
+    }
+  });
+
+
 
   // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;
