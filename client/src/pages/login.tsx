@@ -32,7 +32,7 @@ export default function Login() {
       }
       setLocation("/");
     } catch (err) {
-      // Error is handled by useAuth hook
+      // Error is handled by usePostgresAuth hook
     }
   };
 
