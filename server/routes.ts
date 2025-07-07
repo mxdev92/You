@@ -194,7 +194,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart
   app.get("/api/cart", async (req, res) => {
     try {
-      const cartItems = await storage.getCartItems();
+      // Get user from session
+      const user = req.session?.user;
+      if (!user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      const cartItems = await storage.getCartItems(user.id);
       res.json(cartItems);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cart items" });
@@ -203,8 +209,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
+      // Get user from session
+      const user = req.session?.user;
+      if (!user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
       const validatedData = insertCartItemSchema.parse(req.body);
-      const cartItem = await storage.addToCart(validatedData);
+      const cartItem = await storage.addToCart({
+        ...validatedData,
+        userId: user.id // Add authenticated user ID to cart item
+      });
       res.status(201).json(cartItem);
     } catch (error) {
       res.status(500).json({ message: "Failed to add item to cart" });
@@ -235,7 +250,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/cart", async (req, res) => {
     try {
-      await storage.clearCart();
+      // Get user from session
+      const user = req.session?.user;
+      if (!user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      await storage.clearCart(user.id);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to clear cart" });
