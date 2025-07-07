@@ -309,7 +309,7 @@ class BulletproofPermanentWhatsAppService {
 
     try {
       // Format phone number for WhatsApp
-      const formattedNumber = this.formatPhoneNumber(phoneNumber);
+      let formattedNumber = this.formatPhoneNumber(phoneNumber);
       
       // Skip WhatsApp number existence check for now - send directly and let WhatsApp handle delivery
       console.log(`📋 Attempting to send OTP to: ${formattedNumber} (bypassing existence check)`);

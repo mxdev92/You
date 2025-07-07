@@ -202,22 +202,6 @@ export class MemStorage implements IStorage {
     return updatedProduct;
   }
 
-  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
-    const existingProduct = this.products.get(id);
-    if (!existingProduct) {
-      throw new Error("Product not found");
-    }
-
-    const updatedProduct: Product = {
-      ...existingProduct,
-      displayOrder,
-      id
-    };
-    
-    this.products.set(id, updatedProduct);
-    return updatedProduct;
-  }
-
   async deleteProduct(id: number): Promise<void> {
     this.products.delete(id);
   }
@@ -477,13 +461,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(cartItems);
   }
 
-  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
-    const [updated] = await db.update(products)
-      .set({ displayOrder })
-      .where(eq(products.id, id))
-      .returning();
-    return updated;
-  }
+
 
   // Orders
   async getOrders(): Promise<Order[]> {
@@ -531,21 +509,6 @@ export class DatabaseStorage implements IStorage {
 
   async checkPhoneExists(phone: string): Promise<boolean> {
     const [user] = await db.select().from(users).where(eq(users.phone, phone));
-    return !!user;
-  }
-
-  async getUserByPhone(phone: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.phone, phone));
-    return user || undefined;
-  }
-
-  async checkEmailExists(email: string): Promise<boolean> {
-    const user = await this.getUserByEmail(email);
-    return !!user;
-  }
-
-  async checkPhoneExists(phone: string): Promise<boolean> {
-    const user = await this.getUserByPhone(phone);
     return !!user;
   }
 
