@@ -808,19 +808,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`📱 Processing Baileys WhatsApp OTP request for ${phoneNumber} (${fullName})`);
       
-      // Use professional Baileys direct OTP service
+      // Use professional Baileys WhatsApp OTP service
       const result = await baileysOTPService.sendOTP(phoneNumber, fullName);
       
-      console.log(`✅ Direct OTP generated for ${phoneNumber} - immediate verification available`);
-      
-      res.json({ 
-        message: result.message,
-        otp: result.code,
-        phoneNumber: result.phoneNumber,
-        success: result.success,
-        deliveryMethod: result.deliveryMethod,
-        note: result.note
-      });
+      if (result.success) {
+        console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
+        
+        res.json({ 
+          message: result.message,
+          phoneNumber: result.phoneNumber,
+          success: true,
+          deliveryMethod: result.deliveryMethod
+        });
+      } else {
+        console.log(`❌ WhatsApp OTP failed for ${phoneNumber}: ${result.message}`);
+        
+        res.status(503).json({ 
+          message: result.message,
+          success: false,
+          error: result.error,
+          phoneNumber: phoneNumber,
+          requiresConnection: true
+        });
+      }
       
     } catch (error: any) {
       console.error('❌ Baileys OTP service error:', error);

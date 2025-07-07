@@ -384,18 +384,51 @@ class BaileysOTPService {
 
     console.log(`📱 Generated direct OTP ${otp} for ${phoneNumber} (${fullName || 'Unknown'})`);
 
-    // Always provide direct OTP without dependency on WhatsApp connection
-    console.log(`✅ Direct OTP ${otp} generated for ${phoneNumber} - ready for immediate verification`);
-    
-    return {
-      success: true,
-      code: otp,
-      method: 'direct_otp',
-      message: `رمز التحقق: ${otp}`,
-      phoneNumber: phoneNumber,
-      deliveryMethod: 'manual',
-      note: 'استخدم الرمز المعروض للتحقق من رقم الهاتف'
-    };
+    // Check if WhatsApp is connected for real message sending
+    if (!this.isConnected || !this.sock) {
+      console.log('❌ WhatsApp not connected - cannot send OTP to customer');
+      return {
+        success: false,
+        code: otp,
+        method: 'no_whatsapp',
+        message: 'WhatsApp غير متصل. لا يمكن إرسال رمز التحقق',
+        error: 'WhatsApp service must be connected to send OTP messages to customers'
+      };
+    }
+
+    try {
+      const whatsappNumber = this.formatWhatsAppNumber(phoneNumber);
+      
+      // Create Arabic OTP message for customer
+      const message = fullName 
+        ? `مرحباً ${fullName}!\n\nرمز التحقق الخاص بك في PAKETY هو:\n\n*${otp}*\n\nالرمز صالح لمدة 5 دقائق فقط.\n🔐 لا تشارك هذا الرمز مع أي شخص.\n\n— فريق PAKETY`
+        : `رمز التحقق الخاص بك في PAKETY هو:\n\n*${otp}*\n\nالرمز صالح لمدة 5 دقائق فقط.\n🔐 لا تشارك هذا الرمز مع أي شخص.`;
+
+      // Send actual WhatsApp message to customer
+      await this.sock.sendMessage(whatsappNumber, { text: message });
+      
+      console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
+      
+      return {
+        success: true,
+        code: otp,
+        method: 'whatsapp_message',
+        message: 'تم إرسال رمز التحقق عبر WhatsApp بنجاح',
+        phoneNumber: phoneNumber,
+        deliveryMethod: 'whatsapp'
+      };
+
+    } catch (error) {
+      console.error('❌ Failed to send WhatsApp OTP:', error);
+      
+      return {
+        success: false,
+        code: otp,
+        method: 'send_failed',
+        message: 'فشل إرسال رمز التحقق عبر WhatsApp',
+        error: error instanceof Error ? error.message : 'Unknown WhatsApp sending error'
+      };
+    }
   }
 
   // Verify OTP code
