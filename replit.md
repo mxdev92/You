@@ -248,9 +248,11 @@ July 6, 2025:
 ✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
 ✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
 ✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)
-✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
-✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
-✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)
+✓ CRITICAL CART FIX: Fixed add to cart functionality completely
+✓ Added userId column to cart_items table via SQL migration
+✓ Fixed cart authentication by adding credentials: "include" to all API requests
+✓ Enhanced error logging for cart debugging and troubleshooting
+✓ Cart merging logic now properly checks both productId AND userId for authenticated users
 ✓ PERFORMANCE OPTIMIZATION: Accelerated OTP button response time from 6+ seconds to under 3 seconds
 ✓ Reduced WhatsApp retry attempts from 3 to 2 and retry delay from 2s to 1s for faster fallback
 ✓ Optimized WhatsApp message timeout from 8s to 3s with aggressive timeout handling

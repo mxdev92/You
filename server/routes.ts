@@ -209,20 +209,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
+      console.log('=== ADD TO CART DEBUG ===');
+      console.log('Session ID:', req.session?.id);
+      console.log('Session user:', req.session?.user);
+      console.log('Request body:', req.body);
+      console.log('Headers:', req.headers);
+      
       // Get user from session
       const user = req.session?.user;
       if (!user) {
+        console.log('❌ No user in session');
         return res.status(401).json({ message: "Not authenticated" });
       }
       
+      console.log('✅ User authenticated:', user.email);
       const validatedData = insertCartItemSchema.parse(req.body);
+      console.log('✅ Data validated:', validatedData);
+      
       const cartItem = await storage.addToCart({
         ...validatedData,
         userId: user.id // Add authenticated user ID to cart item
       });
+      
+      console.log('✅ Cart item added:', cartItem);
       res.status(201).json(cartItem);
     } catch (error) {
-      res.status(500).json({ message: "Failed to add item to cart" });
+      console.error('❌ Cart error:', error);
+      res.status(500).json({ message: "Failed to add item to cart", error: error.message });
     }
   });
 
