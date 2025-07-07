@@ -645,9 +645,6 @@ const AuthPage: React.FC = () => {
                           </Button>
                         ) : (
                           <div className="space-y-3">
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 text-center">
-                              📱 تحقق من تطبيق WhatsApp للحصول على رمز التأكيد
-                            </div>
                             <Input
                               type="text"
                               placeholder="ادخل رمز التأكيد (6 أرقام)"
