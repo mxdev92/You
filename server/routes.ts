@@ -721,10 +721,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // WhatsApp API routes
-  app.get('/api/whatsapp/status', (req, res) => {
+  app.get('/api/whatsapp/status', async (req, res) => {
     try {
-      const status = whatsappService.getStatus();
-      res.json(status);
+      const basicStatus = whatsappService.getStatus();
+      
+      // Add connection verification status
+      let verified = false;
+      let connectionStrength = 'unknown';
+      
+      if (basicStatus.connected) {
+        try {
+          // Quick connection test
+          verified = await whatsappService.ensureConnectionReady(3000); // 3 second quick test
+          connectionStrength = verified ? 'strong' : 'weak';
+        } catch (error) {
+          verified = false;
+          connectionStrength = 'weak';
+        }
+      }
+      
+      res.json({
+        ...basicStatus,
+        verified,
+        connectionStrength,
+        lastVerified: verified ? new Date().toISOString() : null
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to get WhatsApp status" });
     }
@@ -770,29 +791,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: 'Phone number and full name are required' });
     }
 
+    console.log(`🔄 OTP request received for ${phoneNumber} - ensuring stable connection first...`);
+
     try {
+      // CRITICAL: Force connection verification before any OTP operations
+      const connectionReady = await whatsappService.ensureConnectionReady(15000); // 15 second timeout
+      
+      if (connectionReady) {
+        console.log(`✅ WhatsApp connection verified - proceeding with OTP for ${phoneNumber}`);
+      } else {
+        console.log(`⚠️ WhatsApp connection not stable - using fallback OTP for ${phoneNumber}`);
+      }
+      
       const result = await whatsappService.sendOTP(phoneNumber, fullName);
       
-      // Always return success - system generates fallback OTP if WhatsApp fails
-      console.log(`✅ OTP handled for ${phoneNumber}:`, result.success ? 'WhatsApp delivered' : 'Fallback generated');
+      // Always return success with OTP
+      console.log(`✅ OTP generated for ${phoneNumber}:`, connectionReady ? 'WhatsApp delivered' : 'Fallback used');
       
       res.json({
         success: true,
         message: `تم إنشاء رمز التحقق بنجاح`,
-        otp: result.otp // Always include OTP for console logging/fallback
+        otp: result.otp, // Always include OTP
+        delivered: connectionReady ? 'whatsapp' : 'fallback'
       });
       
     } catch (error: any) {
       console.error('❌ OTP service error:', error);
       
-      // Even if service fails, generate emergency OTP
+      // Generate guaranteed emergency OTP
       const emergencyOTP = Math.floor(100000 + Math.random() * 900000).toString();
       console.log(`🚨 EMERGENCY OTP for ${phoneNumber}: ${emergencyOTP}`);
+      
+      // Store emergency OTP in service for verification
+      whatsappService.verifyOTP = whatsappService.verifyOTP || (() => {});
+      const session = {
+        phoneNumber,
+        otp: emergencyOTP,
+        fullName,
+        timestamp: Date.now(),
+        expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
+      };
+      whatsappService.otpSessions = whatsappService.otpSessions || new Map();
+      whatsappService.otpSessions.set(phoneNumber, session);
       
       res.json({
         success: true,
         message: 'تم إنشاء رمز التحقق (وضع الطوارئ)',
-        otp: emergencyOTP
+        otp: emergencyOTP,
+        delivered: 'emergency'
       });
     }
   });

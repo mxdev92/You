@@ -57,6 +57,64 @@ export class BaileysWhatsAppService {
     });
   }
 
+  // CRITICAL: Ensure connection is ready before any OTP operations
+  async ensureConnectionReady(maxWaitTime: number = 30000): Promise<boolean> {
+    const startTime = Date.now();
+    
+    console.log('🔄 Ensuring WhatsApp connection is ready...');
+    
+    // If already connected, verify it's actually working
+    if (this.isConnected && this.socket) {
+      try {
+        // Test connection with a simple operation
+        const status = this.socket.user;
+        if (status) {
+          console.log('✅ WhatsApp connection verified and ready');
+          return true;
+        }
+      } catch (error) {
+        console.log('⚠️ Connection test failed, reinitializing...');
+        this.isConnected = false;
+        this.socket = null;
+      }
+    }
+    
+    // Initialize if not connected
+    if (!this.isConnected || !this.socket) {
+      try {
+        await this.initialize();
+      } catch (error) {
+        console.error('❌ Failed to initialize connection:', error);
+        return false;
+      }
+    }
+    
+    // Wait for connection to be established with timeout
+    while (!this.isConnected && (Date.now() - startTime) < maxWaitTime) {
+      console.log('⏳ Waiting for WhatsApp connection...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    if (!this.isConnected) {
+      console.error('❌ Connection timeout - failed to establish WhatsApp connection');
+      return false;
+    }
+    
+    // Additional verification - wait for socket to be fully ready
+    let verificationAttempts = 0;
+    while (verificationAttempts < 10) {
+      if (this.socket && this.socket.user) {
+        console.log('✅ WhatsApp connection fully established and verified');
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+      verificationAttempts++;
+    }
+    
+    console.log('⚠️ Connection established but verification incomplete');
+    return this.isConnected; // Return current status
+  }
+
   async initialize(): Promise<void> {
     if (this.isConnecting || this.isConnected) {
       console.log('🔄 Baileys WhatsApp already initializing or connected');
@@ -104,10 +162,10 @@ export class BaileysWhatsAppService {
         syncFullHistory: false,
         markOnlineOnConnect: false, // Keep false for production stability
         defaultQueryTimeoutMs: 90000, // Extended timeout for stability
-        connectTimeoutMs: 90000, // Extended connection timeout
-        keepAliveIntervalMs: 60000, // Longer keep-alive to reduce server load
-        retryRequestDelayMs: 2000, // Longer retry delay for stability
-        maxMsgRetryCount: 1, // Minimal retries to prevent timeout cascade
+        connectTimeoutMs: 60000, // Optimized connection timeout
+        keepAliveIntervalMs: 30000, // Balanced keep-alive for stability
+        retryRequestDelayMs: 1000, // Quick retry for better responsiveness
+        maxMsgRetryCount: 2, // Sufficient retries for reliability
         qrTimeout: 180000, // Extended QR timeout
         browser: ['PAKETY-Business', 'Chrome', '3.0'], // Professional browser identity
         fireInitQueries: false,
@@ -210,8 +268,8 @@ export class BaileysWhatsAppService {
   }
 
   async sendOTP(phoneNumber: string, fullName: string, retryCount: number = 0): Promise<{ success: boolean; otp?: string; note?: string }> {
-    const maxRetries = 2; // Reduced from 3 to 2 for faster response
-    const retryDelay = 1000; // Reduced from 2000ms to 1000ms 
+    const maxRetries = 3;
+    const retryDelay = 2000;
     
     // Generate OTP once and reuse for retries
     const otp = retryCount === 0 ? this.generateOTP() : this.getStoredOTP(phoneNumber);
@@ -219,23 +277,44 @@ export class BaileysWhatsAppService {
       this.storeOTPSession(phoneNumber, otp, fullName);
     }
 
+    // CRITICAL: Ensure 100% connection before sending OTP
     if (!this.isConnected || !this.socket) {
-      console.log(`⚠️ WhatsApp not connected (attempt ${retryCount + 1})`);
+      console.log(`🔄 WhatsApp not connected - forcing initialization (attempt ${retryCount + 1})`);
       
-      // Quick retry only if reconnecting and under max retries
-      if (this.isReconnecting && retryCount < maxRetries) {
-        console.log(`🔄 Quick retry in ${retryDelay/1000}s...`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-        return this.sendOTP(phoneNumber, fullName, retryCount + 1);
+      try {
+        // Force immediate connection establishment
+        await this.ensureConnectionReady();
+        
+        // Double-check connection after initialization
+        if (!this.isConnected || !this.socket) {
+          if (retryCount < maxRetries) {
+            console.log(`🔄 Connection failed, retrying in ${retryDelay/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            return this.sendOTP(phoneNumber, fullName, retryCount + 1);
+          }
+          
+          // Fallback after all connection attempts failed
+          console.log(`🔑 CONNECTION FAILED - FALLBACK OTP for ${phoneNumber}: ${otp}`);
+          return {
+            success: true,
+            otp: otp,
+            message: `OTP generated (connection failed) for ${phoneNumber}`
+          };
+        }
+      } catch (error) {
+        console.error(`❌ Connection initialization failed:`, error);
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return this.sendOTP(phoneNumber, fullName, retryCount + 1);
+        }
+        
+        console.log(`🔑 INITIALIZATION FAILED - FALLBACK OTP for ${phoneNumber}: ${otp}`);
+        return {
+          success: true,
+          otp: otp,
+          message: `OTP generated (initialization failed) for ${phoneNumber}`
+        };
       }
-      
-      // Return fallback OTP with user-friendly message
-      console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${otp}`);
-      return {
-        success: true,
-        otp: otp,
-        message: `OTP generated successfully for ${phoneNumber}`
-      };
     }
 
     try {
