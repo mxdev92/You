@@ -42,17 +42,6 @@ class PostgresAuthService {
       this.currentUser = user;
       this.notifyListeners();
       console.log('PostgreSQL Auth: Account created successfully', user.email);
-      
-      // Track Meta Pixel registration completion
-      if (typeof window !== 'undefined' && window.fbq) {
-        try {
-          window.fbq('track', 'CompleteRegistration');
-          console.log('📊 Meta Pixel: CompleteRegistration tracked for', user.email);
-        } catch (error) {
-          console.warn('Meta Pixel tracking failed:', error);
-        }
-      }
-      
       return user;
     } catch (error: any) {
       console.error('PostgreSQL Auth: Signup failed', error);

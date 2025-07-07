@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type { CartItem, Product, InsertCartItem } from "@shared/schema";
-import MetaPixelTracker from "@/lib/meta-pixel";
 
 type CartItemWithProduct = CartItem & { product: Product };
 
@@ -55,21 +54,6 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       if (response.ok) {
         // Reload cart to get updated data with product details
         get().loadCart();
-        
-        // Track Meta Pixel AddToCart event
-        // We'll get product details after reload for accurate tracking
-        setTimeout(() => {
-          const cartItems = get().cartItems;
-          const addedItem = cartItems.find(cartItem => cartItem.productId === item.productId);
-          if (addedItem?.product) {
-            const itemValue = parseFloat(addedItem.product.price) * item.quantity;
-            MetaPixelTracker.trackAddToCart(
-              addedItem.product.name,
-              itemValue,
-              item.quantity
-            );
-          }
-        }, 500);
       } else {
         throw new Error("Failed to add item");
       }

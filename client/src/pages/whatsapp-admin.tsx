@@ -76,7 +76,6 @@ const WhatsAppAdmin: React.FC = () => {
       
       if (data.success) {
         addMessage('success', 'تم بدء عملية الاتصال - تحقق من وحدة التحكم لرؤية رمز QR');
-        setWhatsappStatus('connecting');
       } else {
         addMessage('error', `فشل في الاتصال: ${data.error}`);
       }
@@ -84,30 +83,6 @@ const WhatsAppAdmin: React.FC = () => {
       addMessage('error', 'خطأ في تهيئة WhatsApp');
     }
     setIsLoading(false);
-  };
-
-  const reconnectWhatsApp = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/reconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        addMessage('success', 'تم بدء إعادة الاتصال - سيتم إنشاء رمز QR جديد خلال ثواني');
-        setWhatsappStatus('connecting');
-        setQrCode(''); // Clear old QR code
-      } else {
-        addMessage('error', `فشل في إعادة الاتصال: ${data.error}`);
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في إعادة الاتصال بـ WhatsApp');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const addMessage = (type: 'success' | 'error' | 'info', text: string) => {
@@ -294,28 +269,16 @@ const WhatsAppAdmin: React.FC = () => {
               </Badge>
             </div>
             
-            <div className="flex gap-2">
-              {(whatsappStatus === 'disconnected' || whatsappStatus === 'loading') && (
-                <Button
-                  onClick={initializeWhatsApp}
-                  disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
-                </Button>
-              )}
+            {(whatsappStatus === 'disconnected' || whatsappStatus === 'loading') && (
               <Button
-                onClick={reconnectWhatsApp}
+                onClick={initializeWhatsApp}
                 disabled={isLoading}
-                variant="outline"
-                className="border-green-600 text-green-600 hover:bg-green-50"
+                className="bg-green-600 hover:bg-green-700 text-white"
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
               >
-                <QrCode className="h-4 w-4 mr-2" />
-                {isLoading ? 'جاري إعادة الاتصال...' : 'إنشاء QR جديد'}
+                {isLoading ? 'جاري الاتصال...' : 'تهيئة اتصال WhatsApp'}
               </Button>
-            </div>
+            )}
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import session from "express-session";
 import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import whatsappService from "./whatsapp-service-bulletproof-permanent.js";
+import whatsappService from "./whatsapp-service-working.js";
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
