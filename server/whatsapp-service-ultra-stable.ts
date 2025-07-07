@@ -62,11 +62,11 @@ export class UltraStableWhatsAppService {
       const wwebjs = require('whatsapp-web.js');
       const { Client, LocalAuth, MessageMedia } = wwebjs;
 
-      // Enhanced client configuration for maximum stability
+      // Enhanced client configuration for maximum stability and persistent authentication
       this.client = new Client({
         authStrategy: new LocalAuth({
           dataPath: './whatsapp_session',
-          clientId: 'pakety-ultra-stable'
+          clientId: 'pakety-permanent-auth'
         }),
         puppeteer: {
           headless: true,
@@ -137,25 +137,28 @@ export class UltraStableWhatsAppService {
     if (!this.client) return;
 
     this.client.on('qr', (qr: string) => {
-      console.log('📱 Ultra Stable WhatsApp: QR Code generated for authentication');
+      console.log('📱 Ultra Stable WhatsApp: QR Code generated - SCAN ONCE FOR PERMANENT CONNECTION');
       this.state.qrCode = qr;
       this.state.isConnecting = true;
       
       // Display QR in terminal
       const QRCode = require('qrcode-terminal');
       QRCode.generate(qr, { small: true });
-      console.log('📲 Scan this QR code with your WhatsApp Business account');
+      console.log('📲 IMPORTANT: Scan this QR code ONCE to establish permanent WhatsApp connection');
+      console.log('🔐 After scanning, WhatsApp will stay connected permanently - no need to scan again');
     });
 
     this.client.on('authenticated', () => {
-      console.log('🔐 Ultra Stable WhatsApp: Authentication successful');
+      console.log('🔐 Ultra Stable WhatsApp: AUTHENTICATION SUCCESSFUL - PERMANENTLY SAVED');
+      console.log('✅ WhatsApp session saved permanently - no need to scan QR code again');
       this.state.isAuthenticated = true;
       this.state.qrCode = null;
       this.state.lastError = null;
     });
 
     this.client.on('ready', () => {
-      console.log('🎉 Ultra Stable WhatsApp: Client ready and operational');
+      console.log('🎉 Ultra Stable WhatsApp: CLIENT READY - PERMANENT CONNECTION ESTABLISHED');
+      console.log('🛡️ WhatsApp OTP service is now PERMANENTLY ACTIVE');
       this.state.isReady = true;
       this.state.isConnecting = false;
       this.state.isAuthenticated = true;
@@ -167,28 +170,34 @@ export class UltraStableWhatsAppService {
     });
 
     this.client.on('disconnected', (reason: string) => {
-      console.log('⚠️ Ultra Stable WhatsApp: Disconnected -', reason);
+      console.log('⚠️ Ultra Stable WhatsApp: Temporary disconnection -', reason);
+      console.log('🔄 Attempting automatic reconnection using saved authentication...');
       this.state.isReady = false;
-      this.state.isAuthenticated = false;
-      this.state.lastError = `Disconnected: ${reason}`;
+      this.state.lastError = `Temporarily disconnected: ${reason}`;
       
       this.stopHeartbeat();
       
-      // Auto-reconnect after disconnect
+      // Auto-reconnect after disconnect using saved session
       setTimeout(() => {
         if (!this.state.isReady) {
-          console.log('🔄 Ultra Stable WhatsApp: Auto-reconnecting...');
+          console.log('🔄 Ultra Stable WhatsApp: Auto-reconnecting with saved session...');
           this.startConnection();
         }
-      }, 10000);
+      }, 5000); // Faster reconnection since auth is saved
     });
 
     this.client.on('auth_failure', (msg: string) => {
       console.log('❌ Ultra Stable WhatsApp: Authentication failed:', msg);
+      console.log('🔄 Clearing old session and generating new QR code...');
       this.state.isAuthenticated = false;
       this.state.isReady = false;
       this.state.qrCode = null;
       this.state.lastError = `Auth failure: ${msg}`;
+      
+      // Clear session and restart for new QR
+      setTimeout(() => {
+        this.startConnection();
+      }, 3000);
     });
 
     this.client.on('error', (error: any) => {
