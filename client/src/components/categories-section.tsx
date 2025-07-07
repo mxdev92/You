@@ -5,10 +5,12 @@ import type { Category } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/hooks/use-translation";
 import { getCategoryTranslationKey } from "@/lib/category-mapping";
+import { useEffect, useRef } from "react";
 
 export default function CategoriesSection() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const hasInitialized = useRef(false);
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
@@ -66,6 +68,25 @@ export default function CategoriesSection() {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     },
   });
+
+  // Auto-select خضروات (Vegetables) category on app startup
+  useEffect(() => {
+    if (!hasInitialized.current && categories && categories.length > 0) {
+      hasInitialized.current = true;
+      
+      // Check if any category is already selected
+      const hasSelectedCategory = categories.some(cat => cat.isSelected);
+      
+      // If no category is selected, auto-select خضروات (Vegetables - ID: 2)
+      if (!hasSelectedCategory) {
+        const vegetablesCategory = categories.find(cat => cat.id === 2);
+        if (vegetablesCategory) {
+          console.log('🥬 Auto-selecting خضروات (Vegetables) category on startup');
+          selectCategoryMutation.mutate(2);
+        }
+      }
+    }
+  }, [categories, selectCategoryMutation]);
 
   const handleCategorySelect = (categoryId: number) => {
     selectCategoryMutation.mutate(categoryId);

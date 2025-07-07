@@ -229,6 +229,9 @@ July 6, 2025:
 ✓ Updated backend phone formatting to handle 07XXXXXXXXX format correctly for WhatsApp delivery
 ✓ Button validation now requires complete 11-digit number starting with 07 before allowing OTP send
 ✓ CONFIRMED: WhatsApp OTP delivery working successfully to customer phones (+7 757250444)
+✓ DEFAULT CATEGORY: Set خضروات (Vegetables) as default category on app startup
+✓ Auto-selection logic ensures Vegetables category is always selected when no category is chosen
+✓ Improved UX by showing relevant products immediately instead of empty state
 
 July 5, 2025:
 ✓ FIXED: Image upload file size limit issue causing intermittent failures
