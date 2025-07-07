@@ -656,32 +656,25 @@ const AuthPage: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center border border-gray-300 rounded-xl focus-within:border-gray-400 h-12">
-                          <div className="flex items-center px-3 text-gray-800 border-r border-gray-300">
-                            <span className="text-lg font-normal" style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '18px', lineHeight: '1' }}>+964</span>
-                          </div>
-                          <div className="flex items-center pl-3 text-gray-800">
-                            <span className="text-lg font-normal" style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '18px', lineHeight: '1' }}>7</span>
-                          </div>
-                          <Input
-                            type="tel"
-                            placeholder="000000000"
-                            value={signupData.phone.startsWith('7') ? signupData.phone.substring(1) : signupData.phone}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '');
-                              if (value.length <= 9) {
-                                setSignupData(prev => ({ ...prev, phone: '7' + value }));
-                              }
-                            }}
-                            className="flex-1 h-full text-left border-0 focus:ring-0 focus:outline-none bg-transparent pl-0 text-gray-800"
-                            style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '18px', lineHeight: '1', fontWeight: 'normal' }}
-                            maxLength={9}
-                          />
-                        </div>
+                        <Input
+                          type="tel"
+                          placeholder="07000000000"
+                          value={signupData.phone}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 11 && (value.startsWith('07') || value === '' || value === '0')) {
+                              setSignupData(prev => ({ ...prev, phone: value }));
+                            }
+                          }}
+                          className="w-full h-12 text-center text-lg border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                          style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '18px', lineHeight: '1', fontWeight: 'normal' }}
+                          maxLength={11}
+                          dir="ltr"
+                        />
                         {!otpSent ? (
                           <Button
                             onClick={sendOTP}
-                            disabled={!signupData.phone.trim() || isLoading}
+                            disabled={signupData.phone.length !== 11 || !signupData.phone.startsWith('07') || isLoading}
                             className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl transition-all duration-300"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                           >
