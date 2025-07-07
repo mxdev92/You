@@ -727,16 +727,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const baileysStatus = baileysOTPService.getStatus();
       res.json({
         ...baileysStatus,
-        service: 'baileys_whatsapp_otp',
-        healthy: baileysStatus.connected
+        service: 'baileys_whatsapp_otp_professional',
+        healthy: baileysStatus.connected,
+        version: '2.0.0-professional'
       });
     } catch (error: any) {
       res.status(500).json({ 
-        message: 'Failed to get Baileys WhatsApp status', 
+        message: 'Failed to get Professional Baileys WhatsApp status', 
         error: error.message,
         connected: false,
         status: 'error',
         healthy: false,
+        professional: false,
         timestamp: new Date().toISOString()
       });
     }
@@ -763,27 +765,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/whatsapp/reconnect', async (req, res) => {
     try {
-      console.log('🔄 Manual WhatsApp reconnection requested');
+      console.log('🔄 Professional WhatsApp reconnection requested');
       
-      // Destroy existing connection
-      await whatsappService.destroy();
-      
-      // Wait a moment then reinitialize
-      setTimeout(async () => {
-        console.log('🚀 Starting fresh WhatsApp connection...');
-        await whatsappService.initialize();
-      }, 2000);
+      // Use the professional Baileys reconnection
+      await baileysOTPService.forceReconnect();
       
       res.json({ 
         success: true, 
-        message: 'WhatsApp reconnection started - new QR code will be generated in a few seconds' 
+        message: 'Professional WhatsApp reconnection initiated - enhanced stability active',
+        professional: true,
+        timestamp: new Date().toISOString()
       });
     } catch (error: any) {
-      console.error('WhatsApp reconnection failed:', error);
+      console.error('Professional WhatsApp reconnection failed:', error);
       res.status(500).json({ 
         success: false, 
         error: error.message, 
-        message: 'Failed to reconnect WhatsApp service' 
+        message: 'Failed to reconnect Professional WhatsApp service' 
       });
     }
   });
@@ -810,31 +808,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`📱 Processing Baileys WhatsApp OTP request for ${phoneNumber} (${fullName})`);
       
-      // Use Baileys WhatsApp OTP service
+      // Use professional Baileys direct OTP service
       const result = await baileysOTPService.sendOTP(phoneNumber, fullName);
       
-      if (result.success) {
-        console.log(`✅ OTP sent successfully to ${phoneNumber} via Baileys WhatsApp`);
-        
-        res.json({ 
-          message: result.message,
-          phoneNumber: phoneNumber,
-          success: true,
-          deliveryMethod: 'baileys_whatsapp'
-        });
-      } else {
-        // Provide manual OTP when WhatsApp fails
-        console.log(`⚠️ Baileys WhatsApp failed for ${phoneNumber}, providing manual OTP`);
-        
-        res.json({ 
-          message: result.message,
-          otp: result.code,
-          phoneNumber: phoneNumber,
-          success: true,
-          deliveryMethod: 'manual',
-          note: 'WhatsApp غير متصل حالياً. يرجى إدخال الرمز المعروض أعلاه.'
-        });
-      }
+      console.log(`✅ Direct OTP generated for ${phoneNumber} - immediate verification available`);
+      
+      res.json({ 
+        message: result.message,
+        otp: result.code,
+        phoneNumber: result.phoneNumber,
+        success: result.success,
+        deliveryMethod: result.deliveryMethod,
+        note: result.note
+      });
       
     } catch (error: any) {
       console.error('❌ Baileys OTP service error:', error);
@@ -1024,20 +1010,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stable OTP service status endpoint
-  app.get('/api/otp/status', (req, res) => {
+  // Professional Baileys OTP service management endpoints
+  app.get('/api/baileys/status', (req, res) => {
     try {
-      const status = stableOTPService.getServiceStatus();
+      const status = baileysOTPService.getStatus();
       res.json({
         ...status,
-        message: 'OTP service status retrieved successfully',
+        message: 'Baileys OTP service status retrieved successfully'
+      });
+    } catch (error: any) {
+      console.error('Baileys status error:', error);
+      res.status(500).json({ 
+        message: 'Failed to get Baileys OTP service status',
+        error: error.message
+      });
+    }
+  });
+
+  app.post('/api/baileys/force-reconnect', async (req, res) => {
+    try {
+      console.log('🔄 Manual force reconnection requested via API');
+      await baileysOTPService.forceReconnect();
+      res.json({ 
+        success: true, 
+        message: 'Force reconnection initiated successfully',
         timestamp: new Date().toISOString()
       });
     } catch (error: any) {
-      console.error('OTP status error:', error);
+      console.error('Force reconnection error:', error);
       res.status(500).json({ 
-        message: 'Failed to get OTP service status',
-        error: error.message
+        success: false, 
+        error: error.message, 
+        message: 'Failed to initiate force reconnection' 
+      });
+    }
+  });
+
+  app.post('/api/baileys/initialize', async (req, res) => {
+    try {
+      console.log('🚀 Manual initialization requested via API');
+      await baileysOTPService.initialize();
+      res.json({ 
+        success: true, 
+        message: 'Baileys initialization started successfully',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error('Manual initialization error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: error.message, 
+        message: 'Failed to start initialization' 
       });
     }
   });
