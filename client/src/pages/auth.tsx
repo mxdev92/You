@@ -350,7 +350,47 @@ const AuthPage: React.FC = () => {
     }
   };
 
-  const handleSignupNext = () => {
+  // Check email availability
+  const checkEmailAvailability = async (email: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to check email');
+      
+      const { exists } = await response.json();
+      return !exists; // Return true if available (not exists)
+    } catch (error) {
+      console.error('Email check error:', error);
+      return false;
+    }
+  };
+
+  // Check phone availability
+  const checkPhoneAvailability = async (phone: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/check-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to check phone');
+      
+      const { exists } = await response.json();
+      return !exists; // Return true if available (not exists)
+    } catch (error) {
+      console.error('Phone check error:', error);
+      return false;
+    }
+  };
+
+  const handleSignupNext = async () => {
     const step = signupStep;
     
     if (step === 1) {
@@ -370,6 +410,16 @@ const AuthPage: React.FC = () => {
         showNotification('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
         return;
       }
+      
+      // STRICT VALIDATION: Check email uniqueness
+      setIsLoading(true);
+      const emailAvailable = await checkEmailAvailability(signupData.email);
+      setIsLoading(false);
+      
+      if (!emailAvailable) {
+        showNotification('هذا البريد الإلكتروني مستخدم من قبل، يرجى استخدام بريد آخر');
+        return;
+      }
     }
     if (step === 2) {
       // Step 2 is WhatsApp verification - handled separately
@@ -378,6 +428,20 @@ const AuthPage: React.FC = () => {
     if (step === 3) {
       if (!signupData.name.trim()) {
         showNotification('يرجى إدخال الاسم الكامل');
+        return;
+      }
+      if (!signupData.phone.trim()) {
+        showNotification('يرجى إدخال رقم الواتساب');
+        return;
+      }
+      
+      // STRICT VALIDATION: Check phone uniqueness
+      setIsLoading(true);
+      const phoneAvailable = await checkPhoneAvailability(signupData.phone);
+      setIsLoading(false);
+      
+      if (!phoneAvailable) {
+        showNotification('رقم الواتساب هذا مستخدم من قبل، يرجى استخدام رقم آخر');
         return;
       }
     }
@@ -828,20 +892,22 @@ const AuthPage: React.FC = () => {
                   {signupStep === 1 ? (
                     <Button
                       onClick={handleSignupNext}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
+                      disabled={isLoading}
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg disabled:opacity-50"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
-                      التالي
+                      {isLoading ? 'جاري التحقق...' : 'التالي'}
                     </Button>
                   ) : signupStep === 2 ? (
                     null // Step 2 has its own buttons for OTP
                   ) : signupStep === 3 ? (
                     <Button
                       onClick={handleSignupNext}
-                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
+                      disabled={isLoading}
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg disabled:opacity-50"
                       style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
-                      التالي
+                      {isLoading ? 'جاري التحقق...' : 'التالي'}
                     </Button>
                   ) : (
                     <Button

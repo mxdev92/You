@@ -438,20 +438,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Authentication routes
+  // Check email availability endpoint
+  app.post('/api/auth/check-email', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+
+      const emailExists = await storage.checkEmailExists(email);
+      res.json({ exists: emailExists });
+    } catch (error: any) {
+      console.error('Email check error:', error);
+      res.status(500).json({ message: 'Failed to check email availability' });
+    }
+  });
+
+  // Check phone availability endpoint
+  app.post('/api/auth/check-phone', async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ message: 'Phone number is required' });
+      }
+
+      const phoneExists = await storage.checkPhoneExists(phone);
+      res.json({ exists: phoneExists });
+    } catch (error: any) {
+      console.error('Phone check error:', error);
+      res.status(500).json({ message: 'Failed to check phone availability' });
+    }
+  });
+
+  // Authentication routes - STRICT VALIDATION: Account only created after completing ALL steps
   app.post('/api/auth/signup', async (req, res) => {
     try {
       const { email, password, fullName, phone } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+      if (!email || !password || !fullName || !phone) {
+        return res.status(400).json({ message: 'All fields are required: email, password, fullName, phone' });
+      }
+
+      // STRICT VALIDATION: Check email uniqueness
+      const emailExists = await storage.checkEmailExists(email);
+      if (emailExists) {
+        return res.status(409).json({ message: 'هذا البريد الإلكتروني مستخدم من قبل، يرجى استخدام بريد آخر' });
+      }
+
+      // STRICT VALIDATION: Check phone uniqueness  
+      const phoneExists = await storage.checkPhoneExists(phone);
+      if (phoneExists) {
+        return res.status(409).json({ message: 'رقم الواتساب هذا مستخدم من قبل، يرجى استخدام رقم آخر' });
       }
 
       const user = await storage.createUser({ 
         email, 
         passwordHash: password, 
-        fullName: fullName || null,
-        phone: phone || null
+        fullName,
+        phone
       });
       
       // Set session after successful signup
