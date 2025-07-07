@@ -345,26 +345,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Generate PDF invoice once for both customer and admin
           const pdfBuffer = await generateInvoicePDF(order);
           
-          // 1. Send customer confirmation
-          await whatsappService.sendCustomerInvoice(
+          // 1. Send customer confirmation with PDF
+          await whatsappService.sendOrderInvoice(
             order.customerPhone, 
-            order.customerName, 
-            order, 
-            pdfBuffer
+            pdfBuffer,
+            order
           );
 
-          // 2. Send admin copy to fixed admin WhatsApp (07710155333)
-          await whatsappService.sendInvoiceToAdmin(order, pdfBuffer);
+          // 2. Send admin notification to fixed admin WhatsApp (07710155333)
+          const orderData = {
+            orderId: order.id,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            address: order.address?.fullAddress || 'لم يتم تحديد العنوان',
+            total: order.totalAmount,
+            itemCount: order.items.length
+          };
+          await whatsappService.sendAdminNotification(orderData, pdfBuffer);
 
-          // 3. Send store preparation alert (using demo store phone)
-          const storePhone = '07701234567'; // Replace with actual store phone
-          await whatsappService.sendStorePreparationAlert(storePhone, order);
-
-          // 4. Send driver notification (using demo driver phone)
-          const driverPhone = '07709876543'; // Replace with actual driver phone
-          await whatsappService.sendDriverNotification(driverPhone, order);
-
-          console.log(`📱 WhatsApp notifications sent for order #${order.id} (customer + admin copy)`);
+          console.log(`📱 WhatsApp notifications sent for order #${order.id}: customer + admin (07710155333)`);
         } catch (whatsappError) {
           console.error('WhatsApp notification failed (order created successfully):', whatsappError);
         }
@@ -885,6 +884,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('WhatsApp status update error:', error);
       res.status(500).json({ message: 'Failed to send status update via WhatsApp' });
+    }
+  });
+
+  // Admin notification testing endpoint
+  app.post('/api/admin/test-notification', async (req, res) => {
+    try {
+      const { orderData } = req.body;
+      
+      if (!orderData) {
+        return res.status(400).json({ message: 'Order data is required for testing' });
+      }
+
+      // Generate a mock PDF for testing
+      const mockOrder = {
+        id: orderData.orderId,
+        customerName: orderData.customerName,
+        customerPhone: orderData.customerPhone,
+        customerEmail: 'test@example.com',
+        address: { fullAddress: orderData.address },
+        items: [
+          { name: 'خبز عربي', quantity: 2, price: 1500 },
+          { name: 'حليب طازج', quantity: 1, price: 3500 },
+          { name: 'جبن أبيض', quantity: 1, price: 5000 }
+        ],
+        totalAmount: orderData.total,
+        orderDate: new Date(),
+        status: 'pending'
+      };
+
+      // Generate PDF for testing
+      const pdfBuffer = await generateInvoicePDF(mockOrder);
+      
+      // Send admin notification
+      const success = await whatsappService.sendAdminNotification(orderData, pdfBuffer);
+      
+      if (success) {
+        res.json({ 
+          message: 'Admin notification sent successfully to 07710155333',
+          orderId: orderData.orderId 
+        });
+      } else {
+        res.status(500).json({ message: 'Failed to send admin notification' });
+      }
+    } catch (error: any) {
+      console.error('Admin test notification error:', error);
+      res.status(500).json({ message: 'Failed to send admin test notification' });
     }
   });
 

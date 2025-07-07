@@ -214,6 +214,55 @@ export class BaileysWhatsAppService {
     }
   }
 
+  async sendAdminNotification(orderData: any, pdfBuffer: Buffer): Promise<boolean> {
+    if (!this.isConnected || !this.socket) {
+      console.log('⚠️ WhatsApp not connected, cannot send admin notification');
+      return false;
+    }
+
+    try {
+      // Fixed admin number: 07710155333
+      const adminNumber = this.formatPhoneNumber('07710155333');
+      console.log(`📱 Sending admin notification to ${adminNumber}`);
+      
+      // Prepare PDF media
+      const media = await prepareWAMessageMedia({
+        document: pdfBuffer,
+        mimetype: 'application/pdf',
+        fileName: `PAKETY-Admin-Invoice-${orderData.orderId}.pdf`
+      }, { upload: this.socket.waUploadToServer });
+
+      // Send admin notification message
+      const message = `🔔 طلب جديد في PAKETY!
+
+📋 رقم الطلب: ${orderData.orderId}
+👤 اسم العميل: ${orderData.customerName}
+📱 رقم العميل: ${orderData.customerPhone}
+📍 عنوان التوصيل: ${orderData.address}
+💰 المبلغ الإجمالي: ${orderData.total.toLocaleString()} د.ع
+🛒 عدد الأصناف: ${orderData.itemCount}
+
+⚡ يرجى تحضير الطلب والتوصيل في أسرع وقت`;
+
+      // Send text message first
+      await this.socket.sendMessage(adminNumber, { text: message });
+      
+      // Send PDF invoice to admin
+      await this.socket.sendMessage(adminNumber, {
+        document: media.document,
+        caption: `📊 فاتورة إدارية - طلب رقم ${orderData.orderId}`,
+        fileName: `PAKETY-Admin-Invoice-${orderData.orderId}.pdf`,
+        mimetype: 'application/pdf'
+      });
+      
+      console.log('✅ Admin notification and PDF sent successfully to 07710155333');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to send admin notification:', error);
+      return false;
+    }
+  }
+
   verifyOTP(phoneNumber: string, inputOTP: string): { valid: boolean; message: string } {
     const session = this.otpSessions.get(phoneNumber);
     
