@@ -244,8 +244,8 @@ const AuthPage: React.FC = () => {
   };
 
   const verifyOTP = async () => {
-    if (otpCode.length !== 6) {
-      showNotification('يرجى إدخال رمز التحقق مكون من 6 أرقام');
+    if (otpCode.length !== 4) {
+      showNotification('يرجى إدخال رمز التحقق مكون من 4 أرقام');
       return;
     }
 
@@ -704,16 +704,16 @@ const AuthPage: React.FC = () => {
                           <div className="space-y-3">
                             <Input
                               type="text"
-                              placeholder="ادخل رمز التأكيد (6 أرقام)"
+                              placeholder="ادخل رمز التأكيد (4 أرقام)"
                               value={otpCode}
                               onChange={(e) => setOtpCode(e.target.value)}
                               className="w-full h-12 text-center text-lg border-gray-300 focus:border-green-400 focus:ring-0 rounded-xl tracking-wider"
                               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                              maxLength={6}
+                              maxLength={4}
                             />
                             <Button
                               onClick={verifyOTP}
-                              disabled={otpCode.length !== 6 || isLoading}
+                              disabled={otpCode.length !== 4 || isLoading}
                               className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl transition-all duration-300"
                               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             >

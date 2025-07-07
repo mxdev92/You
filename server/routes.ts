@@ -818,8 +818,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('❌ OTP service error:', error);
       
-      // Generate guaranteed emergency OTP
-      const emergencyOTP = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate guaranteed emergency OTP (4 digits)
+      const emergencyOTP = Math.floor(1000 + Math.random() * 9000).toString();
       console.log(`🚨 EMERGENCY OTP for ${phoneNumber}: ${emergencyOTP}`);
       
       // Store emergency OTP in service for verification
