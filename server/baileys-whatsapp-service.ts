@@ -31,7 +31,7 @@ export class BaileysWhatsAppService {
   private readonly OTP_EXPIRY_MINUTES = 10;
   private readonly authPath = './whatsapp_session';
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 10;
+  private maxReconnectAttempts: number = 50; // Increase max attempts for better persistence
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private lastHeartbeat: number = 0;
 
@@ -90,11 +90,13 @@ export class BaileysWhatsAppService {
         markOnlineOnConnect: true,
         defaultQueryTimeoutMs: 60000, // Increase timeout to 60 seconds
         connectTimeoutMs: 60000, // Increase connection timeout
-        keepAliveIntervalMs: 30000, // Send keep-alive every 30 seconds
-        retryRequestDelayMs: 250, // Retry delay
-        maxMsgRetryCount: 5, // Max message retries
-        qrTimeout: 60000, // QR timeout
+        keepAliveIntervalMs: 25000, // Send keep-alive every 25 seconds
+        retryRequestDelayMs: 1000, // Increase retry delay
+        maxMsgRetryCount: 3, // Reduce retries to prevent timeout
+        qrTimeout: 120000, // Increase QR timeout to 2 minutes
         browser: ['PAKETY', 'Desktop', '3.0'], // Stable browser info
+        fireInitQueries: false, // Disable initial queries that can cause timeouts
+        emitOwnEvents: false, // Disable own events to reduce load
         getMessage: async (key) => {
           return {
             conversation: 'Baileys message placeholder'
@@ -118,6 +120,8 @@ export class BaileysWhatsAppService {
 
         if (connection === 'close') {
           const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+          
+          // Handle 440 timeout errors more gracefully - these are often temporary
           const shouldReconnect = statusCode !== DisconnectReason.loggedOut && 
                                  statusCode !== DisconnectReason.badSession;
           
@@ -127,14 +131,17 @@ export class BaileysWhatsAppService {
           this.isConnecting = false;
           this.stopHeartbeat(); // Stop heartbeat when disconnected
           
-          if (shouldReconnect) {
-            // Use exponential backoff for reconnection
-            const delay = Math.min(30000, Math.max(3000, (this.reconnectAttempts || 0) * 2000));
-            console.log(`⏳ Reconnecting in ${delay/1000} seconds...`);
-            this.reconnectAttempts = (this.reconnectAttempts || 0) + 1;
+          if (shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+            // For 440 timeout errors, use shorter delays since they're often temporary
+            const isTimeoutError = statusCode === 440;
+            const baseDelay = isTimeoutError ? 1000 : 3000;
+            const delay = Math.min(30000, Math.max(baseDelay, this.reconnectAttempts * baseDelay));
+            
+            console.log(`⏳ Reconnecting in ${delay/1000} seconds... (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+            this.reconnectAttempts = this.reconnectAttempts + 1;
             setTimeout(() => this.initialize(), delay);
           } else {
-            console.log('🚫 Not reconnecting due to logout or bad session');
+            console.log('🚫 Not reconnecting - max attempts reached or logout/bad session');
             this.reconnectAttempts = 0;
           }
         } else if (connection === 'open') {
@@ -354,6 +361,8 @@ export class BaileysWhatsAppService {
   async resetSession(): Promise<void> {
     console.log('🔄 Resetting Baileys WhatsApp session...');
     
+    this.stopHeartbeat(); // Stop heartbeat before reset
+    
     try {
       if (this.socket) {
         await this.socket.logout();
@@ -377,6 +386,7 @@ export class BaileysWhatsAppService {
     this.isConnecting = false;
     this.qrCode = null;
     this.otpSessions.clear();
+    this.reconnectAttempts = 0; // Reset reconnect attempts
 
     console.log('✅ Session reset complete');
   }
@@ -399,16 +409,17 @@ export class BaileysWhatsAppService {
     this.heartbeatInterval = setInterval(() => {
       if (this.isConnected && this.socket) {
         this.lastHeartbeat = Date.now();
-        // Send a lightweight ping to keep connection alive
+        // Send a very lightweight ping to keep connection alive
         try {
           this.socket.sendPresenceUpdate('available');
         } catch (error) {
           console.log('⚠️ Heartbeat failed, connection may be lost');
+          // Don't force disconnect here, let Baileys handle it
         }
       }
-    }, 30000); // Heartbeat every 30 seconds
+    }, 60000); // Heartbeat every 60 seconds (less frequent to avoid timeouts)
     
-    console.log('💓 Heartbeat monitoring started');
+    console.log('💓 Heartbeat monitoring started (60s intervals)');
   }
 
   private stopHeartbeat(): void {
