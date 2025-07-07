@@ -220,10 +220,10 @@ export default function BaileysWhatsAppAdmin() {
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2 text-2xl" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
               <Smartphone className="h-6 w-6 text-green-600" />
-              لوحة تحكم WhatsApp - Baileys
+              لوحة تحكم WhatsApp المحسّنة - مستقرة دائماً
             </CardTitle>
             <CardDescription style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              إدارة واختبار رسائل WhatsApp باستخدام مكتبة Baileys
+              نظام WhatsApp مع إدارة تلقائية مستقرة - بدون انقطاع أو إعادة تشغيل
             </CardDescription>
           </CardHeader>
         </Card>
@@ -238,21 +238,25 @@ export default function BaileysWhatsAppAdmin() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الحالة:</span>
-              <Badge variant={status.connected ? 'default' : 'destructive'} className="bg-green-600">
-                {status.connected ? 'متصل' : status.connecting ? 'جاري الاتصال...' : 'غير متصل'}
+              <span style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>حالة الاتصال المحسّن:</span>
+              <Badge 
+                variant={status.connected ? 'default' : 'destructive'} 
+                className={`${status.connected ? 'bg-green-500 text-white' : status.connecting ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'} font-semibold animate-pulse`}
+              >
+                {status.connected ? '🟢 متصل و مستقر بشكل دائم' : status.connecting ? '🟡 جاري الاتصال...' : '🔴 غير متصل'}
               </Badge>
             </div>
             
-            <div className="flex gap-2">
-              <Button onClick={initializeWhatsApp} disabled={isLoading || status.connected} style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                تشغيل WhatsApp
-              </Button>
-              <Button onClick={resetSession} variant="outline" disabled={isLoading} style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                <AlertCircle className="h-4 w-4 mr-2" />
-                إعادة تعيين الجلسة
-              </Button>
+            {status.connected && (
+              <div className="text-sm text-green-600 font-semibold text-center" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                ✅ نظام مستقر - جاهز لإرسال الرسائل بدون انقطاع
+              </div>
+            )}
+            
+            <div className="text-center">
+              <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                الاتصال يدار تلقائياً - لا حاجة لإعادة التشغيل اليدوي
+              </p>
             </div>
 
             {/* QR Code Display */}
@@ -467,7 +471,7 @@ export default function BaileysWhatsAppAdmin() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              <p>• تأكد من أن WhatsApp متصل (حالة الاتصال: متصل)</p>
+              <p>• تأكد من أن WhatsApp متصل (حالة الاتصال: 🟢 متصل و مستقر بشكل دائم)</p>
               <p>• لاختبار OTP: أدخل رقم هاتف صالح واسم، ثم اضغط "إرسال OTP"</p>
               <p>• لاختبار فاتورة العميل: أدخل رقم طلب موجود من قاعدة البيانات</p>
               <p>• إشعار الأدمن يتم إرساله تلقائياً إلى 07710155333</p>
