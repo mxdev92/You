@@ -1,3 +1,3 @@
-2025/07/07-02:50:22.975 bbd Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-pakety-simple/Default/shared_proto_db/MANIFEST-000001
-2025/07/07-02:50:22.975 bbd Recovering log #3
-2025/07/07-02:50:22.976 bbd Reusing old log /home/runner/workspace/whatsapp_session/session-pakety-simple/Default/shared_proto_db/000003.log 
+2025/07/07-02:55:35.685 e80 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-pakety-simple/Default/shared_proto_db/MANIFEST-000001
+2025/07/07-02:55:35.686 e80 Recovering log #3
+2025/07/07-02:55:35.686 e80 Reusing old log /home/runner/workspace/whatsapp_session/session-pakety-simple/Default/shared_proto_db/000003.log 

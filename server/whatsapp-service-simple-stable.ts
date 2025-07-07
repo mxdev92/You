@@ -135,6 +135,7 @@ export class SimpleStableWhatsAppService {
       console.log('🎉 WhatsApp Service: Client ready - WhatsApp mode active');
       this.state.isReady = true;
       this.state.isConnecting = false;
+      this.state.isAuthenticated = true;
       this.state.mode = 'whatsapp';
       this.state.lastError = null;
     });
@@ -217,23 +218,13 @@ export class SimpleStableWhatsAppService {
         return otp;
         
       } catch (error: any) {
-        console.log(`⚠️ WhatsApp Service: WhatsApp delivery failed:`, error.message);
-        this.state.mode = 'console';
+        console.log(`❌ WhatsApp Service: WhatsApp delivery failed:`, error.message);
+        throw new Error(`WhatsApp delivery failed: ${error.message}`);
       }
     }
 
-    // Console mode - always reliable
-    console.log('');
-    console.log('════════════════════════════════════════');
-    console.log(`📱 OTP للمستخدم: ${phoneNumber}`);
-    console.log(`👤 الاسم: ${fullName}`);
-    console.log(`🔑 رمز التحقق: ${otp}`);
-    console.log(`⏰ صالح لمدة: ${this.OTP_EXPIRY_MINUTES} دقائق`);
-    console.log(`📅 الوقت: ${new Date().toLocaleString('ar-IQ')}`);
-    console.log('════════════════════════════════════════');
-    console.log('');
-    
-    return otp;
+    // If WhatsApp not connected, throw error - no fallback display
+    throw new Error('WhatsApp service not connected. Please connect WhatsApp to send OTP.');
   }
 
   verifyOTP(phoneNumber: string, enteredOTP: string): boolean {

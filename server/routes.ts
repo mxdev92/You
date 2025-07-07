@@ -778,50 +778,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const otp = await whatsappService.sendSignupOTP(phoneNumber, fullName);
       const status = whatsappService.getStatus();
       
-      console.log(`✅ OTP ${otp} generated for ${phoneNumber}`);
+      console.log(`✅ OTP sent successfully to ${phoneNumber} via WhatsApp`);
       
-      if (status.mode === 'whatsapp' && status.isReady) {
-        // WhatsApp delivery successful
-        res.json({ 
-          message: 'تم إرسال رمز التحقق عبر WhatsApp بنجاح', 
-          otp: otp,
-          phoneNumber: phoneNumber,
-          success: true,
-          deliveryMethod: 'whatsapp'
-        });
-      } else {
-        // Console mode - OTP displayed in server logs
-        res.json({ 
-          message: 'تم إنشاء رمز التحقق - تحقق من WhatsApp أو استخدم الرمز المعروض في الخادم', 
-          otp: otp,
-          phoneNumber: phoneNumber,
-          success: true,
-          deliveryMethod: 'console',
-          note: 'WhatsApp غير متصل. استخدم رمز التحقق المعروض في سجلات الخادم.'
-        });
-      }
+      // Only respond with success if WhatsApp delivery was successful
+      res.json({ 
+        message: 'تم إرسال رمز التحقق عبر WhatsApp بنجاح - تحقق من رسائل WhatsApp الخاصة بك', 
+        phoneNumber: phoneNumber,
+        success: true,
+        deliveryMethod: 'whatsapp'
+      });
+      
     } catch (error: any) {
       console.error('❌ WhatsApp OTP error:', error);
       
-      // Final emergency fallback
-      const emergencyOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log('');
-      console.log('════════════════════════════════════════');
-      console.log(`🚨 EMERGENCY OTP للمستخدم: ${phoneNumber}`);
-      console.log(`🔑 رمز التحقق الطارئ: ${emergencyOtp}`);
-      console.log(`⏰ صالح لمدة: 10 دقائق`);
-      console.log('════════════════════════════════════════');
-      console.log('');
-      
-      whatsappService.storeOTPForVerification(phoneNumber, emergencyOtp);
-      
-      res.json({ 
-        message: 'تم إنشاء رمز التحقق الطارئ - راجع سجلات الخادم', 
-        otp: emergencyOtp,
-        phoneNumber: phoneNumber,
-        success: true,
-        deliveryMethod: 'emergency',
-        note: 'خطأ في الخدمة. استخدم رمز التحقق الطارئ من سجلات الخادم.'
+      // Return error - no fallback, OTP must only go to WhatsApp
+      res.status(500).json({ 
+        message: 'فشل في إرسال رمز التحقق عبر WhatsApp. تأكد من اتصال WhatsApp وحاول مرة أخرى.', 
+        error: 'WhatsApp service unavailable',
+        success: false,
+        phoneNumber: phoneNumber
       });
     }
   });
