@@ -233,6 +233,7 @@ export class BaileysWhatsAppService {
       console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${otp}`);
       return {
         success: true,
+        otp: otp,
         message: `OTP generated successfully for ${phoneNumber}`
       };
     }
@@ -280,6 +281,7 @@ export class BaileysWhatsAppService {
       console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${otp}`);
       return {
         success: true,
+        otp: otp,
         message: `OTP generated successfully for ${phoneNumber}`
       };
     }
