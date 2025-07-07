@@ -456,8 +456,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addToCart(item: InsertCartItem): Promise<CartItem> {
+    // Check if item already exists in cart
+    const [existingItem] = await db.select().from(cartItems)
+      .where(eq(cartItems.productId, item.productId));
+
+    if (existingItem) {
+      // Update quantity of existing item
+      const newQuantity = existingItem.quantity + (item.quantity || 1);
+      const [updatedItem] = await db.update(cartItems)
+        .set({ quantity: newQuantity })
+        .where(eq(cartItems.id, existingItem.id))
+        .returning();
+      return updatedItem;
+    }
+
+    // Create new cart item if it doesn't exist
     const [newItem] = await db.insert(cartItems).values({
       ...item,
+      quantity: item.quantity || 1,
       addedAt: new Date().toISOString()
     }).returning();
     return newItem;

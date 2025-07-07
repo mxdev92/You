@@ -229,6 +229,10 @@ July 6, 2025:
 ✓ Updated OTP generation to produce 4-digit codes instead of 6-digit codes
 ✓ Fixed validation logic to require exactly 4 digits for OTP verification
 ✓ Emergency OTP fallback system also generates 4-digit codes for consistency
+✓ CART FIX: Fixed duplicate item issue - now properly merges items instead of creating duplicates
+✓ When user adds same product multiple times, quantity increases rather than creating duplicate entries
+✓ Updated DatabaseStorage addToCart method to check for existing items and merge quantities
+✓ Cart now displays single item per product with correct total quantity (e.g., "2 kg" instead of two separate entries)
 ✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
 ✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
 ✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)
