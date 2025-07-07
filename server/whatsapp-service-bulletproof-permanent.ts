@@ -31,6 +31,29 @@ class BulletproofPermanentWhatsAppService {
   private MAX_RETRY_ATTEMPTS = 10;
   private HEARTBEAT_INTERVAL = 30000; // 30 seconds
 
+  private forceReconnect(): void {
+    console.log('🔄 Force reconnecting WhatsApp service...');
+    this.state.isConnecting = false;
+    this.state.isReady = false;
+    this.state.isAuthenticated = false;
+    this.state.connectionAttempts = 0;
+    
+    // Clean up existing client
+    if (this.client) {
+      try {
+        this.client.destroy();
+      } catch (error) {
+        console.log('Client cleanup error:', error);
+      }
+      this.client = null;
+    }
+    
+    // Start fresh initialization
+    setTimeout(() => {
+      this.initialize().catch(console.error);
+    }, 1000);
+  }
+
   constructor() {
     this.ensureSessionDirectory();
     // Auto-initialize with saved session
@@ -291,30 +314,17 @@ class BulletproofPermanentWhatsAppService {
       };
     }
     
-    // Check if WhatsApp service is ready - if not, provide fallback OTP
+    // Check if WhatsApp service is ready
     if (!this.state.isReady || !this.client) {
-      console.log('⚠️ WhatsApp service not ready, providing fallback OTP...');
+      console.log('⚠️ WhatsApp service not ready, attempting immediate reconnection...');
       
-      // Generate fallback OTP
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expires = Date.now() + 300000; // 5 minutes
-
-      // Store OTP for verification
-      this.otpStore.set(phoneNumber, { otp, expires });
-      
-      console.log(`🔄 FALLBACK OTP for ${phoneNumber}: ${otp}`);
-      console.log(`📱 WhatsApp not connected - User must enter this OTP: ${otp}`);
-      
-      // Try reconnection in background
-      if (!this.state.isConnecting) {
-        this.initialize().catch(console.error);
-      }
+      // Force immediate reconnection
+      this.forceReconnect();
       
       return {
-        success: true,
-        message: `✅ رمز التحقق: ${otp}\n\n⚠️ WhatsApp غير متصل حالياً - استخدم هذا الرمز للتحقق\n\n(صالح لمدة 5 دقائق)`,
-        phoneNumber,
-        otp // Include OTP in response for display
+        success: false,
+        message: "خدمة WhatsApp غير متصلة حالياً. يرجى المحاولة مرة أخرى خلال دقيقة.",
+        phoneNumber
       };
     }
 

@@ -1,2 +1,3 @@
-2025/07/07-04:47:41.735 19c7 Creating DB /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/Service Worker/Database since it was missing.
-2025/07/07-04:47:41.748 19c7 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/Service Worker/Database/MANIFEST-000001
+2025/07/07-04:47:55.008 1a7c Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/Service Worker/Database/MANIFEST-000001
+2025/07/07-04:47:55.008 1a7c Recovering log #3
+2025/07/07-04:47:55.008 1a7c Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/Service Worker/Database/000003.log 
