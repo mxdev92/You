@@ -13,7 +13,18 @@ export default function CategoriesSection() {
   
   const { data: categories, isLoading, error } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 30000, // Cache for 30 seconds
+    queryFn: async () => {
+      console.log('Fetching categories from API...');
+      const response = await fetch('/api/categories');
+      console.log('Categories response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch categories: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Categories data received:', data);
+      return data;
+    },
+    staleTime: 0, // Always fetch fresh
     retry: 3,
     retryDelay: 1000,
   });
@@ -23,11 +34,11 @@ export default function CategoriesSection() {
   
   // Force re-fetch if no categories and not loading
   useEffect(() => {
-    if (!isLoading && !categories && !error) {
-      console.log('Force refetching categories...');
-      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+    if (!isLoading && !categories) {
+      console.log('Force refetching categories because no data...');
+      queryClient.refetchQueries({ queryKey: ["/api/categories"] });
     }
-  }, [isLoading, categories, error, queryClient]);
+  }, [isLoading, categories, queryClient]);
   
   // If there's an error, show fallback
   if (error) {
