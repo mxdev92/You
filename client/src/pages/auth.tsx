@@ -766,10 +766,8 @@ const AuthPage: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-1 space-y-3">
-                {signupStep === 2 ? (
-                  <div></div>
-                ) : signupStep === 3 ? (
+              {signupStep === 3 && (
+                <div className="mt-1">
                   <Button
                     onClick={handleSignupNext}
                     className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
@@ -777,7 +775,10 @@ const AuthPage: React.FC = () => {
                   >
                     التالي
                   </Button>
-                ) : (
+                </div>
+              )}
+              {signupStep === 4 && (
+                <div className="mt-1">
                   <Button
                     onClick={handleSignupComplete}
                     disabled={isLoading}
@@ -786,8 +787,8 @@ const AuthPage: React.FC = () => {
                   >
                     {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </motion.div>
