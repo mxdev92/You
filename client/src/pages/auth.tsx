@@ -613,11 +613,11 @@ const AuthPage: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center border border-gray-300 rounded-xl focus-within:border-gray-400 h-12">
-                          <div className="flex items-center px-3 text-gray-600 border-r border-gray-300" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            <span className="text-sm font-medium">+964</span>
+                          <div className="flex items-center px-3 text-gray-700 border-r border-gray-300" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                            <span className="text-base font-medium">+964</span>
                           </div>
-                          <div className="flex items-center pl-3 text-gray-600">
-                            <span className="text-sm font-medium">7</span>
+                          <div className="flex items-center pl-3 text-gray-700">
+                            <span className="text-base font-medium">7</span>
                           </div>
                           <Input
                             type="tel"
@@ -629,7 +629,7 @@ const AuthPage: React.FC = () => {
                                 setSignupData(prev => ({ ...prev, phone: '7' + value }));
                               }
                             }}
-                            className="flex-1 h-full text-left text-sm border-0 focus:ring-0 focus:outline-none bg-transparent pl-0"
+                            className="flex-1 h-full text-left text-base border-0 focus:ring-0 focus:outline-none bg-transparent pl-0 text-gray-700"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                             maxLength={8}
                           />
