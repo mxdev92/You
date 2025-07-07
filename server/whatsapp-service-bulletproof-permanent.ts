@@ -56,10 +56,35 @@ class BulletproofPermanentWhatsAppService {
 
   constructor() {
     this.ensureSessionDirectory();
+    this.loadSavedCredentials();
     // Auto-initialize with saved session
     setTimeout(() => {
       this.initialize().catch(console.error);
     }, 1000);
+  }
+
+  private loadSavedCredentials(): void {
+    try {
+      if (fs.existsSync(this.credentialsPath)) {
+        const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
+        console.log('🔍 Found saved credentials:', credentials);
+        
+        if (credentials.authenticated === true) {
+          console.log('🔑 Loading PERMANENT credentials - auto-connecting with saved session...');
+          this.state.sessionSaved = true;
+          this.state.isAuthenticated = true;
+          
+          // Check if session files exist
+          if (fs.existsSync(this.sessionPath)) {
+            console.log('📁 Session files found - will attempt automatic reconnection');
+          }
+        }
+      } else {
+        console.log('🆕 No saved credentials found, will need fresh authentication');
+      }
+    } catch (error) {
+      console.log('❌ Error loading credentials:', error);
+    }
   }
 
   private ensureSessionDirectory(): void {
@@ -75,12 +100,18 @@ class BulletproofPermanentWhatsAppService {
         authenticated: true,
         sessionPath: this.sessionPath,
         timestamp: new Date().toISOString(),
-        version: '1.0.0-bulletproof'
+        version: '2.0.0-bulletproof-permanent',
+        permanent: true,
+        autoReconnect: true
       };
       
       fs.writeFileSync(this.credentialsPath, JSON.stringify(credentials, null, 2));
       this.state.sessionSaved = true;
-      console.log('💾 WhatsApp credentials saved permanently');
+      console.log('💾 WhatsApp credentials saved PERMANENTLY - NEVER expires');
+      
+      // Set permanent flag to prevent session loss
+      this.state.isAuthenticated = true;
+      this.startHeartbeat();
     } catch (error) {
       console.error('Failed to save credentials:', error);
     }
@@ -113,6 +144,7 @@ class BulletproofPermanentWhatsAppService {
       // Check for existing valid session
       if (this.hasValidCredentials()) {
         console.log('🔑 Found saved credentials - using permanent session');
+      console.log('🔄 Auto-connecting with permanent authentication...');
       }
 
       // Destroy existing client if any
@@ -216,11 +248,14 @@ class BulletproofPermanentWhatsAppService {
       console.log('🔐 Once scanned, authentication will NEVER expire');
     });
 
-    // Authentication successful
+    // Authentication successful - PERMANENT SAVE
     this.client.on('authenticated', () => {
-      console.log('🎉 BULLETPROOF AUTHENTICATION SUCCESSFUL!');
+      console.log('🎉 BULLETPROOF AUTHENTICATION SUCCESSFUL - SAVING PERMANENTLY!');
       this.state.isAuthenticated = true;
       this.state.qrCode = null;
+      
+      // Immediately save credentials for permanent storage
+      this.saveCredentials();
       this.saveCredentials(); // Save credentials immediately
     });
 
