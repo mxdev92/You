@@ -18,6 +18,8 @@ class BaileysOTPService {
   private otpStorage = new Map<string, { code: string; expires: Date; attempts: number }>();
   private sessionPath = './whatsapp_baileys_session';
   private saveCreds: any = null;
+  private currentQR: string | null = null;
+  private qrExpiry: number = 0;
 
   constructor() {
     // Ensure session directory exists with proper permissions
@@ -231,8 +233,10 @@ class BaileysOTPService {
         this.lastActivity = Date.now();
 
         if (qr) {
-          console.log('📱 WhatsApp session not authenticated - using fallback OTP mode');
-          // Don't show QR, just use fallback mode
+          console.log('📱 QR Code generated - scan with WhatsApp to connect');
+          console.log('📱 QR expires in 30 seconds, new QR will be generated automatically');
+          this.currentQR = qr;
+          this.qrExpiry = Date.now() + 30000; // 30 seconds
         }
 
         if (connection === 'connecting') {
@@ -485,6 +489,14 @@ class BaileysOTPService {
       timestamp: new Date().toISOString(),
       professional: true
     };
+  }
+
+  // Get current QR code for scanning
+  getQRCode(): string | null {
+    if (this.currentQR && this.qrExpiry > Date.now()) {
+      return this.currentQR;
+    }
+    return null;
   }
 
   // Check if WhatsApp number exists
