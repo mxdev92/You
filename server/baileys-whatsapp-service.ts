@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import QRCode from 'qrcode';
 import { WhatsAppQueueManager } from './whatsapp-queue-manager.js';
+import { WhatsAppResetHelper } from './whatsapp-reset-helper.js';
 
 interface OTPSession {
   phoneNumber: string;
