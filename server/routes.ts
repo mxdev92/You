@@ -721,10 +721,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // WhatsApp API routes
   app.get('/api/whatsapp/status', (req, res) => {
-    res.json({ 
-      status: whatsappService.getStatus(),
-      connected: whatsappService.isConnected()
-    });
+    try {
+      const status = whatsappService.getStatus();
+      const healthy = whatsappService.isHealthy();
+      
+      res.json({ 
+        connected: status.isReady && status.isAuthenticated,
+        status: status.isReady ? 'connected' : (status.isConnecting ? 'connecting' : 'disconnected'),
+        mode: status.mode || 'console',
+        healthy: healthy,
+        isReady: status.isReady,
+        isAuthenticated: status.isAuthenticated,
+        qrCode: status.qrCode,
+        lastError: status.lastError,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: 'Failed to get WhatsApp status', 
+        error: error.message,
+        connected: false,
+        status: 'error',
+        healthy: false,
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   app.get('/api/whatsapp/qr', (req, res) => {
