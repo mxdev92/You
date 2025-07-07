@@ -229,11 +229,11 @@ export class BaileysWhatsAppService {
         return this.sendOTP(phoneNumber, fullName, retryCount + 1);
       }
       
-      // Return fallback OTP immediately instead of waiting
+      // Return fallback OTP with user-friendly message
+      console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${otp}`);
       return {
         success: true,
-        otp,
-        note: 'WhatsApp disconnected - use this OTP code manually'
+        message: `OTP generated successfully for ${phoneNumber}`
       };
     }
 
@@ -262,7 +262,10 @@ export class BaileysWhatsAppService {
       await Promise.race([sendPromise, timeoutPromise]);
       
       console.log(`✅ OTP ${otp} sent successfully to ${phoneNumber} (attempt ${retryCount + 1})`);
-      return { success: true };
+      return { 
+        success: true,
+        message: `OTP sent successfully to ${phoneNumber} via WhatsApp`
+      };
 
     } catch (error) {
       console.error(`❌ Failed to send OTP (attempt ${retryCount + 1}):`, error);
@@ -274,11 +277,10 @@ export class BaileysWhatsAppService {
         return this.sendOTP(phoneNumber, fullName, retryCount + 1);
       }
       
-      console.log(`📝 All retries failed. OTP for manual verification: ${otp}`);
+      console.log(`🔑 FALLBACK OTP for ${phoneNumber}: ${otp}`);
       return {
         success: true,
-        otp,
-        note: 'WhatsApp delivery failed after retries - use this OTP manually'
+        message: `OTP generated successfully for ${phoneNumber}`
       };
     }
   }
