@@ -1,24 +1,13 @@
-2025/07/07-04:59:51.935 252f Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
-2025/07/07-04:59:51.935 252f Recovering log #263
-2025/07/07-04:59:51.943 252f Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000263.log 
-2025/07/07-04:59:52.668 252f Level-0 table #269: started
-2025/07/07-04:59:52.702 252f Level-0 table #269: 111434 bytes OK
-2025/07/07-04:59:52.710 252f Delete type=0 #263
-2025/07/07-04:59:52.711 2533 Manual compaction at level-0 from '\x00e\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00f\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-04:59:52.712 2533 Level-0 table #271: started
-2025/07/07-04:59:52.716 2533 Level-0 table #271: 445 bytes OK
-2025/07/07-04:59:52.732 2533 Delete type=0 #268
-2025/07/07-04:59:52.733 252f Manual compaction at level-0 from '\x00f\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00g\x00\x00\x00' @ 0 : 0; will stop at '\x00f\x00\x00\x05' @ 143501 : 0
-2025/07/07-04:59:52.733 252f Compacting 1@0 + 1@1 files
-2025/07/07-04:59:52.750 252f Generated table #272@0: 3389 keys, 69400 bytes
-2025/07/07-04:59:52.750 252f Compacted 1@0 + 1@1 files => 69400 bytes
-2025/07/07-04:59:52.760 252f compacted to: files[ 0 1 1 0 0 0 0 ]
-2025/07/07-04:59:52.760 252f Delete type=2 #271
-2025/07/07-04:59:52.763 252f Manual compaction at level-0 from '\x00f\x00\x00\x05' @ 143501 : 0 .. '\x00g\x00\x00\x00' @ 0 : 0; will stop at (end)
-2025/07/07-04:59:55.524 252d Compacting 1@1 + 1@2 files
-2025/07/07-04:59:55.775 252d Generated table #273@1: 24200 keys, 898902 bytes
-2025/07/07-04:59:55.775 252d Compacted 1@1 + 1@2 files => 898902 bytes
-2025/07/07-04:59:55.807 252d compacted to: files[ 0 0 1 0 0 0 0 ]
-2025/07/07-04:59:55.808 252d Delete type=2 #266
-2025/07/07-04:59:55.808 252d Delete type=2 #269
-2025/07/07-04:59:55.808 252d Delete type=2 #272
+2025/07/07-05:17:44.489 27b1 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/07/07-05:17:44.492 27b1 Recovering log #274
+2025/07/07-05:17:44.493 27b1 Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000274.log 
+2025/07/07-05:17:45.256 27b1 Level-0 table #279: started
+2025/07/07-05:17:45.287 27b1 Level-0 table #279: 30935 bytes OK
+2025/07/07-05:17:45.296 27b1 Delete type=0 #274
+2025/07/07-05:17:45.297 27a6 Manual compaction at level-0 from '\x00i\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00j\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/07/07-05:17:48.542 27a8 Compacting 1@1 + 1@2 files
+2025/07/07-05:17:48.708 27a8 Generated table #280@1: 25610 keys, 947404 bytes
+2025/07/07-05:17:48.708 27a8 Compacted 1@1 + 1@2 files => 947404 bytes
+2025/07/07-05:17:48.719 27a8 compacted to: files[ 0 0 1 0 0 0 0 ]
+2025/07/07-05:17:48.719 27a8 Delete type=2 #276
+2025/07/07-05:17:48.719 27a8 Delete type=2 #279
