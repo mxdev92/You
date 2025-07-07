@@ -612,26 +612,30 @@ const AuthPage: React.FC = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center border border-gray-300 rounded-xl focus-within:border-gray-400 h-12">
-                          <div className="flex items-center px-3 text-gray-600 border-r border-gray-300" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                            <span className="text-sm font-medium">+964</span>
-                          </div>
-                          <div className="flex items-center pl-3 text-gray-600">
-                            <span className="text-sm font-medium">7</span>
-                          </div>
+                        <div className="relative">
                           <Input
                             type="tel"
-                            placeholder="00000000"
-                            value={signupData.phone.replace(/^7/, '')}
+                            placeholder="+964 07000000000"
+                            value={signupData.phone ? `+964 0${signupData.phone}` : ''}
                             onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '');
-                              if (value.length <= 8) {
-                                setSignupData(prev => ({ ...prev, phone: '7' + value }));
+                              let value = e.target.value.replace(/[^\d]/g, '');
+                              // Remove 964 prefix if user typed it
+                              if (value.startsWith('964')) {
+                                value = value.substring(3);
+                              }
+                              // Ensure it starts with 7
+                              if (value && !value.startsWith('7')) {
+                                value = '7' + value.replace(/^0*/, '');
+                              }
+                              // Limit to 10 digits (07xxxxxxxx)
+                              if (value.length <= 10) {
+                                setSignupData(prev => ({ ...prev, phone: value }));
                               }
                             }}
-                            className="flex-1 h-full text-left text-sm border-0 focus:ring-0 focus:outline-none bg-transparent pl-0"
+                            className="w-full h-12 text-center text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                            maxLength={8}
+                            maxLength={17}
+                            dir="ltr"
                           />
                         </div>
                         {!otpSent ? (
