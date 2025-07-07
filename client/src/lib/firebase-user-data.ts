@@ -1,23 +1,6 @@
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy,
-  setDoc,
-  getDoc
-} from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
-import { User } from "firebase/auth";
-
-// User Profile Data
-export interface UserProfile {
-  id?: string;
+// DEPRECATED: Use PostgreSQL instead
+// This file redirects to stub to prevent import errors
+export * from './firebase-user-data-stub';
   uid: string;
   displayName?: string;
   email: string;

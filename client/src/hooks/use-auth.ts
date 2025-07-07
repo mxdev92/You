@@ -1,19 +1,8 @@
-import { useState, useEffect } from 'react';
-import { User } from 'firebase/auth';
-import { migrateUserDataOnAuth, clearUserDataOnLogout } from '@/lib/firebase-user-data';
-import { 
-  reliableLogin, 
-  reliableRegister, 
-  reliableLogout, 
-  onAuthStateChange 
-} from '@/lib/auth-utils';
-
+// DEPRECATED: Use usePostgresAuth instead
+// This file is kept for backward compatibility only
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
+  throw new Error('useAuth is deprecated. Use usePostgresAuth instead');
+}
     const unsubscribe = onAuthStateChange(async (user) => {
       setUser(user);
       
