@@ -238,6 +238,10 @@ July 6, 2025:
 ✓ ORDER SUBMISSION FIX: Fixed critical error "whatsappService.getConnectionStatus is not a function"
 ✓ Added missing getConnectionStatus method to BaileysWhatsAppService class
 ✓ Order submission now works properly with WhatsApp integration enabled
+✓ CART STABILITY FIX: Fixed infinite refresh loop causing cart instability
+✓ Removed excessive auto-refetch interval (2 seconds) from ProductsGrid component
+✓ Fixed useEffect dependency arrays in Home and RightSidebar components
+✓ Cart now stable with proper caching (5 minutes) instead of constant API calls
 ✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
 ✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
 ✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)
