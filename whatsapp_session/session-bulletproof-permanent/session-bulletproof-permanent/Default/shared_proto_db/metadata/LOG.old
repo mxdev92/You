@@ -1,3 +1,2 @@
-2025/07/07-04:30:58.700 1410 Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/shared_proto_db/metadata/MANIFEST-000001
-2025/07/07-04:30:58.700 1410 Recovering log #3
-2025/07/07-04:30:58.701 1410 Reusing old log /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/shared_proto_db/metadata/000003.log 
+2025/07/07-04:47:38.433 19cc Creating DB /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/shared_proto_db/metadata since it was missing.
+2025/07/07-04:47:38.498 19cc Reusing MANIFEST /home/runner/workspace/whatsapp_session/session-bulletproof-permanent/session-bulletproof-permanent/Default/shared_proto_db/metadata/MANIFEST-000001
