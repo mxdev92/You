@@ -117,6 +117,7 @@ export class MetaWhatsAppService {
         return {
           success: true, // Still return success with fallback OTP
           otp: otp,
+          delivered: 'fallback',
           note: `OTP generated: ${otp} (Meta API requires phone number permissions)`
         };
       }

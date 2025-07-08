@@ -216,12 +216,20 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setOtpSent(true);
-        showNotification('✅ تم إنشاء رمز التحقق بنجاح - تحقق من WhatsApp أو استخدم الرمز في وحدة التحكم', 'success');
         
         // Always log OTP to console for user access
         if (data.otp) {
           console.log(`🔑 رمز التحقق: ${data.otp}`);
           console.log(`📱 OTP Code: ${data.otp} (Valid for 10 minutes)`);
+          
+          // Display OTP prominently in UI if Meta API permissions not available
+          if (data.delivered === 'fallback' || data.note?.includes('requires') || data.note?.includes('permissions')) {
+            showNotification(`🔑 رمز التحقق: ${data.otp}\n(صالح لمدة 10 دقائق)\n\nإذا لم تتلقى رسالة WhatsApp، استخدم هذا الرمز`, 'info');
+          } else {
+            showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp بنجاح', 'success');
+          }
+        } else {
+          showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp بنجاح', 'success');
         }
       } else {
         // Even on server error, try to continue with OTP flow
@@ -232,7 +240,7 @@ const AuthPage: React.FC = () => {
       if (error.name === 'AbortError') {
         // Set OtpSent to true even on timeout since backend likely processed it
         setOtpSent(true);
-        showNotification('✅ تم إنشاء رمز التحقق - تحقق من WhatsApp أو وحدة التحكم', 'success');
+        showNotification('✅ تم إنشاء رمز التحقق - تحقق من WhatsApp أو وحدة التحكم للحصول على الرمز', 'success');
       } else {
         // Always allow user to proceed with OTP verification
         setOtpSent(true);
