@@ -29,13 +29,20 @@ export class FazpassService {
   constructor() {
     // Use the JWT token provided by user
     this.merchantKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjoxNjA1OX0.jgMploSV90sZcC0Xg8z-XSQt-Xj2plkdwcGQjdr9xvs';
-    this.gatewayKey = process.env.FAZPASS_GATEWAY_KEY || 'whatsapp_gateway'; // Should match your Fazpass dashboard gateway name
+    // You need to replace this with your actual gateway key from Fazpass dashboard
+    this.gatewayKey = process.env.FAZPASS_GATEWAY_KEY || 'YOUR_GATEWAY_KEY_HERE';
     this.baseUrl = 'https://api.fazpass.com';
     this.otpSessions = new Map();
     
     console.log('🚀 Fazpass OTP Service initialized');
     console.log(`📋 Merchant Key: ${this.merchantKey ? 'configured' : 'missing'}`);
     console.log(`🚪 Gateway Key: ${this.gatewayKey}`);
+    
+    if (this.gatewayKey === 'YOUR_GATEWAY_KEY_HERE') {
+      console.log('⚠️  WARNING: Default gateway key detected!');
+      console.log('⚠️  Please replace YOUR_GATEWAY_KEY_HERE with actual gateway key from Fazpass dashboard');
+      console.log('⚠️  System will use fallback OTP generation until gateway is properly configured');
+    }
   }
 
   private generateOTP(): string {
