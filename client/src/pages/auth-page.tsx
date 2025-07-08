@@ -133,22 +133,39 @@ export default function AuthPage() {
     setErrors({});
     
     try {
-      const phoneNumber = `+964${formData.phone.substring(1)}`; // Convert 07XXXXXXXXX to +9647XXXXXXXXX
-      console.log('Sending Firebase OTP to:', phoneNumber);
+      const phoneNumber = formData.phone; // Use original format 07XXXXXXXXX
+      console.log('Sending simple OTP to:', phoneNumber);
       
-      const confirmationResult = await registerWithPhoneOTP(phoneNumber, 'New User');
-      
-      setOtpState({
-        confirmationResult,
-        phoneNumber: formData.phone,
-        isOTPSent: true,
-        isVerifying: false
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phoneNumber })
       });
+
+      const result = await response.json();
+      console.log('Simple OTP response:', result);
       
-      console.log('Firebase OTP sent successfully, showing input field');
+      if (response.ok && result.success) {
+        setOtpState({
+          confirmationResult: result,
+          phoneNumber: formData.phone,
+          isOTPSent: true,
+          isVerifying: false
+        });
+        
+        console.log('Simple OTP sent successfully, showing input field');
+        
+        // Show the OTP in console for testing
+        if (result.otp) {
+          console.log('🔑 OTP Code for testing:', result.otp);
+        }
+      } else {
+        setErrors({ submit: result.message || 'فشل في إرسال رمز التحقق' });
+      }
     } catch (error: any) {
-      console.error('Failed to send Firebase OTP:', error);
-      setErrors({ submit: error.message || 'فشل في إرسال رمز التحقق' });
+      console.error('Failed to send simple OTP:', error);
+      setErrors({ submit: 'فشل في إرسال رمز التحقق. تحقق من اتصال الإنترنت' });
     } finally {
       setIsSubmitting(false);
     }
@@ -170,23 +187,37 @@ export default function AuthPage() {
   };
 
   const verifyOTP = async () => {
-    if (!otpState.confirmationResult || !otpCode) return;
+    if (!otpCode) return;
     
     setIsSubmitting(true);
     setOtpState(prev => ({ ...prev, isVerifying: true }));
     
     try {
-      console.log('Verifying Firebase OTP:', otpCode, 'for phone:', formData.phone);
+      console.log('Verifying simple OTP:', otpCode, 'for phone:', formData.phone);
       
-      // Verify the OTP code with Firebase
-      await verifyOTPAndComplete(otpState.confirmationResult, otpCode, 'New User');
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          phoneNumber: formData.phone,
+          otp: otpCode
+        })
+      });
+
+      const result = await response.json();
+      console.log('Simple OTP verification response:', result);
       
-      console.log('Firebase OTP verified successfully, moving to step 2');
-      setStep(2); // Move to password step for signup
-      setOtpCode(''); // Clear OTP code
+      if (response.ok && result.valid) {
+        console.log('OTP verified successfully, moving to step 2');
+        setStep(2); // Move to password step for signup
+        setOtpCode(''); // Clear OTP code
+      } else {
+        setErrors({ submit: result.message || 'رمز التحقق غير صحيح أو منتهي الصلاحية' });
+      }
     } catch (error: any) {
-      console.error('Failed to verify Firebase OTP:', error);
-      setErrors({ submit: error.message || 'رمز التحقق غير صحيح أو منتهي الصلاحية' });
+      console.error('Failed to verify simple OTP:', error);
+      setErrors({ submit: 'فشل في التحقق من رمز OTP. حاول مرة أخرى' });
     } finally {
       setIsSubmitting(false);
       setOtpState(prev => ({ ...prev, isVerifying: false }));

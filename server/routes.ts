@@ -660,6 +660,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple OTP storage (in production, use Redis or database)
+  const otpStore = new Map<string, { otp: string; phone: string; expiresAt: number; verified: boolean }>();
+
+  // Send OTP endpoint
+  app.post('/api/auth/send-otp', async (req, res) => {
+    try {
+      const { phoneNumber } = req.body;
+      
+      if (!phoneNumber) {
+        return res.status(400).json({ message: 'Phone number is required' });
+      }
+
+      // Generate 4-digit OTP
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
+      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+      // Store OTP
+      otpStore.set(phoneNumber, {
+        otp,
+        phone: phoneNumber,
+        expiresAt,
+        verified: false
+      });
+
+      console.log(`📱 OTP Generated for ${phoneNumber}: ${otp} (expires in 10 minutes)`);
+      
+      res.json({
+        success: true,
+        message: 'تم إنشاء رمز التحقق بنجاح',
+        // In development, include OTP in response for testing
+        otp: process.env.NODE_ENV === 'development' ? otp : undefined
+      });
+    } catch (error: any) {
+      console.error('OTP generation error:', error);
+      res.status(500).json({ message: 'فشل في إنشاء رمز التحقق' });
+    }
+  });
+
+  // Verify OTP endpoint
+  app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+      const { phoneNumber, otp } = req.body;
+      
+      if (!phoneNumber || !otp) {
+        return res.status(400).json({ message: 'Phone number and OTP are required' });
+      }
+
+      const otpData = otpStore.get(phoneNumber);
+      
+      if (!otpData) {
+        return res.status(400).json({ 
+          valid: false, 
+          message: 'لم يتم العثور على رمز التحقق' 
+        });
+      }
+
+      if (Date.now() > otpData.expiresAt) {
+        otpStore.delete(phoneNumber);
+        return res.status(400).json({ 
+          valid: false, 
+          message: 'رمز التحقق منتهي الصلاحية' 
+        });
+      }
+
+      if (otpData.otp !== otp) {
+        return res.status(400).json({ 
+          valid: false, 
+          message: 'رمز التحقق غير صحيح' 
+        });
+      }
+
+      // Mark as verified but keep for signup completion
+      otpData.verified = true;
+      otpStore.set(phoneNumber, otpData);
+
+      console.log(`✅ OTP verified for ${phoneNumber}`);
+      
+      res.json({
+        valid: true,
+        message: 'تم التحقق من الرمز بنجاح'
+      });
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      res.status(500).json({ 
+        valid: false, 
+        message: 'خطأ في التحقق من الرمز' 
+      });
+    }
+  });
+
   // Users management route
   app.get('/api/users', async (req, res) => {
     try {
