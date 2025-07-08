@@ -762,35 +762,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/sms/send-otp', async (req, res) => {
+  app.post('/api/whatsapp/send-otp', async (req, res) => {
     const { phoneNumber, fullName } = req.body;
     
     if (!phoneNumber || !fullName) {
       return res.status(400).json({ message: 'Phone number and full name are required' });
     }
 
-    console.log(`🔄 OTP request received for ${phoneNumber} via Fazpass SMS service`);
+    console.log(`🔄 OTP request received for ${phoneNumber} via Fazpass WhatsApp service`);
 
     try {
       const result = await fazpassService.sendOTP(phoneNumber, fullName);
       
       if (result.success) {
-        console.log(`✅ OTP sent via Fazpass for ${phoneNumber}`);
+        console.log(`✅ WhatsApp OTP sent via Fazpass for ${phoneNumber}`);
         res.json({
           success: true,
           message: `تم إرسال رمز التحقق بنجاح`,
-          delivered: 'fazpass-sms'
+          delivered: 'fazpass-whatsapp'
         });
       } else {
-        console.error(`❌ Failed to send OTP via Fazpass for ${phoneNumber}`);
+        console.error(`❌ Failed to send WhatsApp OTP via Fazpass for ${phoneNumber}`);
         res.status(400).json({
           success: false,
-          message: result.note || 'فشل في إرسال رمز التحقق عبر SMS'
+          message: result.note || 'فشل في إرسال رمز التحقق عبر WhatsApp'
         });
       }
       
     } catch (error: any) {
-      console.error('❌ Fazpass OTP service error:', error);
+      console.error('❌ Fazpass WhatsApp OTP service error:', error);
       
       res.status(500).json({
         success: false,
@@ -799,7 +799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/sms/verify-otp', async (req, res) => {
+  app.post('/api/whatsapp/verify-otp', async (req, res) => {
     try {
       const { phoneNumber, otp } = req.body;
       
@@ -820,19 +820,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test endpoint for Fazpass integration
-  app.get('/api/sms/test', async (req, res) => {
+  // Test endpoint for Fazpass WhatsApp integration
+  app.get('/api/whatsapp/test', async (req, res) => {
     try {
       res.json({
         success: true,
-        message: 'Fazpass SMS service is ready',
+        message: 'Fazpass WhatsApp service is ready',
         merchantKey: fazpassService.merchantKey ? 'configured' : 'missing',
-        baseUrl: 'https://api.fazpass.com'
+        baseUrl: 'https://api.fazpass.com',
+        channel: 'whatsapp'
       });
     } catch (error: any) {
       res.status(500).json({
         success: false,
-        message: 'Fazpass service error',
+        message: 'Fazpass WhatsApp service error',
         error: error.message
       });
     }

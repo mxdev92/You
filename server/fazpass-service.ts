@@ -69,12 +69,14 @@ export class FazpassService {
   async sendOTP(phoneNumber: string, fullName: string): Promise<{ success: boolean; otp?: string; note?: string }> {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
     
-    console.log(`📱 Sending OTP to ${formattedPhone} via Fazpass API`);
+    console.log(`📱 Sending WhatsApp OTP to ${formattedPhone} via Fazpass API`);
     
     try {
+      // Use WhatsApp channel specifically
       const requestBody = {
         phone: formattedPhone,
-        gateway_key: this.gatewayKey
+        gateway_key: this.gatewayKey,
+        channel: 'whatsapp' // Specify WhatsApp channel
       };
 
       const response = await fetch(`${this.baseUrl}/v1/otp/request`, {
@@ -95,13 +97,13 @@ export class FazpassService {
         
         this.storeOTPSession(phoneNumber, otpCode, fullName, otpId);
         
-        console.log(`✅ Fazpass OTP sent successfully to ${formattedPhone}`);
+        console.log(`✅ Fazpass WhatsApp OTP sent successfully to ${formattedPhone}`);
         console.log(`📋 OTP ID: ${otpId}, Channel: ${result.data?.channel}`);
         
         return {
           success: true,
           otp: otpCode,
-          note: `OTP sent via Fazpass to ${formattedPhone}`
+          note: `WhatsApp OTP sent via Fazpass to ${formattedPhone}`
         };
       } else {
         console.error('❌ Fazpass API error:', result);
