@@ -8,7 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import { metaWhatsAppService } from './meta-whatsapp-service.js';
+import { fazpassService } from './fazpass-service.js';
 
 // Meta Cloud API is always ready - no initialization needed
 console.log('🎯 Meta Cloud API WhatsApp service ready');
@@ -762,38 +762,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/whatsapp/send-otp', async (req, res) => {
+  app.post('/api/sms/send-otp', async (req, res) => {
     const { phoneNumber, fullName } = req.body;
     
     if (!phoneNumber || !fullName) {
       return res.status(400).json({ message: 'Phone number and full name are required' });
     }
 
-    console.log(`🔄 OTP request received for ${phoneNumber} - ensuring stable connection first...`);
+    console.log(`🔄 OTP request received for ${phoneNumber} via Fazpass SMS service`);
 
     try {
-      // Meta Cloud API is always ready - no connection verification needed
-      console.log(`✅ Meta Cloud API ready - proceeding with OTP for ${phoneNumber}`);
-      
-      const result = await metaWhatsAppService.sendOTP(phoneNumber, fullName);
+      const result = await fazpassService.sendOTP(phoneNumber, fullName);
       
       if (result.success) {
-        console.log(`✅ OTP sent via Meta Cloud API for ${phoneNumber}`);
+        console.log(`✅ OTP sent via Fazpass for ${phoneNumber}`);
         res.json({
           success: true,
           message: `تم إرسال رمز التحقق بنجاح`,
-          delivered: 'meta-api'
+          delivered: 'fazpass-sms'
         });
       } else {
-        console.error(`❌ Failed to send OTP via Meta API for ${phoneNumber}`);
+        console.error(`❌ Failed to send OTP via Fazpass for ${phoneNumber}`);
         res.status(400).json({
           success: false,
-          message: result.message || 'فشل في إرسال رمز التحقق عبر WhatsApp'
+          message: result.note || 'فشل في إرسال رمز التحقق عبر SMS'
         });
       }
       
     } catch (error: any) {
-      console.error('❌ OTP service error:', error);
+      console.error('❌ Fazpass OTP service error:', error);
       
       res.status(500).json({
         success: false,
@@ -802,7 +799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/whatsapp/verify-otp', (req, res) => {
+  app.post('/api/sms/verify-otp', async (req, res) => {
     try {
       const { phoneNumber, otp } = req.body;
       
@@ -810,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Phone number and OTP are required' });
       }
 
-      const result = metaWhatsAppService.verifyOTP(phoneNumber, otp);
+      const result = await fazpassService.verifyOTP(phoneNumber, otp);
       
       if (result.valid) {
         res.json({ message: result.message, valid: true });
@@ -818,8 +815,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ message: result.message, valid: false });
       }
     } catch (error: any) {
-      console.error('Baileys WhatsApp OTP verification error:', error);
-      res.status(500).json({ message: 'Failed to verify OTP' });
+      console.error('❌ OTP verification error:', error);
+      res.status(500).json({ message: 'خطأ في التحقق من رمز OTP', valid: false });
+    }
+  });
+
+  // Test endpoint for Fazpass integration
+  app.get('/api/sms/test', async (req, res) => {
+    try {
+      res.json({
+        success: true,
+        message: 'Fazpass SMS service is ready',
+        merchantKey: fazpassService.merchantKey ? 'configured' : 'missing',
+        baseUrl: 'https://api.fazpass.com'
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: 'Fazpass service error',
+        error: error.message
+      });
     }
   });
 
