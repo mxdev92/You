@@ -686,9 +686,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`📱 OTP Generated for ${phoneNumber}: ${otp} (expires in 10 minutes)`);
       
+      // Try to send OTP via WhatsApp if connected
+      let smsDelivered = false;
+      try {
+        const isConnected = whatsappService.getConnectionStatus();
+        if (isConnected) {
+          const message = `رمز التحقق الخاص بك في تطبيق باكيتي: ${otp}\n\nصالح لمدة 10 دقائق فقط.\nلا تشارك هذا الرمز مع أي شخص.`;
+          
+          // Send via WhatsApp
+          await whatsappService.sendMessage(phoneNumber, message);
+          smsDelivered = true;
+          console.log(`✅ OTP sent via WhatsApp to ${phoneNumber}`);
+        }
+      } catch (whatsappError) {
+        console.log('WhatsApp delivery failed, using fallback method:', whatsappError.message);
+      }
+      
       res.json({
         success: true,
-        message: 'تم إنشاء رمز التحقق بنجاح',
+        message: smsDelivered ? 'تم إرسال رمز التحقق عبر WhatsApp' : 'تم إنشاء رمز التحقق',
+        delivered: smsDelivered ? 'whatsapp' : 'fallback',
         // In development, include OTP in response for testing
         otp: process.env.NODE_ENV === 'development' ? otp : undefined
       });

@@ -498,6 +498,25 @@ export class BaileysWhatsAppService {
     return Math.floor(1000 + Math.random() * 9000).toString();
   }
 
+  async sendMessage(phoneNumber: string, message: string): Promise<boolean> {
+    if (!this.isConnected || !this.socket) {
+      console.log('⚠️ WhatsApp not connected, cannot send message');
+      return false;
+    }
+
+    try {
+      const formattedNumber = this.formatPhoneNumber(phoneNumber);
+      console.log(`📤 Sending message to ${formattedNumber}: ${message.substring(0, 50)}...`);
+      
+      await this.socket.sendMessage(formattedNumber, { text: message });
+      console.log(`✅ Message sent successfully to ${phoneNumber}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to send message to ${phoneNumber}:`, error);
+      return false;
+    }
+  }
+
   private storeOTPSession(phoneNumber: string, otp: string, fullName: string): void {
     const session: OTPSession = {
       phoneNumber,
