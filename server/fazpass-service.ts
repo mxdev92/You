@@ -29,7 +29,7 @@ export class FazpassService {
   constructor() {
     // Use the JWT token provided by user
     this.merchantKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjoxNjA1OX0.jgMploSV90sZcC0Xg8z-XSQt-Xj2plkdwcGQjdr9xvs';
-    this.gatewayKey = process.env.FAZPASS_GATEWAY_KEY || 'default_gateway'; // This should be configured in dashboard
+    this.gatewayKey = process.env.FAZPASS_GATEWAY_KEY || 'whatsapp_gateway'; // Should match your Fazpass dashboard gateway name
     this.baseUrl = 'https://api.fazpass.com';
     this.otpSessions = new Map();
     
@@ -70,16 +70,20 @@ export class FazpassService {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
     
     console.log(`📱 Sending WhatsApp OTP to ${formattedPhone} via Fazpass API`);
+    console.log(`🔧 Debug - Merchant Key present: ${!!this.merchantKey}`);
+    console.log(`🔧 Debug - Gateway Key: ${this.gatewayKey}`);
     
     try {
-      // Use WhatsApp channel specifically
+      // Request body - channel is determined by gateway configuration
       const requestBody = {
         phone: formattedPhone,
-        gateway_key: this.gatewayKey,
-        channel: 'whatsapp' // Specify WhatsApp channel
+        gateway_key: this.gatewayKey
       };
 
-      const response = await fetch(`${this.baseUrl}/v1/otp/request`, {
+      console.log(`🔧 Debug - Request body:`, requestBody);
+      console.log(`🔧 Debug - API URL: ${this.baseUrl}/v1/otp/generate`);
+
+      const response = await fetch(`${this.baseUrl}/v1/otp/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.merchantKey}`,
@@ -88,7 +92,11 @@ export class FazpassService {
         body: JSON.stringify(requestBody)
       });
 
+      console.log(`🔧 Debug - Response status: ${response.status}`);
+      console.log(`🔧 Debug - Response headers:`, Object.fromEntries(response.headers.entries()));
+
       const result = await response.json() as FazpassOTPResponse;
+      console.log(`🔧 Debug - Full API response:`, result);
       
       if (response.ok && result.status) {
         // Fazpass successful response
@@ -107,12 +115,15 @@ export class FazpassService {
         };
       } else {
         console.error('❌ Fazpass API error:', result);
+        console.error('❌ Response status:', response.status);
+        console.error('❌ Response headers:', Object.fromEntries(response.headers.entries()));
         
         // Fallback: Generate local OTP for development/testing
         const fallbackOtp = this.generateOTP();
         this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
         
         console.log(`🔄 Fallback: Generated OTP ${fallbackOtp} for ${formattedPhone}`);
+        console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
         return {
           success: true,
           otp: fallbackOtp,
@@ -127,6 +138,7 @@ export class FazpassService {
       this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
       
       console.log(`🔄 Error fallback: Generated OTP ${fallbackOtp} for ${formattedPhone}`);
+      console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
       return {
         success: true,
         otp: fallbackOtp,
