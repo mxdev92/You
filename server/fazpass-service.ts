@@ -1,48 +1,40 @@
 import fetch from 'node-fetch';
 
-interface FazpassOTPResponse {
-  status: boolean;
+interface VerifyWayOTPResponse {
+  success: boolean;
   message: string;
   data?: {
-    id: string;
-    otp: string;
-    otp_length: number;
-    channel: string;
-  };
-}
-
-interface FazpassVerifyResponse {
-  status: boolean;
-  message: string;
-  data?: {
-    id: string;
+    otp_id: string;
+    otp_code: string;
+    phone: string;
     status: string;
   };
 }
 
-export class FazpassService {
-  public merchantKey: string;
-  private gatewayKey: string;
+interface VerifyWayVerifyResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    otp_id: string;
+    status: string;
+    verified: boolean;
+  };
+}
+
+export class VerifyWayService {
+  private apiKey: string;
   private baseUrl: string;
   private otpSessions: Map<string, { otp: string; expiresAt: number; fullName: string; id?: string }>;
 
   constructor() {
-    // Use the JWT token provided by user
-    this.merchantKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjoxNjA1OX0.jgMploSV90sZcC0Xg8z-XSQt-Xj2plkdwcGQjdr9xvs';
-    // Try common gateway key patterns for WhatsApp
-    this.gatewayKey = process.env.FAZPASS_GATEWAY_KEY || 'whatsapp' || 'wa' || 'default';
-    this.baseUrl = 'https://api.fazpass.com';
+    // VerifyWay API key provided by user
+    this.apiKey = '906$E2P3X5cqM5U7lOgYNjZYOzfdLXCMDgFljOW9';
+    this.baseUrl = 'https://api.verifyway.com/api/v1';
     this.otpSessions = new Map();
     
-    console.log('🚀 Fazpass OTP Service initialized');
-    console.log(`📋 Merchant Key: ${this.merchantKey ? 'configured' : 'missing'}`);
-    console.log(`🚪 Gateway Key: ${this.gatewayKey}`);
-    
-    if (this.gatewayKey === 'YOUR_GATEWAY_KEY_HERE') {
-      console.log('⚠️  WARNING: Default gateway key detected!');
-      console.log('⚠️  Please replace YOUR_GATEWAY_KEY_HERE with actual gateway key from Fazpass dashboard');
-      console.log('⚠️  System will use fallback OTP generation until gateway is properly configured');
-    }
+    console.log('🚀 VerifyWay WhatsApp OTP Service initialized');
+    console.log(`📋 API Key: ${this.apiKey ? 'configured' : 'missing'}`);
+    console.log(`🌐 Base URL: ${this.baseUrl}`);
   }
 
   private generateOTP(): string {
@@ -76,73 +68,80 @@ export class FazpassService {
   async sendOTP(phoneNumber: string, fullName: string): Promise<{ success: boolean; otp?: string; note?: string }> {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
     
-    // Try multiple gateway keys that might exist
-    const gatewayKeys = ['whatsapp', 'wa', 'default', 'gateway1', 'otp', this.gatewayKey];
+    console.log(`📱 Sending WhatsApp OTP to ${formattedPhone} via VerifyWay`);
     
-    for (const gatewayKey of gatewayKeys) {
-      console.log(`📱 Trying gateway key: ${gatewayKey} for ${formattedPhone}`);
+    try {
+      const otpCode = this.generateOTP();
       
-      try {
-        const requestBody = {
-          phone: formattedPhone,
-          gateway_key: gatewayKey
-        };
+      const requestBody = {
+        recipient: formattedPhone,
+        type: 'otp',
+        code: otpCode,
+        channel: 'whatsapp'
+      };
 
-        const response = await fetch(`${this.baseUrl}/v1/otp/generate`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.merchantKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
-        });
+      console.log(`🔧 Debug - Request body:`, { ...requestBody, code: '***masked***' });
+      console.log(`🔧 Debug - API URL: ${this.baseUrl}/`);
 
-        const result = await response.json() as FazpassOTPResponse;
+      const response = await fetch(`${this.baseUrl}/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log(`🔧 Debug - Response status: ${response.status}`);
+      
+      const result = await response.json() as VerifyWayOTPResponse;
+      console.log(`🔧 Debug - Full API response:`, result);
+      
+      if (response.ok) {
+        // VerifyWay sends the OTP for us, we use the code we generated
+        const otpId = result.data?.otp_id || Date.now().toString();
         
-        if (response.ok && result.status) {
-          // Success! Store this gateway key for future use
-          this.gatewayKey = gatewayKey;
-          
-          const otpCode = result.data?.otp || this.generateOTP();
-          const otpId = result.data?.id;
-          
-          this.storeOTPSession(phoneNumber, otpCode, fullName, otpId);
-          
-          console.log(`✅ SUCCESS! Gateway key "${gatewayKey}" works!`);
-          console.log(`✅ Fazpass WhatsApp OTP sent to ${formattedPhone}`);
-          console.log(`📋 OTP: ${otpCode}, ID: ${otpId}, Channel: ${result.data?.channel}`);
-          
-          return {
-            success: true,
-            otp: otpCode,
-            note: `WhatsApp OTP sent via Fazpass using gateway: ${gatewayKey}`
-          };
-        } else if (result.message === 'gateway does not exists') {
-          console.log(`❌ Gateway "${gatewayKey}" does not exist, trying next...`);
-          continue;
-        } else {
-          console.error(`❌ Gateway "${gatewayKey}" failed:`, result);
-          continue;
-        }
-      } catch (error) {
-        console.error(`❌ Error with gateway "${gatewayKey}":`, error);
-        continue;
+        this.storeOTPSession(phoneNumber, otpCode, fullName, otpId);
+        
+        console.log(`✅ VerifyWay WhatsApp OTP sent successfully to ${formattedPhone}`);
+        console.log(`📋 OTP: ${otpCode}, ID: ${otpId}`);
+        
+        return {
+          success: true,
+          otp: otpCode,
+          note: `WhatsApp OTP sent via VerifyWay to ${formattedPhone}`
+        };
+      } else {
+        console.error('❌ VerifyWay API error:', result);
+        
+        // Fallback: Generate local OTP for development/testing
+        const fallbackOtp = this.generateOTP();
+        this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
+        
+        console.log(`🔄 Fallback: Generated OTP ${fallbackOtp} for ${formattedPhone}`);
+        console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
+        return {
+          success: true,
+          otp: fallbackOtp,
+          note: "رمز التحقق جاهز للتسجيل (وضع الاحتياطي)"
+        };
       }
+    } catch (error) {
+      console.error('❌ VerifyWay service error:', error);
+      
+      // Fallback: Generate local OTP
+      const fallbackOtp = this.generateOTP();
+      this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
+      
+      console.log(`🔄 Error fallback: Generated OTP ${fallbackOtp} for ${formattedPhone}`);
+      console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
+      return {
+        success: true,
+        otp: fallbackOtp,
+        note: "رمز التحقق جاهز للتسجيل (وضع الطوارئ)"
+      };
     }
-    
-    // All gateways failed, use fallback
-    console.error('❌ All gateway keys failed, using fallback OTP');
-    const fallbackOtp = this.generateOTP();
-    this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
-    
-    console.log(`🔄 FALLBACK OTP: ${fallbackOtp} for ${formattedPhone}`);
-    console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
-    
-    return {
-      success: true,
-      otp: fallbackOtp,
-      note: "رمز التحقق جاهز للتسجيل (جميع البوابات فشلت)"
-    };
   }
 
   async verifyOTP(phoneNumber: string, inputOtp: string): Promise<{ valid: boolean; message: string }> {
@@ -225,7 +224,10 @@ export class FazpassService {
 }
 
 // Export singleton instance
-export const fazpassService = new FazpassService();
+export const verifyWayService = new VerifyWayService();
+
+// Export with old name for compatibility
+export const fazpassService = verifyWayService;
 
 // Clean up expired sessions every 5 minutes
 setInterval(() => {

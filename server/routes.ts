@@ -8,7 +8,7 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import { fazpassService } from './fazpass-service.js';
+import { verifyWayService as fazpassService } from './fazpass-service.js';
 
 // Meta Cloud API is always ready - no initialization needed
 console.log('🎯 Meta Cloud API WhatsApp service ready');
@@ -769,13 +769,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: 'Phone number and full name are required' });
     }
 
-    console.log(`🔄 OTP request received for ${phoneNumber} via Fazpass WhatsApp service`);
+    console.log(`🔄 OTP request received for ${phoneNumber} via VerifyWay WhatsApp service`);
 
     try {
       const result = await fazpassService.sendOTP(phoneNumber, fullName);
       
       if (result.success) {
-        console.log(`✅ WhatsApp OTP sent via Fazpass for ${phoneNumber}`);
+        console.log(`✅ WhatsApp OTP sent via VerifyWay for ${phoneNumber}`);
         res.json({
           success: true,
           message: `تم إرسال رمز التحقق بنجاح`,

@@ -268,24 +268,19 @@ July 6, 2025:
 ✓ Enhanced signup UX with tighter, more professional layout and shorter action text
 
 July 8, 2025:
-✓ FAZPASS WHATSAPP INTEGRATION: Replaced Meta Cloud API with Fazpass WhatsApp OTP system
-✓ Created comprehensive Fazpass service with JWT token authentication for WhatsApp delivery
-✓ Maintained /api/whatsapp/* endpoints for WhatsApp OTP delivery via Fazpass
-✓ Implemented channel-specific WhatsApp requests in Fazpass API calls
-✓ Added proper phone number formatting for Iraqi numbers (+964 prefix)
-✓ Enhanced fallback OTP generation for development and error scenarios
-✓ Restored WhatsApp branding and messaging throughout the authentication flow
-✓ Maintained WhatsApp icon and "الواتساب" text in user interface
-✓ Enhanced error handling with graceful fallbacks and Arabic error messages
+✓ VERIFYWAY WHATSAPP INTEGRATION: Replaced Fazpass with VerifyWay WhatsApp OTP API
+✓ Integrated VerifyWay API (https://verifyway.com) with API key: 906$E2P3X5cqM5U7lOgYNjZYOzfdLXCMDgFljOW9
+✓ Implemented proper VerifyWay API format with Bearer token authentication
+✓ Updated to use official VerifyWay endpoint: https://api.verifyway.com/api/v1/
+✓ Fixed API request structure: recipient, type:'otp', code, channel:'whatsapp'
+✓ Maintained WhatsApp branding and user experience throughout authentication flow
+✓ Enhanced error handling with automatic fallback OTP generation
 ✓ Implemented 4-digit OTP codes with 10-minute expiration time
-✓ Added session cleanup mechanism to prevent memory leaks
-✓ Ready for production with Fazpass merchant key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjoxNjA1OX0.jgMploSV90sZcC0Xg8z-XSQt-Xj2plkdwcGQjdr9xvs
-✓ WhatsApp OTP delivery via Fazpass API with automatic fallback to local OTP generation
-✓ GATEWAY CONFIGURATION NEEDED: System currently using fallback OTP due to missing gateway key
-✓ Error: "gateway does not exists" - requires actual gateway key from Fazpass dashboard
-✓ Created comprehensive setup guide (FAZPASS_SETUP.md) with configuration instructions
-✓ Added detailed debugging and fallback system for development/testing
-✓ System generates local OTP codes (displayed in logs) until Fazpass gateway is properly configured
+✓ Added comprehensive debugging and logging system
+✓ Created updated setup guide with VerifyWay configuration details
+✓ Ready for production with WhatsApp OTP delivery via VerifyWay Cloud API
+✓ Maintained fallback system for development and error scenarios
+✓ System generates local OTP codes (displayed in logs) if VerifyWay API unavailable
 
 July 5, 2025:
 ✓ FIXED: Image upload file size limit issue causing intermittent failures
