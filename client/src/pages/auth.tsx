@@ -217,34 +217,20 @@ const AuthPage: React.FC = () => {
       if (response.ok) {
         setOtpSent(true);
         
-        // Always log OTP to console for user access
-        if (data.otp) {
-          console.log(`🔑 رمز التحقق: ${data.otp}`);
-          console.log(`📱 OTP Code: ${data.otp} (Valid for 10 minutes)`);
-          
-          // Display OTP prominently in UI if Meta API permissions not available
-          if (data.delivered === 'fallback' || data.note?.includes('requires') || data.note?.includes('permissions')) {
-            showNotification(`🔑 رمز التحقق: ${data.otp}\n(صالح لمدة 10 دقائق)\n\nإذا لم تتلقى رسالة WhatsApp، استخدم هذا الرمز`, 'info');
-          } else {
-            showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp بنجاح', 'success');
-          }
-        } else {
-          showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp بنجاح', 'success');
-        }
+        // Only show success message - no OTP display
+        showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp بنجاح', 'success');
       } else {
-        // Even on server error, try to continue with OTP flow
-        setOtpSent(true);
-        showNotification('تم إنشاء رمز التحقق - تحقق من وحدة التحكم', 'success');
+        // Show error message for failed OTP sending
+        showNotification('فشل في إرسال رمز التحقق عبر WhatsApp. يرجى المحاولة مرة أخرى', 'error');
       }
     } catch (error) {
       if (error.name === 'AbortError') {
         // Set OtpSent to true even on timeout since backend likely processed it
         setOtpSent(true);
-        showNotification('✅ تم إنشاء رمز التحقق - تحقق من WhatsApp أو وحدة التحكم للحصول على الرمز', 'success');
+        showNotification('✅ تم إرسال رمز التحقق عبر WhatsApp', 'success');
       } else {
-        // Always allow user to proceed with OTP verification
-        setOtpSent(true);
-        showNotification('تم إنشاء رمز التحقق - تحقق من وحدة التحكم للحصول على الرمز', 'success');
+        // Show error message if OTP sending failed
+        showNotification('خطأ في إرسال رمز التحقق. يرجى المحاولة مرة أخرى', 'error');
       }
     } finally {
       setIsLoading(false);

@@ -777,30 +777,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await metaWhatsAppService.sendOTP(phoneNumber, fullName);
       
-      // Always return success with OTP
-      console.log(`✅ OTP sent via Meta Cloud API for ${phoneNumber}`);
-      
-      res.json({
-        success: true,
-        message: `تم إرسال رمز التحقق بنجاح`,
-        otp: result.otp, // Always include OTP for console verification
-        delivered: 'meta-api'
-      });
+      if (result.success) {
+        console.log(`✅ OTP sent via Meta Cloud API for ${phoneNumber}`);
+        res.json({
+          success: true,
+          message: `تم إرسال رمز التحقق بنجاح`,
+          delivered: 'meta-api'
+        });
+      } else {
+        console.error(`❌ Failed to send OTP via Meta API for ${phoneNumber}`);
+        res.status(400).json({
+          success: false,
+          message: result.message || 'فشل في إرسال رمز التحقق عبر WhatsApp'
+        });
+      }
       
     } catch (error: any) {
       console.error('❌ OTP service error:', error);
       
-      // Generate guaranteed emergency OTP (4 digits)
-      const emergencyOTP = Math.floor(1000 + Math.random() * 9000).toString();
-      console.log(`🚨 EMERGENCY OTP for ${phoneNumber}: ${emergencyOTP}`);
-      
-      // Emergency OTP is handled by Meta service internally
-      
-      res.json({
-        success: true,
-        message: 'تم إنشاء رمز التحقق (وضع الطوارئ)',
-        otp: emergencyOTP,
-        delivered: 'emergency'
+      res.status(500).json({
+        success: false,
+        message: 'خطأ في خدمة إرسال رمز التحقق'
       });
     }
   });

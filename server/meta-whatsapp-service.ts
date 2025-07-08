@@ -113,22 +113,21 @@ export class MetaWhatsAppService {
         };
       } else {
         console.error('❌ Meta API error (permissions issue):', result);
-        console.log(`📱 OTP ${otp} ready for ${formattedPhone} (Meta API requires additional permissions)`);
+        // Return failure instead of fallback OTP
         return {
-          success: true, // Still return success with fallback OTP
-          otp: otp,
-          delivered: 'fallback',
-          note: `OTP generated: ${otp} (Meta API requires phone number permissions)`
+          success: false,
+          message: 'WhatsApp messaging not available - check Meta API permissions',
+          error: result.error
         };
       }
       
     } catch (error) {
       console.error('❌ Meta Cloud API connection error:', error);
-      console.log(`📱 Fallback OTP ${otp} ready for ${formattedPhone}`);
+      // Return failure instead of fallback OTP
       return {
-        success: true, // Always provide fallback OTP
-        otp: otp,
-        note: `OTP generated: ${otp} (Meta API connection issue)`
+        success: false,
+        message: 'WhatsApp service unavailable - connection error',
+        error: error.message
       };
     }
   }
