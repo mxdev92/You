@@ -8,7 +8,7 @@ import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 
 export default function AuthPage() {
   const [location, setLocation] = useLocation();
-  const [mode, setMode] = useState<'login' | 'signup'>('signup');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -301,40 +301,41 @@ export default function AuthPage() {
       return (
         <div className="space-y-4">
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="email"
               placeholder="البريد الإلكتروني"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="h-12 pl-10 text-left font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
-              dir="ltr"
+              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              dir="rtl"
             />
             {errors.email && <p className="text-red-500 text-sm mt-1 text-right">{errors.email}</p>}
           </div>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="password"
               placeholder="كلمة المرور"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="h-12 pl-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              dir="rtl"
             />
             {errors.password && <p className="text-red-500 text-sm mt-1 text-right">{errors.password}</p>}
           </div>
 
           {errors.submit && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-600 text-sm text-center">{errors.submit}</p>
+              <p className="text-red-600 text-sm text-center font-['Cairo']">{errors.submit}</p>
             </div>
           )}
 
           <Button
             onClick={handleLogin}
             disabled={isSubmitting}
-            className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
+            className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 font-['Cairo']"
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center gap-2">
@@ -359,52 +360,54 @@ export default function AuthPage() {
           </div>
 
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="email"
               placeholder="البريد الإلكتروني"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="h-12 pl-10 text-left font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
-              dir="ltr"
+              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              dir="rtl"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1 text-right">{errors.email}</p>}
+            {errors.email && <p className="text-red-500 text-sm mt-1 text-right font-['Cairo']">{errors.email}</p>}
           </div>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="password"
               placeholder="كلمة المرور (6 أحرف على الأقل)"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="h-12 pl-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              dir="rtl"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1 text-right">{errors.password}</p>}
+            {errors.password && <p className="text-red-500 text-sm mt-1 text-right font-['Cairo']">{errors.password}</p>}
           </div>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="password"
               placeholder="تأكيد كلمة المرور"
               value={formData.confirmPassword}
               onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              className="h-12 pl-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              dir="rtl"
             />
-            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 text-right">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 text-right font-['Cairo']">{errors.confirmPassword}</p>}
           </div>
 
           {errors.submit && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-600 text-sm text-center">{errors.submit}</p>
+              <p className="text-red-600 text-sm text-center font-['Cairo']">{errors.submit}</p>
             </div>
           )}
 
           <Button
             onClick={handleFirebaseSignup}
             disabled={isSubmitting}
-            className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
+            className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 font-['Cairo']"
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center gap-2">
@@ -413,8 +416,8 @@ export default function AuthPage() {
               </div>
             ) : (
               <>
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 <span>إنشاء حساب Firebase</span>
-                <ArrowRight className="w-4 h-4 ml-2" />
               </>
             )}
           </Button>
@@ -624,7 +627,7 @@ export default function AuthPage() {
           </button>
           
           <h1 className="text-3xl font-bold text-gray-800 font-['Cairo'] mb-2">PAKETY</h1>
-          <p className="text-gray-600 font-['Cairo']">
+          <p className="text-gray-600 font-['Cairo'] text-right">
             {mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
           </p>
         </div>

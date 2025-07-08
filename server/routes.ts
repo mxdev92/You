@@ -785,17 +785,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert phone to email format for storage (since user already has Firebase account)
       const email = `${phone}@pakety.app`;
 
-      // Create user in database
-      const newUser = await storage.createUser({
-        email,
-        passwordHash: 'firebase-auth', // Placeholder since Firebase handles auth
-        fullName,
-        phone
-      });
+      // Check if user already exists with this phone
+      let user = await storage.getUserByPhone(phone);
+      
+      if (!user) {
+        // Create new user in database
+        user = await storage.createUser({
+          email,
+          passwordHash: 'firebase-auth', // Placeholder since Firebase handles auth
+          fullName,
+          phone
+        });
+      }
 
-      // Create address
+      // Create address (replace existing if any)
       await storage.createAddress({
-        userId: newUser.id,
+        userId: user.id,
         governorate,
         district,
         neighborhood: landmark, // Using landmark as neighborhood
@@ -805,7 +810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create session
       (req as any).session = (req as any).session || {};
-      (req as any).session.userId = newUser.id;
+      (req as any).session.userId = user.id;
       
       // Clean up OTP
       otpStore.delete(phone);
@@ -813,10 +818,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         message: 'تم إكمال التسجيل بنجاح', 
         user: { 
-          id: newUser.id, 
-          email: newUser.email, 
-          fullName: newUser.fullName,
-          phone: newUser.phone
+          id: user.id, 
+          email: user.email, 
+          fullName: user.fullName,
+          phone: user.phone
         } 
       });
     } catch (error: any) {
