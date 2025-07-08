@@ -8,7 +8,7 @@ import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useLocation } from "wouter";
-import FirebaseSignupModal from "@/components/firebase-signup-modal";
+
 import { formatPrice } from "@/lib/price-utils";
 import type { Product } from "@shared/schema";
 
@@ -67,7 +67,7 @@ function LazyImage({ src, alt, className }: { src: string; alt: string; classNam
 export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const addToCart = useCartFlow(state => state.addToCart);
   const { t } = useTranslation();
   const { user, loading } = useFirebaseAuth();
@@ -87,8 +87,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     
     // Check if user is authenticated after loading is complete
     if (!user) {
-      console.log('❌ No user found, opening auth modal');
-      setIsModalOpen(true);
+      console.log('❌ No user found, redirecting to login');
+      setLocation('/login');
       return;
     }
     
@@ -194,15 +194,8 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Details Modal */}
       <ProductDetailsModal
         product={product}
-        isOpen={isModalOpen && !!user}
-        onClose={() => setIsModalOpen(false)}
-      />
-
-      {/* Firebase Authentication Modal */}
-      <FirebaseSignupModal 
-        isOpen={isModalOpen && !user}
-        onClose={() => setIsModalOpen(false)}
-        initialMode="login"
+        isOpen={false}
+        onClose={() => {}}
       />
     </>
   );

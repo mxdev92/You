@@ -97,6 +97,17 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 8, 2025:
+✓ AUTHENTICATION REDESIGN: Converted login/signup from modal popup to dedicated page-based interface
+✓ Created comprehensive /login route with full-screen authentication experience
+✓ Updated header and product cards to redirect to /login instead of opening modals
+✓ Removed all modal authentication components and dependencies from UI
+✓ Hybrid system implemented: signup uses phone + password + OTP verification, login uses phone + password only
+✓ Eliminated reCAPTCHA requirement as requested for simplified user experience
+✓ Added visual progress indicators for multi-step signup flow
+✓ Mobile-optimized design with proper back navigation and responsive layout
+✓ Enhanced UX with step-by-step signup process and clear authentication flow
+
 July 6, 2025:
 ✓ UX ENHANCEMENT: Set Vegetables as default category when app opens (category ID: 2)
 ✓ CART FIX: Cart now properly empty on first app load for anonymous users

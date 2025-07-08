@@ -59,8 +59,9 @@ function Router() {
       {/* Home page - allows anonymous browsing */}
       <Route path="/" component={Home} />
       
-      {/* Auth page */}
+      {/* Auth pages */}
       <Route path="/auth" component={AuthPage} />
+      <Route path="/login" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );

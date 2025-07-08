@@ -6,8 +6,7 @@ import { useCartFlow } from "@/store/cart-flow";
 import CategoriesSection from "@/components/categories-section";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useLocation } from "wouter";
-import FirebaseSignupModal from "@/components/firebase-signup-modal";
-import { useState } from "react";
+
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -23,11 +22,11 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { cartItems, getCartItemsCount } = useCartFlow();
   const cartItemsCount = cartItems.length; // Show number of different items, not total quantity
 
-  const [showAuthModal, setShowAuthModal] = useState(false);
+
 
   const handleMenuClick = () => {
     if (!user) {
-      setShowAuthModal(true);
+      setLocation('/login');
       return;
     }
     onMenuClick();
@@ -35,7 +34,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
 
   const handleCartClick = () => {
     if (!user) {
-      setShowAuthModal(true);
+      setLocation('/login');
       return;
     }
     onCartClick();
@@ -87,11 +86,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
         <CategoriesSection />
       </header>
 
-    <FirebaseSignupModal 
-      isOpen={showAuthModal}
-      onClose={() => setShowAuthModal(false)}
-      initialMode="login"
-    />
+
     </>
   );
 }
