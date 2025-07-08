@@ -9,7 +9,6 @@ import AdminPanel from "@/pages/admin-panel";
 import AdminLogin from "@/pages/admin-login";
 import WhatsAppAdmin from "@/pages/whatsapp-admin";
 import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
-import BaileysAdmin from "@/pages/baileys-admin";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 
@@ -56,7 +55,6 @@ function Router() {
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/whatsapp-admin" component={BaileysWhatsAppAdmin} />
       <Route path="/whatsapp-admin-old" component={WhatsAppAdmin} />
-      <Route path="/baileys-admin" component={BaileysAdmin} />
       
       {/* Home page - allows anonymous browsing */}
       <Route path="/" component={Home} />

@@ -25,7 +25,7 @@ interface TestData {
   orderId: string;
 }
 
-export default function MetaWhatsAppAdmin() {
+export default function BaileysWhatsAppAdmin() {
   const [status, setStatus] = useState<WhatsAppStatus>({ 
     connected: false, 
     connecting: false, 
