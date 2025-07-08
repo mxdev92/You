@@ -45,11 +45,14 @@ export default function AuthPage() {
     'المثنى', 'القادسية', 'ميسان'
   ];
 
+  // Only redirect to home if user completes all steps (not just Firebase auth)
   useEffect(() => {
-    if (user) {
+    if (user && mode === 'login') {
+      // For login mode, redirect immediately after Firebase auth
       setLocation('/');
     }
-  }, [user, setLocation]);
+    // For signup mode, don't redirect - user must complete all 3 steps
+  }, [user, mode, setLocation]);
 
   const validateStep = (stepNumber: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -107,13 +110,29 @@ export default function AuthPage() {
     if (!validateStep(1)) return;
     
     setIsSubmitting(true);
+    setErrors({}); // Clear any previous errors
+    
     try {
       const user = await registerWithEmailPassword(formData.email, formData.password);
-      console.log('Firebase signup successful:', user.email);
+      console.log('Firebase signup successful, moving to step 2:', user.email);
+      
+      // Clear any Firebase auth errors and move to step 2
+      setErrors({});
       setStep(2); // Move to WhatsApp verification
+      
     } catch (error: any) {
       console.error('Firebase signup failed:', error);
-      setErrors({ submit: error.message || 'فشل في إنشاء الحساب' });
+      let errorMessage = 'فشل في إنشاء الحساب';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'هذا البريد الإلكتروني مستخدم بالفعل';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'كلمة المرور ضعيفة جداً';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'البريد الإلكتروني غير صحيح';
+      }
+      
+      setErrors({ submit: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
@@ -218,7 +237,9 @@ export default function AuthPage() {
       });
 
       if (response.ok) {
-        console.log('Signup completed successfully');
+        // Show success message
+        alert('تم إنشاء الحساب بنجاح! أهلاً وسهلاً بك في PAKETY');
+        console.log('Signup completed successfully - all 3 steps done');
         setLocation('/');
       } else {
         const result = await response.json();
@@ -333,7 +354,7 @@ export default function AuthPage() {
       return (
         <div className="space-y-4">
           <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 font-['Cairo']">إنشاء حساب Firebase</h3>
+            <h3 className="text-lg font-semibold text-gray-800 font-['Cairo']">الخطوة 1: إنشاء الحساب</h3>
             <p className="text-sm text-gray-600 mt-1">البريد الإلكتروني وكلمة المرور</p>
           </div>
 
@@ -405,7 +426,7 @@ export default function AuthPage() {
       return (
         <div className="space-y-4">
           <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 font-['Cairo']">تأكيد رقم الواتساب</h3>
+            <h3 className="text-lg font-semibold text-gray-800 font-['Cairo']">الخطوة 2: تأكيد رقم الواتساب</h3>
             <p className="text-sm text-gray-600 mt-1">سنرسل لك رمز تحقق عبر WhatsApp</p>
           </div>
 
@@ -501,7 +522,7 @@ export default function AuthPage() {
       return (
         <div className="space-y-4">
           <div className="text-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 font-['Cairo']">معلومات التوصيل</h3>
+            <h3 className="text-lg font-semibold text-gray-800 font-['Cairo']">الخطوة 3: معلومات التوصيل</h3>
             <p className="text-sm text-gray-600 mt-1">اكمل بياناتك لإنهاء التسجيل</p>
           </div>
 
