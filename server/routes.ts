@@ -10,6 +10,7 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import BaileysWhatsAppService from './baileys-whatsapp-service';
 import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
+import { verifyWayService } from './verifyway-service';
 
 const whatsappService = new BaileysWhatsAppService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
@@ -791,55 +792,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: 'Phone number and full name are required' });
     }
 
-    console.log(`🔄 OTP request received for ${phoneNumber} - ensuring stable connection first...`);
+    console.log(`📱 Sending OTP via VerifyWay API to ${phoneNumber}`);
 
     try {
-      // CRITICAL: Force connection verification before any OTP operations
-      const connectionReady = await whatsappService.ensureConnectionReady(15000); // 15 second timeout
+      // Use VerifyWay API for stable OTP delivery
+      const result = await verifyWayService.sendOTP(phoneNumber, fullName);
       
-      if (connectionReady) {
-        console.log(`✅ WhatsApp connection verified - proceeding with OTP for ${phoneNumber}`);
+      if (result.success) {
+        console.log(`✅ VerifyWay OTP sent successfully to ${phoneNumber}`);
+        
+        res.json({
+          success: true,
+          message: 'تم إرسال رمز التحقق عبر واتساب',
+          otp: result.otp, // Include OTP for console display
+          reference: result.reference,
+          delivered: 'verifyway'
+        });
       } else {
-        console.log(`⚠️ WhatsApp connection not stable - using fallback OTP for ${phoneNumber}`);
+        console.log(`⚠️ VerifyWay failed, using Baileys fallback for ${phoneNumber}`);
+        
+        // Fallback to Baileys WhatsApp service
+        const baileyResult = await whatsappService.sendOTP(phoneNumber, fullName);
+        
+        res.json({
+          success: true,
+          message: 'تم إرسال رمز التحقق',
+          otp: baileyResult.otp,
+          delivered: 'baileys_fallback'
+        });
       }
-      
-      const result = await whatsappService.sendOTP(phoneNumber, fullName);
-      
-      // Always return success with OTP
-      console.log(`✅ OTP generated for ${phoneNumber}:`, connectionReady ? 'WhatsApp delivered' : 'Fallback used');
-      
-      res.json({
-        success: true,
-        message: `تم إنشاء رمز التحقق بنجاح`,
-        otp: result.otp, // Always include OTP
-        delivered: connectionReady ? 'whatsapp' : 'fallback'
-      });
       
     } catch (error: any) {
       console.error('❌ OTP service error:', error);
       
-      // Generate guaranteed emergency OTP (4 digits)
-      const emergencyOTP = Math.floor(1000 + Math.random() * 9000).toString();
-      console.log(`🚨 EMERGENCY OTP for ${phoneNumber}: ${emergencyOTP}`);
-      
-      // Store emergency OTP in service for verification
-      whatsappService.verifyOTP = whatsappService.verifyOTP || (() => {});
-      const session = {
-        phoneNumber,
-        otp: emergencyOTP,
-        fullName,
-        timestamp: Date.now(),
-        expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
-      };
-      whatsappService.otpSessions = whatsappService.otpSessions || new Map();
-      whatsappService.otpSessions.set(phoneNumber, session);
-      
-      res.json({
-        success: true,
-        message: 'تم إنشاء رمز التحقق (وضع الطوارئ)',
-        otp: emergencyOTP,
-        delivered: 'emergency'
-      });
+      // Final fallback - generate local OTP
+      try {
+        const baileyResult = await whatsappService.sendOTP(phoneNumber, fullName);
+        res.json({
+          success: true,
+          message: 'تم إنشاء رمز التحقق',
+          otp: baileyResult.otp,
+          delivered: 'baileys_emergency'
+        });
+      } catch (baileyError) {
+        // Last resort - manual OTP
+        const emergencyOTP = Math.floor(1000 + Math.random() * 9000).toString();
+        console.log(`🚨 MANUAL OTP for ${phoneNumber}: ${emergencyOTP}`);
+        
+        res.json({
+          success: true,
+          message: 'تم إنشاء رمز التحقق (يدوي)',
+          otp: emergencyOTP,
+          delivered: 'manual'
+        });
+      }
     }
   });
 
@@ -851,15 +857,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Phone number and OTP are required' });
       }
 
-      const result = whatsappService.verifyOTP(phoneNumber, otp);
+      // Try VerifyWay verification first
+      let result = verifyWayService.verifyOTP(phoneNumber, otp);
+      
+      // If VerifyWay verification fails, try Baileys fallback
+      if (!result.valid) {
+        result = whatsappService.verifyOTP(phoneNumber, otp);
+      }
       
       if (result.valid) {
+        console.log(`✅ OTP verified successfully for ${phoneNumber}`);
         res.json({ message: result.message, valid: true });
       } else {
         res.status(400).json({ message: result.message, valid: false });
       }
     } catch (error: any) {
-      console.error('Baileys WhatsApp OTP verification error:', error);
+      console.error('OTP verification error:', error);
       res.status(500).json({ message: 'Failed to verify OTP' });
     }
   });
