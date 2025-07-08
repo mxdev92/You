@@ -73,8 +73,8 @@ export default function AuthPage() {
         if (!formData.phone.match(/^07\d{9}$/)) {
           newErrors.phone = 'رقم الموبايل يجب أن يبدأ ب 07 ويحتوي على 11 رقم';
         }
-        if (otpState.isOTPSent && (!otpCode || otpCode.length !== 6)) {
-          newErrors.otp = 'رمز التحقق يجب أن يكون 6 أرقام';
+        if (otpState.isOTPSent && (!otpCode || otpCode.length !== 4)) {
+          newErrors.otp = 'رمز التحقق يجب أن يكون 4 أرقام';
         }
       } else if (stepNumber === 2) {
         // Step 2: Set password
@@ -331,163 +331,315 @@ export default function AuthPage() {
 
           {/* Signup Step 1: Phone Verification */}
           {mode === 'signup' && step === 1 && (
-            <div className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold font-['Cairo']">تأكيد رقم الهاتف</h3>
-                <p className="text-gray-600 dark:text-gray-400">أدخل رقم هاتفك لاستلام رمز التحقق</p>
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold font-['Cairo'] mb-2">تأكيد رقم الهاتف</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">أدخل رقم هاتفك لاستلام رمز التحقق</p>
               </div>
 
-              <div>
-                <Label htmlFor="phone" className="text-right block mb-2 font-['Cairo']">رقم الموبايل</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className={`text-left ${errors.phone ? 'border-red-500' : ''}`}
-                  dir="ltr"
-                  placeholder="07000000000"
-                />
-                {errors.phone && <p className="text-red-500 text-sm mt-1 text-right">{errors.phone}</p>}
-              </div>
-
-              {!otpState.isOTPSent && (
-                <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                  <p className="text-sm text-green-700 dark:text-green-300 text-right font-['Cairo']">
-                    📱 سنرسل لك رمز التحقق عبر رسالة نصية لتأكيد رقم الهاتف
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="phone" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                    رقم الموبايل العراقي
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 11) {
+                          setFormData({...formData, phone: value});
+                        }
+                      }}
+                      className={`h-14 text-lg text-center tracking-wider border-2 rounded-xl font-mono ${
+                        errors.phone ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                      } transition-all duration-200`}
+                      dir="ltr"
+                      placeholder="07000000000"
+                      maxLength={11}
+                    />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
+                      11 رقم
+                    </div>
+                  </div>
+                  {errors.phone && (
+                    <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                      {errors.phone}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2 text-center">
+                    مثال: 07701234567
                   </p>
                 </div>
-              )}
 
-              {otpState.isOTPSent && (
-                <>
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300 text-right font-['Cairo']">
-                      ✅ تم إرسال رمز التحقق إلى {otpState.phoneNumber}
-                    </p>
-                  </div>
+                {!otpState.isOTPSent && (
+                  <Button
+                    onClick={handleNext}
+                    disabled={isSubmitting || !formData.phone.match(/^07\d{9}$/)}
+                    className="w-full h-14 text-lg font-['Cairo'] font-semibold bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl transition-all duration-200 shadow-lg"
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>جاري الإرسال...</span>
+                      </div>
+                    ) : (
+                      'إرسال رمز التأكيد'
+                    )}
+                  </Button>
+                )}
 
-                  <div>
-                    <Label htmlFor="otp" className="text-right block mb-2 font-['Cairo']">رمز التحقق</Label>
-                    <Input
-                      id="otp"
-                      type="text"
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value)}
-                      className={`text-center text-lg tracking-widest ${errors.otp ? 'border-red-500' : ''}`}
-                      placeholder="123456"
-                      maxLength={6}
-                      dir="ltr"
-                    />
-                    {errors.otp && <p className="text-red-500 text-sm mt-1 text-right">{errors.otp}</p>}
-                  </div>
-                </>
-              )}
+                {otpState.isOTPSent && (
+                  <>
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-200">
+                      <div className="flex items-center justify-center space-x-2 space-x-reverse mb-2">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <span className="text-green-600">✓</span>
+                        </div>
+                        <p className="text-green-700 dark:text-green-300 font-['Cairo'] font-medium">
+                          تم إرسال الرمز بنجاح
+                        </p>
+                      </div>
+                      <p className="text-sm text-green-600 text-center font-['Cairo']">
+                        إلى الرقم: {otpState.phoneNumber}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="otp" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                        رمز التحقق (4 أرقام)
+                      </Label>
+                      <Input
+                        id="otp"
+                        type="text"
+                        value={otpCode}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '');
+                          if (value.length <= 4) {
+                            setOtpCode(value);
+                          }
+                        }}
+                        className={`h-14 text-2xl text-center tracking-[0.8em] border-2 rounded-xl font-mono ${
+                          errors.otp ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                        } transition-all duration-200`}
+                        placeholder="● ● ● ●"
+                        maxLength={4}
+                        dir="ltr"
+                      />
+                      {errors.otp && (
+                        <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                          {errors.otp}
+                        </p>
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={handleNext}
+                      disabled={isSubmitting || otpCode.length !== 4}
+                      className="w-full h-14 text-lg font-['Cairo'] font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-xl transition-all duration-200 shadow-lg"
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>جاري التحقق...</span>
+                        </div>
+                      ) : (
+                        'تأكيد'
+                      )}
+                    </Button>
+
+                    <button
+                      onClick={async () => {
+                        setOtpState(prev => ({ ...prev, isOTPSent: false }));
+                        setOtpCode('');
+                        await sendOTP();
+                      }}
+                      className="w-full text-sm text-gray-500 hover:text-green-600 font-['Cairo'] py-2"
+                    >
+                      إعادة إرسال الرمز
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
           {/* Signup Step 2: Set Password */}
           {mode === 'signup' && step === 2 && (
-            <div className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold font-['Cairo']">تعيين كلمة المرور</h3>
-                <p className="text-gray-600 dark:text-gray-400">اختر كلمة مرور قوية لحسابك</p>
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold font-['Cairo'] mb-2">تعيين كلمة المرور</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">اختر كلمة مرور قوية لحماية حسابك</p>
               </div>
 
-              <div>
-                <Label htmlFor="password" className="text-right block mb-2 font-['Cairo']">كلمة المرور</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className={`text-left ${errors.password ? 'border-red-500' : ''}`}
-                  dir="ltr"
-                  placeholder="ادخل كلمة المرور"
-                />
-                {errors.password && <p className="text-red-500 text-sm mt-1 text-right">{errors.password}</p>}
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="password" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                    كلمة المرور
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className={`h-14 text-lg border-2 rounded-xl ${
+                      errors.password ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                    } transition-all duration-200`}
+                    dir="ltr"
+                    placeholder="ادخل كلمة المرور (6 أحرف على الأقل)"
+                  />
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                      {errors.password}
+                    </p>
+                  )}
+                </div>
 
-              <div>
-                <Label htmlFor="confirmPassword" className="text-right block mb-2 font-['Cairo']">تأكيد كلمة المرور</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                  className={`text-left ${errors.confirmPassword ? 'border-red-500' : ''}`}
-                  dir="ltr"
-                  placeholder="أعد كتابة كلمة المرور"
-                />
-                {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 text-right">{errors.confirmPassword}</p>}
+                <div>
+                  <Label htmlFor="confirmPassword" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                    تأكيد كلمة المرور
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    className={`h-14 text-lg border-2 rounded-xl ${
+                      errors.confirmPassword ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                    } transition-all duration-200`}
+                    dir="ltr"
+                    placeholder="أعد كتابة كلمة المرور"
+                  />
+                  {errors.confirmPassword && (
+                    <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                      {errors.confirmPassword}
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-xl">
+                  <p className="text-sm text-blue-700 font-['Cairo'] text-right">
+                    💡 اختر كلمة مرور تحتوي على 6 أحرف على الأقل لضمان الأمان
+                  </p>
+                </div>
+
+                <Button
+                  onClick={handleNext}
+                  disabled={!formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword || formData.password.length < 6}
+                  className="w-full h-14 text-lg font-['Cairo'] font-semibold bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl transition-all duration-200 shadow-lg"
+                >
+                  المتابعة إلى المعلومات الشخصية
+                </Button>
               </div>
             </div>
           )}
 
           {/* Signup Step 3: Personal Details */}
           {mode === 'signup' && step === 3 && (
-            <div className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold font-['Cairo']">المعلومات الشخصية</h3>
-                <p className="text-gray-600 dark:text-gray-400">أكمل معلوماتك الشخصية</p>
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold font-['Cairo'] mb-2">المعلومات الشخصية</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">أكمل معلوماتك لإنهاء إنشاء الحساب</p>
               </div>
 
-              <div>
-                <Label htmlFor="fullName" className="text-right block mb-2 font-['Cairo']">الاسم</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                  className={`text-right ${errors.fullName ? 'border-red-500' : ''}`}
-                  dir="rtl"
-                  placeholder="اكتب اسمك الكامل"
-                />
-                {errors.fullName && <p className="text-red-500 text-sm mt-1 text-right">{errors.fullName}</p>}
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="fullName" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                    الاسم
+                  </Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    className={`h-14 text-lg text-right border-2 rounded-xl ${
+                      errors.fullName ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                    } transition-all duration-200`}
+                    dir="rtl"
+                    placeholder="اكتب اسمك الكامل"
+                  />
+                  {errors.fullName && (
+                    <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                      {errors.fullName}
+                    </p>
+                  )}
+                </div>
 
-              <div>
-                <Label htmlFor="governorate" className="text-right block mb-2 font-['Cairo']">المحافظة</Label>
-                <select
-                  id="governorate"
-                  value={formData.governorate}
-                  onChange={(e) => setFormData({ ...formData, governorate: e.target.value })}
-                  className={`w-full p-3 border rounded-lg text-right font-['Cairo'] ${errors.governorate ? 'border-red-500' : 'border-gray-300'}`}
-                  dir="rtl"
-                >
-                  {iraqiGovernorates.map((gov) => (
-                    <option key={gov} value={gov}>{gov}</option>
-                  ))}
-                </select>
-                {errors.governorate && <p className="text-red-500 text-sm mt-1 text-right">{errors.governorate}</p>}
-              </div>
+                <div>
+                  <Label htmlFor="governorate" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                    المحافظة
+                  </Label>
+                  <select
+                    id="governorate"
+                    value={formData.governorate}
+                    onChange={(e) => setFormData({ ...formData, governorate: e.target.value })}
+                    className={`w-full h-14 text-lg border-2 rounded-xl text-right font-['Cairo'] bg-white ${
+                      errors.governorate ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                    } transition-all duration-200`}
+                    dir="rtl"
+                  >
+                    {iraqiGovernorates.map((gov) => (
+                      <option key={gov} value={gov}>{gov}</option>
+                    ))}
+                  </select>
+                  {errors.governorate && (
+                    <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                      {errors.governorate}
+                    </p>
+                  )}
+                </div>
 
-              <div>
-                <Label htmlFor="district" className="text-right block mb-2 font-['Cairo']">المنطقة</Label>
-                <Input
-                  id="district"
-                  type="text"
-                  value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  className={`text-right ${errors.district ? 'border-red-500' : ''}`}
-                  dir="rtl"
-                  placeholder="اكتب اسم المنطقة"
-                />
-                {errors.district && <p className="text-red-500 text-sm mt-1 text-right">{errors.district}</p>}
-              </div>
+                <div>
+                  <Label htmlFor="district" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                    المنطقة
+                  </Label>
+                  <Input
+                    id="district"
+                    type="text"
+                    value={formData.district}
+                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                    className={`h-14 text-lg text-right border-2 rounded-xl ${
+                      errors.district ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                    } transition-all duration-200`}
+                    dir="rtl"
+                    placeholder="اكتب اسم المنطقة"
+                  />
+                  {errors.district && (
+                    <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                      {errors.district}
+                    </p>
+                  )}
+                </div>
 
-              <div>
-                <Label htmlFor="landmark" className="text-right block mb-2 font-['Cairo']">أقرب نقطة دالة</Label>
-                <Input
-                  id="landmark"
-                  type="text"
-                  value={formData.landmark}
-                  onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                  className={`text-right ${errors.landmark ? 'border-red-500' : ''}`}
-                  dir="rtl"
-                  placeholder="مثل: قرب الجامعة، بجانب المستشفى"
-                />
-                {errors.landmark && <p className="text-red-500 text-sm mt-1 text-right">{errors.landmark}</p>}
+                <div>
+                  <Label htmlFor="landmark" className="text-right block mb-3 text-sm font-medium font-['Cairo']">
+                    أقرب نقطة دالة
+                  </Label>
+                  <Input
+                    id="landmark"
+                    type="text"
+                    value={formData.landmark}
+                    onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
+                    className={`h-14 text-lg text-right border-2 rounded-xl ${
+                      errors.landmark ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-green-500'
+                    } transition-all duration-200`}
+                    dir="rtl"
+                    placeholder="مثل: قرب الجامعة، بجانب المستشفى"
+                  />
+                  {errors.landmark && (
+                    <p className="text-red-500 text-sm mt-2 text-right font-['Cairo'] bg-red-50 p-2 rounded-lg">
+                      {errors.landmark}
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-xl">
+                  <p className="text-sm text-green-700 font-['Cairo'] text-right">
+                    🎉 مرحلة أخيرة! بعد الضغط على "إنشاء الحساب" ستتمكن من التسوق فوراً
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -501,41 +653,53 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex space-x-reverse space-x-3 mt-6">
-            <Button
-              onClick={handleNext}
-              disabled={isSubmitting}
-              className="flex-1 bg-green-600 hover:bg-green-700 font-['Cairo']"
-            >
-              {isSubmitting ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : mode === 'login' ? (
-                'تسجيل الدخول'
-              ) : step === 1 && !otpState.isOTPSent ? (
-                'إرسال رمز التحقق'
-              ) : step === 1 && otpState.isOTPSent ? (
-                'تأكيد الرمز'
-              ) : step === 2 ? (
-                'التالي'
-              ) : step === 3 ? (
-                'إنشاء الحساب'
-              ) : (
-                'التالي'
-              )}
-            </Button>
-            
-            {step > 1 && mode === 'signup' && (
+          {/* Action Buttons - Only for Login and Step 3 */}
+          {mode === 'login' && (
+            <div className="mt-6">
+              <Button
+                onClick={handleNext}
+                disabled={isSubmitting}
+                className="w-full h-14 text-lg font-['Cairo'] font-semibold bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl transition-all duration-200 shadow-lg"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>جاري تسجيل الدخول...</span>
+                  </div>
+                ) : (
+                  'تسجيل الدخول'
+                )}
+              </Button>
+            </div>
+          )}
+
+          {mode === 'signup' && step === 3 && (
+            <div className="flex space-x-reverse space-x-3 mt-6">
+              <Button
+                onClick={handleNext}
+                disabled={isSubmitting}
+                className="flex-1 h-14 text-lg font-['Cairo'] font-semibold bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-xl transition-all duration-200 shadow-lg"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center space-x-2 space-x-reverse">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>جاري إنشاء الحساب...</span>
+                  </div>
+                ) : (
+                  'إنشاء الحساب'
+                )}
+              </Button>
+              
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setStep(step - 1)}
-                className="flex-1 font-['Cairo']"
+                className="flex-1 h-14 text-lg font-['Cairo'] border-2 rounded-xl"
               >
                 السابق
               </Button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Toggle between login/signup */}
           <div className="text-center mt-4">
