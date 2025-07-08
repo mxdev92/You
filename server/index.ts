@@ -24,13 +24,14 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 // Configure session middleware with persistent sessions
 app.use(session({
   secret: process.env.SESSION_SECRET || 'yalla-jeetek-secret-key-12345',
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Changed to true to ensure session is saved
+  saveUninitialized: true, // Changed to true to create session for all requests
   rolling: true, // Reset expiration on activity
   cookie: {
     secure: false, // Set to true if using HTTPS
     httpOnly: true,
     maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year - effectively permanent
+    sameSite: 'lax' // Added for better cookie handling
   }
 }));
 
