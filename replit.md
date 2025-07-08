@@ -97,17 +97,6 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
-July 8, 2025:
-✓ AUTHENTICATION REDESIGN: Converted login/signup from modal popup to dedicated page-based interface
-✓ Created comprehensive /login route with full-screen authentication experience
-✓ Updated header and product cards to redirect to /login instead of opening modals
-✓ Removed all modal authentication components and dependencies from UI
-✓ Hybrid system implemented: signup uses phone + password + OTP verification, login uses phone + password only
-✓ Eliminated reCAPTCHA requirement as requested for simplified user experience
-✓ Added visual progress indicators for multi-step signup flow
-✓ Mobile-optimized design with proper back navigation and responsive layout
-✓ Enhanced UX with step-by-step signup process and clear authentication flow
-
 July 6, 2025:
 ✓ UX ENHANCEMENT: Set Vegetables as default category when app opens (category ID: 2)
 ✓ CART FIX: Cart now properly empty on first app load for anonymous users
@@ -240,30 +229,9 @@ July 6, 2025:
 ✓ Updated OTP generation to produce 4-digit codes instead of 6-digit codes
 ✓ Fixed validation logic to require exactly 4 digits for OTP verification
 ✓ Emergency OTP fallback system also generates 4-digit codes for consistency
-✓ CART FIX: Fixed duplicate item issue - now properly merges items instead of creating duplicates
-✓ When user adds same product multiple times, quantity increases rather than creating duplicate entries
-✓ Updated DatabaseStorage addToCart method to check for existing items and merge quantities
-✓ Cart now displays single item per product with correct total quantity (e.g., "2 kg" instead of two separate entries)
-✓ CART BADGE FIX: Cart badge now shows number of different items instead of total quantity
-✓ Badge displays count of unique products in cart (e.g., "2" for cucumber + tomato) not sum of quantities
-✓ ORDER SUBMISSION FIX: Fixed critical error "whatsappService.getConnectionStatus is not a function"
-✓ Added missing getConnectionStatus method to BaileysWhatsAppService class
-✓ Order submission now works properly with WhatsApp integration enabled
-✓ CART STABILITY FIX: Fixed infinite refresh loop causing cart instability
-✓ Removed excessive auto-refetch interval (2 seconds) from ProductsGrid component
-✓ Fixed useEffect dependency arrays in Home and RightSidebar components
-✓ Cart now stable with proper caching (5 minutes) instead of constant API calls
-✓ CART STARTUP: Cart now clears automatically when app opens
-✓ Fresh start experience with empty cart on every app launch
-✓ Cart only loads existing data for authenticated users after clearing
 ✓ OTP DELIVERY FIX: Fixed frontend timeout issues causing stuck loading states during OTP sending
 ✓ Enhanced error handling with 30-second frontend timeout and 8-second backend timeout for faster response
 ✓ Added fallback logic to proceed with OTP verification even if frontend times out (backend still succeeds)
-✓ CRITICAL CART FIX: Fixed add to cart functionality completely
-✓ Added userId column to cart_items table via SQL migration
-✓ Fixed cart authentication by adding credentials: "include" to all API requests
-✓ Enhanced error logging for cart debugging and troubleshooting
-✓ Cart merging logic now properly checks both productId AND userId for authenticated users
 ✓ PERFORMANCE OPTIMIZATION: Accelerated OTP button response time from 6+ seconds to under 3 seconds
 ✓ Reduced WhatsApp retry attempts from 3 to 2 and retry delay from 2s to 1s for faster fallback
 ✓ Optimized WhatsApp message timeout from 8s to 3s with aggressive timeout handling

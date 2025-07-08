@@ -969,8 +969,8 @@ function ItemsManagement() {
       if (!response.ok) throw new Error('Failed to fetch products');
       return response.json();
     },
-    staleTime: 30000, // Cache data for 30 seconds
-    refetchInterval: 5000, // Refetch every 5 seconds instead of 1 second
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 1000, // Refetch every 1 second for real-time updates
   });
 
   // Convert backend products to Firebase-compatible format

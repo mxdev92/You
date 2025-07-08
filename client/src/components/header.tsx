@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartFlow } from "@/store/cart-flow";
 import CategoriesSection from "@/components/categories-section";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useLocation } from "wouter";
-
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -15,18 +14,16 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { t } = useTranslation();
-  const { user } = useFirebaseAuth();
+  const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
   
   // Use CartFlow store for cart data (same as sidebar)
   const { cartItems, getCartItemsCount } = useCartFlow();
-  const cartItemsCount = cartItems.length; // Show number of different items, not total quantity
-
-
+  const cartItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleMenuClick = () => {
     if (!user) {
-      setLocation('/login');
+      setLocation('/auth');
       return;
     }
     onMenuClick();
@@ -34,15 +31,14 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
 
   const handleCartClick = () => {
     if (!user) {
-      setLocation('/login');
+      setLocation('/auth');
       return;
     }
     onCartClick();
   };
 
   return (
-    <>
-      <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
+    <header className="bg-white shadow-sm sticky top-0 z-40 safe-area-inset rounded-b-3xl">
       <div className="flex items-center justify-between px-4 py-3 touch-action-manipulation">
         {/* Menu Icon */}
         <Button
@@ -82,11 +78,8 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
         </Button>
       </div>
       
-        {/* Categories Section */}
-        <CategoriesSection />
-      </header>
-
-
-    </>
+      {/* Categories Section */}
+      <CategoriesSection />
+    </header>
   );
 }

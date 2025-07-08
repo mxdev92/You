@@ -9,8 +9,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useFirebaseAddresses } from "@/hooks/use-firebase-addresses";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/price-utils";
 import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
@@ -140,17 +140,17 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   // Use CartFlow store for cart data
   const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem, clearCart: clearCartFlow } = useCartFlow();
   
-  // Firebase authentication and address integration
-  const { user: firebaseUser } = useFirebaseAuth();
-  const { addresses, loadAddresses } = useFirebaseAddresses();
+  // PostgreSQL authentication and address integration
+  const { user: postgresUser } = usePostgresAuth();
+  const { addresses, loadAddresses } = usePostgresAddressStore();
 
   // Auto-load addresses when user is authenticated
   useEffect(() => {
-    if (firebaseUser && firebaseUser.uid) {
-      console.log('Right sidebar: Auto-loading addresses for user:', firebaseUser.uid);
-      loadAddresses(firebaseUser.uid);
+    if (postgresUser && postgresUser.id) {
+      console.log('Right sidebar: Auto-loading addresses for user:', postgresUser.id);
+      loadAddresses(postgresUser.id);
     }
-  }, [firebaseUser?.uid, loadAddresses]);
+  }, [postgresUser, loadAddresses]);
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {
@@ -293,7 +293,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           neighborhood: primaryAddress.neighborhood,
           notes: primaryAddress.neighborhood // Only store landmark/neighborhood, not phone
         },
-        items: Array.isArray(cartItems) ? cartItems.map((item: any) => ({
+        items: Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
           productId: item.productId,
           productName: item.product.name,
           quantity: item.quantity,

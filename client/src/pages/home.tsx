@@ -3,7 +3,7 @@ import Header from "@/components/header";
 import LeftSidebar from "@/components/left-sidebar";
 import RightSidebar from "@/components/right-sidebar";
 import ProductsGrid from "@/components/products-grid";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useCartFlow } from "@/store/cart-flow";
 
 export default function Home() {
@@ -11,19 +11,15 @@ export default function Home() {
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt'>('menu');
   
-  const { user } = useFirebaseAuth();
-  const { loadCart, clearCart } = useCartFlow();
+  const { user } = usePostgresAuth();
+  const { loadCart } = useCartFlow();
 
-  // Clear cart on app startup, then load only for authenticated users
+  // Load cart only for authenticated users
   useEffect(() => {
-    // Always clear cart when app starts
-    clearCart();
-    
-    // Only load cart data if user is authenticated
     if (user) {
       loadCart();
     }
-  }, [user?.id]); // Only depend on user ID, not the function references
+  }, [user, loadCart]);
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);

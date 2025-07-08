@@ -39,7 +39,6 @@ export class BaileysWhatsAppService {
   private connectionStabilityInterval: NodeJS.Timeout | null = null;
   private reconnectDelay: number = 1000;
   private isReconnecting: boolean = false;
-  private queueManager: WhatsAppQueueManager;
 
   constructor() {
     // Ensure auth directory exists
@@ -264,20 +263,7 @@ export class BaileysWhatsAppService {
     } catch (error) {
       console.error('❌ Failed to initialize Baileys WhatsApp:', error);
       this.isConnecting = false;
-      this.isConnected = false;
-      
-      // Don't throw error to prevent server crash
-      // Instead, schedule retry after delay
-      if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        const delay = Math.min(30000, 5000 * Math.pow(2, this.reconnectAttempts));
-        console.log(`🔄 Scheduling WhatsApp retry in ${delay/1000} seconds...`);
-        setTimeout(() => {
-          this.reconnectAttempts++;
-          this.initialize().catch(() => {
-            // Silent catch to prevent uncaught promise rejection
-          });
-        }, delay);
-      }
+      throw error;
     }
   }
 
@@ -498,25 +484,6 @@ export class BaileysWhatsAppService {
     return Math.floor(1000 + Math.random() * 9000).toString();
   }
 
-  async sendMessage(phoneNumber: string, message: string): Promise<boolean> {
-    if (!this.isConnected || !this.socket) {
-      console.log('⚠️ WhatsApp not connected, cannot send message');
-      return false;
-    }
-
-    try {
-      const formattedNumber = this.formatPhoneNumber(phoneNumber);
-      console.log(`📤 Sending message to ${formattedNumber}: ${message.substring(0, 50)}...`);
-      
-      await this.socket.sendMessage(formattedNumber, { text: message });
-      console.log(`✅ Message sent successfully to ${phoneNumber}`);
-      return true;
-    } catch (error) {
-      console.error(`❌ Failed to send message to ${phoneNumber}:`, error);
-      return false;
-    }
-  }
-
   private storeOTPSession(phoneNumber: string, otp: string, fullName: string): void {
     const session: OTPSession = {
       phoneNumber,
@@ -633,15 +600,6 @@ export class BaileysWhatsAppService {
       console.error('❌ Failed to send message:', error);
       return false;
     }
-  }
-
-  getConnectionStatus() {
-    return {
-      connected: this.isConnected,
-      isConnecting: this.isConnecting,
-      qrCode: this.qrCode,
-      reconnectAttempts: this.reconnectAttempts
-    };
   }
 }
 

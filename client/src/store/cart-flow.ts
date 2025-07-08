@@ -32,15 +32,10 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   loadCart: async () => {
     set({ isLoading: true });
     try {
-      const response = await fetch("/api/cart", {
-        credentials: "include" // Include session cookies for authentication
-      });
+      const response = await fetch("/api/cart");
       if (response.ok) {
         const items = await response.json();
         set({ cartItems: items });
-      } else if (response.status === 401) {
-        // User not authenticated, clear cart
-        set({ cartItems: [] });
       }
     } catch (error) {
       console.error("CartFlow: Failed to load cart:", error);
@@ -50,92 +45,23 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   },
 
   addToCart: async (item: InsertCartItem) => {
-    const { cartItems } = get();
-    const originalCartItems = [...cartItems]; // Save for error rollback
-    
-    // SUPER FAST OPTIMISTIC UPDATE: Update UI immediately
-    const existingItemIndex = cartItems.findIndex(
-      cartItem => cartItem.productId === item.productId
-    );
-    
-    if (existingItemIndex >= 0) {
-      // Update existing item quantity instantly
-      const optimisticUpdate = cartItems.map((cartItem, index) =>
-        index === existingItemIndex
-          ? { ...cartItem, quantity: cartItem.quantity + (item.quantity || 1) }
-          : cartItem
-      );
-      set({ cartItems: optimisticUpdate });
-    } else {
-      // For new items, create temporary cart item with basic product info
-      // We'll sync with full data from server later
-      const tempCartItem: CartItemWithProduct = {
-        id: Date.now(), // Temporary ID
-        productId: item.productId,
-        userId: 0,
-        quantity: item.quantity || 1,
-        addedAt: new Date().toISOString(),
-        product: {
-          id: item.productId,
-          name: "Loading...",
-          price: "0",
-          imageUrl: "/api/placeholder/60/60",
-          categoryId: 1,
-          unit: "kg",
-          available: true
-        }
-      };
-      set({ cartItems: [...cartItems, tempCartItem] });
+    try {
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item),
+      });
       
-      // Get real product data in background
-      fetch(`/api/products/${item.productId}`, { credentials: "include" })
-        .then(res => res.json())
-        .then(product => {
-          const { cartItems: currentItems } = get();
-          const updatedItems = currentItems.map(cartItem =>
-            cartItem.id === tempCartItem.id
-              ? { ...cartItem, product }
-              : cartItem
-          );
-          set({ cartItems: updatedItems });
-        })
-        .catch(() => {
-          // Keep temp data if product fetch fails
-        });
-    }
-    
-    // Send to server in background (non-blocking)
-    fetch("/api/cart", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(item),
-    })
-    .then(async (response) => {
       if (response.ok) {
-        // Silently sync with server after 1 second to get real IDs
-        setTimeout(async () => {
-          try {
-            const serverResponse = await fetch("/api/cart", {
-              credentials: "include"
-            });
-            if (serverResponse.ok) {
-              const serverItems = await serverResponse.json();
-              set({ cartItems: serverItems });
-            }
-          } catch {
-            // Silent fail - keep optimistic update
-          }
-        }, 1000);
+        // Reload cart to get updated data with product details
+        get().loadCart();
       } else {
-        // Revert optimistic update on error
-        set({ cartItems: originalCartItems });
+        throw new Error("Failed to add item");
       }
-    })
-    .catch(() => {
-      // Revert optimistic update on network error
-      set({ cartItems: originalCartItems });
-    });
+    } catch (error) {
+      console.error("CartFlow: Failed to add item:", error);
+      throw error;
+    }
   },
 
   removeFromCart: async (itemId: number) => {
@@ -147,7 +73,6 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
 
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "DELETE",
-        credentials: "include", // Include session cookies for authentication
       });
       
       if (!response.ok) {
@@ -176,7 +101,6 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // Include session cookies for authentication
         body: JSON.stringify({ quantity }),
       });
       
@@ -197,10 +121,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   clearCart: async () => {
     try {
       set({ cartItems: [] });
-      const response = await fetch("/api/cart", { 
-        method: "DELETE",
-        credentials: "include" // Include session cookies for authentication
-      });
+      const response = await fetch("/api/cart", { method: "DELETE" });
       
       if (!response.ok) {
         get().loadCart();

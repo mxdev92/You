@@ -1,6 +1,6 @@
 import { categories, products, cartItems, orders, users, userAddresses, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -18,11 +18,11 @@ export interface IStorage {
   deleteProduct(id: number): Promise<void>;
 
   // Cart
-  getCartItems(userId: number): Promise<(CartItem & { product: Product })[]>;
+  getCartItems(): Promise<(CartItem & { product: Product })[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
   updateCartItemQuantity(id: number, quantity: number): Promise<CartItem>;
   removeFromCart(id: number): Promise<void>;
-  clearCart(userId?: number): Promise<void>;
+  clearCart(): Promise<void>;
 
   // Orders
   getOrders(): Promise<Order[]>;
@@ -220,8 +220,8 @@ export class MemStorage implements IStorage {
     this.products.delete(id);
   }
 
-  async getCartItems(userId: number): Promise<(CartItem & { product: Product })[]> {
-    const items = Array.from(this.cartItems.values()).filter(item => item.userId === userId);
+  async getCartItems(): Promise<(CartItem & { product: Product })[]> {
+    const items = Array.from(this.cartItems.values());
     return items.map(item => {
       const product = this.products.get(item.productId);
       if (!product) {
@@ -435,22 +435,19 @@ export class DatabaseStorage implements IStorage {
     await db.delete(products).where(eq(products.id, id));
   }
 
-  async getCartItems(userId: number): Promise<(CartItem & { product: Product })[]> {
+  async getCartItems(): Promise<(CartItem & { product: Product })[]> {
     const items = await db.select({
       id: cartItems.id,
-      userId: cartItems.userId,
       productId: cartItems.productId,
       quantity: cartItems.quantity,
       addedAt: cartItems.addedAt,
       product: products
     })
     .from(cartItems)
-    .innerJoin(products, eq(cartItems.productId, products.id))
-    .where(eq(cartItems.userId, userId));
+    .innerJoin(products, eq(cartItems.productId, products.id));
     
     return items.map(item => ({
       id: item.id,
-      userId: item.userId,
       productId: item.productId,
       quantity: item.quantity,
       addedAt: item.addedAt,
@@ -459,27 +456,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addToCart(item: InsertCartItem): Promise<CartItem> {
-    // Check if item already exists in cart for this user
-    const [existingItem] = await db.select().from(cartItems)
-      .where(and(
-        eq(cartItems.productId, item.productId),
-        eq(cartItems.userId, item.userId!)
-      ));
-
-    if (existingItem) {
-      // Update quantity of existing item
-      const newQuantity = existingItem.quantity + (item.quantity || 1);
-      const [updatedItem] = await db.update(cartItems)
-        .set({ quantity: newQuantity })
-        .where(eq(cartItems.id, existingItem.id))
-        .returning();
-      return updatedItem;
-    }
-
-    // Create new cart item if it doesn't exist
     const [newItem] = await db.insert(cartItems).values({
       ...item,
-      quantity: item.quantity || 1,
       addedAt: new Date().toISOString()
     }).returning();
     return newItem;
@@ -497,12 +475,8 @@ export class DatabaseStorage implements IStorage {
     await db.delete(cartItems).where(eq(cartItems.id, id));
   }
 
-  async clearCart(userId?: number): Promise<void> {
-    if (userId) {
-      await db.delete(cartItems).where(eq(cartItems.userId, userId));
-    } else {
-      await db.delete(cartItems);
-    }
+  async clearCart(): Promise<void> {
+    await db.delete(cartItems);
   }
 
   async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {

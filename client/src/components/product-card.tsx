@@ -6,9 +6,8 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useLocation } from "wouter";
-
 import { formatPrice } from "@/lib/price-utils";
 import type { Product } from "@shared/schema";
 
@@ -67,46 +66,33 @@ function LazyImage({ src, alt, className }: { src: string; alt: string; classNam
 export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
   const { t } = useTranslation();
-  const { user, loading } = useFirebaseAuth();
+  const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
 
   const handleAddToCart = async () => {
     // Don't allow adding if product is not available
     if (!product.available) return;
     
-    console.log('🛒 Add to cart clicked - Auth check:', { user: user?.email, loading });
-    
-    // Wait for auth to finish loading before checking
-    if (loading) {
-      console.log('⏳ Auth still loading, waiting...');
-      return;
-    }
-    
-    // Check if user is authenticated after loading is complete
+    // Check if user is authenticated
     if (!user) {
-      console.log('❌ No user found, redirecting to login');
-      setLocation('/login');
+      setLocation('/auth');
       return;
     }
     
-    console.log('✅ User authenticated, proceeding with add to cart:', user.email);
-    
-    // Instant feedback - no waiting for server
     setIsAdding(true);
     setShowShimmer(true);
 
     try {
-      // This now happens instantly with optimistic updates
       await addToCart({ productId: product.id, quantity: 1 });
       
-      // Show success state immediately
+      // Fast feedback - quick shimmer and "Added!" state
       setTimeout(() => {
         setIsAdding(false);
         setShowShimmer(false);
-      }, 300); // Reduced to 300ms for faster feedback
+      }, 400);
     } catch (error) {
       console.error('Error adding to cart:', error);
       setIsAdding(false);
@@ -194,9 +180,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Details Modal */}
       <ProductDetailsModal
         product={product}
-        isOpen={false}
-        onClose={() => {}}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
+
+
     </>
   );
 }

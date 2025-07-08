@@ -26,7 +26,7 @@ export const usePostgresAuth = () => {
       }));
     });
 
-    // Check session only once on mount, with caching
+    // Force session check on mount to ensure auth state is current
     const initializeAuth = async () => {
       try {
         await postgresAuth.checkSession();
@@ -36,7 +36,6 @@ export const usePostgresAuth = () => {
       }
     };
 
-    // Always initialize to ensure auth state is current
     initializeAuth();
 
     return unsubscribe.unsubscribe;

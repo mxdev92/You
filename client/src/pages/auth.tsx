@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, ChevronDown } from 'lucide-react';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
-import { useFirebaseAddresses } from '@/hooks/use-firebase-addresses';
+import { usePostgresAuth } from '@/hooks/use-postgres-auth';
+import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
 import { MetaPixel } from '@/lib/meta-pixel';
@@ -150,8 +150,8 @@ const AuthPage: React.FC = () => {
     };
   }, []);
 
-  const { user, login, register } = useFirebaseAuth();
-  const { addAddress } = useFirebaseAddresses();
+  const { user, login, register } = usePostgresAuth();
+  const { addAddress } = usePostgresAddressStore();
 
   const showNotification = (message: string, type: 'success' | 'error' = 'error') => {
     setNotification({ show: true, message, type });

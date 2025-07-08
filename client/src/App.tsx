@@ -5,13 +5,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth";
-import NewAuthPage from "@/pages/auth-page";
 import AdminPanel from "@/pages/admin-panel";
 import AdminLogin from "@/pages/admin-login";
 import WhatsAppAdmin from "@/pages/whatsapp-admin";
 import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
 import NotFound from "@/pages/not-found";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 
 // Protected Admin Route Component
 function ProtectedAdminRoute() {
@@ -28,7 +27,7 @@ function ProtectedAdminRoute() {
 
 // Protected Route Component for regular users
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading } = useFirebaseAuth();
+  const { user, loading } = usePostgresAuth();
   
   if (loading) {
     return (
@@ -42,7 +41,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
   
   if (!user) {
-    return <NewAuthPage />;
+    return <AuthPage />;
   }
   
   return <Component />;
@@ -60,9 +59,8 @@ function Router() {
       {/* Home page - allows anonymous browsing */}
       <Route path="/" component={Home} />
       
-      {/* Auth pages */}
-      <Route path="/auth" component={NewAuthPage} />
-      <Route path="/login" component={NewAuthPage} />
+      {/* Auth page */}
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -14,15 +14,12 @@ import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
 const whatsappService = new BaileysWhatsAppService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
 
-// Initialize Baileys WhatsApp service in background (non-blocking)
-setTimeout(() => {
-  whatsappService.initialize().then(() => {
-    console.log('🎯 Baileys WhatsApp service initialized successfully');
-  }).catch((error) => {
-    console.error('⚠️ Baileys WhatsApp failed to initialize (will retry later):', error.message);
-    // Don't crash the server, just log the error
-  });
-}, 5000); // Delay initialization to let server start first
+// Initialize Baileys WhatsApp service on startup
+whatsappService.initialize().then(() => {
+  console.log('🎯 Baileys WhatsApp service initialized on server startup');
+}).catch((error) => {
+  console.error('⚠️ Baileys WhatsApp failed to initialize on startup:', error);
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -119,27 +116,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get single product (for cart optimistic updates)
-  app.get("/api/products/:id", async (req, res) => {
-    try {
-      const productId = parseInt(req.params.id);
-      if (isNaN(productId)) {
-        return res.status(400).json({ message: "Invalid product ID" });
-      }
-      
-      const products = await storage.getProducts();
-      const product = products.find(p => p.id === productId);
-      
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
-      }
-      
-      res.json(product);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch product" });
-    }
-  });
-
   app.get("/api/products/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -218,13 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart
   app.get("/api/cart", async (req, res) => {
     try {
-      // Get user from session
-      const userId = (req as any).session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      const cartItems = await storage.getCartItems(userId);
+      const cartItems = await storage.getCartItems();
       res.json(cartItems);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch cart items" });
@@ -233,33 +203,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
-      console.log('=== ADD TO CART DEBUG ===');
-      console.log('Session ID:', req.session?.id);
-      console.log('Full session:', (req as any).session);
-      console.log('Session userId:', (req as any).session?.userId);
-      console.log('Request body:', req.body);
-      
-      // Get user from session
-      const userId = (req as any).session?.userId;
-      if (!userId) {
-        console.log('❌ No user in session');
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      console.log('✅ User authenticated, userId:', userId);
       const validatedData = insertCartItemSchema.parse(req.body);
-      console.log('✅ Data validated:', validatedData);
-      
-      const cartItem = await storage.addToCart({
-        ...validatedData,
-        userId: userId // Add authenticated user ID to cart item
-      });
-      
-      console.log('✅ Cart item added:', cartItem);
+      const cartItem = await storage.addToCart(validatedData);
       res.status(201).json(cartItem);
     } catch (error) {
-      console.error('❌ Cart error:', error);
-      res.status(500).json({ message: "Failed to add item to cart", error: error.message });
+      res.status(500).json({ message: "Failed to add item to cart" });
     }
   });
 
@@ -287,13 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/cart", async (req, res) => {
     try {
-      // Get user from session
-      const userId = (req as any).session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      await storage.clearCart(userId);
+      await storage.clearCart();
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to clear cart" });
@@ -597,7 +539,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store user session
       (req as any).session = (req as any).session || {};
       (req as any).session.userId = user.id;
-      console.log('Session set for user:', user.id, 'Session ID:', (req as any).sessionID);
 
       res.json({ 
         user: { 
@@ -634,9 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/session', async (req, res) => {
     try {
       const userId = (req as any).session?.userId;
-      console.log('Session check - User ID:', userId, 'Session ID:', (req as any).sessionID);
       if (!userId) {
-        console.log('No userId in session, session object:', (req as any).session);
         return res.status(401).json({ message: 'Not authenticated' });
       }
 
@@ -657,179 +596,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Session check error:', error);
       res.status(500).json({ message: 'Failed to check session' });
-    }
-  });
-
-  // Simple OTP storage (in production, use Redis or database)
-  const otpStore = new Map<string, { otp: string; phone: string; expiresAt: number; verified: boolean }>();
-
-  // Send OTP endpoint
-  app.post('/api/auth/send-otp', async (req, res) => {
-    try {
-      const { phoneNumber } = req.body;
-      
-      if (!phoneNumber) {
-        return res.status(400).json({ message: 'Phone number is required' });
-      }
-
-      // Generate 4-digit OTP
-      const otp = Math.floor(1000 + Math.random() * 9000).toString();
-      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-      // Store OTP
-      otpStore.set(phoneNumber, {
-        otp,
-        phone: phoneNumber,
-        expiresAt,
-        verified: false
-      });
-
-      console.log(`📱 OTP Generated for ${phoneNumber}: ${otp} (expires in 10 minutes)`);
-      
-      // Try to send OTP via WhatsApp if connected
-      let smsDelivered = false;
-      try {
-        const isConnected = whatsappService.getConnectionStatus();
-        if (isConnected) {
-          const message = `رمز التحقق الخاص بك في تطبيق باكيتي: ${otp}\n\nصالح لمدة 10 دقائق فقط.\nلا تشارك هذا الرمز مع أي شخص.`;
-          
-          // Send via WhatsApp
-          await whatsappService.sendMessage(phoneNumber, message);
-          smsDelivered = true;
-          console.log(`✅ OTP sent via WhatsApp to ${phoneNumber}`);
-        }
-      } catch (whatsappError) {
-        console.log('WhatsApp delivery failed, using fallback method:', whatsappError.message);
-      }
-      
-      res.json({
-        success: true,
-        message: smsDelivered ? 'تم إرسال رمز التحقق عبر WhatsApp' : 'تم إنشاء رمز التحقق',
-        delivered: smsDelivered ? 'whatsapp' : 'fallback',
-        // In development, include OTP in response for testing
-        otp: process.env.NODE_ENV === 'development' ? otp : undefined
-      });
-    } catch (error: any) {
-      console.error('OTP generation error:', error);
-      res.status(500).json({ message: 'فشل في إنشاء رمز التحقق' });
-    }
-  });
-
-  // Verify OTP endpoint
-  app.post('/api/auth/verify-otp', async (req, res) => {
-    try {
-      const { phoneNumber, otp } = req.body;
-      
-      if (!phoneNumber || !otp) {
-        return res.status(400).json({ message: 'Phone number and OTP are required' });
-      }
-
-      const otpData = otpStore.get(phoneNumber);
-      
-      if (!otpData) {
-        return res.status(400).json({ 
-          valid: false, 
-          message: 'لم يتم العثور على رمز التحقق' 
-        });
-      }
-
-      if (Date.now() > otpData.expiresAt) {
-        otpStore.delete(phoneNumber);
-        return res.status(400).json({ 
-          valid: false, 
-          message: 'رمز التحقق منتهي الصلاحية' 
-        });
-      }
-
-      if (otpData.otp !== otp) {
-        return res.status(400).json({ 
-          valid: false, 
-          message: 'رمز التحقق غير صحيح' 
-        });
-      }
-
-      // Mark as verified but keep for signup completion
-      otpData.verified = true;
-      otpStore.set(phoneNumber, otpData);
-
-      console.log(`✅ OTP verified for ${phoneNumber}`);
-      
-      res.json({
-        valid: true,
-        message: 'تم التحقق من الرمز بنجاح'
-      });
-    } catch (error: any) {
-      console.error('OTP verification error:', error);
-      res.status(500).json({ 
-        valid: false, 
-        message: 'خطأ في التحقق من الرمز' 
-      });
-    }
-  });
-
-  // Complete signup endpoint
-  app.post('/api/auth/complete-signup', async (req, res) => {
-    try {
-      const { phone, fullName, governorate, district, landmark } = req.body;
-      
-      if (!phone || !fullName || !governorate || !district || !landmark) {
-        return res.status(400).json({ message: 'All fields are required' });
-      }
-
-      // Check if OTP was verified for this phone
-      const otpData = otpStore.get(phone);
-      if (!otpData || !otpData.verified) {
-        return res.status(400).json({ message: 'Phone number not verified' });
-      }
-
-      // Convert phone to email format for storage (since user already has Firebase account)
-      const email = `${phone}@pakety.app`;
-
-      // Check if user already exists with this phone
-      let user = await storage.getUserByPhone(phone);
-      
-      if (!user) {
-        // Create new user in database
-        user = await storage.createUser({
-          email,
-          passwordHash: 'firebase-auth', // Placeholder since Firebase handles auth
-          fullName,
-          phone
-        });
-      }
-
-      // Create address (replace existing if any)
-      await storage.createAddress({
-        userId: user.id,
-        governorate,
-        district,
-        neighborhood: landmark, // Using landmark as neighborhood
-        notes: null,
-        isDefault: true
-      });
-
-      // Create session
-      (req as any).session = (req as any).session || {};
-      (req as any).session.userId = user.id;
-      
-      // Clean up OTP
-      otpStore.delete(phone);
-      
-      res.json({ 
-        message: 'تم إكمال التسجيل بنجاح', 
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          fullName: user.fullName,
-          phone: user.phone
-        } 
-      });
-    } catch (error: any) {
-      console.error('Complete signup error:', error);
-      if (error.message?.includes('duplicate') || error.code === '23505') {
-        return res.status(409).json({ message: 'Phone number already exists' });
-      }
-      res.status(500).json({ message: 'Failed to complete signup' });
     }
   });
 
