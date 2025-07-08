@@ -296,6 +296,14 @@ July 8, 2025:
 ✓ ERROR HANDLING: Separated customer/admin notifications - admin messages never fail due to customer issues
 ✓ REAL ORDER TESTING: Confirmed working with live order #43 - admin received notification successfully
 ✓ Both customer and admin WhatsApp notifications working via VerifyWay with Arabic language support
+✓ HYBRID WHATSAPP SYSTEM: Implemented dual-service approach for maximum efficiency and cost savings
+✓ VerifyWay API used exclusively for OTP verification during user registration (keeps OTP cost-effective)
+✓ Baileys (@whiskeysockets/baileys) used for FREE PDF invoice delivery to both customers and admin
+✓ Smart fallback system: Falls back to VerifyWay text notifications if Baileys not connected
+✓ New admin panel at /baileys-admin for managing free WhatsApp PDF invoice delivery
+✓ Customer and admin both receive detailed Arabic messages + PDF invoices via Baileys (no cost)
+✓ Zero ongoing costs for invoice delivery - only OTP verification has minimal charges
+✓ System prioritizes Baileys for invoices (free) and uses VerifyWay as backup for text notifications
 
 July 5, 2025:
 ✓ FIXED: Image upload file size limit issue causing intermittent failures

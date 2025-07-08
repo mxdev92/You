@@ -10,12 +10,17 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { verifyWayService as fazpassService } from './fazpass-service.js';
 import { MetaWhatsAppService } from './meta-whatsapp-service.js';
+import BaileysWhatsAppService from './baileys-whatsapp-service.js';
 
 // Initialize Meta WhatsApp service for admin notifications
 const metaWhatsAppService = new MetaWhatsAppService();
 
+// Initialize Baileys WhatsApp service for PDF invoices
+const baileysService = new BaileysWhatsAppService();
+
 // Meta Cloud API is always ready - no initialization needed
 console.log('🎯 Meta Cloud API WhatsApp service ready');
+console.log('📱 Baileys WhatsApp service initialized for PDF invoices');
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
@@ -337,53 +342,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
 
-      // Send WhatsApp notifications if service is connected
-      // Meta Cloud API is always connected
-      if (true) {
-        try {
-          // Generate PDF invoice once for both customer and admin
-          const pdfBuffer = await generateInvoicePDF(order);
+      // Send WhatsApp notifications using hybrid approach
+      // VerifyWay for OTP, Baileys for PDF invoices
+      try {
+        // Generate PDF invoice once for both customer and admin
+        const pdfBuffer = await generateInvoicePDF(order);
+        
+        // Prepare order data for notifications
+        const orderData = {
+          orderId: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address?.fullAddress || 'لم يتم تحديد العنوان',
+          total: order.totalAmount,
+          itemCount: order.items.length
+        };
+        
+        // Check if Baileys is connected for PDF invoices
+        if (baileysService.getStatus().connected) {
+          console.log('📱 Using Baileys for PDF invoice delivery (FREE)');
           
-          // Prepare order data for admin notification
-          const orderData = {
-            orderId: order.id,
-            customerName: order.customerName,
-            customerPhone: order.customerPhone,
-            address: order.address?.fullAddress || 'لم يتم تحديد العنوان',
-            total: order.totalAmount,
-            itemCount: order.items.length
-          };
+          // 1. Send customer invoice via Baileys (with PDF)
+          try {
+            const customerSuccess = await baileysService.sendCustomerInvoice(order.customerPhone, orderData, pdfBuffer);
+            if (customerSuccess) {
+              console.log(`📄 Customer invoice sent successfully via Baileys for order #${order.id}`);
+            }
+          } catch (customerError) {
+            console.error(`❌ Customer invoice failed for order #${order.id}:`, customerError);
+          }
+
+          // 2. Send admin invoice via Baileys (with PDF) - CRITICAL
+          try {
+            const adminSuccess = await baileysService.sendAdminInvoice('07710155333', orderData, pdfBuffer);
+            if (adminSuccess) {
+              console.log(`📄 Admin invoice sent successfully via Baileys to 07710155333 for order #${order.id}`);
+            } else {
+              console.error(`❌ Admin invoice failed for order #${order.id}`);
+            }
+          } catch (adminError) {
+            console.error(`❌ Critical: Admin invoice error for order #${order.id}:`, adminError);
+          }
           
-          // 1. Send customer confirmation via VerifyWay (try but don't fail if it doesn't work)
+        } else {
+          console.log('📱 Baileys not connected - falling back to VerifyWay for text notifications');
+          
+          // Fallback to VerifyWay for text notifications only (no PDF)
           try {
             const customerSuccess = await fazpassService.sendCustomerNotification(order.customerPhone, orderData);
-            
             if (customerSuccess) {
               console.log(`📱 Customer notification sent successfully via VerifyWay for order #${order.id}`);
             }
           } catch (customerError) {
             console.error(`❌ Customer notification failed for order #${order.id}:`, customerError);
-            // Continue with admin notification even if customer notification fails
           }
 
-          // 2. Send admin notification to fixed admin WhatsApp (07710155333) - CRITICAL
           try {
             const adminSuccess = await fazpassService.sendAdminNotification('07710155333', orderData);
             if (adminSuccess) {
               console.log(`✅ Admin notification sent successfully to 07710155333 for order #${order.id}`);
-            } else {
-              console.error(`❌ Admin notification failed for order #${order.id}`);
             }
           } catch (adminError) {
             console.error(`❌ Critical: Admin notification error for order #${order.id}:`, adminError);
           }
-
-          console.log(`📱 WhatsApp notification process completed for order #${order.id}`);
-        } catch (whatsappError) {
-          console.error('WhatsApp notification system error (order created successfully):', whatsappError);
         }
-      } else {
-        console.log('📱 WhatsApp service not connected - notifications skipped');
+
+        console.log(`📱 WhatsApp notification process completed for order #${order.id}`);
+      } catch (whatsappError) {
+        console.error('WhatsApp notification system error (order created successfully):', whatsappError);
       }
       
       res.status(201).json(order);
@@ -1059,6 +1085,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Admin test notification error:', error);
       res.status(500).json({ message: 'Failed to send admin test notification' });
+    }
+  });
+
+  // Baileys WhatsApp routes for PDF invoice delivery
+  app.get('/api/baileys/status', (req, res) => {
+    res.json(baileysService.getStatus());
+  });
+
+  app.post('/api/baileys/initialize', async (req, res) => {
+    try {
+      await baileysService.initialize();
+      res.json({ message: 'Baileys WhatsApp initialization started' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to initialize Baileys WhatsApp' });
+    }
+  });
+
+  app.get('/api/baileys/qr', (req, res) => {
+    const qrCode = baileysService.getQRCode();
+    if (qrCode) {
+      res.json({ qrCode });
+    } else {
+      res.status(404).json({ message: 'QR code not available' });
+    }
+  });
+
+  app.post('/api/baileys/reset', async (req, res) => {
+    try {
+      await baileysService.resetSession();
+      res.json({ message: 'Baileys WhatsApp session reset successfully' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to reset Baileys WhatsApp session' });
     }
   });
 
