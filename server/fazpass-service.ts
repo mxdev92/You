@@ -78,10 +78,11 @@ export class VerifyWayService {
         type: 'otp',
         code: otpCode,
         channel: 'whatsapp',
-        template: 'arabic'
+        lang: 'ar'
       };
 
       console.log(`🔧 Debug - Request body:`, { ...requestBody, code: '***masked***' });
+      console.log(`🔧 Debug - Using lang: ar for Arabic messages (official VerifyWay parameter)`);
       console.log(`🔧 Debug - API URL: ${this.baseUrl}/`);
 
       const response = await fetch(`${this.baseUrl}/`, {

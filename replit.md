@@ -281,10 +281,10 @@ July 8, 2025:
 ✓ Ready for production with WhatsApp OTP delivery via VerifyWay Cloud API
 ✓ Maintained fallback system for development and error scenarios
 ✓ System generates local OTP codes (displayed in logs) if VerifyWay API unavailable
-✓ ARABIC OTP MESSAGES: Updated VerifyWay integration to send single Arabic message
-✓ Changed from type:'otp' to type:'text' with custom Arabic body message
-✓ Message format: "رمز التحقق الخاص بك: [CODE] مرحباً بك في تطبيق باكيتي 🌟"
-✓ Eliminates English template messages for cleaner Arabic user experience
+✓ ARABIC OTP MESSAGES: Updated VerifyWay integration to send Arabic OTP messages
+✓ Fixed API parameter from "language" to official "lang":"ar" parameter per VerifyWay documentation
+✓ VerifyWay API supports Arabic (ar) language with proper Arabic OTP templates
+✓ Eliminates English template messages for native Arabic user experience
 
 July 5, 2025:
 ✓ FIXED: Image upload file size limit issue causing intermittent failures
