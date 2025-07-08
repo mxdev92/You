@@ -36,10 +36,8 @@ export const usePostgresAuth = () => {
       }
     };
 
-    // Only initialize if not already done
-    if (authState.loading) {
-      initializeAuth();
-    }
+    // Always initialize to ensure auth state is current
+    initializeAuth();
 
     return unsubscribe.unsubscribe;
   }, []);

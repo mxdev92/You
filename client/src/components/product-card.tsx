@@ -69,18 +69,29 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
   const { t } = useTranslation();
-  const { user } = usePostgresAuth();
+  const { user, loading } = usePostgresAuth();
   const [, setLocation] = useLocation();
 
   const handleAddToCart = async () => {
     // Don't allow adding if product is not available
     if (!product.available) return;
     
-    // Check if user is authenticated
+    console.log('🛒 Add to cart clicked - Auth check:', { user: user?.email, loading });
+    
+    // Wait for auth to finish loading before checking
+    if (loading) {
+      console.log('⏳ Auth still loading, waiting...');
+      return;
+    }
+    
+    // Check if user is authenticated after loading is complete
     if (!user) {
+      console.log('❌ No user found, redirecting to auth');
       setLocation('/auth');
       return;
     }
+    
+    console.log('✅ User authenticated, proceeding with add to cart:', user.email);
     
     // Instant feedback - no waiting for server
     setIsAdding(true);
