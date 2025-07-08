@@ -216,7 +216,7 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setOtpSent(true);
-        showNotification('✅ تم إرسال رمز التحقق بنجاح إلى تطبيق WhatsApp المسجل على رقمكم', 'success');
+        showNotification('تم إرسال رمز التحقق بنجاح إلى تطبيق WhatsApp المسجل على رقمكم', 'success');
         
         // Always log OTP to console for user access
         if (data.otp) {
@@ -232,7 +232,7 @@ const AuthPage: React.FC = () => {
       if (error.name === 'AbortError') {
         // Set OtpSent to true even on timeout since backend likely processed it
         setOtpSent(true);
-        showNotification('✅ تم إرسال رمز التحقق بنجاح - يرجى مراجعة تطبيق WhatsApp', 'success');
+        showNotification('تم إرسال رمز التحقق بنجاح - يرجى مراجعة تطبيق WhatsApp', 'success');
       } else {
         // Always allow user to proceed with OTP verification
         setOtpSent(true);
@@ -825,16 +825,17 @@ const AuthPage: React.FC = () => {
             }`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3 rtl:space-x-reverse">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-3 rtl:space-x-reverse">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   notification.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                 }`}>
                   {notification.type === 'error' ? '⚠️' : '✅'}
                 </div>
                 <p 
-                  className="text-gray-800 dark:text-gray-200 text-sm font-medium"
+                  className="text-gray-800 dark:text-gray-200 text-sm font-medium leading-relaxed"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  dir="rtl"
                 >
                   {notification.message}
                 </p>
