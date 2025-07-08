@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth";
+import NewAuthPage from "@/pages/auth-page";
 import AdminPanel from "@/pages/admin-panel";
 import AdminLogin from "@/pages/admin-login";
 import WhatsAppAdmin from "@/pages/whatsapp-admin";
@@ -41,7 +42,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
   
   if (!user) {
-    return <AuthPage />;
+    return <NewAuthPage />;
   }
   
   return <Component />;
@@ -60,8 +61,8 @@ function Router() {
       <Route path="/" component={Home} />
       
       {/* Auth pages */}
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/login" component={AuthPage} />
+      <Route path="/auth" component={NewAuthPage} />
+      <Route path="/login" component={NewAuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
