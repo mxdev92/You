@@ -1,9 +1,14 @@
 # Meta WhatsApp Business API Setup Guide
 
 ## Current Configuration
-- **Access Token**: EAAW1nntqY4IBPP6FScewbcj4StKsoovDIGLXYfxwt5UgmRAQWZAiWAZCpEBUA8NBZAyMPhyugk79Ui7sB10GFifAH0lkbQpCHRG8VR17ZAq9Nu0r0yUIOHUoIZCYrlQIQnrZCoelGifzFCQkanby5Hz675QUlpQDZBCjZColSZAXHqiPkmI21aVVvmI6gqTBiCPd0MWWzCxVDW337p4UQRxbtfCNaDE4gQb3lMIdzz8ZAW7hUZD
+- **Access Token**: ⚠️ NEEDS TO BE REGENERATED WITH PROPER PERMISSIONS
 - **Phone Number ID**: 655810796856265
 - **WhatsApp Business Account ID**: 211058550432159
+
+## Status
+❌ Current access token lacks required WhatsApp Business permissions
+✅ Phone number ID and account ID are correct
+🔄 Waiting for new access token with proper permissions
 
 ## Required Permissions
 The Meta access token needs these permissions:
@@ -11,16 +16,31 @@ The Meta access token needs these permissions:
 2. **whatsapp_business_management** - Manage WhatsApp Business settings
 3. **pages_show_list** - Access to business pages
 4. **pages_messaging** - Send messages from business pages
+5. **ads_read** - Required for Marketing Messages Lite API metrics (optional)
 
 ## Setup Steps
 1. Go to Meta Developer Console: https://developers.facebook.com/apps/
 2. Select your app
-3. Navigate to WhatsApp → Configuration
-4. Add the required permissions to your access token
-5. Verify the phone number is properly registered and active
+3. Navigate to WhatsApp → API Setup
+4. Generate access token with required permissions
+5. Add phone number and verify it's active
+6. Test message sending capability
+
+## Important Notes
+- OTP messages use standard Cloud API (not Marketing Messages Lite API)
+- Marketing Messages Lite API requires pre-approved templates
+- Authentication messages like OTP can use freeform text messages
+- Phone number must be verified and active in Meta Business
 
 ## Current Issue
 The API is returning permission errors, indicating the access token lacks the required WhatsApp Business messaging permissions.
+
+## Solution
+1. In the screenshot you shared, click "Generate access token" button
+2. Select ALL the required permissions listed above
+3. Copy the new token and update it in the Meta service
+4. The phone number 655810796856265 should be visible in the "Send and receive messages" section
+5. Test by sending a message directly from the API Setup page first
 
 ## Test Commands
 ```bash

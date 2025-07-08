@@ -15,6 +15,7 @@ export class MetaWhatsAppService {
   private baseUrl: string = 'https://graph.facebook.com/v21.0';
 
   constructor() {
+    // TODO: Replace with new access token that has proper permissions
     this.accessToken = 'EAAW1nntqY4IBPP6FScewbcj4StKsoovDIGLXYfxwt5UgmRAQWZAiWAZCpEBUA8NBZAyMPhyugk79Ui7sB10GFifAH0lkbQpCHRG8VR17ZAq9Nu0r0yUIOHUoIZCYrlQIQnrZCoelGifzFCQkanby5Hz675QUlpQDZBCjZColSZAXHqiPkmI21aVVvmI6gqTBiCPd0MWWzCxVDW337p4UQRxbtfCNaDE4gQb3lMIdzz8ZAW7hUZD';
   }
 
@@ -84,6 +85,7 @@ export class MetaWhatsAppService {
       };
 
       // For now, send a simple text message since template might not be configured
+      // Use text message for OTP authentication (not marketing)
       const textMessageData = {
         messaging_product: 'whatsapp',
         to: formattedPhone,
@@ -93,6 +95,7 @@ export class MetaWhatsAppService {
         }
       };
 
+      // Use standard Cloud API for OTP authentication messages
       const response = await fetch(`${this.baseUrl}/${this.phoneNumberId}/messages`, {
         method: 'POST',
         headers: {
