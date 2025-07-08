@@ -1,6 +1,6 @@
 // Simple test script to verify Meta WhatsApp API setup
-const ACCESS_TOKEN = "EAAW1nntqY4IBPP6FScewbcj4StKsoovDIGLXYfxwt5UgmRAQWZAiWAZCpEBUA8NBZAyMPhyugk79Ui7sB10GFifAH0lkbQpCHRG8VR17ZAq9Nu0r0yUIOHUoIZCYrlQIQnrZCoelGifzFCQkanby5Hz675QUlpQDZBCjZColSZAXHqiPkmI21aVVvmI6gqTBiCPd0MWWzCxVDW337p4UQRxbtfCNaDE4gQb3lMIdzz8ZAW7hUZD";
-const PHONE_NUMBER_ID = "655810796856265";
+const ACCESS_TOKEN = "EAAW1nntqY4IBPIDncncD2BUs71vfgXzL83x22wKglYEZBjEsJ27MzsZByVCmmjSmQ5Ymx5154RLEAF94DYmCyRQcevxNZAQXzLcjVZC0OYziIbLZAu8fJCXMbrA9cOSbSaIXx8UBKozITgZBvlK9pMYU0rvpZBZA7TlM6PmW0UxjvOA4CCSblTVdGR2U2zsE2z7PdeFGUKBZA3HDVNaYcpQdxTZBKv4LHmmfaxZB7kZBfTOXZAidg";
+const PHONE_NUMBER_ID = "675759472293180";
 
 async function testMetaAPI() {
   console.log("Testing Meta WhatsApp API setup...");
@@ -33,7 +33,7 @@ async function testMetaAPI() {
   try {
     const messageData = {
       messaging_product: 'whatsapp',
-      to: '9647701234567', // Test Iraqi number
+      to: '15556672190', // Test number from Meta console
       type: 'text',
       text: {
         body: 'Test message from PAKETY app'

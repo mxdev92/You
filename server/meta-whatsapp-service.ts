@@ -10,13 +10,13 @@ interface OTPSession {
 
 export class MetaWhatsAppService {
   private accessToken: string;
-  private phoneNumberId: string = '655810796856265'; // Meta Business Phone Number ID from developer console
+  private phoneNumberId: string = '675759472293180'; // Meta Business Phone Number ID from developer console
   private otpSessions: Map<string, OTPSession> = new Map();
   private baseUrl: string = 'https://graph.facebook.com/v21.0';
 
   constructor() {
-    // TODO: Replace with new access token that has proper permissions
-    this.accessToken = 'EAAW1nntqY4IBPP6FScewbcj4StKsoovDIGLXYfxwt5UgmRAQWZAiWAZCpEBUA8NBZAyMPhyugk79Ui7sB10GFifAH0lkbQpCHRG8VR17ZAq9Nu0r0yUIOHUoIZCYrlQIQnrZCoelGifzFCQkanby5Hz675QUlpQDZBCjZColSZAXHqiPkmI21aVVvmI6gqTBiCPd0MWWzCxVDW337p4UQRxbtfCNaDE4gQb3lMIdzz8ZAW7hUZD';
+    // Updated with new access token that has proper WhatsApp Business permissions
+    this.accessToken = 'EAAW1nntqY4IBPIDncncD2BUs71vfgXzL83x22wKglYEZBjEsJ27MzsZByVCmmjSmQ5Ymx5154RLEAF94DYmCyRQcevxNZAQXzLcjVZC0OYziIbLZAu8fJCXMbrA9cOSbSaIXx8UBKozITgZBvlK9pMYU0rvpZBZA7TlM6PmW0UxjvOA4CCSblTVdGR2U2zsE2z7PdeFGUKBZA3HDVNaYcpQdxTZBKv4LHmmfaxZB7kZBfTOXZAidg';
   }
 
   // Format Iraqi phone numbers for Meta API (964 prefix required)
