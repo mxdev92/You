@@ -767,6 +767,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Complete signup endpoint
+  app.post('/api/auth/complete-signup', async (req, res) => {
+    try {
+      const { phone, fullName, governorate, district, landmark } = req.body;
+      
+      if (!phone || !fullName || !governorate || !district || !landmark) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
+
+      // Check if OTP was verified for this phone
+      const otpData = otpStore.get(phone);
+      if (!otpData || !otpData.verified) {
+        return res.status(400).json({ message: 'Phone number not verified' });
+      }
+
+      // Convert phone to email format for storage (since user already has Firebase account)
+      const email = `${phone}@pakety.app`;
+
+      // Create user in database
+      const newUser = await storage.createUser({
+        email,
+        passwordHash: 'firebase-auth', // Placeholder since Firebase handles auth
+        fullName,
+        phone
+      });
+
+      // Create address
+      await storage.createAddress({
+        userId: newUser.id,
+        governorate,
+        district,
+        neighborhood: landmark, // Using landmark as neighborhood
+        notes: null,
+        isDefault: true
+      });
+
+      // Create session
+      (req as any).session = (req as any).session || {};
+      (req as any).session.userId = newUser.id;
+      
+      // Clean up OTP
+      otpStore.delete(phone);
+      
+      res.json({ 
+        message: 'تم إكمال التسجيل بنجاح', 
+        user: { 
+          id: newUser.id, 
+          email: newUser.email, 
+          fullName: newUser.fullName,
+          phone: newUser.phone
+        } 
+      });
+    } catch (error: any) {
+      console.error('Complete signup error:', error);
+      if (error.message?.includes('duplicate') || error.code === '23505') {
+        return res.status(409).json({ message: 'Phone number already exists' });
+      }
+      res.status(500).json({ message: 'Failed to complete signup' });
+    }
+  });
+
   // Users management route
   app.get('/api/users', async (req, res) => {
     try {
