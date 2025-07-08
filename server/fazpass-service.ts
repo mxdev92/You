@@ -75,12 +75,13 @@ export class VerifyWayService {
       
       const requestBody = {
         recipient: formattedPhone,
-        type: 'text',
-        body: `رمز التحقق الخاص بك: ${otpCode}\n\nمرحباً بك في تطبيق باكيتي 🌟`,
-        channel: 'whatsapp'
+        type: 'otp',
+        code: otpCode,
+        channel: 'whatsapp',
+        template: 'arabic'
       };
 
-      console.log(`🔧 Debug - Request body:`, { ...requestBody, body: '***masked***' });
+      console.log(`🔧 Debug - Request body:`, { ...requestBody, code: '***masked***' });
       console.log(`🔧 Debug - API URL: ${this.baseUrl}/`);
 
       const response = await fetch(`${this.baseUrl}/`, {
