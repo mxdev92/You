@@ -6,8 +6,9 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useLocation } from "wouter";
+import FirebaseSignupModal from "@/components/firebase-signup-modal";
 import { formatPrice } from "@/lib/price-utils";
 import type { Product } from "@shared/schema";
 
@@ -69,7 +70,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
   const { t } = useTranslation();
-  const { user, loading } = usePostgresAuth();
+  const { user, loading } = useFirebaseAuth();
   const [, setLocation] = useLocation();
 
   const handleAddToCart = async () => {
@@ -86,8 +87,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     
     // Check if user is authenticated after loading is complete
     if (!user) {
-      console.log('❌ No user found, redirecting to auth');
-      setLocation('/auth');
+      console.log('❌ No user found, opening auth modal');
+      setIsModalOpen(true);
       return;
     }
     
@@ -193,11 +194,16 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Details Modal */}
       <ProductDetailsModal
         product={product}
-        isOpen={isModalOpen}
+        isOpen={isModalOpen && !!user}
         onClose={() => setIsModalOpen(false)}
       />
 
-
+      {/* Firebase Authentication Modal */}
+      <FirebaseSignupModal 
+        isOpen={isModalOpen && !user}
+        onClose={() => setIsModalOpen(false)}
+        initialMode="login"
+      />
     </>
   );
 }

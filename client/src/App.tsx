@@ -10,7 +10,7 @@ import AdminLogin from "@/pages/admin-login";
 import WhatsAppAdmin from "@/pages/whatsapp-admin";
 import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
 import NotFound from "@/pages/not-found";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 
 // Protected Admin Route Component
 function ProtectedAdminRoute() {
@@ -27,7 +27,7 @@ function ProtectedAdminRoute() {
 
 // Protected Route Component for regular users
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading } = usePostgresAuth();
+  const { user, loading } = useFirebaseAuth();
   
   if (loading) {
     return (

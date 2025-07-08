@@ -3,7 +3,7 @@ import Header from "@/components/header";
 import LeftSidebar from "@/components/left-sidebar";
 import RightSidebar from "@/components/right-sidebar";
 import ProductsGrid from "@/components/products-grid";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useCartFlow } from "@/store/cart-flow";
 
 export default function Home() {
@@ -11,7 +11,7 @@ export default function Home() {
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt'>('menu');
   
-  const { user } = usePostgresAuth();
+  const { user } = useFirebaseAuth();
   const { loadCart, clearCart } = useCartFlow();
 
   // Clear cart on app startup, then load only for authenticated users
