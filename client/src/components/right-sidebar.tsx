@@ -336,7 +336,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       queryClient.invalidateQueries({ queryKey: ['user-orders'] });
       console.log('Order history cache invalidated');
       
-      showNotification('تم تقديم الطلب بنجاح! يمكنك مراجعة الطلب في لوحة الإدارة.', 'success');
+      showNotification('تم استلام طلبكم بنجاح وسيتم التواصل معكم لترتيب عملية التسليم', 'success');
       setCurrentView('cart');
       onClose();
     } catch (error: any) {

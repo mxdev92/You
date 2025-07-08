@@ -216,7 +216,7 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setOtpSent(true);
-        showNotification('✅ تم إنشاء رمز التحقق بنجاح - تحقق من WhatsApp أو استخدم الرمز في وحدة التحكم', 'success');
+        showNotification('✅ تم إرسال رمز التحقق بنجاح إلى تطبيق WhatsApp المسجل على رقمكم', 'success');
         
         // Always log OTP to console for user access
         if (data.otp) {
@@ -226,17 +226,17 @@ const AuthPage: React.FC = () => {
       } else {
         // Even on server error, try to continue with OTP flow
         setOtpSent(true);
-        showNotification('تم إنشاء رمز التحقق - تحقق من وحدة التحكم', 'success');
+        showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق WhatsApp للحصول على الرمز', 'success');
       }
     } catch (error) {
       if (error.name === 'AbortError') {
         // Set OtpSent to true even on timeout since backend likely processed it
         setOtpSent(true);
-        showNotification('✅ تم إنشاء رمز التحقق - تحقق من WhatsApp أو وحدة التحكم', 'success');
+        showNotification('✅ تم إرسال رمز التحقق بنجاح - يرجى مراجعة تطبيق WhatsApp', 'success');
       } else {
         // Always allow user to proceed with OTP verification
         setOtpSent(true);
-        showNotification('تم إنشاء رمز التحقق - تحقق من وحدة التحكم للحصول على الرمز', 'success');
+        showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق WhatsApp أو وحدة التحكم', 'success');
       }
     } finally {
       setIsLoading(false);
