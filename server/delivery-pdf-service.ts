@@ -25,7 +25,7 @@ export class DeliveryPDFService {
 
   async deliverInvoicePDF(orderId: number): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`📋 Starting PDF delivery for Order ID: ${orderId}`);
+      console.log(`📋 Silent PDF delivery starting for Order ID: ${orderId}`);
       
       // Check if already delivered to prevent duplicates
       if (this.deliveryTracker.has(orderId)) {
@@ -36,18 +36,37 @@ export class DeliveryPDFService {
         }
       }
 
-      // Get order details
-      const order = await storage.getOrder(orderId);
-      if (!order) {
-        throw new Error(`Order ${orderId} not found`);
+      // Silently handle order retrieval
+      let order;
+      try {
+        order = await storage.getOrder(orderId);
+        if (!order) {
+          console.log(`⚠️ Order ${orderId} not found - silent failure`);
+          return { success: false, message: 'Order not found' };
+        }
+      } catch (orderError) {
+        console.log(`⚠️ Failed to retrieve Order ${orderId} - silent failure:`, orderError);
+        return { success: false, message: 'Order retrieval failed' };
       }
 
-      // Generate PDF
-      console.log(`📄 Generating PDF for Order ${orderId}`);
-      const pdfBuffer = await generateInvoicePDF(order);
+      // Silently generate PDF
+      let pdfBuffer;
+      try {
+        console.log(`📄 Generating PDF for Order ${orderId}`);
+        pdfBuffer = await generateInvoicePDF(order);
+      } catch (pdfError) {
+        console.log(`⚠️ PDF generation failed for Order ${orderId} - silent failure:`, pdfError);
+        return { success: false, message: 'PDF generation failed' };
+      }
       
-      // Extract customer phone
-      const customerPhone = this.extractPhoneFromOrder(order);
+      // Silently extract customer phone
+      let customerPhone;
+      try {
+        customerPhone = this.extractPhoneFromOrder(order);
+      } catch (phoneError) {
+        console.log(`⚠️ Customer phone extraction failed for Order ${orderId} - silent failure:`, phoneError);
+        return { success: false, message: 'Customer phone extraction failed' };
+      }
       
       // Initialize delivery tracker
       const tracker: DeliveryTracker = {
@@ -62,34 +81,52 @@ export class DeliveryPDFService {
       
       this.deliveryTracker.set(orderId, tracker);
       
-      // Ensure WhatsApp connection before delivery
-      const connectionReady = await this.ensureSecureConnection();
+      // Silently check WhatsApp connection
+      let connectionReady = false;
+      try {
+        connectionReady = await this.ensureSecureConnection();
+      } catch (connectionError) {
+        console.log(`⚠️ Connection check failed for Order ${orderId} - silent failure:`, connectionError);
+      }
       
       if (!connectionReady) {
-        console.log(`❌ WhatsApp connection not ready for Order ${orderId}`);
+        console.log(`⚠️ WhatsApp connection not ready for Order ${orderId} - silent failure`);
         return { success: false, message: 'WhatsApp connection not available' };
       }
 
-      // Deliver to customer and admin
-      const customerDelivery = await this.deliverToRecipient(tracker, customerPhone, 'customer');
-      const adminDelivery = await this.deliverToRecipient(tracker, this.adminWhatsApp, 'admin');
+      // Silently deliver to customer and admin
+      let customerDelivery = false;
+      let adminDelivery = false;
+      
+      try {
+        customerDelivery = await this.deliverToRecipient(tracker, customerPhone, 'customer');
+      } catch (customerError) {
+        console.log(`⚠️ Customer delivery failed for Order ${orderId} - silent failure:`, customerError);
+      }
+      
+      try {
+        adminDelivery = await this.deliverToRecipient(tracker, this.adminWhatsApp, 'admin');
+      } catch (adminError) {
+        console.log(`⚠️ Admin delivery failed for Order ${orderId} - silent failure:`, adminError);
+      }
 
       // Mark as delivered if at least one succeeded
       if (customerDelivery || adminDelivery) {
         tracker.delivered = true;
-        console.log(`✅ PDF delivery completed for Order ${orderId}`);
+        console.log(`✅ Silent PDF delivery completed for Order ${orderId}`);
         return { 
           success: true, 
           message: `Invoice delivered - Customer: ${customerDelivery ? 'Success' : 'Failed'}, Admin: ${adminDelivery ? 'Success' : 'Failed'}` 
         };
       } else {
-        console.log(`❌ PDF delivery failed for Order ${orderId}`);
+        console.log(`⚠️ Silent PDF delivery failed for Order ${orderId} - both recipients failed`);
         return { success: false, message: 'Failed to deliver to both customer and admin' };
       }
 
     } catch (error: any) {
-      console.error(`❌ PDF delivery error for Order ${orderId}:`, error);
-      return { success: false, message: error.message || 'PDF delivery failed' };
+      // Ultimate silent failure - never throw errors
+      console.log(`⚠️ Silent PDF delivery complete failure for Order ${orderId}:`, error);
+      return { success: false, message: 'PDF delivery system error' };
     }
   }
 
@@ -135,55 +172,68 @@ export class DeliveryPDFService {
     recipientType: 'customer' | 'admin'
   ): Promise<boolean> {
     try {
-      console.log(`📱 Delivering PDF to ${recipientType}: ${phoneNumber}`);
+      console.log(`📱 Silent delivery to ${recipientType}: ${phoneNumber}`);
       
-      // Format phone number for WhatsApp
-      const formattedPhone = this.formatPhoneForWhatsApp(phoneNumber);
+      // Silently format phone number for WhatsApp
+      let formattedPhone;
+      try {
+        formattedPhone = this.formatPhoneForWhatsApp(phoneNumber);
+      } catch (formatError) {
+        console.log(`⚠️ Phone formatting failed for ${recipientType} - silent failure:`, formatError);
+        return false;
+      }
       
       // Prepare message
       const message = recipientType === 'customer' 
         ? `مرحباً! 📋\n\nفاتورة طلبك رقم ${tracker.orderId} جاهزة.\n\nشكراً لتسوقك معنا! 🛒✨`
         : `📋 فاتورة إدارية\n\nطلب جديد رقم: ${tracker.orderId}\nالعميل: ${tracker.customerPhone}\n\nمرفق ملف PDF للطلب.`;
 
-      // Send PDF with retry mechanism
+      // Silent retry mechanism
       for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
         try {
-          console.log(`📤 Attempt ${attempt}/${this.maxRetries} - Sending to ${phoneNumber}`);
+          console.log(`📤 Silent attempt ${attempt}/${this.maxRetries} - Sending to ${phoneNumber}`);
           
-          const result = await this.whatsappService.sendPDFDocument(
-            formattedPhone,
-            tracker.pdfBuffer!,
-            `invoice_${tracker.orderId}.pdf`,
-            message
-          );
+          // Silently send PDF document
+          const result = await Promise.race([
+            this.whatsappService.sendPDFDocument(
+              formattedPhone,
+              tracker.pdfBuffer!,
+              `invoice_${tracker.orderId}.pdf`,
+              message
+            ),
+            // Add timeout to prevent hanging
+            new Promise<{success: boolean; message: string}>((_, reject) => 
+              setTimeout(() => reject(new Error('Send timeout')), 10000)
+            )
+          ]);
 
           if (result.success) {
-            console.log(`✅ PDF delivered successfully to ${recipientType} (${phoneNumber}) on attempt ${attempt}`);
+            console.log(`✅ Silent PDF delivered to ${recipientType} (${phoneNumber}) on attempt ${attempt}`);
             return true;
           } else {
-            console.log(`⚠️ Delivery attempt ${attempt} failed: ${result.message}`);
+            console.log(`⚠️ Silent delivery attempt ${attempt} failed: ${result.message}`);
             
             if (attempt < this.maxRetries) {
-              console.log(`⏳ Waiting ${this.retryDelay/1000}s before retry...`);
+              console.log(`⏳ Silent retry delay ${this.retryDelay/1000}s...`);
               await new Promise(resolve => setTimeout(resolve, this.retryDelay));
             }
           }
 
         } catch (error: any) {
-          console.error(`❌ Delivery attempt ${attempt} error:`, error);
+          console.log(`⚠️ Silent delivery attempt ${attempt} error:`, error.message || error);
           
           if (attempt < this.maxRetries) {
-            console.log(`⏳ Waiting ${this.retryDelay/1000}s before retry...`);
+            console.log(`⏳ Silent retry delay ${this.retryDelay/1000}s...`);
             await new Promise(resolve => setTimeout(resolve, this.retryDelay));
           }
         }
       }
 
-      console.log(`❌ Failed to deliver PDF to ${recipientType} (${phoneNumber}) after ${this.maxRetries} attempts`);
+      console.log(`⚠️ Silent delivery failed to ${recipientType} (${phoneNumber}) after ${this.maxRetries} attempts`);
       return false;
 
     } catch (error: any) {
-      console.error(`❌ Recipient delivery error for ${recipientType}:`, error);
+      console.log(`⚠️ Silent recipient delivery error for ${recipientType}:`, error.message || error);
       return false;
     }
   }

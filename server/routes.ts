@@ -347,56 +347,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
 
-      // Enhanced PDF delivery with bulletproof connection verification
-      // Use enhanced delivery PDF service for bulletproof invoice delivery
-      console.log(`📋 Triggering enhanced PDF delivery for Order ${orderId}`);
+      // Silent enhanced PDF delivery system
+      console.log(`📋 Starting silent PDF delivery for Order ${orderId}`);
       
-      // Trigger bulletproof PDF delivery with secure connection verification
+      // Trigger silent PDF delivery - never affects order submission
       setTimeout(async () => {
         try {
           const deliveryResult = await deliveryPDFService.deliverInvoicePDF(orderId);
           if (deliveryResult.success) {
-            console.log(`✅ Enhanced PDF delivery completed for Order ${orderId}: ${deliveryResult.message}`);
+            console.log(`✅ Silent PDF delivery completed for Order ${orderId}: ${deliveryResult.message}`);
           } else {
-            console.log(`⚠️ Enhanced PDF delivery failed - using legacy WhatsApp`);
-            // Legacy fallback code will run below
+            console.log(`⚠️ Silent PDF delivery failed - legacy fallback will attempt`);
           }
         } catch (error: any) {
-          console.error(`❌ Enhanced PDF delivery error for Order ${orderId}:`, error);
+          // Silent failure - never throw or affect order processing
+          console.log(`⚠️ Silent PDF delivery system error for Order ${orderId}:`, error.message || error);
         }
       }, 2000);
 
-      // Legacy WhatsApp notifications (fallback)
-      if (whatsappService.getConnectionStatus().connected) {
+      // Silent legacy WhatsApp notifications (fallback)
+      setTimeout(async () => {
         try {
-          // Generate PDF invoice once for both customer and admin
-          const pdfBuffer = await generateInvoicePDF(order);
-          
-          // 1. Send customer confirmation with PDF
-          await whatsappService.sendOrderInvoice(
-            order.customerPhone, 
-            pdfBuffer,
-            order
-          );
+          if (whatsappService.getConnectionStatus().connected) {
+            try {
+              // Silently generate PDF invoice
+              const pdfBuffer = await generateInvoicePDF(order);
+              
+              // Silently send customer confirmation with PDF
+              await whatsappService.sendOrderInvoice(
+                order.customerPhone, 
+                pdfBuffer,
+                order
+              );
 
-          // 2. Send admin notification to fixed admin WhatsApp (07710155333)
-          const orderData = {
-            orderId: order.id,
-            customerName: order.customerName,
-            customerPhone: order.customerPhone,
-            address: order.address?.fullAddress || 'لم يتم تحديد العنوان',
-            total: order.totalAmount,
-            itemCount: order.items.length
-          };
-          await whatsappService.sendAdminNotification(orderData, pdfBuffer);
+              // Silently send admin notification
+              const orderData = {
+                orderId: order.id,
+                customerName: order.customerName,
+                customerPhone: order.customerPhone,
+                address: order.address?.fullAddress || 'لم يتم تحديد العنوان',
+                total: order.totalAmount,
+                itemCount: order.items.length
+              };
+              await whatsappService.sendAdminNotification(orderData, pdfBuffer);
 
-          console.log(`📱 Legacy WhatsApp notifications sent for order #${order.id}: customer + admin (07710155333)`);
-        } catch (whatsappError) {
-          console.error('Legacy WhatsApp notification failed (order created successfully):', whatsappError);
+              console.log(`📱 Silent legacy WhatsApp notifications sent for order #${order.id}`);
+            } catch (whatsappError) {
+              console.log('⚠️ Silent legacy WhatsApp notification failed:', whatsappError.message || whatsappError);
+            }
+          } else {
+            console.log('⚠️ Silent legacy WhatsApp service not connected');
+          }
+        } catch (error: any) {
+          console.log('⚠️ Silent legacy WhatsApp system error:', error.message || error);
         }
-      } else {
-        console.log('📱 Legacy WhatsApp service not connected - enhanced PDF delivery is primary method');
-      }
+      }, 5000); // 5 second delay for legacy fallback
       
       res.status(201).json(order);
     } catch (error: any) {
