@@ -12,6 +12,7 @@ import {
   sendOTPToPhone,
   verifyOTPAndSignIn
 } from '../lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 
 interface AuthState {
   user: User | null;
@@ -130,21 +131,21 @@ export const useFirebaseAuth = () => {
   const registerWithPhoneOTP = async (phoneNumber: string, fullName: string) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     try {
-      console.log('Firebase Auth: Starting phone OTP registration (without reCAPTCHA):', phoneNumber);
+      console.log('Firebase Auth: Starting phone OTP registration:', phoneNumber);
       
-      // For testing, we'll skip Firebase phone auth and use email-based registration
-      // Convert phone to email format for Firebase compatibility
-      const emailFromPhone = `${phoneNumber.replace('+964', '0')}@pakety.app`;
-      
-      // Return a mock confirmation for the OTP flow
-      return {
-        phoneNumber,
-        confirm: async (otpCode: string) => {
-          // Mock OTP verification - in production, you'd validate the OTP here
-          console.log('Mock OTP verification for code:', otpCode);
-          return { user: { phoneNumber } };
+      // Create invisible reCAPTCHA
+      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          console.log('reCAPTCHA solved');
         }
-      };
+      });
+      
+      // Send OTP to phone number
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+      console.log('Firebase: OTP sent successfully to', phoneNumber);
+      
+      return confirmationResult;
     } catch (error: any) {
       console.error('Firebase Auth: Phone registration failed:', error);
       setAuthState(prev => ({ 

@@ -134,9 +134,9 @@ export default function AuthPage() {
     
     try {
       const phoneNumber = `+964${formData.phone.substring(1)}`; // Convert 07XXXXXXXXX to +9647XXXXXXXXX
-      console.log('Sending OTP to:', phoneNumber);
+      console.log('Sending Firebase OTP to:', phoneNumber);
       
-      const confirmationResult = await registerWithPhoneOTP(phoneNumber, formData.fullName);
+      const confirmationResult = await registerWithPhoneOTP(phoneNumber, 'New User');
       
       setOtpState({
         confirmationResult,
@@ -145,11 +145,10 @@ export default function AuthPage() {
         isVerifying: false
       });
       
-      console.log('OTP sent successfully, showing input field');
-      // Stay on step 1 to show OTP input field - don't move to step 2
+      console.log('Firebase OTP sent successfully, showing input field');
     } catch (error: any) {
-      console.error('Failed to send OTP:', error);
-      setErrors({ submit: error.message });
+      console.error('Failed to send Firebase OTP:', error);
+      setErrors({ submit: error.message || 'فشل في إرسال رمز التحقق' });
     } finally {
       setIsSubmitting(false);
     }
@@ -177,15 +176,17 @@ export default function AuthPage() {
     setOtpState(prev => ({ ...prev, isVerifying: true }));
     
     try {
-      // Verify OTP and also create Firebase account with email format
-      await verifyOTPAndComplete(otpState.confirmationResult, otpCode, formData.fullName);
+      console.log('Verifying Firebase OTP:', otpCode, 'for phone:', formData.phone);
       
-      // Also create email-based account for future login compatibility
-      await registerWithEmailFromPhone(formData.phone, formData.password, formData.fullName);
+      // Verify the OTP code with Firebase
+      await verifyOTPAndComplete(otpState.confirmationResult, otpCode, 'New User');
       
+      console.log('Firebase OTP verified successfully, moving to step 2');
       setStep(2); // Move to password step for signup
+      setOtpCode(''); // Clear OTP code
     } catch (error: any) {
-      setErrors({ submit: error.message });
+      console.error('Failed to verify Firebase OTP:', error);
+      setErrors({ submit: error.message || 'رمز التحقق غير صحيح أو منتهي الصلاحية' });
     } finally {
       setIsSubmitting(false);
       setOtpState(prev => ({ ...prev, isVerifying: false }));
@@ -228,6 +229,9 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col" dir="rtl">
+      {/* reCAPTCHA container for Firebase phone auth */}
+      <div id="recaptcha-container" className="hidden"></div>
+      
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
