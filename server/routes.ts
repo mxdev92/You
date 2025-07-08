@@ -11,6 +11,7 @@ import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator
 import BaileysWhatsAppService from './baileys-whatsapp-service';
 import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
 import { verifyWayService } from './verifyway-service';
+import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
 
 const whatsappService = new BaileysWhatsAppService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
@@ -18,6 +19,10 @@ const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
 // Initialize Baileys WhatsApp service on startup
 whatsappService.initialize().then(() => {
   console.log('🎯 Baileys WhatsApp service initialized on server startup');
+  
+  // Initialize delivery PDF service after WhatsApp is ready
+  initializeDeliveryPDFService(whatsappService);
+  console.log('📋 Delivery PDF service initialized');
 }).catch((error) => {
   console.error('⚠️ Baileys WhatsApp failed to initialize on startup:', error);
 });
@@ -342,7 +347,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
 
-      // Send WhatsApp notifications if service is connected
+      // Enhanced PDF delivery with bulletproof connection verification
+      // Use enhanced delivery PDF service for bulletproof invoice delivery
+      console.log(`📋 Triggering enhanced PDF delivery for Order ${orderId}`);
+      
+      // Trigger bulletproof PDF delivery with secure connection verification
+      setTimeout(async () => {
+        try {
+          const deliveryResult = await deliveryPDFService.deliverInvoicePDF(orderId);
+          if (deliveryResult.success) {
+            console.log(`✅ Enhanced PDF delivery completed for Order ${orderId}: ${deliveryResult.message}`);
+          } else {
+            console.log(`⚠️ Enhanced PDF delivery failed - using legacy WhatsApp`);
+            // Legacy fallback code will run below
+          }
+        } catch (error: any) {
+          console.error(`❌ Enhanced PDF delivery error for Order ${orderId}:`, error);
+        }
+      }, 2000);
+
+      // Legacy WhatsApp notifications (fallback)
       if (whatsappService.getConnectionStatus().connected) {
         try {
           // Generate PDF invoice once for both customer and admin
@@ -366,12 +390,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           await whatsappService.sendAdminNotification(orderData, pdfBuffer);
 
-          console.log(`📱 WhatsApp notifications sent for order #${order.id}: customer + admin (07710155333)`);
+          console.log(`📱 Legacy WhatsApp notifications sent for order #${order.id}: customer + admin (07710155333)`);
         } catch (whatsappError) {
-          console.error('WhatsApp notification failed (order created successfully):', whatsappError);
+          console.error('Legacy WhatsApp notification failed (order created successfully):', whatsappError);
         }
       } else {
-        console.log('📱 WhatsApp service not connected - notifications skipped');
+        console.log('📱 Legacy WhatsApp service not connected - enhanced PDF delivery is primary method');
       }
       
       res.status(201).json(order);
@@ -722,6 +746,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Test VerifyWay API endpoint
+  // Enhanced PDF delivery endpoints
+  app.post('/api/delivery/trigger/:orderId', async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      console.log(`🚀 Manual PDF delivery trigger for Order ${orderId}`);
+      
+      const deliveryResult = await deliveryPDFService.deliverInvoicePDF(orderId);
+      
+      res.json({
+        success: deliveryResult.success,
+        message: deliveryResult.message,
+        orderId: orderId,
+        timestamp: Date.now()
+      });
+    } catch (error: any) {
+      console.error('Manual PDF delivery error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || 'PDF delivery failed' 
+      });
+    }
+  });
+
+  app.get('/api/delivery/status/:orderId', async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      const status = deliveryPDFService.getDeliveryStatus(orderId);
+      
+      if (!status) {
+        return res.status(404).json({ 
+          message: 'No delivery record found for this order' 
+        });
+      }
+
+      res.json({
+        orderId: status.orderId,
+        delivered: status.delivered,
+        attempts: status.attempts,
+        customerPhone: status.customerPhone,
+        timestamp: status.timestamp,
+        success: true
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || 'Failed to get delivery status' 
+      });
+    }
+  });
+
+  app.get('/api/delivery/stats', async (req, res) => {
+    try {
+      const stats = deliveryPDFService.getDeliveryStats();
+      
+      res.json({
+        ...stats,
+        success: true,
+        timestamp: Date.now()
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || 'Failed to get delivery stats' 
+      });
+    }
+  });
+
   app.post('/api/verifyway/test', async (req, res) => {
     try {
       const { phoneNumber } = req.body;

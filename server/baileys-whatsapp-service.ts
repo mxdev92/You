@@ -397,18 +397,94 @@ export class BaileysWhatsAppService {
 
       await this.socket.sendMessage(formattedNumber, {
         document: media.document,
-        caption: message,
+        mimetype: 'application/pdf',
         fileName: `PAKETY-Invoice-${orderData.orderId}.pdf`,
-        mimetype: 'application/pdf'
+        caption: message
       });
 
-      console.log(`✅ Invoice sent successfully to ${phoneNumber}`);
+      console.log(`✅ Invoice PDF sent successfully to ${phoneNumber}`);
       return true;
 
     } catch (error) {
-      console.error('❌ Failed to send invoice via Baileys:', error);
+      console.error(`❌ Failed to send invoice PDF:`, error);
       return false;
     }
+  }
+
+  // Enhanced PDF document sending method for delivery service
+  async sendPDFDocument(
+    phoneNumber: string, 
+    pdfBuffer: Buffer, 
+    fileName: string, 
+    message: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log(`📄 Sending PDF document to ${phoneNumber}`);
+      
+      if (!this.isConnected || !this.socket) {
+        return { success: false, message: 'WhatsApp not connected' };
+      }
+
+      const formattedNumber = this.formatPhoneNumber(phoneNumber);
+      
+      // Prepare PDF media with enhanced error handling
+      const media = await prepareWAMessageMedia({
+        document: pdfBuffer,
+        mimetype: 'application/pdf',
+        fileName: fileName
+      }, { upload: this.socket.waUploadToServer });
+
+      // Send document with message
+      await this.socket.sendMessage(formattedNumber, {
+        document: media.document,
+        caption: message,
+        fileName: fileName,
+        mimetype: 'application/pdf'
+      });
+
+      console.log(`✅ PDF document sent successfully to ${phoneNumber}`);
+      return { success: true, message: 'PDF sent successfully' };
+
+    } catch (error: any) {
+      console.error(`❌ Failed to send PDF document:`, error);
+      return { success: false, message: error.message || 'Failed to send PDF' };
+    }
+  }
+
+  // Enhanced connection ready check with timeout
+  async ensureConnectionReady(timeoutMs: number = 30000): Promise<boolean> {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      const checkInterval = 1000; // Check every second
+      
+      const checkConnection = () => {
+        if (this.isConnected && this.socket) {
+          console.log(`✅ Connection ready for PDF delivery`);
+          resolve(true);
+          return;
+        }
+        
+        if (Date.now() - startTime > timeoutMs) {
+          console.log(`❌ Connection timeout after ${timeoutMs/1000}s`);
+          resolve(false);
+          return;
+        }
+        
+        setTimeout(checkConnection, checkInterval);
+      };
+      
+      checkConnection();
+    });
+  }
+
+  // Public method to expose otpSessions for delivery service
+  get otpSessions() {
+    return this.otpSessions;
+  }
+
+  // Public method to set otpSessions
+  set otpSessions(sessions: Map<string, OTPSession>) {
+    this.otpSessions = sessions;
   }
 
   async sendAdminNotification(orderData: any, pdfBuffer: Buffer): Promise<boolean> {
