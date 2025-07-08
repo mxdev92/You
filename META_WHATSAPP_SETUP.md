@@ -12,6 +12,14 @@
 ✅ Message sending: SUCCESS to approved numbers
 ✅ OTP system working with Iraqi phone number +964 775 725 0444
 ✅ WhatsApp OTP delivery confirmed working
+⚠️ PRODUCTION REQUIREMENT: Need to submit for Business Verification to message any number
+
+## Production Setup Required
+To send OTP to any phone number (not just allowed list), you must:
+1. Submit WhatsApp Business Account for verification
+2. Add business information (name, website, privacy policy)
+3. Wait for Facebook approval (typically 1-3 days)
+4. Once approved, any phone number can receive messages
 
 ## Required Permissions
 The Meta access token needs these permissions:
