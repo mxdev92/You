@@ -85,7 +85,7 @@ export class MetaWhatsAppService {
       };
 
       // For now, send a simple text message since template might not be configured
-      // Use text message for OTP authentication (not marketing)
+      // Use text message for OTP authentication
       const textMessageData = {
         messaging_product: 'whatsapp',
         to: formattedPhone,

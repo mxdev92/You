@@ -9,8 +9,9 @@
 ✅ Access token updated and working with proper permissions
 ✅ Phone number ID updated to 675759472293180 (Test Number)
 ✅ Phone number access: SUCCESS
-⚠️ Message sending blocked - recipient numbers need to be added to allowed list
-🔄 Need to add phone numbers to allowed recipient list in Meta console
+✅ Message sending: SUCCESS to approved numbers
+✅ OTP system working with Iraqi phone number +964 775 725 0444
+✅ WhatsApp OTP delivery confirmed working
 
 ## Required Permissions
 The Meta access token needs these permissions:
