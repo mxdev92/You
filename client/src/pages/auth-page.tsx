@@ -280,28 +280,28 @@ export default function AuthPage() {
       return (
         <div className="space-y-4">
           <div className="relative">
-            <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="email"
               placeholder="البريد الإلكتروني"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pl-10 text-left font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
               dir="ltr"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            {errors.email && <p className="text-red-500 text-sm mt-1 text-right">{errors.email}</p>}
           </div>
 
           <div className="relative">
-            <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="password"
               placeholder="كلمة المرور"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pl-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+            {errors.password && <p className="text-red-500 text-sm mt-1 text-right">{errors.password}</p>}
           </div>
 
           {errors.submit && (
@@ -316,7 +316,7 @@ export default function AuthPage() {
             className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
           >
             {isSubmitting ? (
-              <div className="flex items-center justify-center space-x-2 space-x-reverse">
+              <div className="flex items-center justify-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span>جاري تسجيل الدخول...</span>
               </div>
@@ -338,40 +338,40 @@ export default function AuthPage() {
           </div>
 
           <div className="relative">
-            <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="email"
               placeholder="البريد الإلكتروني"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pl-10 text-left font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
               dir="ltr"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            {errors.email && <p className="text-red-500 text-sm mt-1 text-right">{errors.email}</p>}
           </div>
 
           <div className="relative">
-            <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="password"
               placeholder="كلمة المرور (6 أحرف على الأقل)"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pl-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+            {errors.password && <p className="text-red-500 text-sm mt-1 text-right">{errors.password}</p>}
           </div>
 
           <div className="relative">
-            <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               type="password"
               placeholder="تأكيد كلمة المرور"
               value={formData.confirmPassword}
               onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              className="h-12 pr-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
+              className="h-12 pl-10 text-right font-['Cairo'] border-gray-300 focus:border-green-500 rounded-xl"
             />
-            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 text-right">{errors.confirmPassword}</p>}
           </div>
 
           {errors.submit && (
@@ -386,14 +386,14 @@ export default function AuthPage() {
             className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
           >
             {isSubmitting ? (
-              <div className="flex items-center justify-center space-x-2 space-x-reverse">
+              <div className="flex items-center justify-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span>جاري إنشاء الحساب...</span>
               </div>
             ) : (
               <>
                 <span>إنشاء حساب Firebase</span>
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowRight className="w-4 h-4 ml-2" />
               </>
             )}
           </Button>
@@ -590,7 +590,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -598,7 +598,7 @@ export default function AuthPage() {
             onClick={() => setLocation('/')}
             className="inline-flex items-center text-gray-600 hover:text-gray-800 mb-4"
           >
-            <ArrowRight className="w-5 h-5 ml-1" />
+            <ArrowLeft className="w-5 h-5 mr-1" />
             <span className="font-['Cairo']">العودة للرئيسية</span>
           </button>
           
