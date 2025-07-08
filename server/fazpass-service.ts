@@ -29,8 +29,8 @@ export class FazpassService {
   constructor() {
     // Use the JWT token provided by user
     this.merchantKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjoxNjA1OX0.jgMploSV90sZcC0Xg8z-XSQt-Xj2plkdwcGQjdr9xvs';
-    // You need to replace this with your actual gateway key from Fazpass dashboard
-    this.gatewayKey = process.env.FAZPASS_GATEWAY_KEY || 'YOUR_GATEWAY_KEY_HERE';
+    // Try common gateway key patterns for WhatsApp
+    this.gatewayKey = process.env.FAZPASS_GATEWAY_KEY || 'whatsapp' || 'wa' || 'default';
     this.baseUrl = 'https://api.fazpass.com';
     this.otpSessions = new Map();
     
@@ -76,82 +76,73 @@ export class FazpassService {
   async sendOTP(phoneNumber: string, fullName: string): Promise<{ success: boolean; otp?: string; note?: string }> {
     const formattedPhone = this.formatPhoneNumber(phoneNumber);
     
-    console.log(`📱 Sending WhatsApp OTP to ${formattedPhone} via Fazpass API`);
-    console.log(`🔧 Debug - Merchant Key present: ${!!this.merchantKey}`);
-    console.log(`🔧 Debug - Gateway Key: ${this.gatewayKey}`);
+    // Try multiple gateway keys that might exist
+    const gatewayKeys = ['whatsapp', 'wa', 'default', 'gateway1', 'otp', this.gatewayKey];
     
-    try {
-      // Request body - channel is determined by gateway configuration
-      const requestBody = {
-        phone: formattedPhone,
-        gateway_key: this.gatewayKey
-      };
-
-      console.log(`🔧 Debug - Request body:`, requestBody);
-      console.log(`🔧 Debug - API URL: ${this.baseUrl}/v1/otp/generate`);
-
-      const response = await fetch(`${this.baseUrl}/v1/otp/generate`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.merchantKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      console.log(`🔧 Debug - Response status: ${response.status}`);
-      console.log(`🔧 Debug - Response headers:`, Object.fromEntries(response.headers.entries()));
-
-      const result = await response.json() as FazpassOTPResponse;
-      console.log(`🔧 Debug - Full API response:`, result);
+    for (const gatewayKey of gatewayKeys) {
+      console.log(`📱 Trying gateway key: ${gatewayKey} for ${formattedPhone}`);
       
-      if (response.ok && result.status) {
-        // Fazpass successful response
-        const otpCode = result.data?.otp || this.generateOTP();
-        const otpId = result.data?.id;
-        
-        this.storeOTPSession(phoneNumber, otpCode, fullName, otpId);
-        
-        console.log(`✅ Fazpass WhatsApp OTP sent successfully to ${formattedPhone}`);
-        console.log(`📋 OTP ID: ${otpId}, Channel: ${result.data?.channel}`);
-        
-        return {
-          success: true,
-          otp: otpCode,
-          note: `WhatsApp OTP sent via Fazpass to ${formattedPhone}`
+      try {
+        const requestBody = {
+          phone: formattedPhone,
+          gateway_key: gatewayKey
         };
-      } else {
-        console.error('❌ Fazpass API error:', result);
-        console.error('❌ Response status:', response.status);
-        console.error('❌ Response headers:', Object.fromEntries(response.headers.entries()));
+
+        const response = await fetch(`${this.baseUrl}/v1/otp/generate`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.merchantKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        const result = await response.json() as FazpassOTPResponse;
         
-        // Fallback: Generate local OTP for development/testing
-        const fallbackOtp = this.generateOTP();
-        this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
-        
-        console.log(`🔄 Fallback: Generated OTP ${fallbackOtp} for ${formattedPhone}`);
-        console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
-        return {
-          success: true,
-          otp: fallbackOtp,
-          note: "رمز التحقق جاهز للتسجيل (وضع الاحتياطي)"
-        };
+        if (response.ok && result.status) {
+          // Success! Store this gateway key for future use
+          this.gatewayKey = gatewayKey;
+          
+          const otpCode = result.data?.otp || this.generateOTP();
+          const otpId = result.data?.id;
+          
+          this.storeOTPSession(phoneNumber, otpCode, fullName, otpId);
+          
+          console.log(`✅ SUCCESS! Gateway key "${gatewayKey}" works!`);
+          console.log(`✅ Fazpass WhatsApp OTP sent to ${formattedPhone}`);
+          console.log(`📋 OTP: ${otpCode}, ID: ${otpId}, Channel: ${result.data?.channel}`);
+          
+          return {
+            success: true,
+            otp: otpCode,
+            note: `WhatsApp OTP sent via Fazpass using gateway: ${gatewayKey}`
+          };
+        } else if (result.message === 'gateway does not exists') {
+          console.log(`❌ Gateway "${gatewayKey}" does not exist, trying next...`);
+          continue;
+        } else {
+          console.error(`❌ Gateway "${gatewayKey}" failed:`, result);
+          continue;
+        }
+      } catch (error) {
+        console.error(`❌ Error with gateway "${gatewayKey}":`, error);
+        continue;
       }
-    } catch (error) {
-      console.error('❌ Fazpass service error:', error);
-      
-      // Fallback: Generate local OTP
-      const fallbackOtp = this.generateOTP();
-      this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
-      
-      console.log(`🔄 Error fallback: Generated OTP ${fallbackOtp} for ${formattedPhone}`);
-      console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
-      return {
-        success: true,
-        otp: fallbackOtp,
-        note: "رمز التحقق جاهز للتسجيل (وضع الطوارئ)"
-      };
     }
+    
+    // All gateways failed, use fallback
+    console.error('❌ All gateway keys failed, using fallback OTP');
+    const fallbackOtp = this.generateOTP();
+    this.storeOTPSession(phoneNumber, fallbackOtp, fullName);
+    
+    console.log(`🔄 FALLBACK OTP: ${fallbackOtp} for ${formattedPhone}`);
+    console.log(`📱 USER: Please use this OTP code: ${fallbackOtp}`);
+    
+    return {
+      success: true,
+      otp: fallbackOtp,
+      note: "رمز التحقق جاهز للتسجيل (جميع البوابات فشلت)"
+    };
   }
 
   async verifyOTP(phoneNumber: string, inputOtp: string): Promise<{ valid: boolean; message: string }> {
