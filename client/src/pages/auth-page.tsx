@@ -130,6 +130,8 @@ export default function AuthPage() {
 
   const sendOTP = async () => {
     setIsSubmitting(true);
+    setErrors({});
+    
     try {
       const phoneNumber = `+964${formData.phone.substring(1)}`; // Convert 07XXXXXXXXX to +9647XXXXXXXXX
       console.log('Sending OTP to:', phoneNumber);
@@ -138,13 +140,15 @@ export default function AuthPage() {
       
       setOtpState({
         confirmationResult,
-        phoneNumber,
+        phoneNumber: formData.phone,
         isOTPSent: true,
         isVerifying: false
       });
       
-      setStep(2); // Move to OTP verification step
+      console.log('OTP sent successfully, showing input field');
+      // Stay on step 1 to show OTP input field - don't move to step 2
     } catch (error: any) {
+      console.error('Failed to send OTP:', error);
       setErrors({ submit: error.message });
     } finally {
       setIsSubmitting(false);
