@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+// Note: Using global fetch available in Node.js 18+
 
 interface VerifyWayResponse {
   success: boolean;
@@ -23,10 +23,8 @@ export class VerifyWayService {
   private otpSessions = new Map<string, OTPSession>();
 
   constructor() {
-    this.apiKey = process.env.VERIFYWAY_API_KEY || '';
-    if (!this.apiKey) {
-      console.warn('⚠️ VERIFYWAY_API_KEY not found in environment variables');
-    }
+    this.apiKey = process.env.VERIFYWAY_API_KEY || '906$E2P3X5cqM5U7lOgYNjZYOzfdLXCMDgFljOW9';
+    console.log('🔑 VerifyWay service initialized with API key');
   }
 
   async sendOTP(phoneNumber: string, fullName: string): Promise<{ success: boolean; otp?: string; reference?: string; message?: string }> {
@@ -44,9 +42,7 @@ export class VerifyWayService {
         },
         body: JSON.stringify({
           phone: formattedPhone,
-          message: `مرحباً ${fullName}!\nرمز التحقق الخاص بك لتطبيق باكيتي هو: {otp}\nالرمز صالح لمدة 10 دقائق فقط.`,
-          template_name: 'pakety_otp',
-          language: 'ar'
+          message: `مرحباً ${fullName}!\nرمز التحقق الخاص بك لتطبيق باكيتي هو: {otp}\nالرمز صالح لمدة 10 دقائق فقط.`
         }),
       });
 

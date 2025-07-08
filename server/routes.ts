@@ -721,6 +721,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // Test VerifyWay API endpoint
+  app.post('/api/verifyway/test', async (req, res) => {
+    try {
+      const { phoneNumber } = req.body;
+      const testPhone = phoneNumber || '07701234567';
+      
+      console.log(`🧪 Testing VerifyWay API with phone: ${testPhone}`);
+      
+      const result = await verifyWayService.sendOTP(testPhone, 'اختبار المستخدم');
+      
+      res.json({
+        success: result.success,
+        message: result.message,
+        delivered: result.success ? 'verifyway' : 'failed',
+        otp: result.otp,
+        phone: testPhone
+      });
+      
+    } catch (error: any) {
+      console.error('VerifyWay test error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Test failed'
+      });
+    }
+  });
+
   // WhatsApp API routes
   app.get('/api/whatsapp/status', async (req, res) => {
     try {
