@@ -344,14 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Generate PDF invoice once for both customer and admin
           const pdfBuffer = await generateInvoicePDF(order);
           
-          // 1. Send customer confirmation with PDF
-          await metaWhatsAppService.sendOrderNotification(order.customerPhone, {
-            orderId: order.id,
-            total: order.totalAmount,
-            customerName: order.customerName
-          });
-
-          // 2. Send admin notification to fixed admin WhatsApp (07710155333)
+          // Prepare order data for admin notification
           const orderData = {
             orderId: order.id,
             customerName: order.customerName,
@@ -361,12 +354,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
             itemCount: order.items.length
           };
           
-          // Send admin notification via VerifyWay WhatsApp to 07710155333
-          await fazpassService.sendAdminNotification('07710155333', orderData);
+          // 1. Send customer confirmation via VerifyWay (try but don't fail if it doesn't work)
+          try {
+            const customerSuccess = await fazpassService.sendCustomerNotification(order.customerPhone, orderData);
+            
+            if (customerSuccess) {
+              console.log(`📱 Customer notification sent successfully via VerifyWay for order #${order.id}`);
+            }
+          } catch (customerError) {
+            console.error(`❌ Customer notification failed for order #${order.id}:`, customerError);
+            // Continue with admin notification even if customer notification fails
+          }
 
-          console.log(`📱 WhatsApp notifications sent for order #${order.id}: customer + admin (07710155333)`);
+          // 2. Send admin notification to fixed admin WhatsApp (07710155333) - CRITICAL
+          try {
+            const adminSuccess = await fazpassService.sendAdminNotification('07710155333', orderData);
+            if (adminSuccess) {
+              console.log(`✅ Admin notification sent successfully to 07710155333 for order #${order.id}`);
+            } else {
+              console.error(`❌ Admin notification failed for order #${order.id}`);
+            }
+          } catch (adminError) {
+            console.error(`❌ Critical: Admin notification error for order #${order.id}:`, adminError);
+          }
+
+          console.log(`📱 WhatsApp notification process completed for order #${order.id}`);
         } catch (whatsappError) {
-          console.error('WhatsApp notification failed (order created successfully):', whatsappError);
+          console.error('WhatsApp notification system error (order created successfully):', whatsappError);
         }
       } else {
         console.log('📱 WhatsApp service not connected - notifications skipped');

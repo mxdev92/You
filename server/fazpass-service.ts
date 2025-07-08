@@ -224,28 +224,20 @@ export class VerifyWayService {
     }
   }
 
-  // Send admin notification via VerifyWay WhatsApp
-  async sendAdminNotification(adminPhone: string, orderData: any): Promise<boolean> {
-    const formattedPhone = this.formatPhoneNumber(adminPhone);
+  // Send message via VerifyWay WhatsApp (can be used for both admin and customer)
+  async sendWhatsAppMessage(phoneNumber: string, messageText: string, isAdmin: boolean = false): Promise<boolean> {
+    const formattedPhone = this.formatPhoneNumber(phoneNumber);
     
     try {
-      console.log(`📱 Sending admin notification to ${formattedPhone} via VerifyWay`);
+      console.log(`📱 Sending WhatsApp message to ${formattedPhone} via VerifyWay ${isAdmin ? '(Admin)' : '(Customer)'}`);
       
-      // Create admin notification message
-      const adminMessage = `🔔 طلب جديد في PAKETY!
-
-📋 رقم الطلب: ${orderData.orderId}
-👤 اسم العميل: ${orderData.customerName}
-📱 رقم العميل: ${orderData.customerPhone}
-📍 عنوان التوصيل: ${orderData.address}
-💰 المبلغ الإجمالي: ${orderData.total.toLocaleString()} د.ع
-🛒 عدد الأصناف: ${orderData.itemCount}
-
-⚡ يرجى تحضير الطلب والتوصيل في أسرع وقت`;
-
-      // VerifyWay only supports OTP type messages, so we need to send as OTP with a dummy code
-      // and include our admin message in the text
-      const dummyCode = '0000'; // Dummy code since this is not for verification
+      // For rate limiting, use a small delay for admin messages
+      if (isAdmin) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay for admin
+      }
+      
+      // Use a dummy OTP code since VerifyWay only supports OTP type
+      const dummyCode = isAdmin ? '0000' : '1111'; // Different codes to avoid conflicts
       
       const requestBody = {
         recipient: formattedPhone,
@@ -253,10 +245,10 @@ export class VerifyWayService {
         code: dummyCode,
         channel: 'whatsapp',
         lang: 'ar',
-        body: adminMessage  // Custom message body
+        body: messageText
       };
 
-      console.log(`🔧 Debug - Admin notification request:`, { ...requestBody, body: '***message***' });
+      console.log(`🔧 Debug - WhatsApp message request:`, { ...requestBody, body: '***message***' });
 
       const response = await fetch(`${this.baseUrl}/`, {
         method: 'POST',
@@ -271,18 +263,53 @@ export class VerifyWayService {
       
       if (response.ok) {
         const result = await response.json();
-        console.log(`🔧 Debug - Admin notification API response:`, result);
-        console.log(`✅ VerifyWay admin notification sent successfully to ${formattedPhone}`);
+        console.log(`🔧 Debug - WhatsApp API response:`, result);
+        console.log(`✅ VerifyWay message sent successfully to ${formattedPhone} ${isAdmin ? '(Admin)' : '(Customer)'}`);
         return true;
       } else {
         const errorResult = await response.json();
-        console.error('❌ Failed to send admin notification:', errorResult);
+        console.error(`❌ Failed to send WhatsApp message to ${formattedPhone}:`, errorResult);
         return false;
       }
     } catch (error) {
-      console.error('❌ Error sending admin notification:', error);
+      console.error(`❌ Error sending WhatsApp message to ${formattedPhone}:`, error);
       return false;
     }
+  }
+
+  // Send admin notification via VerifyWay WhatsApp
+  async sendAdminNotification(adminPhone: string, orderData: any): Promise<boolean> {
+    // Create admin notification message
+    const adminMessage = `🔔 طلب جديد في PAKETY!
+
+📋 رقم الطلب: ${orderData.orderId}
+👤 اسم العميل: ${orderData.customerName}
+📱 رقم العميل: ${orderData.customerPhone}
+📍 عنوان التوصيل: ${orderData.address}
+💰 المبلغ الإجمالي: ${orderData.total.toLocaleString()} د.ع
+🛒 عدد الأصناف: ${orderData.itemCount}
+
+⚡ يرجى تحضير الطلب والتوصيل في أسرع وقت`;
+
+    return await this.sendWhatsAppMessage(adminPhone, adminMessage, true);
+  }
+
+  // Send customer notification via VerifyWay WhatsApp
+  async sendCustomerNotification(customerPhone: string, orderData: any): Promise<boolean> {
+    // Create customer notification message
+    const customerMessage = `✅ تم تأكيد طلبك في PAKETY!
+
+📋 رقم الطلب: ${orderData.orderId}
+👤 العميل: ${orderData.customerName}
+💰 المبلغ الإجمالي: ${orderData.total.toLocaleString()} د.ع
+🛒 عدد الأصناف: ${orderData.itemCount}
+
+📍 سيتم التوصيل إلى: ${orderData.address}
+
+🚚 سيصل طلبك خلال 30-45 دقيقة
+شكراً لاختيارك PAKETY للتوصيل السريع! 🙏`;
+
+    return await this.sendWhatsAppMessage(customerPhone, customerMessage, false);
   }
 }
 
