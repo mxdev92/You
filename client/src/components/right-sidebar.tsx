@@ -886,7 +886,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   notification.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                 }`}>
-                  {notification.type === 'error' ? '⚠️' : '✅'}
+                  {notification.type === 'error' ? '❌' : '✅'}
                 </div>
                 <p 
                   className="text-gray-800 dark:text-gray-200 text-sm font-medium leading-relaxed"

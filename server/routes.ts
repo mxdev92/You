@@ -967,7 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Always return immediate success
       res.json({
         success: true,
-        message: 'تم إرسال رمز التحقق بنجاح إلى تطبيق WhatsApp',
+        message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
         otp: immediateOTP,
         delivered: 'immediate'
       });
@@ -980,7 +980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const baileyResult = await whatsappService.sendOTP(phoneNumber, fullName);
         res.json({
           success: true,
-          message: 'تم إرسال رمز التحقق إلى تطبيق WhatsApp',
+          message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
           otp: baileyResult.otp,
           delivered: 'baileys_emergency'
         });

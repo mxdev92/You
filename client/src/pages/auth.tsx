@@ -216,7 +216,7 @@ const AuthPage: React.FC = () => {
       
       if (response.ok) {
         setOtpSent(true);
-        showNotification('تم إرسال رمز التحقق بنجاح إلى تطبيق WhatsApp المسجل على رقمكم', 'success');
+        showNotification('تم إرسال رمز التحقق إلى تطبيق الواتساب المسجل على رقمكم', 'success');
         
         // Always log OTP to console for user access
         if (data.otp) {
@@ -226,17 +226,17 @@ const AuthPage: React.FC = () => {
       } else {
         // Even on server error, try to continue with OTP flow
         setOtpSent(true);
-        showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق WhatsApp للحصول على الرمز', 'success');
+        showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق الواتساب', 'success');
       }
     } catch (error) {
       if (error.name === 'AbortError') {
         // Set OtpSent to true even on timeout since backend likely processed it
         setOtpSent(true);
-        showNotification('تم إرسال رمز التحقق بنجاح - يرجى مراجعة تطبيق WhatsApp', 'success');
+        showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق الواتساب', 'success');
       } else {
         // Always allow user to proceed with OTP verification
         setOtpSent(true);
-        showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق WhatsApp أو وحدة التحكم', 'success');
+        showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق الواتساب أو وحدة التحكم', 'success');
       }
     } finally {
       setIsLoading(false);
@@ -830,7 +830,7 @@ const AuthPage: React.FC = () => {
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   notification.type === 'error' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
                 }`}>
-                  {notification.type === 'error' ? '⚠️' : '✅'}
+                  {notification.type === 'error' ? '❌' : '✅'}
                 </div>
                 <p 
                   className="text-gray-800 dark:text-gray-200 text-sm font-medium leading-relaxed"
