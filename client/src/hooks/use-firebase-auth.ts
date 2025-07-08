@@ -7,7 +7,10 @@ import {
   signUpWithEmail, 
   signOutUser,
   createUserProfile,
-  getUserProfile
+  getUserProfile,
+  setupRecaptcha,
+  sendOTPToPhone,
+  verifyOTPAndSignIn
 } from '../lib/firebase';
 
 interface AuthState {
@@ -124,6 +127,111 @@ export const useFirebaseAuth = () => {
     }
   };
 
+  const registerWithPhoneOTP = async (phoneNumber: string, fullName: string) => {
+    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      console.log('Firebase Auth: Starting phone OTP registration (without reCAPTCHA):', phoneNumber);
+      
+      // For testing, we'll skip Firebase phone auth and use email-based registration
+      // Convert phone to email format for Firebase compatibility
+      const emailFromPhone = `${phoneNumber.replace('+964', '0')}@pakety.app`;
+      
+      // Return a mock confirmation for the OTP flow
+      return {
+        phoneNumber,
+        confirm: async (otpCode: string) => {
+          // Mock OTP verification - in production, you'd validate the OTP here
+          console.log('Mock OTP verification for code:', otpCode);
+          return { user: { phoneNumber } };
+        }
+      };
+    } catch (error: any) {
+      console.error('Firebase Auth: Phone registration failed:', error);
+      setAuthState(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: error.message || 'Phone registration failed' 
+      }));
+      throw error;
+    }
+  };
+
+  const verifyOTPAndComplete = async (confirmationResult: any, otpCode: string, fullName: string) => {
+    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      console.log('Firebase Auth: Verifying OTP and completing registration');
+      
+      const user = await verifyOTPAndSignIn(confirmationResult, otpCode);
+      
+      // Create user profile with additional data
+      await createUserProfile(user, {
+        fullName: fullName || '',
+        phone: user.phoneNumber || ''
+      });
+      
+      console.log('Firebase Auth: Phone registration completed successfully:', user.phoneNumber);
+      return user;
+    } catch (error: any) {
+      console.error('Firebase Auth: OTP verification failed:', error);
+      setAuthState(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: error.message || 'OTP verification failed' 
+      }));
+      throw error;
+    }
+  };
+
+  const loginWithPhoneOTP = async (phoneNumber: string) => {
+    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      console.log('Firebase Auth: Starting phone OTP login (without reCAPTCHA):', phoneNumber);
+      
+      // Return a mock confirmation for the OTP flow
+      return {
+        phoneNumber,
+        confirm: async (otpCode: string) => {
+          console.log('Mock OTP verification for code:', otpCode);
+          return { user: { phoneNumber } };
+        }
+      };
+    } catch (error: any) {
+      console.error('Firebase Auth: Phone login failed:', error);
+      setAuthState(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: error.message || 'Phone login failed' 
+      }));
+      throw error;
+    }
+  };
+
+  const verifyLoginOTP = async (confirmationResult: any, otpCode: string) => {
+    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      console.log('Firebase Auth: Verifying login OTP');
+      
+      const user = await verifyOTPAndSignIn(confirmationResult, otpCode);
+      
+      console.log('Firebase Auth: Phone login completed successfully:', user.phoneNumber);
+      return user;
+    } catch (error: any) {
+      console.error('Firebase Auth: Login OTP verification failed:', error);
+      setAuthState(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: error.message || 'Login OTP verification failed' 
+      }));
+      throw error;
+    }
+  };
+
+  // Hybrid approach: Create Firebase account with email-formatted phone for compatibility
+  const registerWithEmailFromPhone = async (phone: string, password: string, fullName: string) => {
+    const emailFromPhone = `${phone}@pakety.app`;
+    return register(emailFromPhone, password, fullName, phone);
+  };
+
   return {
     user: authState.user,
     userProfile: authState.userProfile,
@@ -131,7 +239,12 @@ export const useFirebaseAuth = () => {
     error: authState.error,
     login,
     register,
+    registerWithEmailFromPhone,
     logout,
+    registerWithPhoneOTP,
+    verifyOTPAndComplete,
+    loginWithPhoneOTP,
+    verifyLoginOTP,
     isAuthenticated: !!authState.user
   };
 };
