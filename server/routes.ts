@@ -14,12 +14,15 @@ import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
 const whatsappService = new BaileysWhatsAppService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
 
-// Initialize Baileys WhatsApp service on startup
-whatsappService.initialize().then(() => {
-  console.log('🎯 Baileys WhatsApp service initialized on server startup');
-}).catch((error) => {
-  console.error('⚠️ Baileys WhatsApp failed to initialize on startup:', error);
-});
+// Initialize Baileys WhatsApp service in background (non-blocking)
+setTimeout(() => {
+  whatsappService.initialize().then(() => {
+    console.log('🎯 Baileys WhatsApp service initialized successfully');
+  }).catch((error) => {
+    console.error('⚠️ Baileys WhatsApp failed to initialize (will retry later):', error.message);
+    // Don't crash the server, just log the error
+  });
+}, 5000); // Delay initialization to let server start first
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment

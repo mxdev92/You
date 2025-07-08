@@ -39,6 +39,7 @@ export class BaileysWhatsAppService {
   private connectionStabilityInterval: NodeJS.Timeout | null = null;
   private reconnectDelay: number = 1000;
   private isReconnecting: boolean = false;
+  private queueManager: WhatsAppQueueManager;
 
   constructor() {
     // Ensure auth directory exists
@@ -263,7 +264,20 @@ export class BaileysWhatsAppService {
     } catch (error) {
       console.error('❌ Failed to initialize Baileys WhatsApp:', error);
       this.isConnecting = false;
-      throw error;
+      this.isConnected = false;
+      
+      // Don't throw error to prevent server crash
+      // Instead, schedule retry after delay
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        const delay = Math.min(30000, 5000 * Math.pow(2, this.reconnectAttempts));
+        console.log(`🔄 Scheduling WhatsApp retry in ${delay/1000} seconds...`);
+        setTimeout(() => {
+          this.reconnectAttempts++;
+          this.initialize().catch(() => {
+            // Silent catch to prevent uncaught promise rejection
+          });
+        }, delay);
+      }
     }
   }
 
