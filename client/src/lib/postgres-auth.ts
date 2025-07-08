@@ -21,6 +21,8 @@ export interface AuthUserAddress {
 class PostgresAuthService {
   private currentUser: AuthUser | null = null;
   private authListeners: ((user: AuthUser | null) => void)[] = [];
+  private sessionCheckCache: { timestamp: number; user: AuthUser | null } | null = null;
+  private readonly CACHE_DURATION = 60000; // 1 minute cache
 
   // Authentication methods
   async signUp(email: string, password: string, fullName?: string, phone?: string): Promise<AuthUser> {
@@ -194,8 +196,19 @@ class PostgresAuthService {
     return errorMessage || 'حدث خطأ غير متوقع';
   }
 
-  // Session management
+  // Session management with caching
   async checkSession(): Promise<void> {
+    const now = Date.now();
+    
+    // Return cached result if still valid
+    if (this.sessionCheckCache && (now - this.sessionCheckCache.timestamp) < this.CACHE_DURATION) {
+      if (this.currentUser !== this.sessionCheckCache.user) {
+        this.currentUser = this.sessionCheckCache.user;
+        this.notifyListeners();
+      }
+      return;
+    }
+    
     try {
       const response = await fetch('/api/auth/session', {
         credentials: 'include', // Ensure cookies are sent
@@ -203,17 +216,20 @@ class PostgresAuthService {
       if (response.ok) {
         const { user } = await response.json();
         this.currentUser = user;
+        this.sessionCheckCache = { timestamp: now, user };
         this.notifyListeners();
         console.log('PostgreSQL Auth: Session restored for user:', user.email);
       } else {
         // Session expired or invalid
         this.currentUser = null;
+        this.sessionCheckCache = { timestamp: now, user: null };
         this.notifyListeners();
         console.log('PostgreSQL Auth: No valid session found');
       }
     } catch (error) {
       console.warn('PostgreSQL Auth: Failed to check session', error);
       this.currentUser = null;
+      this.sessionCheckCache = { timestamp: now, user: null };
       this.notifyListeners();
     }
   }

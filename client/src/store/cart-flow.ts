@@ -50,25 +50,92 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   },
 
   addToCart: async (item: InsertCartItem) => {
-    try {
-      const response = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // Include session cookies for authentication
-        body: JSON.stringify(item),
-      });
+    const { cartItems } = get();
+    const originalCartItems = [...cartItems]; // Save for error rollback
+    
+    // SUPER FAST OPTIMISTIC UPDATE: Update UI immediately
+    const existingItemIndex = cartItems.findIndex(
+      cartItem => cartItem.productId === item.productId
+    );
+    
+    if (existingItemIndex >= 0) {
+      // Update existing item quantity instantly
+      const optimisticUpdate = cartItems.map((cartItem, index) =>
+        index === existingItemIndex
+          ? { ...cartItem, quantity: cartItem.quantity + (item.quantity || 1) }
+          : cartItem
+      );
+      set({ cartItems: optimisticUpdate });
+    } else {
+      // For new items, create temporary cart item with basic product info
+      // We'll sync with full data from server later
+      const tempCartItem: CartItemWithProduct = {
+        id: Date.now(), // Temporary ID
+        productId: item.productId,
+        userId: 0,
+        quantity: item.quantity || 1,
+        addedAt: new Date().toISOString(),
+        product: {
+          id: item.productId,
+          name: "Loading...",
+          price: "0",
+          imageUrl: "/api/placeholder/60/60",
+          categoryId: 1,
+          unit: "kg",
+          available: true
+        }
+      };
+      set({ cartItems: [...cartItems, tempCartItem] });
       
-      if (response.ok) {
-        // Reload cart to get updated data with product details
-        get().loadCart();
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-        throw new Error(errorData.message || "Failed to add item");
-      }
-    } catch (error) {
-      console.error("CartFlow: Failed to add item:", error);
-      throw error;
+      // Get real product data in background
+      fetch(`/api/products/${item.productId}`, { credentials: "include" })
+        .then(res => res.json())
+        .then(product => {
+          const { cartItems: currentItems } = get();
+          const updatedItems = currentItems.map(cartItem =>
+            cartItem.id === tempCartItem.id
+              ? { ...cartItem, product }
+              : cartItem
+          );
+          set({ cartItems: updatedItems });
+        })
+        .catch(() => {
+          // Keep temp data if product fetch fails
+        });
     }
+    
+    // Send to server in background (non-blocking)
+    fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(item),
+    })
+    .then(async (response) => {
+      if (response.ok) {
+        // Silently sync with server after 1 second to get real IDs
+        setTimeout(async () => {
+          try {
+            const serverResponse = await fetch("/api/cart", {
+              credentials: "include"
+            });
+            if (serverResponse.ok) {
+              const serverItems = await serverResponse.json();
+              set({ cartItems: serverItems });
+            }
+          } catch {
+            // Silent fail - keep optimistic update
+          }
+        }, 1000);
+      } else {
+        // Revert optimistic update on error
+        set({ cartItems: originalCartItems });
+      }
+    })
+    .catch(() => {
+      // Revert optimistic update on network error
+      set({ cartItems: originalCartItems });
+    });
   },
 
   removeFromCart: async (itemId: number) => {

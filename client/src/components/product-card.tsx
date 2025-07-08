@@ -82,17 +82,19 @@ export default function ProductCard({ product }: ProductCardProps) {
       return;
     }
     
+    // Instant feedback - no waiting for server
     setIsAdding(true);
     setShowShimmer(true);
 
     try {
+      // This now happens instantly with optimistic updates
       await addToCart({ productId: product.id, quantity: 1 });
       
-      // Fast feedback - quick shimmer and "Added!" state
+      // Show success state immediately
       setTimeout(() => {
         setIsAdding(false);
         setShowShimmer(false);
-      }, 400);
+      }, 300); // Reduced to 300ms for faster feedback
     } catch (error) {
       console.error('Error adding to cart:', error);
       setIsAdding(false);
