@@ -223,6 +223,67 @@ export class VerifyWayService {
       }
     }
   }
+
+  // Send admin notification via VerifyWay WhatsApp
+  async sendAdminNotification(adminPhone: string, orderData: any): Promise<boolean> {
+    const formattedPhone = this.formatPhoneNumber(adminPhone);
+    
+    try {
+      console.log(`📱 Sending admin notification to ${formattedPhone} via VerifyWay`);
+      
+      // Create admin notification message
+      const adminMessage = `🔔 طلب جديد في PAKETY!
+
+📋 رقم الطلب: ${orderData.orderId}
+👤 اسم العميل: ${orderData.customerName}
+📱 رقم العميل: ${orderData.customerPhone}
+📍 عنوان التوصيل: ${orderData.address}
+💰 المبلغ الإجمالي: ${orderData.total.toLocaleString()} د.ع
+🛒 عدد الأصناف: ${orderData.itemCount}
+
+⚡ يرجى تحضير الطلب والتوصيل في أسرع وقت`;
+
+      // VerifyWay only supports OTP type messages, so we need to send as OTP with a dummy code
+      // and include our admin message in the text
+      const dummyCode = '0000'; // Dummy code since this is not for verification
+      
+      const requestBody = {
+        recipient: formattedPhone,
+        type: 'otp',
+        code: dummyCode,
+        channel: 'whatsapp',
+        lang: 'ar',
+        body: adminMessage  // Custom message body
+      };
+
+      console.log(`🔧 Debug - Admin notification request:`, { ...requestBody, body: '***message***' });
+
+      const response = await fetch(`${this.baseUrl}/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log(`🔧 Debug - Response status: ${response.status}`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`🔧 Debug - Admin notification API response:`, result);
+        console.log(`✅ VerifyWay admin notification sent successfully to ${formattedPhone}`);
+        return true;
+      } else {
+        const errorResult = await response.json();
+        console.error('❌ Failed to send admin notification:', errorResult);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error sending admin notification:', error);
+      return false;
+    }
+  }
 }
 
 // Export singleton instance

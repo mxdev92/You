@@ -9,6 +9,10 @@ import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { verifyWayService as fazpassService } from './fazpass-service.js';
+import { MetaWhatsAppService } from './meta-whatsapp-service.js';
+
+// Initialize Meta WhatsApp service for admin notifications
+const metaWhatsAppService = new MetaWhatsAppService();
 
 // Meta Cloud API is always ready - no initialization needed
 console.log('🎯 Meta Cloud API WhatsApp service ready');
@@ -356,7 +360,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             total: order.totalAmount,
             itemCount: order.items.length
           };
-          // Admin notification handled separately with admin phone number
+          
+          // Send admin notification via VerifyWay WhatsApp to 07710155333
+          await fazpassService.sendAdminNotification('07710155333', orderData);
 
           console.log(`📱 WhatsApp notifications sent for order #${order.id}: customer + admin (07710155333)`);
         } catch (whatsappError) {
@@ -1025,8 +1031,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate PDF for testing
       const pdfBuffer = await generateInvoicePDF(mockOrder);
       
-      // Send admin notification
-      const success = await metaWhatsAppService.sendOrderNotification('07710155333', orderData);
+      // Send admin notification via VerifyWay
+      const success = await fazpassService.sendAdminNotification('07710155333', orderData);
       
       if (success) {
         res.json({ 
