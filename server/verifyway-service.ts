@@ -19,8 +19,8 @@ interface OTPSession {
 
 export class VerifyWayService {
   private apiKey: string;
-  private baseUrl = 'https://api.verifyway.com/v1';
-  private otpSessions = new Map<string, OTPSession>();
+  private baseUrl = 'https://api.verifyway.com/api/v1';
+  public otpSessions = new Map<string, OTPSession>();
 
   constructor() {
     this.apiKey = process.env.VERIFYWAY_API_KEY || '906$E2P3X5cqM5U7lOgYNjZYOzfdLXCMDgFljOW9';
@@ -34,38 +34,57 @@ export class VerifyWayService {
       // Format phone number for VerifyWay (remove leading 0, add country code)
       const formattedPhone = this.formatPhoneNumber(phoneNumber);
       
-      const response = await fetch(`${this.baseUrl}/whatsapp/send-otp`, {
+      // Generate a 4-digit OTP code
+      const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+      
+      console.log(`📤 Sending to VerifyWay API: ${this.baseUrl}`);
+      console.log(`📞 Phone: ${formattedPhone}, Original: ${phoneNumber}, OTP: ${otpCode}`);
+      
+      const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          phone: formattedPhone,
-          message: `مرحباً ${fullName}!\nرمز التحقق الخاص بك لتطبيق باكيتي هو: {otp}\nالرمز صالح لمدة 10 دقائق فقط.`
+          recipient: formattedPhone,
+          type: 'otp',
+          code: otpCode,
+          channel: 'whatsapp'
         }),
       });
 
-      const data = await response.json() as VerifyWayResponse;
+      console.log(`📊 VerifyWay response status: ${response.status}`);
+      const responseText = await response.text();
+      console.log(`📋 VerifyWay response body: ${responseText}`);
       
-      if (data.success && data.data) {
+      let data: VerifyWayResponse;
+      try {
+        data = JSON.parse(responseText) as VerifyWayResponse;
+      } catch (parseError) {
+        console.error(`❌ Failed to parse VerifyWay response: ${responseText}`);
+        throw new Error(`Invalid response from VerifyWay API: ${responseText}`);
+      }
+      
+      if (response.status === 200 || response.status === 201) {
         // Store OTP session for verification
         const session: OTPSession = {
           phoneNumber,
-          otp: data.data.otp,
-          reference: data.data.reference,
+          otp: otpCode,
+          reference: `vw_${Date.now()}`,
           timestamp: Date.now(),
           expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
         };
         
         this.otpSessions.set(phoneNumber, session);
         
-        console.log(`✅ VerifyWay OTP sent successfully to ${phoneNumber}`);
+        console.log(`✅ VerifyWay OTP sent successfully to ${phoneNumber}: ${otpCode}`);
         
         return {
           success: true,
-          otp: data.data.otp,
-          reference: data.data.reference,
+          otp: otpCode,
+          reference: session.reference,
           message: 'OTP sent via WhatsApp'
         };
       } else {
@@ -107,13 +126,16 @@ export class VerifyWayService {
   }
 
   private formatPhoneNumber(phoneNumber: string): string {
-    // Convert Iraqi phone format 07xxxxxxxxx to international format
-    // Remove leading 0 and add country code 964
+    // Convert Iraqi phone format 07xxxxxxxxx to international format +9647xxxxxxxxx
+    // Remove leading 0 and add country code 964 with + prefix
     if (phoneNumber.startsWith('07')) {
-      return `964${phoneNumber.substring(1)}`;
+      return `+964${phoneNumber.substring(1)}`;
     }
     if (phoneNumber.startsWith('7')) {
-      return `964${phoneNumber}`;
+      return `+964${phoneNumber}`;
+    }
+    if (!phoneNumber.startsWith('+')) {
+      return `+${phoneNumber}`;
     }
     return phoneNumber;
   }
