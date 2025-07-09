@@ -22,19 +22,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const cartItemsCount = cartItems.length; // Count unique items, not total quantity
 
   const handleMenuClick = () => {
-    console.log('AUTHENTICATION CHECK - Menu clicked');
-    console.log('User object:', user);
-    console.log('User authenticated:', !!user);
-    console.log('User email:', user?.email);
-    console.log('User UID:', user?.uid);
-    
-    if (!user) {
-      console.log('🚫 BLOCKING ACCESS - No user authenticated, redirecting to /auth');
-      setLocation('/auth');
-      return;
-    }
-    
-    console.log('✅ ALLOWING ACCESS - User is authenticated');
+    // Always allow menu access - authentication handled inside profile sidebar
     onMenuClick();
   };
 
@@ -42,11 +30,9 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
     console.log('AUTHENTICATION CHECK - Cart clicked');
     console.log('User object:', user);
     console.log('User authenticated:', !!user);
-    console.log('User email:', user?.email);
-    console.log('User UID:', user?.uid);
     
     if (!user) {
-      console.log('🚫 BLOCKING CART ACCESS - No user authenticated, redirecting to /auth');
+      console.log('🚫 CART REQUIRES AUTH - Redirecting to /auth');
       setLocation('/auth');
       return;
     }
@@ -71,11 +57,12 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
         {/* Search Bar */}
         <div className="flex-1 mx-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
             <Input
               type="text"
               placeholder={t('search')}
-              className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200 cursor-text"
+              disabled={false}
             />
           </div>
         </div>

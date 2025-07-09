@@ -302,7 +302,7 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                الملف الشخصي
+                {user ? 'الملف الشخصي' : 'القائمة'}
               </h2>
               <Button
                 variant="ghost"
@@ -314,8 +314,8 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
               </Button>
             </div>
 
-            {/* User Info */}
-            {user && (
+            {/* User Info or Login Prompt */}
+            {user ? (
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center space-x-3 space-x-reverse">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -331,28 +331,58 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
                   </div>
                 </div>
               </div>
+            ) : (
+              <div className="p-4 border-b border-gray-200">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <User className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <p className="text-gray-600 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    سجل دخولك للوصول إلى ملفك الشخصي وطلباتك
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setLocation('/auth');
+                      onClose();
+                    }}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white"
+                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  >
+                    تسجيل الدخول
+                  </Button>
+                </div>
+              </div>
             )}
 
             {/* Menu Items */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {menuItems.map((item, index) => (
-                <button
-                  key={index}
-                  onClick={item.onClick}
-                  className="w-full flex items-center space-x-3 space-x-reverse p-3 rounded-xl hover:bg-gray-50 transition-colors text-right"
-                >
-                  <item.icon className="h-5 w-5 text-gray-600" />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      {item.title}
-                    </h4>
-                    <p className="text-sm text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      {item.subtitle}
-                    </p>
-                  </div>
-                  <ChevronLeft className="h-5 w-5 text-gray-400" />
-                </button>
-              ))}
+              {user ? (
+                menuItems.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={item.onClick}
+                    className="w-full flex items-center space-x-3 space-x-reverse p-3 rounded-xl hover:bg-gray-50 transition-colors text-right"
+                  >
+                    <item.icon className="h-5 w-5 text-gray-600" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                        {item.title}
+                      </h4>
+                      <p className="text-sm text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                        {item.subtitle}
+                      </p>
+                    </div>
+                    <ChevronLeft className="h-5 w-5 text-gray-400" />
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    قم بتسجيل الدخول للوصول إلى عناوينك وطلباتك
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Logout */}
