@@ -19,7 +19,8 @@ export default function Home() {
     if (user) {
       loadCart();
     }
-  }, [user, loadCart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // Only depend on user, not loadCart function
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);

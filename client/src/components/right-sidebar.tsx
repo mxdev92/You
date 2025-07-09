@@ -150,7 +150,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       console.log('Right sidebar: Auto-loading addresses for user:', postgresUser.id);
       loadAddresses(postgresUser.id);
     }
-  }, [postgresUser, loadAddresses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postgresUser]); // Only depend on postgresUser, not loadAddresses function
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {
