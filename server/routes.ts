@@ -977,25 +977,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt: Date.now() + (10 * 60 * 1000)
       });
       
-      console.log(`✅ IMMEDIATE OTP: ${immediateOTP} for ${phoneNumber}`);
+      console.log(`📱 Sending OTP via VerifyWay to ${phoneNumber}`);
       
-      // Try VerifyWay in background (don't wait for it)
-      verifyWayService.sendOTP(phoneNumber, fullName).catch(err => {
-        console.log(`⚠️ VerifyWay background attempt failed: ${err.message}`);
-      });
+      // Send OTP via VerifyWay only
+      const verifyWayResult = await verifyWayService.sendOTP(phoneNumber, fullName);
       
-      // Try Baileys in background (don't wait for it)
-      whatsappService.sendOTP(phoneNumber, fullName).catch(err => {
-        console.log(`⚠️ Baileys background attempt failed: ${err.message}`);
-      });
-      
-      // Always return immediate success
-      res.json({
-        success: true,
-        message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
-        otp: immediateOTP,
-        delivered: 'immediate'
-      });
+      if (verifyWayResult.success) {
+        console.log(`✅ OTP sent successfully via VerifyWay to ${phoneNumber}`);
+        res.json({
+          success: true,
+          message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
+          delivered: 'whatsapp'
+        });
+      } else {
+        console.log(`❌ VerifyWay failed: ${verifyWayResult.message}`);
+        
+        // Handle rate limiting or other errors gracefully
+        if (verifyWayResult.message && verifyWayResult.message.includes('30 seconds')) {
+          res.status(429).json({
+            success: false,
+            message: 'يرجى الانتظار 30 ثانية قبل طلب رمز جديد'
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            message: 'فشل في إرسال رمز التحقق، يرجى المحاولة مرة أخرى'
+          });
+        }
+      }
       
     } catch (error: any) {
       console.error('❌ OTP service error:', error);

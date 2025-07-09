@@ -218,11 +218,7 @@ const AuthPage: React.FC = () => {
         setOtpSent(true);
         showNotification('تم إرسال رمز التحقق إلى تطبيق الواتساب المسجل على رقمكم', 'success');
         
-        // Always log OTP to console for user access
-        if (data.otp) {
-          console.log(`🔑 رمز التحقق: ${data.otp}`);
-          console.log(`📱 OTP Code: ${data.otp} (Valid for 10 minutes)`);
-        }
+        console.log(`📱 OTP sent to WhatsApp via VerifyWay`);
       } else {
         // Even on server error, try to continue with OTP flow
         setOtpSent(true);
