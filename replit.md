@@ -106,6 +106,12 @@ July 9, 2025:
 • FIREBASE ADMIN: Added server-side Firebase Admin SDK for user management operations
 • Created admin endpoint /api/admin/clear-firebase-users for bulk user deletion (requires proper service account credentials)
 • Updated replit.md to reflect Firebase migration and new authentication architecture
+• CART OPENING BUG FIX: Fixed cart button redirecting to auth page instead of opening cart sidebar
+• Updated header component to use Firebase authentication instead of PostgreSQL authentication
+• Removed authentication requirement for cart access - cart now works for both authenticated and anonymous users
+• Added automatic cart loading when cart sidebar opens for immediate item display
+• Re-enabled address loading functionality for Firebase authenticated users
+• CART BADGE IMPROVEMENT: Changed cart badge to show number of unique items instead of total quantity
 
 July 6, 2025:
 • UX ENHANCEMENT: Set Vegetables as default category when app opens (category ID: 2)

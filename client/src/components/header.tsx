@@ -19,7 +19,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   
   // Use CartFlow store for cart data (same as sidebar)
   const { cartItems, getCartItemsCount } = useCartFlow();
-  const cartItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const cartItemsCount = cartItems.length; // Count unique items, not total quantity
 
   const handleMenuClick = () => {
     if (!user) {
