@@ -89,8 +89,6 @@ export default function CategoriesSection() {
   }, [categories, selectCategoryMutation]);
 
   const handleCategorySelect = (categoryId: number) => {
-    console.log('DEBUG: Category clicked!', categoryId);
-    alert(`Category ${categoryId} clicked! This means categories work.`);
     selectCategoryMutation.mutate(categoryId);
   };
 

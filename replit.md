@@ -98,6 +98,13 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 9, 2025:
+• CRITICAL UI FIX: Resolved complete button interaction failure when users are signed out
+• Fixed global mousedown event listeners in sidebar components that were blocking all UI interactions
+• Modified dropdown event listeners to only activate when dropdowns are actually open instead of always listening
+• Enhanced pointer-events CSS to ensure all interactive elements remain clickable
+• All buttons (menu, cart, categories, search) now work properly for both signed-in and signed-out users
+• Improved event handling prevents sidebar listeners from interfering with main app interactions
+• Users can now browse products and categories normally while signed out, with auth required only for cart/profile features
 • SECURITY ENFORCEMENT: Enhanced authentication requirements for all cart functionality
 • FRONTEND AUTHENTICATION: Cart icon, add to cart buttons, and product modals now redirect to login if user not authenticated
 • BACKEND SECURITY: Added authentication checks to all cart API endpoints (/api/cart GET/POST/PATCH/DELETE)

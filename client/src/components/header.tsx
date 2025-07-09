@@ -22,22 +22,15 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const cartItemsCount = cartItems.length; // Count unique items, not total quantity
 
   const handleMenuClick = () => {
-    // Always allow menu access - authentication handled inside profile sidebar
     onMenuClick();
   };
 
   const handleCartClick = () => {
-    console.log('AUTHENTICATION CHECK - Cart clicked');
-    console.log('User object:', user);
-    console.log('User authenticated:', !!user);
-    
     if (!user) {
-      console.log('🚫 CART REQUIRES AUTH - Redirecting to /auth');
       setLocation('/auth');
       return;
     }
     
-    console.log('✅ ALLOWING CART ACCESS - User is authenticated');
     onCartClick();
   };
 
