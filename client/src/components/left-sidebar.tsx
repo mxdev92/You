@@ -136,21 +136,14 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Only add event listener when dropdown is actually open
-      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
-    // Only add listener when dropdown is open
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]); // Add isOpen as dependency
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="relative" ref={dropdownRef}>

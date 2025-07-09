@@ -6,8 +6,6 @@ interface AddressState {
   defaultAddress: AuthUserAddress | null;
   loading: boolean;
   error: string | null;
-  lastLoadTime: number;
-  lastUserId: number | null;
 }
 
 interface AddressActions {
@@ -24,21 +22,11 @@ export const usePostgresAddressStore = create<AddressState & AddressActions>((se
   defaultAddress: null,
   loading: false,
   error: null,
-  lastLoadTime: 0,
-  lastUserId: null,
 
   // Actions
   loadAddresses: async (userId: number) => {
-    const { lastLoadTime, loading, lastUserId } = get();
-    const now = Date.now();
-    
-    // Prevent rapid consecutive calls (less than 1 second apart) or same user reload
-    if (loading || (userId === lastUserId && (now - lastLoadTime) < 1000)) {
-      return;
-    }
-    
     try {
-      set({ loading: true, error: null, lastLoadTime: now, lastUserId: userId });
+      set({ loading: true, error: null });
       console.log('PostgreSQL Address Store: Loading addresses for user', userId);
       
       const addresses = await postgresAuth.getUserAddresses(userId);

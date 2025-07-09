@@ -122,12 +122,12 @@ export default function CategoriesSection() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 interactive-element ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 ${
                 category.isSelected
                   ? "shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
               }`}
-              style={category.isSelected ? { backgroundColor: '#22c55e', pointerEvents: 'auto', cursor: 'pointer' } : { pointerEvents: 'auto', cursor: 'pointer' }}
+              style={category.isSelected ? { backgroundColor: '#22c55e' } : {}}
             >
               {(() => {
                 const IconComponent = iconMap[category.icon];

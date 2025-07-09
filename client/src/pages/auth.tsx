@@ -3,12 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, ChevronDown } from 'lucide-react';
-import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
+import { usePostgresAuth } from '@/hooks/use-postgres-auth';
 import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
 import { MetaPixel } from '@/lib/meta-pixel';
-import { addUserAddress } from '@/lib/firebase-user-data';
 
 interface SignupData {
   email: string;
@@ -151,7 +150,7 @@ const AuthPage: React.FC = () => {
     };
   }, []);
 
-  const { user, signIn: firebaseSignIn, signUp: firebaseSignUp } = useFirebaseAuth();
+  const { user, login, register } = usePostgresAuth();
   const { addAddress } = usePostgresAddressStore();
 
   const showNotification = (message: string, type: 'success' | 'error' = 'error') => {
@@ -300,33 +299,14 @@ const AuthPage: React.FC = () => {
     
     setIsLoading(true);
     try {
-      await firebaseSignIn(loginData.email, loginData.password);
+      await login(loginData.email, loginData.password);
       
       // Track successful login with Meta Pixel
       MetaPixel.trackLogin();
       
       setLocation('/');
     } catch (error: any) {
-      console.error('Login error:', error);
-      
-      // Handle Firebase authentication errors with Arabic messages
-      let errorMessage = 'خطأ في تسجيل الدخول';
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'المستخدم غير موجود. يرجى التحقق من البريد الإلكتروني أو إنشاء حساب جديد';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'كلمة المرور غير صحيحة';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'البريد الإلكتروني غير صحيح';
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'هذا الحساب معطل';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'خطأ في الاتصال بالشبكة. يرجى المحاولة مرة أخرى';
-      } else if (error.message) {
-        errorMessage = 'خطأ في تسجيل الدخول: ' + error.message;
-      }
-      
-      showNotification(errorMessage);
+      showNotification('خطأ في تسجيل الدخول: ' + (error.message || 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
     }
@@ -436,11 +416,12 @@ const AuthPage: React.FC = () => {
       const email = signupData.email;
       
       // Register user with full name and phone
-      const newUser = await firebaseSignUp(email, signupData.password);
+      const newUser = await register(email, signupData.password, signupData.name, signupData.phone);
       console.log('User registered successfully:', newUser);
       
-      // Create address record from signup data using Firebase
+      // Create address record from signup data
       const addressData = {
+        userId: newUser.id,
         governorate: signupData.governorate,
         district: signupData.district,
         neighborhood: signupData.landmark,
@@ -448,8 +429,8 @@ const AuthPage: React.FC = () => {
         isDefault: true
       };
       
-      // Add the address to Firebase
-      await addUserAddress(addressData);
+      // Add the address to the user's profile
+      await addAddress(addressData);
       console.log('Address created successfully during signup');
       
       // Send welcome messages - Arabic alert + WhatsApp message
@@ -485,23 +466,7 @@ const AuthPage: React.FC = () => {
       
     } catch (error: any) {
       console.error('Signup error:', error);
-      
-      // Handle Firebase authentication errors with Arabic messages
-      let errorMessage = 'خطأ في إنشاء الحساب';
-      
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'هذا البريد الإلكتروني مستخدم بالفعل. يرجى تسجيل الدخول أو استخدام بريد إلكتروني آخر';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'كلمة المرور ضعيفة. يرجى استخدام كلمة مرور أقوى';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'البريد الإلكتروني غير صحيح';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'خطأ في الاتصال بالشبكة. يرجى المحاولة مرة أخرى';
-      } else if (error.message) {
-        errorMessage = 'خطأ في إنشاء الحساب: ' + error.message;
-      }
-      
-      showNotification(errorMessage);
+      showNotification('خطأ في إنشاء الحساب: ' + (error.message || 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
     }

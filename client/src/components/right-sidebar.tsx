@@ -9,8 +9,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { getUserAddresses, type UserAddress } from "@/lib/firebase-user-data";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/price-utils";
 import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
@@ -34,21 +34,14 @@ function CustomDropdown({ value, onChange, options, placeholder }: CustomDropdow
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Only add event listener when dropdown is actually open
-      if (isOpen && dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
-    // Only add listener when dropdown is open
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]); // Add isOpen as dependency
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -147,37 +140,17 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   // Use CartFlow store for cart data
   const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem, clearCart: clearCartFlow } = useCartFlow();
   
-  // Load cart when sidebar opens
-  useEffect(() => {
-    if (isOpen) {
-      loadCart();
-    }
-  }, [isOpen, loadCart]);
-  
-  // Firebase authentication and address integration
-  const { user: firebaseUser } = useFirebaseAuth();
-  const [addresses, setAddresses] = useState<UserAddress[]>([]);
-  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  // PostgreSQL authentication and address integration
+  const { user: postgresUser } = usePostgresAuth();
+  const { addresses, loadAddresses } = usePostgresAddressStore();
 
   // Auto-load addresses when user is authenticated
   useEffect(() => {
-    if (firebaseUser && firebaseUser.uid) {
-      console.log('Right sidebar: Auto-loading addresses for user:', firebaseUser.uid);
-      setLoadingAddresses(true);
-      getUserAddresses()
-        .then(userAddresses => {
-          setAddresses(userAddresses);
-          console.log('Loaded addresses:', userAddresses);
-        })
-        .catch(error => {
-          console.error('Failed to load addresses:', error);
-          setAddresses([]);
-        })
-        .finally(() => setLoadingAddresses(false));
-    } else {
-      setAddresses([]);
+    if (postgresUser && postgresUser.id) {
+      console.log('Right sidebar: Auto-loading addresses for user:', postgresUser.id);
+      loadAddresses(postgresUser.id);
     }
-  }, [firebaseUser?.uid]);
+  }, [postgresUser, loadAddresses]);
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {
@@ -200,8 +173,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   });
 
   const { t } = useTranslation();
-  // Use Firebase user instead of old auth system
-  const user = firebaseUser;
+  const { user } = useAuth();
   
   // Calculate cart totals
   const getCartTotal = () => {
@@ -276,9 +248,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  // Use first saved address automatically from Firebase
+  // Use first saved address automatically from PostgreSQL
   const primaryAddress = addresses.length > 0 ? addresses[0] : null;
-  const hasAddress = addresses.length > 0 && firebaseUser !== null;
+  const hasAddress = addresses.length > 0 && postgresUser !== null;
 
   const handlePlaceOrder = async () => {
     console.log('Starting order placement...');
@@ -308,18 +280,18 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       console.log('Starting order submission...');
       
       // Use phone from user profile, fallback to extracting from notes if not available
-      const customerPhone = firebaseUser?.phoneNumber || primaryAddress?.notes?.match(/\d{11}/)?.[0] || '07501234567';
-      const customerName = firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'Customer';
+      const customerPhone = postgresUser?.phone || '07501234567';
+      const customerName = postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'Customer';
       
       const orderData = {
         customerName: customerName,
-        customerEmail: firebaseUser?.email || 'guest@example.com',
+        customerEmail: postgresUser?.email || 'guest@example.com',
         customerPhone: customerPhone,
         address: {
           governorate: primaryAddress.governorate,
           district: primaryAddress.district,
           neighborhood: primaryAddress.neighborhood,
-          notes: primaryAddress.notes || primaryAddress.neighborhood // Use notes or neighborhood
+          notes: primaryAddress.neighborhood // Only store landmark/neighborhood, not phone
         },
         items: Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
           productId: item.productId,
@@ -582,7 +554,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <div className="flex items-start gap-2">
                 <span className="text-xs font-medium text-gray-500 min-w-[40px]">الاسم:</span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'غير محدد'}
+                  {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'غير محدد'}
                 </span>
               </div>
               
@@ -590,7 +562,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <div className="flex items-start gap-2">
                 <span className="text-xs font-medium text-gray-500 min-w-[40px]">الرقم:</span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {firebaseUser?.phoneNumber || 'غير محدد'}
+                  {postgresUser?.phone || 'غير محدد'}
                 </span>
               </div>
               
@@ -672,7 +644,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           {hasAddress && (
             <div className="space-y-2">
               <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'عميل'}
+                {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'عميل'}
               </p>
               <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 {primaryAddress?.governorate} - {primaryAddress?.district}

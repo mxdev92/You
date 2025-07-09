@@ -106,7 +106,6 @@ html[lang="ar"] * {
   * {
     @apply border-border;
     box-sizing: border-box;
-    pointer-events: auto !important;
   }
 
   html {
@@ -175,18 +174,6 @@ html[lang="ar"] * {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-
-  /* Ensure all interactive elements are clickable */
-  .interactive-element {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
 }
 
 /* Shimmer animation */
@@ -252,8 +239,6 @@ button {
   border: none;
   outline: none;
   -webkit-tap-highlight-color: transparent;
-  pointer-events: auto;
-  cursor: pointer;
 }
 
 /* Cross-browser input fixes */
@@ -262,8 +247,6 @@ input {
   -moz-appearance: none;
   appearance: none;
   border-radius: 0;
-  pointer-events: auto;
-  cursor: text;
 }
 
 /* Custom Select Dropdown Styles */

@@ -5,15 +5,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth";
-import Profile from "@/pages/profile";
-import Addresses from "@/pages/addresses";
-import Orders from "@/pages/orders";
 import AdminPanel from "@/pages/admin-panel";
 import AdminLogin from "@/pages/admin-login";
 import WhatsAppAdmin from "@/pages/whatsapp-admin";
 import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
 import NotFound from "@/pages/not-found";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 
 // Protected Admin Route Component
 function ProtectedAdminRoute() {
@@ -30,7 +27,7 @@ function ProtectedAdminRoute() {
 
 // Protected Route Component for regular users
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading } = useFirebaseAuth();
+  const { user, loading } = usePostgresAuth();
   
   if (loading) {
     return (
@@ -64,12 +61,6 @@ function Router() {
       
       {/* Auth page */}
       <Route path="/auth" component={AuthPage} />
-      
-      {/* Protected user pages */}
-      <Route path="/profile" component={() => <ProtectedRoute component={Profile} />} />
-      <Route path="/addresses" component={() => <ProtectedRoute component={Addresses} />} />
-      <Route path="/orders" component={() => <ProtectedRoute component={Orders} />} />
-      
       <Route component={NotFound} />
     </Switch>
   );

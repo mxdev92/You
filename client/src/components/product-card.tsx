@@ -6,7 +6,7 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useLocation } from "wouter";
 import { formatPrice } from "@/lib/price-utils";
 import type { Product } from "@shared/schema";
@@ -68,32 +68,19 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [showShimmer, setShowShimmer] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
-  const isProductInCart = useCartFlow(state => state.isProductInCart);
   const { t } = useTranslation();
-  const { user } = useFirebaseAuth();
+  const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
 
-  // Check if this product is in cart
-  const isInCart = isProductInCart(product.id);
-
   const handleAddToCart = async () => {
-    console.log('AUTHENTICATION CHECK - Add to cart clicked');
-    console.log('User object:', user);
-    console.log('User authenticated:', !!user);
-    console.log('User email:', user?.email);
-    console.log('User UID:', user?.uid);
-    
-    // Don't allow adding if product is not available or already in cart
-    if (!product.available || isInCart) return;
+    // Don't allow adding if product is not available
+    if (!product.available) return;
     
     // Check if user is authenticated
     if (!user) {
-      console.log('🚫 BLOCKING ADD TO CART - No user authenticated, redirecting to /auth');
       setLocation('/auth');
       return;
     }
-    
-    console.log('✅ ALLOWING ADD TO CART - User is authenticated');
     
     setIsAdding(true);
     setShowShimmer(true);
@@ -162,30 +149,24 @@ export default function ProductCard({ product }: ProductCardProps) {
           {formatPrice(product.price)}/{product.unit}
         </p>
         
-        <motion.div whileTap={{ scale: product.available && !isInCart ? 0.95 : 1 }}>
+        <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              if (!isInCart) {
-                handleAddToCart();
-              }
+              handleAddToCart();
             }}
-            disabled={isAdding || !product.available || isInCart}
+            disabled={isAdding || !product.available}
             className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 touch-action-manipulation min-h-9 ${
               !product.available
                 ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
-                : isInCart
-                ? "bg-green-500 hover:bg-green-500 text-white cursor-default"
                 : isAdding
                 ? "bg-green-500 hover:bg-green-500 text-white"
                 : "hover:opacity-90 text-black"
             }`}
-            style={!product.available ? {} : (isInCart || isAdding) ? {} : { backgroundColor: '#22c55e' }}
+            style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#22c55e' }}
           >
             {!product.available ? (
               t('outOfStock')
-            ) : isInCart ? (
-              <Check className="h-4 w-4 text-white" />
             ) : isAdding ? (
               <Check className="h-4 w-4 text-white" />
             ) : (

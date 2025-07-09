@@ -1,10 +1,10 @@
-import { Search, Menu, ShoppingCart, LogOut } from "lucide-react";
+import { Search, Menu, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartFlow } from "@/store/cart-flow";
 import CategoriesSection from "@/components/categories-section";
-import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useLocation } from "wouter";
 
 interface HeaderProps {
@@ -14,27 +14,26 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { t } = useTranslation();
-  const { user, signOut } = useFirebaseAuth();
+  const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
   
   // Use CartFlow store for cart data (same as sidebar)
   const { cartItems, getCartItemsCount } = useCartFlow();
-  const cartItemsCount = cartItems.length; // Count unique items, not total quantity
+  const cartItemsCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleMenuClick = () => {
-    console.log('Header: Menu button clicked, calling onMenuClick');
+    if (!user) {
+      setLocation('/auth');
+      return;
+    }
     onMenuClick();
   };
 
   const handleCartClick = () => {
-    console.log('Header: Cart button clicked');
     if (!user) {
-      console.log('Header: User not authenticated, redirecting to auth');
       setLocation('/auth');
       return;
     }
-    
-    console.log('Header: User authenticated, calling onCartClick');
     onCartClick();
   };
 
@@ -46,9 +45,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={handleMenuClick}
-          disabled={false}
-          className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 interactive-element"
-          style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+          className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
         >
           <Menu className="h-6 w-6 text-gray-700" />
         </Button>
@@ -56,38 +53,29 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
         {/* Search Bar */}
         <div className="flex-1 mx-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
             <Input
               type="text"
               placeholder={t('search')}
-              className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200 cursor-text"
-              disabled={false}
-              style={{ pointerEvents: 'auto', cursor: 'text' }}
+              className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200"
             />
           </div>
         </div>
 
-        {/* User Actions */}
-        <div className="flex items-center gap-2">
-
-          
-          {/* Cart Icon */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleCartClick}
-            disabled={false}
-            className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 interactive-element"
-            style={{ pointerEvents: 'auto', cursor: 'pointer' }}
-          >
-            <ShoppingCart className="h-6 w-6 text-gray-700" />
-            {cartItemsCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-fresh-green text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {cartItemsCount}
-              </span>
-            )}
-          </Button>
-        </div>
+        {/* Cart Icon */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleCartClick}
+          className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+        >
+          <ShoppingCart className="h-6 w-6 text-gray-700" />
+          {cartItemsCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-fresh-green text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {cartItemsCount}
+            </span>
+          )}
+        </Button>
       </div>
       
       {/* Categories Section */}

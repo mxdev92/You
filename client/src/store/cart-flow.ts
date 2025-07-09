@@ -8,7 +8,6 @@ interface CartFlowState {
   cartItems: CartItemWithProduct[];
   isLoading: boolean;
   isUpdating: boolean;
-  lastLoadTime: number;
 }
 
 interface CartFlowActions {
@@ -19,7 +18,6 @@ interface CartFlowActions {
   clearCart: () => Promise<void>;
   getCartItemsCount: () => number;
   getCartTotal: () => number;
-  isProductInCart: (productId: number) => boolean;
 }
 
 type CartFlowStore = CartFlowState & CartFlowActions;
@@ -29,19 +27,10 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   cartItems: [],
   isLoading: false,
   isUpdating: false,
-  lastLoadTime: 0,
 
   // Actions
   loadCart: async () => {
-    const { lastLoadTime, isLoading } = get();
-    const now = Date.now();
-    
-    // Prevent rapid consecutive calls (less than 1 second apart)
-    if (isLoading || (now - lastLoadTime) < 1000) {
-      return;
-    }
-    
-    set({ isLoading: true, lastLoadTime: now });
+    set({ isLoading: true });
     try {
       const response = await fetch("/api/cart");
       if (response.ok) {
@@ -156,11 +145,6 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       if (!item.product?.price) return total;
       return total + (parseFloat(item.product.price) * item.quantity);
     }, 0);
-  },
-
-  isProductInCart: (productId: number) => {
-    const { cartItems } = get();
-    return cartItems.some(item => item.productId === productId);
   },
 }));
 
