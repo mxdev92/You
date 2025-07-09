@@ -77,16 +77,23 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isInCart = isProductInCart(product.id);
 
   const handleAddToCart = async () => {
-    console.log('Add to cart clicked, user:', user ? `${user.email} (${user.uid})` : 'Not authenticated');
+    console.log('AUTHENTICATION CHECK - Add to cart clicked');
+    console.log('User object:', user);
+    console.log('User authenticated:', !!user);
+    console.log('User email:', user?.email);
+    console.log('User UID:', user?.uid);
+    
     // Don't allow adding if product is not available or already in cart
     if (!product.available || isInCart) return;
     
     // Check if user is authenticated
     if (!user) {
-      console.log('Redirecting to auth - no user for add to cart');
+      console.log('🚫 BLOCKING ADD TO CART - No user authenticated, redirecting to /auth');
       setLocation('/auth');
       return;
     }
+    
+    console.log('✅ ALLOWING ADD TO CART - User is authenticated');
     
     setIsAdding(true);
     setShowShimmer(true);

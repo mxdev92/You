@@ -47,14 +47,21 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const displayName = translationKey ? t(translationKey) : product.name;
 
   const handleAddToCart = async () => {
-    console.log('Modal add to cart clicked, user:', user ? `${user.email} (${user.uid})` : 'Not authenticated');
+    console.log('AUTHENTICATION CHECK - Modal add to cart clicked');
+    console.log('User object:', user);
+    console.log('User authenticated:', !!user);
+    console.log('User email:', user?.email);
+    console.log('User UID:', user?.uid);
+    
     // Require authentication before adding to cart
     if (!user) {
-      console.log('Redirecting to auth - no user for modal add to cart');
+      console.log('🚫 BLOCKING MODAL ADD TO CART - No user authenticated, redirecting to /auth');
       onClose(); // Close modal first
       setLocation('/auth');
       return;
     }
+    
+    console.log('✅ ALLOWING MODAL ADD TO CART - User is authenticated');
     
     setIsAdding(true);
     
