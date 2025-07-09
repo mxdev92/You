@@ -30,8 +30,8 @@ function LazyImage({ src, alt, className }: { src: string; alt: string; classNam
         }
       },
       { 
-        threshold: 0.1, // More aggressive loading
-        rootMargin: '100px' // Load 100px before entering viewport
+        threshold: 0.01, // Load even earlier
+        rootMargin: '50px' // Load 50px before entering viewport
       }
     );
 
@@ -54,7 +54,7 @@ function LazyImage({ src, alt, className }: { src: string; alt: string; classNam
         <img
           src={src}
           alt={alt}
-          className={`${className} transition-opacity duration-100 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`${className} transition-opacity duration-150 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={handleLoad}
           loading="lazy"
         />
@@ -92,7 +92,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       setTimeout(() => {
         setIsAdding(false);
         setShowShimmer(false);
-      }, 200);
+      }, 400);
     } catch (error) {
       console.error('Error adding to cart:', error);
       setIsAdding(false);
@@ -106,8 +106,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     <>
       <motion.div
         whileHover={{ y: product.available ? -2 : 0 }}
-        transition={{ duration: 0.1, ease: "easeOut" }}
-        className={`product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-100 overflow-hidden relative cursor-pointer ${
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className={`product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-150 overflow-hidden relative cursor-pointer ${
           !product.available ? 'opacity-60' : ''
         }`}
         onClick={() => setIsModalOpen(true)}
@@ -126,7 +126,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.05 }}
+            transition={{ duration: 0.1 }}
             className="absolute inset-0 shimmer-effect"
           />
         )}
