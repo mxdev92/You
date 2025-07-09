@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, ChevronDown } from 'lucide-react';
-import { usePostgresAuth } from '@/hooks/use-postgres-auth';
+import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
@@ -150,7 +150,7 @@ const AuthPage: React.FC = () => {
     };
   }, []);
 
-  const { user, login, register } = usePostgresAuth();
+  const { user, signIn: firebaseSignIn, signUp: firebaseSignUp } = useFirebaseAuth();
   const { addAddress } = usePostgresAddressStore();
 
   const showNotification = (message: string, type: 'success' | 'error' = 'error') => {
@@ -299,7 +299,7 @@ const AuthPage: React.FC = () => {
     
     setIsLoading(true);
     try {
-      await login(loginData.email, loginData.password);
+      await firebaseSignIn(loginData.email, loginData.password);
       
       // Track successful login with Meta Pixel
       MetaPixel.trackLogin();
@@ -416,7 +416,7 @@ const AuthPage: React.FC = () => {
       const email = signupData.email;
       
       // Register user with full name and phone
-      const newUser = await register(email, signupData.password, signupData.name, signupData.phone);
+      const newUser = await firebaseSignUp(email, signupData.password);
       console.log('User registered successfully:', newUser);
       
       // Create address record from signup data

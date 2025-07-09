@@ -1,85 +1,85 @@
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { firebaseAuth } from '@/lib/firebase';
+import { onAuthStateChange, signInUser, signUpUser, signOutUser } from '@/lib/firebase';
 
-interface AuthState {
+interface FirebaseAuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
 }
 
-export const useFirebaseAuth = () => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: firebaseAuth.getCurrentUser(),
-    loading: true,
-    error: null,
-  });
+interface FirebaseAuthActions {
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  clearError: () => void;
+}
+
+export const useFirebaseAuth = (): FirebaseAuthState & FirebaseAuthActions => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('Firebase Auth: Setting up auth state listener');
-    
-    const unsubscribe = firebaseAuth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChange((user) => {
+      setUser(user);
+      setLoading(false);
       console.log('Firebase Auth: State changed', user ? `User: ${user.email}` : 'No user');
-      setAuthState(prev => ({
-        ...prev,
-        user,
-        loading: false
-      }));
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
-  const register = async (email: string, password: string) => {
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+  const signIn = async (email: string, password: string) => {
     try {
-      console.log('Starting auth process:', { isLogin: false, email });
-      const user = await firebaseAuth.signUp(email, password);
-      setAuthState(prev => ({ ...prev, user, loading: false }));
-      console.log('Registration completed successfully for:', user.email);
-      return user;
+      setLoading(true);
+      setError(null);
+      await signInUser(email, password);
     } catch (error: any) {
-      console.error('Auth error:', error);
-      setAuthState(prev => ({ ...prev, loading: false, error: error.message }));
+      setError(error.message || 'Failed to sign in');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const login = async (email: string, password: string) => {
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+  const signUp = async (email: string, password: string) => {
     try {
-      console.log('Starting auth process:', { isLogin: true, email });
-      const user = await firebaseAuth.signIn(email, password);
-      setAuthState(prev => ({ ...prev, user, loading: false }));
-      console.log('Login completed successfully for:', user.email);
-      return user;
+      setLoading(true);
+      setError(null);
+      await signUpUser(email, password);
     } catch (error: any) {
-      console.error('Auth error:', error);
-      setAuthState(prev => ({ ...prev, loading: false, error: error.message }));
+      setError(error.message || 'Failed to sign up');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = async () => {
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+  const signOut = async () => {
     try {
-      console.log('Starting logout process');
-      await firebaseAuth.signOut();
-      setAuthState(prev => ({ ...prev, user: null, loading: false }));
-      console.log('Logout completed successfully');
+      setLoading(true);
+      setError(null);
+      await signOutUser();
     } catch (error: any) {
-      console.error('Logout error:', error);
-      setAuthState(prev => ({ ...prev, loading: false, error: error.message }));
+      setError(error.message || 'Failed to sign out');
       throw error;
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   return {
-    user: authState.user,
-    loading: authState.loading,
-    error: authState.error,
-    register,
-    login,
-    logout,
+    user,
+    loading,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    clearError,
   };
 };

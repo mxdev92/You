@@ -6,7 +6,7 @@ import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
 import { getProductTranslationKey } from "@/lib/category-mapping";
 import { ProductDetailsModal } from "./product-details-modal";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useLocation } from "wouter";
 import { formatPrice } from "@/lib/price-utils";
 import type { Product } from "@shared/schema";
@@ -70,7 +70,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const addToCart = useCartFlow(state => state.addToCart);
   const isProductInCart = useCartFlow(state => state.isProductInCart);
   const { t } = useTranslation();
-  const { user } = usePostgresAuth();
+  const { user } = useFirebaseAuth();
   const [, setLocation] = useLocation();
 
   // Check if this product is in cart
