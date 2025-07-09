@@ -15,7 +15,7 @@ interface DeliveryTracker {
 export class DeliveryPDFService {
   private whatsappService: BaileysWhatsAppService;
   private deliveryTracker = new Map<number, DeliveryTracker>();
-  private adminWhatsApp = '07710155333'; // Admin WhatsApp number
+  private adminWhatsApp = '07757250444'; // Admin WhatsApp number
   private maxRetries = 3;
   private retryDelay = 5000; // 5 seconds
 

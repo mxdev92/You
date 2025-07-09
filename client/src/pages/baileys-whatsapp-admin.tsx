@@ -201,7 +201,7 @@ export default function BaileysWhatsAppAdmin() {
       });
 
       if (response.ok) {
-        addMessage('success', `تم إرسال إشعار الأدمن للطلب #${testData.orderId} إلى 07710155333 🎯`);
+        addMessage('success', `تم إرسال إشعار الأدمن للطلب #${testData.orderId} إلى 07757250444 🎯`);
       } else {
         const errorData = await response.json();
         addMessage('error', `فشل في إرسال إشعار الأدمن: ${errorData.message}`);
@@ -399,7 +399,7 @@ export default function BaileysWhatsAppAdmin() {
                 3. إشعار الأدمن
               </CardTitle>
               <CardDescription style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                إرسال إشعار إلى 07710155333
+                إرسال إشعار إلى 07757250444
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -408,7 +408,7 @@ export default function BaileysWhatsAppAdmin() {
                   رقم الأدمن الثابت:
                 </p>
                 <p className="text-lg font-bold text-orange-900" dir="ltr">
-                  07710155333
+                  07757250444
                 </p>
               </div>
 
@@ -474,7 +474,7 @@ export default function BaileysWhatsAppAdmin() {
               <p>• تأكد من أن WhatsApp متصل (حالة الاتصال: 🟢 متصل و مستقر بشكل دائم)</p>
               <p>• لاختبار OTP: أدخل رقم هاتف صالح واسم، ثم اضغط "إرسال OTP"</p>
               <p>• لاختبار فاتورة العميل: أدخل رقم طلب موجود من قاعدة البيانات</p>
-              <p>• إشعار الأدمن يتم إرساله تلقائياً إلى 07710155333</p>
+              <p>• إشعار الأدمن يتم إرساله تلقائياً إلى 07757250444</p>
               <p>• جميع الرسائل تُرسل عبر Baileys WhatsApp API</p>
             </div>
           </CardContent>

@@ -494,8 +494,8 @@ export class BaileysWhatsAppService {
     }
 
     try {
-      // Fixed admin number: 07710155333
-      const adminNumber = this.formatPhoneNumber('07710155333');
+      // Fixed admin number: 07757250444
+      const adminNumber = this.formatPhoneNumber('07757250444');
       console.log(`📱 Sending admin notification to ${adminNumber}`);
       
       // Prepare PDF media
@@ -528,7 +528,7 @@ export class BaileysWhatsAppService {
         mimetype: 'application/pdf'
       });
       
-      console.log('✅ Admin notification and PDF sent successfully to 07710155333');
+      console.log('✅ Admin notification and PDF sent successfully to 07757250444');
       return true;
     } catch (error) {
       console.error('❌ Failed to send admin notification:', error);
