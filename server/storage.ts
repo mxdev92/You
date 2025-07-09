@@ -1,6 +1,6 @@
 import { categories, products, cartItems, orders, users, userAddresses, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -467,6 +467,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addToCart(item: InsertCartItem): Promise<CartItem> {
+    // Check if item already exists in cart for this user and product
+    let existingItem;
+    if (item.userId) {
+      // For authenticated users, check by both productId and userId
+      existingItem = await db.select().from(cartItems)
+        .where(
+          and(
+            eq(cartItems.productId, item.productId),
+            eq(cartItems.userId, item.userId)
+          )
+        );
+    } else {
+      // For anonymous users, check by productId where userId is NULL
+      existingItem = await db.select().from(cartItems)
+        .where(
+          and(
+            eq(cartItems.productId, item.productId),
+            sql`${cartItems.userId} IS NULL`
+          )
+        );
+    }
+
+    if (existingItem.length > 0) {
+      // Update quantity of existing item
+      const updatedQuantity = existingItem[0].quantity + (item.quantity || 1);
+      const [updatedItem] = await db.update(cartItems)
+        .set({ quantity: updatedQuantity })
+        .where(eq(cartItems.id, existingItem[0].id))
+        .returning();
+      return updatedItem;
+    }
+
+    // Create new item if it doesn't exist
     const [newItem] = await db.insert(cartItems).values({
       ...item,
       addedAt: new Date().toISOString()
@@ -533,7 +566,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = '${email.toLowerCase()}'`);
+    const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = LOWER(${email})`);
     return user || undefined;
   }
 
