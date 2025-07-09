@@ -12,6 +12,7 @@ import BaileysWhatsAppService from './baileys-whatsapp-service';
 import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
 import { verifyWayService } from './verifyway-service';
 import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
+import { deleteAllFirebaseUsers } from './firebase-admin';
 
 const whatsappService = new BaileysWhatsAppService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
@@ -738,6 +739,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // WebSocket Server for real-time updates
+  // Admin endpoint to clear all Firebase users
+  app.post('/api/admin/clear-firebase-users', async (req, res) => {
+    try {
+      console.log('🗑️ Admin request to clear all Firebase users');
+      const result = await deleteAllFirebaseUsers();
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          message: `Successfully deleted ${result.deletedCount} Firebase users`,
+          deletedCount: result.deletedCount
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: result.error || 'Failed to delete Firebase users'
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Admin clear Firebase users error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
