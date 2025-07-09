@@ -49,7 +49,8 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={handleMenuClick}
-          className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+          className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 interactive-element"
+          style={{ pointerEvents: 'auto', cursor: 'pointer' }}
         >
           <Menu className="h-6 w-6 text-gray-700" />
         </Button>
@@ -76,7 +77,8 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
             variant="ghost"
             size="icon"
             onClick={handleCartClick}
-            className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+            className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 interactive-element"
+            style={{ pointerEvents: 'auto', cursor: 'pointer' }}
           >
             <ShoppingCart className="h-6 w-6 text-gray-700" />
             {cartItemsCount > 0 && (
