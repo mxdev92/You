@@ -22,15 +22,19 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const cartItemsCount = cartItems.length; // Count unique items, not total quantity
 
   const handleMenuClick = () => {
+    console.log('Header: Menu button clicked, calling onMenuClick');
     onMenuClick();
   };
 
   const handleCartClick = () => {
+    console.log('Header: Cart button clicked');
     if (!user) {
+      console.log('Header: User not authenticated, redirecting to auth');
       setLocation('/auth');
       return;
     }
     
+    console.log('Header: User authenticated, calling onCartClick');
     onCartClick();
   };
 

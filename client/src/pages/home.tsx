@@ -32,8 +32,14 @@ export default function Home() {
 
       
       <Header
-        onMenuClick={() => setIsProfileSidebarOpen(true)}
-        onCartClick={() => setIsRightSidebarOpen(true)}
+        onMenuClick={() => {
+          console.log('Home: Menu clicked, setting profile sidebar open');
+          setIsProfileSidebarOpen(true);
+        }}
+        onCartClick={() => {
+          console.log('Home: Cart clicked, setting right sidebar open');
+          setIsRightSidebarOpen(true);
+        }}
       />
       
       <ProfileSidebar 
