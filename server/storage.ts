@@ -18,11 +18,11 @@ export interface IStorage {
   deleteProduct(id: number): Promise<void>;
 
   // Cart
-  getCartItems(): Promise<(CartItem & { product: Product })[]>;
+  getCartItems(userId?: number): Promise<(CartItem & { product: Product })[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
   updateCartItemQuantity(id: number, quantity: number): Promise<CartItem>;
   removeFromCart(id: number): Promise<void>;
-  clearCart(): Promise<void>;
+  clearCart(userId?: number): Promise<void>;
 
   // Orders
   getOrders(): Promise<Order[]>;
@@ -220,7 +220,7 @@ export class MemStorage implements IStorage {
     this.products.delete(id);
   }
 
-  async getCartItems(): Promise<(CartItem & { product: Product })[]> {
+  async getCartItems(userId?: number): Promise<(CartItem & { product: Product })[]> {
     const items = Array.from(this.cartItems.values());
     return items.map(item => {
       const product = this.products.get(item.productId);
@@ -269,7 +269,7 @@ export class MemStorage implements IStorage {
     this.cartItems.delete(id);
   }
 
-  async clearCart(): Promise<void> {
+  async clearCart(userId?: number): Promise<void> {
     this.cartItems.clear();
   }
 
@@ -435,9 +435,10 @@ export class DatabaseStorage implements IStorage {
     await db.delete(products).where(eq(products.id, id));
   }
 
-  async getCartItems(): Promise<(CartItem & { product: Product })[]> {
-    const items = await db.select({
+  async getCartItems(userId?: number): Promise<(CartItem & { product: Product })[]> {
+    let query = db.select({
       id: cartItems.id,
+      userId: cartItems.userId,
       productId: cartItems.productId,
       quantity: cartItems.quantity,
       addedAt: cartItems.addedAt,
@@ -446,8 +447,18 @@ export class DatabaseStorage implements IStorage {
     .from(cartItems)
     .innerJoin(products, eq(cartItems.productId, products.id));
     
+    if (userId) {
+      query = query.where(eq(cartItems.userId, userId));
+    } else {
+      // For anonymous users, get cart items without userId
+      query = query.where(sql`${cartItems.userId} IS NULL`);
+    }
+    
+    const items = await query;
+    
     return items.map(item => ({
       id: item.id,
+      userId: item.userId,
       productId: item.productId,
       quantity: item.quantity,
       addedAt: item.addedAt,
@@ -475,8 +486,13 @@ export class DatabaseStorage implements IStorage {
     await db.delete(cartItems).where(eq(cartItems.id, id));
   }
 
-  async clearCart(): Promise<void> {
-    await db.delete(cartItems);
+  async clearCart(userId?: number): Promise<void> {
+    if (userId) {
+      await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    } else {
+      // For anonymous users, clear cart items without userId
+      await db.delete(cartItems).where(sql`${cartItems.userId} IS NULL`);
+    }
   }
 
   async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {

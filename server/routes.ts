@@ -197,22 +197,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cart
+  // Cart with authentication support
   app.get("/api/cart", async (req, res) => {
     try {
-      const cartItems = await storage.getCartItems();
+      const userId = (req as any).session?.userId;
+      const cartItems = await storage.getCartItems(userId);
       res.json(cartItems);
     } catch (error) {
+      console.error('Get cart error:', error);
       res.status(500).json({ message: "Failed to fetch cart items" });
     }
   });
 
   app.post("/api/cart", async (req, res) => {
     try {
+      const userId = (req as any).session?.userId;
       const validatedData = insertCartItemSchema.parse(req.body);
-      const cartItem = await storage.addToCart(validatedData);
+      
+      // Add userId to cart item if user is authenticated
+      const cartItemData = userId ? { ...validatedData, userId } : validatedData;
+      
+      const cartItem = await storage.addToCart(cartItemData);
       res.status(201).json(cartItem);
     } catch (error) {
+      console.error('Add to cart error:', error);
       res.status(500).json({ message: "Failed to add item to cart" });
     }
   });
@@ -235,15 +243,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.removeFromCart(id);
       res.status(204).send();
     } catch (error) {
+      console.error('Remove from cart error:', error);
       res.status(500).json({ message: "Failed to remove item from cart" });
     }
   });
 
   app.delete("/api/cart", async (req, res) => {
     try {
-      await storage.clearCart();
+      const userId = (req as any).session?.userId;
+      await storage.clearCart(userId);
       res.status(204).send();
     } catch (error) {
+      console.error('Clear cart error:', error);
       res.status(500).json({ message: "Failed to clear cart" });
     }
   });

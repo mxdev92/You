@@ -9,8 +9,17 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Configure session middleware with persistent sessions
+// Configure session middleware with persistent sessions and PostgreSQL store
+import connect_pg_simple from 'connect-pg-simple';
+
+const pgSession = connect_pg_simple(session);
+
 app.use(session({
+  store: new pgSession({
+    conString: process.env.DATABASE_URL,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
   secret: process.env.SESSION_SECRET || 'yalla-jeetek-secret-key-12345',
   resave: false,
   saveUninitialized: false,
