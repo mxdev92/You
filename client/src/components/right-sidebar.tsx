@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { usePostgresAddressStore } from "@/store/postgres-address-store";
+import { getUserAddresses, type UserAddress } from "@/lib/firebase-user-data";
 import { formatPrice } from "@/lib/price-utils";
 import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
@@ -149,15 +149,28 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   
   // Firebase authentication and address integration
   const { user: firebaseUser } = useFirebaseAuth();
-  const { addresses, loadAddresses } = usePostgresAddressStore();
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   // Auto-load addresses when user is authenticated
   useEffect(() => {
     if (firebaseUser && firebaseUser.uid) {
       console.log('Right sidebar: Auto-loading addresses for user:', firebaseUser.uid);
-      loadAddresses(firebaseUser.uid);
+      setLoadingAddresses(true);
+      getUserAddresses()
+        .then(userAddresses => {
+          setAddresses(userAddresses);
+          console.log('Loaded addresses:', userAddresses);
+        })
+        .catch(error => {
+          console.error('Failed to load addresses:', error);
+          setAddresses([]);
+        })
+        .finally(() => setLoadingAddresses(false));
+    } else {
+      setAddresses([]);
     }
-  }, [firebaseUser?.uid, loadAddresses]);
+  }, [firebaseUser?.uid]);
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {
@@ -256,7 +269,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     'الانبار', 'الديوانية', 'كركوك', 'حلبجة'
   ];
 
-  // Use first saved address automatically from PostgreSQL
+  // Use first saved address automatically from Firebase
   const primaryAddress = addresses.length > 0 ? addresses[0] : null;
   const hasAddress = addresses.length > 0 && firebaseUser !== null;
 
@@ -288,7 +301,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       console.log('Starting order submission...');
       
       // Use phone from user profile, fallback to extracting from notes if not available
-      const customerPhone = firebaseUser?.phoneNumber || '07501234567';
+      const customerPhone = firebaseUser?.phoneNumber || primaryAddress?.notes?.match(/\d{11}/)?.[0] || '07501234567';
       const customerName = firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'Customer';
       
       const orderData = {
@@ -299,7 +312,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           governorate: primaryAddress.governorate,
           district: primaryAddress.district,
           neighborhood: primaryAddress.neighborhood,
-          notes: primaryAddress.neighborhood // Only store landmark/neighborhood, not phone
+          notes: primaryAddress.notes || primaryAddress.neighborhood // Use notes or neighborhood
         },
         items: Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
           productId: item.productId,
