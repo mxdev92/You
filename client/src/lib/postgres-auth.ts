@@ -21,6 +21,7 @@ export interface AuthUserAddress {
 class PostgresAuthService {
   private currentUser: AuthUser | null = null;
   private authListeners: ((user: AuthUser | null) => void)[] = [];
+  private sessionCheckInProgress: boolean = false;
 
   // Authentication methods
   async signUp(email: string, password: string, fullName?: string, phone?: string): Promise<AuthUser> {
@@ -171,8 +172,16 @@ class PostgresAuthService {
   }
 
   private notifyListeners() {
+    // Prevent rapid consecutive notifications
+    const now = Date.now();
+    if (this.lastNotification && (now - this.lastNotification) < 100) {
+      return; // Throttle notifications to max 10 per second
+    }
+    this.lastNotification = now;
     this.authListeners.forEach(callback => callback(this.currentUser));
   }
+
+  private lastNotification: number = 0;
 
   private getErrorMessage(errorMessage: string): string {
     // Map common error messages to Arabic
@@ -196,25 +205,40 @@ class PostgresAuthService {
 
   // Session management
   async checkSession(): Promise<void> {
+    // Prevent multiple simultaneous session checks
+    if (this.sessionCheckInProgress) {
+      console.log('PostgreSQL Auth: Session check already in progress, skipping');
+      return;
+    }
+    
+    this.sessionCheckInProgress = true;
     try {
       const response = await fetch('/api/auth/session', {
         credentials: 'include', // Ensure cookies are sent
       });
       if (response.ok) {
         const { user } = await response.json();
-        this.currentUser = user;
-        this.notifyListeners();
-        console.log('PostgreSQL Auth: Session restored for user:', user.email);
+        if (!this.currentUser || this.currentUser.id !== user.id) {
+          this.currentUser = user;
+          this.notifyListeners();
+          console.log('PostgreSQL Auth: Session restored for user:', user.email);
+        }
       } else {
         // Session expired or invalid
-        this.currentUser = null;
-        this.notifyListeners();
-        console.log('PostgreSQL Auth: No valid session found');
+        if (this.currentUser !== null) {
+          this.currentUser = null;
+          this.notifyListeners();
+          console.log('PostgreSQL Auth: No valid session found');
+        }
       }
     } catch (error) {
       console.warn('PostgreSQL Auth: Failed to check session', error);
-      this.currentUser = null;
-      this.notifyListeners();
+      if (this.currentUser !== null) {
+        this.currentUser = null;
+        this.notifyListeners();
+      }
+    } finally {
+      this.sessionCheckInProgress = false;
     }
   }
 

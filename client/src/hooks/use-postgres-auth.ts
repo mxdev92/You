@@ -26,7 +26,7 @@ export const usePostgresAuth = () => {
       }));
     });
 
-    // Force session check on mount to ensure auth state is current
+    // Only check session once on initial mount
     const initializeAuth = async () => {
       try {
         await postgresAuth.checkSession();
@@ -39,7 +39,7 @@ export const usePostgresAuth = () => {
     initializeAuth();
 
     return unsubscribe.unsubscribe;
-  }, []);
+  }, []); // Keep empty dependency array
 
   const register = async (email: string, password: string, fullName?: string, phone?: string) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));

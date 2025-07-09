@@ -14,13 +14,13 @@ export default function Home() {
   const { user } = usePostgresAuth();
   const { loadCart } = useCartFlow();
 
-  // Load cart only for authenticated users
+  // Load cart only once when user logs in
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadCart();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Only depend on user, not loadCart function
+  }, [user?.id]); // Only depend on user ID, not entire user object
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);

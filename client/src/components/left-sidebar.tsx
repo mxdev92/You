@@ -343,14 +343,14 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     };
   }, [isOpen]);
 
-  // Auto-load addresses when user is authenticated
+  // Auto-load addresses only once when user is authenticated
   useEffect(() => {
-    if (user && user.id) {
-      console.log('Auto-loading addresses for user:', user.id);
+    if (user?.id) {
+      console.log('Left sidebar: Auto-loading addresses for user:', user.id);
       loadAddresses(user.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Only depend on user, not loadAddresses function
+  }, [user?.id]); // Only depend on user ID, not entire user object
   
   const handleMenuItemClick = (targetView: string, action?: () => void) => {
     if (!user) {

@@ -144,14 +144,14 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const { user: postgresUser } = usePostgresAuth();
   const { addresses, loadAddresses } = usePostgresAddressStore();
 
-  // Auto-load addresses when user is authenticated
+  // Auto-load addresses only once when user is authenticated
   useEffect(() => {
-    if (postgresUser && postgresUser.id) {
+    if (postgresUser?.id) {
       console.log('Right sidebar: Auto-loading addresses for user:', postgresUser.id);
       loadAddresses(postgresUser.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postgresUser]); // Only depend on postgresUser, not loadAddresses function
+  }, [postgresUser?.id]); // Only depend on user ID, not entire user object
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {

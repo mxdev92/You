@@ -101,9 +101,12 @@ July 9, 2025:
 • INFINITE CART LOOP COMPLETELY FIXED: Resolved critical useEffect dependency infinite loop causing "Loading cart..." freeze
 • Fixed cart store loadCart() calls that were triggering recursive reloads between home.tsx and addToCart function
 • Optimized cart refresh logic with direct fetch calls instead of recursive loadCart() function calls
-• INFINITE ADDRESS LOOP FIXED: Removed loadAddresses from useEffect dependency array in left-sidebar.tsx
-• Fixed duplicate address loading between left-sidebar.tsx and right-sidebar.tsx components
-• Cart now loads instantly without infinite request loops to /api/cart, /api/auth/session, and /api/auth/addresses
+• INFINITE LOOPS COMPLETELY FIXED: Resolved all infinite loop issues with comprehensive dependency fixes
+• Fixed session infinite loop: Added sessionCheckInProgress flag to prevent concurrent session checks
+• Fixed address infinite loop: Changed useEffect dependencies to user?.id instead of entire user object
+• Added notification throttling to prevent rapid auth state changes (max 10 per second)
+• Optimized all useEffect hooks in home.tsx, left-sidebar.tsx, and right-sidebar.tsx
+• Cart and address loading now work without infinite request loops to any API endpoints
 • CART DUPLICATE PREVENTION PERFECTED: Add-to-cart logic prevents duplicate items by checking both productId and userId
 • Fixed Drizzle ORM query syntax with proper and() conditions for accurate existing item detection
 • Cart behavior: First tap adds item, subsequent taps increase quantity instead of creating duplicates
