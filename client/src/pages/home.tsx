@@ -19,7 +19,7 @@ export default function Home() {
     if (user) {
       loadCart();
     }
-  }, [user, loadCart]);
+  }, [user?.id]); // Only depend on user ID, not the entire user object or loadCart function
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);

@@ -8,6 +8,7 @@ interface CartFlowState {
   cartItems: CartItemWithProduct[];
   isLoading: boolean;
   isUpdating: boolean;
+  lastLoadTime: number;
 }
 
 interface CartFlowActions {
@@ -28,10 +29,19 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   cartItems: [],
   isLoading: false,
   isUpdating: false,
+  lastLoadTime: 0,
 
   // Actions
   loadCart: async () => {
-    set({ isLoading: true });
+    const { lastLoadTime, isLoading } = get();
+    const now = Date.now();
+    
+    // Prevent rapid consecutive calls (less than 1 second apart)
+    if (isLoading || (now - lastLoadTime) < 1000) {
+      return;
+    }
+    
+    set({ isLoading: true, lastLoadTime: now });
     try {
       const response = await fetch("/api/cart");
       if (response.ok) {
