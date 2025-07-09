@@ -53,8 +53,12 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       });
       
       if (response.ok) {
-        // Reload cart to get updated data with product details
-        get().loadCart();
+        // Optimistically refresh cart without triggering infinite loop
+        const updatedResponse = await fetch("/api/cart");
+        if (updatedResponse.ok) {
+          const items = await updatedResponse.json();
+          set({ cartItems: items });
+        }
       } else {
         throw new Error("Failed to add item");
       }

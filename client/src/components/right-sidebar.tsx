@@ -330,9 +330,6 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       await clearCartFlow();
       console.log('Cart cleared successfully');
       
-      // Also reload cart to ensure consistency
-      await loadCart();
-      
       // Invalidate order queries to refresh order history
       queryClient.invalidateQueries({ queryKey: ['user-orders'] });
       console.log('Order history cache invalidated');

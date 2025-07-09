@@ -98,6 +98,14 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 9, 2025:
+• INFINITE CART LOOP COMPLETELY FIXED: Resolved critical useEffect dependency infinite loop causing "Loading cart..." freeze
+• Fixed cart store loadCart() calls that were triggering recursive reloads between home.tsx and addToCart function
+• Optimized cart refresh logic with direct fetch calls instead of recursive loadCart() function calls
+• Cart now loads instantly without infinite request loops to /api/cart, /api/auth/session, and /api/auth/addresses
+• CART DUPLICATE PREVENTION PERFECTED: Add-to-cart logic prevents duplicate items by checking both productId and userId
+• Fixed Drizzle ORM query syntax with proper and() conditions for accurate existing item detection
+• Cart behavior: First tap adds item, subsequent taps increase quantity instead of creating duplicates
+• Enhanced database duplicate checking works for both authenticated users and anonymous sessions
 • AUTHENTICATION PERSISTENCE FIXED: Resolved critical PostgreSQL session storage issue that caused users to sign in repeatedly
 • Added forced session.save() calls in signup and signin routes to ensure persistent authentication
 • Enhanced PostgreSQL session store configuration with proper error logging and pruning disabled
