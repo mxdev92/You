@@ -110,7 +110,10 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setActiveSection('menu')}
+          onClick={() => {
+            console.log('Profile sidebar: Back button clicked from addresses, returning to menu');
+            setActiveSection('menu');
+          }}
           className="hover:bg-gray-100 rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -237,7 +240,10 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setActiveSection('menu')}
+          onClick={() => {
+            console.log('Profile sidebar: Back button clicked from orders, returning to menu');
+            setActiveSection('menu');
+          }}
           className="hover:bg-gray-100 rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -307,7 +313,10 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onClose}
+                onClick={() => {
+                  console.log('Profile sidebar: X button clicked, closing sidebar');
+                  onClose();
+                }}
                 className="hover:bg-gray-100 rounded-full"
               >
                 <X className="h-6 w-6" />
