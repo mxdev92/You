@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Header from "@/components/header";
 import LeftSidebar from "@/components/left-sidebar";
 import RightSidebar from "@/components/right-sidebar";
-import ProductsGrid from "@/components/products-grid";
+import ProgressiveProductsGrid from "@/components/progressive-products-grid";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useCartFlow } from "@/store/cart-flow";
 
@@ -51,7 +51,7 @@ export default function Home() {
       />
 
       <main className="pb-8">
-        <ProductsGrid />
+        <ProgressiveProductsGrid />
       </main>
     </div>
   );
