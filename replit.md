@@ -97,6 +97,14 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 9, 2025:
+• AUTHENTICATION PERSISTENCE FIXED: Resolved critical PostgreSQL session storage issue that caused users to sign in repeatedly
+• Added forced session.save() calls in signup and signin routes to ensure persistent authentication
+• Enhanced PostgreSQL session store configuration with proper error logging and pruning disabled
+• Cart functionality enhanced with user-specific cart management supporting both authenticated and anonymous users
+• Cart routes now properly handle userId for persistent cart data across user sessions
+• Users now stay logged in permanently until manual logout as intended
+
 July 6, 2025:
 • UX ENHANCEMENT: Set Vegetables as default category when app opens (category ID: 2)
 • CART FIX: Cart now properly empty on first app load for anonymous users

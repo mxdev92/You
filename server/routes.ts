@@ -540,8 +540,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Set session after successful signup
-      (req as any).session = (req as any).session || {};
       (req as any).session.userId = user.id;
+      
+      // Force session save
+      await new Promise<void>((resolve, reject) => {
+        (req as any).session.save((err: any) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       
       res.json({ 
         user: { 
@@ -578,8 +585,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store user session
-      (req as any).session = (req as any).session || {};
       (req as any).session.userId = user.id;
+      
+      // Force session save
+      await new Promise<void>((resolve, reject) => {
+        (req as any).session.save((err: any) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
 
       res.json({ 
         user: { 
