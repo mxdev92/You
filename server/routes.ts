@@ -359,27 +359,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Silent enhanced PDF delivery system
-      console.log(`📋 Starting silent PDF delivery for Order ${orderId}`);
+      console.log(`📋 Starting silent PDF delivery for Order ${order.id}`);
       
       // Trigger silent PDF delivery - never affects order submission
       setTimeout(async () => {
         try {
-          const deliveryResult = await deliveryPDFService.deliverInvoicePDF(orderId);
+          const deliveryResult = await deliveryPDFService.deliverInvoicePDF(order.id);
           if (deliveryResult.success) {
-            console.log(`✅ Silent PDF delivery completed for Order ${orderId}: ${deliveryResult.message}`);
+            console.log(`✅ Silent PDF delivery completed for Order ${order.id}: ${deliveryResult.message}`);
           } else {
             console.log(`⚠️ Silent PDF delivery failed - legacy fallback will attempt`);
           }
         } catch (error: any) {
           // Silent failure - never throw or affect order processing
-          console.log(`⚠️ Silent PDF delivery system error for Order ${orderId}:`, error.message || error);
+          console.log(`⚠️ Silent PDF delivery system error for Order ${order.id}:`, error.message || error);
         }
       }, 2000);
 
       // Silent legacy WhatsApp notifications (fallback)
       setTimeout(async () => {
         try {
-          if (whatsappService.getConnectionStatus().connected) {
+          if (whatsappService.getStatus().connected) {
             try {
               // Silently generate PDF invoice
               const pdfBuffer = await generateInvoicePDF(order);
@@ -439,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.updateOrderStatus(id, status);
       
       // Send WhatsApp status update notification
-      if (whatsappService.getConnectionStatus().connected && order.customerPhone) {
+      if (whatsappService.getStatus().connected && order.customerPhone) {
         try {
           await whatsappService.sendOrderStatusUpdate(
             order.customerPhone,

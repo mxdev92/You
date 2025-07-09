@@ -373,4 +373,85 @@ export class BaileysWhatsAppFreshService {
 
     return { valid: false, message: 'رمز OTP غير صحيح' };
   }
+
+  // Send order invoice (required for existing code)
+  async sendOrderInvoice(phoneNumber: string, pdfBuffer: Buffer, order: any): Promise<boolean> {
+    if (!this.isConnected || !this.socket) {
+      console.log('⚠️ Fresh WhatsApp not connected for order invoice');
+      return false;
+    }
+
+    try {
+      const formattedNumber = this.formatPhoneNumber(phoneNumber);
+      
+      // Prepare PDF media
+      const media = await prepareWAMessageMedia({
+        document: pdfBuffer,
+        mimetype: 'application/pdf',
+        fileName: `PAKETY-Invoice-${order.id}.pdf`
+      }, { upload: this.socket.waUploadToServer });
+
+      // Send customer invoice message
+      const message = `📋 شكراً لطلبكم من PAKETY!
+
+رقم الطلب: ${order.id}
+المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
+
+سيتم التواصل معكم لترتيب عملية التسليم في أقرب وقت.
+
+شكراً لثقتكم بنا! 🙏`;
+
+      await this.socket.sendMessage(formattedNumber, { text: message });
+      
+      // Send PDF invoice
+      await this.socket.sendMessage(formattedNumber, {
+        document: media.document,
+        caption: `📊 فاتورة طلبكم - رقم ${order.id}`,
+        fileName: `PAKETY-Invoice-${order.id}.pdf`,
+        mimetype: 'application/pdf'
+      });
+      
+      console.log(`✅ Fresh order invoice sent to ${phoneNumber}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Fresh order invoice send failed:', error);
+      return false;
+    }
+  }
+
+  // Send order status update (required for existing code)
+  async sendOrderStatusUpdate(phoneNumber: string, customerName: string, order: any, status: string): Promise<boolean> {
+    if (!this.isConnected || !this.socket) {
+      console.log('⚠️ Fresh WhatsApp not connected for status update');
+      return false;
+    }
+
+    try {
+      const formattedNumber = this.formatPhoneNumber(phoneNumber);
+      
+      const statusMessages: { [key: string]: string } = {
+        'pending': '⏳ طلبكم قيد المراجعة',
+        'confirmed': '✅ تم تأكيد طلبكم وسيتم التحضير قريباً',
+        'preparing': '👨‍🍳 جاري تحضير طلبكم',
+        'out-for-delivery': '🚚 طلبكم في الطريق إليكم',
+        'delivered': '🎉 تم تسليم طلبكم بنجاح',
+        'cancelled': '❌ تم إلغاء طلبكم'
+      };
+
+      const message = `📱 تحديث حالة الطلب - PAKETY
+
+👤 عزيز/عزيزة ${customerName}
+📋 رقم الطلب: ${order.id}
+📊 الحالة: ${statusMessages[status] || status}
+
+شكراً لثقتكم بنا! 🙏`;
+
+      await this.socket.sendMessage(formattedNumber, { text: message });
+      console.log(`✅ Fresh status update sent to ${phoneNumber}: ${status}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Fresh status update send failed:', error);
+      return false;
+    }
+  }
 }
