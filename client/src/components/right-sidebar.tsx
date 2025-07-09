@@ -140,18 +140,24 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   // Use CartFlow store for cart data
   const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem, clearCart: clearCartFlow } = useCartFlow();
   
+  // Load cart when sidebar opens
+  useEffect(() => {
+    if (isOpen) {
+      loadCart();
+    }
+  }, [isOpen, loadCart]);
+  
   // Firebase authentication and address integration
   const { user: firebaseUser } = useFirebaseAuth();
   const { addresses, loadAddresses } = usePostgresAddressStore();
 
-  // Auto-load addresses when user is authenticated (temporarily disabled for Firebase migration)
+  // Auto-load addresses when user is authenticated
   useEffect(() => {
-    // TODO: Implement address loading for Firebase users
-    // if (firebaseUser && firebaseUser.uid) {
-    //   console.log('Right sidebar: Auto-loading addresses for user:', firebaseUser.uid);
-    //   loadAddresses(firebaseUser.uid);
-    // }
-  }, [firebaseUser?.uid]);
+    if (firebaseUser && firebaseUser.uid) {
+      console.log('Right sidebar: Auto-loading addresses for user:', firebaseUser.uid);
+      loadAddresses(firebaseUser.uid);
+    }
+  }, [firebaseUser?.uid, loadAddresses]);
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {

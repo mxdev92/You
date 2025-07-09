@@ -201,6 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart
   app.get("/api/cart", async (req, res) => {
     try {
+      // Cart can be accessed without authentication for anonymous users
       const cartItems = await storage.getCartItems();
       res.json(cartItems);
     } catch (error) {

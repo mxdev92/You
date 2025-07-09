@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
 import { useCartFlow } from "@/store/cart-flow";
 import CategoriesSection from "@/components/categories-section";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useLocation } from "wouter";
 
 interface HeaderProps {
@@ -14,7 +14,7 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const { t } = useTranslation();
-  const { user } = usePostgresAuth();
+  const { user } = useFirebaseAuth();
   const [, setLocation] = useLocation();
   
   // Use CartFlow store for cart data (same as sidebar)
@@ -30,10 +30,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   };
 
   const handleCartClick = () => {
-    if (!user) {
-      setLocation('/auth');
-      return;
-    }
+    // Cart can be accessed without authentication
     onCartClick();
   };
 
