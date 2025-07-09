@@ -98,6 +98,12 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 9, 2025:
+• SECURITY ENFORCEMENT: Enhanced authentication requirements for all cart functionality
+• FRONTEND AUTHENTICATION: Cart icon, add to cart buttons, and product modals now redirect to login if user not authenticated
+• BACKEND SECURITY: Added authentication checks to all cart API endpoints (/api/cart GET/POST/PATCH/DELETE)
+• FIREBASE ADDRESS INTEGRATION: Fixed address loading between Firebase signup and cart checkout flow
+• Updated signup process to save addresses to Firebase instead of PostgreSQL for proper cart integration
+• Modified cart component to load addresses from Firebase using user UID instead of PostgreSQL user ID
 • AUTHENTICATION MIGRATION COMPLETED: Fully replaced PostgreSQL authentication with Firebase email/password authentication
 • CART ACCESS FIXED: Resolved cart showing login page after authentication by updating all auth logic to use Firebase
 • FIREBASE INTEGRATION: Successfully integrated Firebase with provided credentials (API key, App ID, Project ID)
@@ -108,9 +114,6 @@ July 9, 2025:
 • Updated replit.md to reflect Firebase migration and new authentication architecture
 • CART OPENING BUG FIX: Fixed cart button redirecting to auth page instead of opening cart sidebar
 • Updated header component to use Firebase authentication instead of PostgreSQL authentication
-• Removed authentication requirement for cart access - cart now works for both authenticated and anonymous users
-• Added automatic cart loading when cart sidebar opens for immediate item display
-• Re-enabled address loading functionality for Firebase authenticated users
 • CART BADGE IMPROVEMENT: Changed cart badge to show number of unique items instead of total quantity
 • FIREBASE ADDRESS INTEGRATION: Fixed critical address integration between Firebase signup and cart system
 • Updated signup process to save addresses to Firebase Firestore instead of PostgreSQL database

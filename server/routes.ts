@@ -201,7 +201,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart
   app.get("/api/cart", async (req, res) => {
     try {
-      // Cart can be accessed without authentication for anonymous users
+      // Require authentication to access cart
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required to access cart' });
+      }
+
       const cartItems = await storage.getCartItems();
       res.json(cartItems);
     } catch (error) {
@@ -211,6 +216,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", async (req, res) => {
     try {
+      // Require authentication to add items to cart
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required to add items to cart' });
+      }
+
       const validatedData = insertCartItemSchema.parse(req.body);
       const cartItem = await storage.addToCart(validatedData);
       res.status(201).json(cartItem);
@@ -221,6 +232,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/cart/:id", async (req, res) => {
     try {
+      // Require authentication to update cart items
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required to update cart items' });
+      }
+
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
       const cartItem = await storage.updateCartItemQuantity(id, quantity);
@@ -233,6 +250,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/cart/:id", async (req, res) => {
     try {
+      // Require authentication to remove cart items
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required to remove cart items' });
+      }
+
       const id = parseInt(req.params.id);
       await storage.removeFromCart(id);
       res.status(204).send();
@@ -243,6 +266,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/cart", async (req, res) => {
     try {
+      // Require authentication to clear cart
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required to clear cart' });
+      }
+
       await storage.clearCart();
       res.status(204).send();
     } catch (error) {
