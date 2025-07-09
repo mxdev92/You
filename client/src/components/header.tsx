@@ -22,7 +22,9 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   const cartItemsCount = cartItems.length; // Count unique items, not total quantity
 
   const handleMenuClick = () => {
+    console.log('Menu clicked, user:', user ? `${user.email} (${user.uid})` : 'Not authenticated');
     if (!user) {
+      console.log('Redirecting to auth - no user');
       setLocation('/auth');
       return;
     }
@@ -30,8 +32,10 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   };
 
   const handleCartClick = () => {
+    console.log('Cart clicked, user:', user ? `${user.email} (${user.uid})` : 'Not authenticated');
     // Require authentication to access cart
     if (!user) {
+      console.log('Redirecting to auth - no user for cart');
       setLocation('/auth');
       return;
     }

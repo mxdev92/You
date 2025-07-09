@@ -47,8 +47,10 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const displayName = translationKey ? t(translationKey) : product.name;
 
   const handleAddToCart = async () => {
+    console.log('Modal add to cart clicked, user:', user ? `${user.email} (${user.uid})` : 'Not authenticated');
     // Require authentication before adding to cart
     if (!user) {
+      console.log('Redirecting to auth - no user for modal add to cart');
       onClose(); // Close modal first
       setLocation('/auth');
       return;
