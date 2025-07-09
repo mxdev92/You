@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/header";
-import LeftSidebar from "@/components/left-sidebar";
+// import LeftSidebar from "@/components/left-sidebar"; // Replaced with ProfileSidebar
 import RightSidebar from "@/components/right-sidebar";
+import ProfileSidebar from "@/components/profile-sidebar";
 import ProductsGrid from "@/components/products-grid";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { useCartFlow } from "@/store/cart-flow";
 
 export default function Home() {
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [isProfileSidebarOpen, setIsProfileSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt'>('menu');
   
   const { user } = useFirebaseAuth();
   const { loadCart } = useCartFlow();
@@ -23,25 +23,20 @@ export default function Home() {
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);
-    setLeftSidebarView('addresses');
-    setIsLeftSidebarOpen(true);
+    // TODO: Navigate to addresses in future implementation
+    console.log('Navigate to addresses from cart');
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
-        onMenuClick={() => setIsLeftSidebarOpen(true)}
+        onMenuClick={() => setIsProfileSidebarOpen(true)}
         onCartClick={() => setIsRightSidebarOpen(true)}
       />
       
-      <LeftSidebar 
-        isOpen={isLeftSidebarOpen}
-        onClose={() => {
-          setIsLeftSidebarOpen(false);
-          setLeftSidebarView('menu');
-        }}
-        currentView={leftSidebarView}
-        setCurrentView={setLeftSidebarView as (view: 'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt') => void}
+      <ProfileSidebar 
+        isOpen={isProfileSidebarOpen}
+        onClose={() => setIsProfileSidebarOpen(false)}
       />
       
       <RightSidebar
