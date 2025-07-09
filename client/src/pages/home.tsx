@@ -28,19 +28,39 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ pointerEvents: 'auto' }}>
+    <div 
+      className="min-h-screen bg-gray-50" 
+      style={{ pointerEvents: 'auto' }}
+      onClickCapture={(e) => {
+        console.log('HOME DIV CLICK CAPTURED:', e.target);
+      }}
+    >
       {/* DEBUG: Test button to verify interaction works */}
       <div className="fixed top-20 right-4 z-50" style={{ pointerEvents: 'auto' }}>
         <button 
-          onClick={() => {
-            console.log('DEBUG: Test button clicked!');
+          onClick={(e) => {
+            console.log('DEBUG: Test button clicked!', e);
             alert('Test button works! This means buttons can be clicked.');
+            e.stopPropagation();
           }}
           className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-          style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+          style={{ pointerEvents: 'auto', cursor: 'pointer', zIndex: 9999 }}
         >
           TEST
         </button>
+      </div>
+      
+      {/* Additional test: Simple div click */}
+      <div 
+        className="fixed top-32 right-4 z-50 bg-blue-500 text-white px-3 py-1 rounded text-sm cursor-pointer"
+        onClick={(e) => {
+          console.log('DEBUG: Simple div clicked!', e);
+          alert('Simple div works!');
+          e.stopPropagation();
+        }}
+        style={{ pointerEvents: 'auto', cursor: 'pointer', zIndex: 9999 }}
+      >
+        DIV
       </div>
       
       <Header
@@ -48,16 +68,21 @@ export default function Home() {
         onCartClick={() => setIsRightSidebarOpen(true)}
       />
       
-      <ProfileSidebar 
-        isOpen={isProfileSidebarOpen}
-        onClose={() => setIsProfileSidebarOpen(false)}
-      />
+      {/* TEMPORARILY DISABLED SIDEBARS FOR DEBUGGING */}
+      {false && (
+        <ProfileSidebar 
+          isOpen={isProfileSidebarOpen}
+          onClose={() => setIsProfileSidebarOpen(false)}
+        />
+      )}
       
-      <RightSidebar
-        isOpen={isRightSidebarOpen}
-        onClose={() => setIsRightSidebarOpen(false)}
-        onNavigateToAddresses={handleNavigateToAddresses}
-      />
+      {false && (
+        <RightSidebar
+          isOpen={isRightSidebarOpen}
+          onClose={() => setIsRightSidebarOpen(false)}
+          onNavigateToAddresses={handleNavigateToAddresses}
+        />
+      )}
 
       <main className="pb-8">
         <ProductsGrid />

@@ -106,6 +106,7 @@ html[lang="ar"] * {
   * {
     @apply border-border;
     box-sizing: border-box;
+    pointer-events: auto !important;
   }
 
   html {
