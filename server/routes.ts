@@ -8,12 +8,12 @@ import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
-import BaileysWhatsAppService from './baileys-whatsapp-service';
+import { BaileysWhatsAppFreshService } from './baileys-whatsapp-fresh.js';
 import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
 import { verifyWayService } from './verifyway-service';
 import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
 
-const whatsappService = new BaileysWhatsAppService();
+const whatsappService = new BaileysWhatsAppFreshService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
 
 // Initialize Baileys WhatsApp service on startup

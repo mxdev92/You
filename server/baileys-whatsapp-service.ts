@@ -41,6 +41,9 @@ export class BaileysWhatsAppService {
   private isReconnecting: boolean = false;
 
   constructor() {
+    // Clear any existing corrupted session data
+    this.clearSession();
+    
     // Ensure auth directory exists
     if (!fs.existsSync(this.authPath)) {
       fs.mkdirSync(this.authPath, { recursive: true });
@@ -55,6 +58,21 @@ export class BaileysWhatsAppService {
         this.queueManager.processQueue(this);
       }
     });
+  }
+
+  // Clear corrupted session data
+  private clearSession(): void {
+    try {
+      const sessionPaths = ['./whatsapp_session', './whatsapp_session_simple'];
+      sessionPaths.forEach(path => {
+        if (fs.existsSync(path)) {
+          fs.rmSync(path, { recursive: true, force: true });
+          console.log(`🧹 Cleared session directory: ${path}`);
+        }
+      });
+    } catch (error) {
+      console.log('⚠️ Session clear warning:', error);
+    }
   }
 
   // CRITICAL: Ensure connection is ready before any OTP operations
