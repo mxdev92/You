@@ -49,6 +49,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={handleMenuClick}
+          disabled={false}
           className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 interactive-element"
           style={{ pointerEvents: 'auto', cursor: 'pointer' }}
         >
@@ -64,6 +65,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
               placeholder={t('search')}
               className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full border-none focus:ring-2 focus:ring-fresh-green focus:bg-white transition-all duration-200 cursor-text"
               disabled={false}
+              style={{ pointerEvents: 'auto', cursor: 'text' }}
             />
           </div>
         </div>
@@ -77,6 +79,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
             variant="ghost"
             size="icon"
             onClick={handleCartClick}
+            disabled={false}
             className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 interactive-element"
             style={{ pointerEvents: 'auto', cursor: 'pointer' }}
           >

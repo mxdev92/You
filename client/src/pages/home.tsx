@@ -28,7 +28,21 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" style={{ pointerEvents: 'auto' }}>
+      {/* DEBUG: Test button to verify interaction works */}
+      <div className="fixed top-20 right-4 z-50" style={{ pointerEvents: 'auto' }}>
+        <button 
+          onClick={() => {
+            console.log('DEBUG: Test button clicked!');
+            alert('Test button works! This means buttons can be clicked.');
+          }}
+          className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+          style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+        >
+          TEST
+        </button>
+      </div>
+      
       <Header
         onMenuClick={() => setIsProfileSidebarOpen(true)}
         onCartClick={() => setIsRightSidebarOpen(true)}

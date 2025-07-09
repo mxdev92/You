@@ -84,10 +84,9 @@ const forceAppUpdate = () => {
 // Execute aggressive update check
 forceAppUpdate();
 
+// Temporarily disable StrictMode to debug button interaction issues
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
-  </StrictMode>
 );
