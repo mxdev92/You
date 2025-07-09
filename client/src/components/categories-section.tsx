@@ -14,7 +14,7 @@ export default function CategoriesSection() {
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 60000, // Cache categories for 1 minute for faster performance
+    staleTime: 300000, // Cache categories for 5 minutes for faster performance
   });
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {

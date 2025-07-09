@@ -71,6 +71,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Categories
   app.get("/api/categories", async (req, res) => {
     try {
+      // Set aggressive caching headers for categories
+      res.set({
+        'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+        'ETag': 'categories-v1'
+      });
+      
       const categories = await storage.getCategories();
       res.json(categories);
     } catch (error) {
@@ -101,6 +107,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Products
   app.get("/api/products", async (req, res) => {
     try {
+      // Set cache headers for products - shorter cache for real-time updates
+      res.set({
+        'Cache-Control': 'public, max-age=15', // Cache for 15 seconds
+        'ETag': `products-${Date.now()}`
+      });
+      
       const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
       const search = req.query.search as string;
       
