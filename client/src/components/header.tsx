@@ -30,7 +30,11 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
   };
 
   const handleCartClick = () => {
-    // Cart can be accessed without authentication
+    // Require authentication to access cart
+    if (!user) {
+      setLocation('/auth');
+      return;
+    }
     onCartClick();
   };
 

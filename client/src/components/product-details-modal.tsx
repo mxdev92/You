@@ -8,6 +8,8 @@ import { getProductTranslationKey } from "@/lib/category-mapping";
 import { useCartFlow } from "@/store/cart-flow";
 import { formatPrice } from "@/lib/price-utils";
 import { MetaPixel } from "@/lib/meta-pixel";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { useLocation } from "wouter";
 
 interface ProductDetailsModalProps {
   product: Product | null;
@@ -19,6 +21,8 @@ interface ProductDetailsModalProps {
 
 export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetailsModalProps) {
   const { t } = useTranslation();
+  const { user } = useFirebaseAuth();
+  const [, setLocation] = useLocation();
   const addToCart = useCartFlow(state => state.addToCart);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -43,6 +47,13 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
   const displayName = translationKey ? t(translationKey) : product.name;
 
   const handleAddToCart = async () => {
+    // Require authentication before adding to cart
+    if (!user) {
+      onClose(); // Close modal first
+      setLocation('/auth');
+      return;
+    }
+    
     setIsAdding(true);
     
     try {

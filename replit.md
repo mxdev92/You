@@ -112,6 +112,14 @@ July 9, 2025:
 • Added automatic cart loading when cart sidebar opens for immediate item display
 • Re-enabled address loading functionality for Firebase authenticated users
 • CART BADGE IMPROVEMENT: Changed cart badge to show number of unique items instead of total quantity
+• FIREBASE ADDRESS INTEGRATION: Fixed critical address integration between Firebase signup and cart system
+• Updated signup process to save addresses to Firebase Firestore instead of PostgreSQL database
+• Modified cart component to load addresses from Firebase using user UID authentication
+• Enhanced address display format to work with Firebase UserAddress structure for seamless cart-address flow
+• AUTHENTICATION ENFORCEMENT: Enforced login requirement for ALL cart functionality per user request
+• Cart icon in header now redirects to login page if user not authenticated
+• Add to cart buttons (both product card and modal) require authentication before adding items
+• Only authenticated users can access cart, add items, or place orders - anonymous browsing only allowed
 
 July 6, 2025:
 • UX ENHANCEMENT: Set Vegetables as default category when app opens (category ID: 2)
