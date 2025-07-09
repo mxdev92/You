@@ -82,21 +82,7 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
 
         {/* User Actions */}
         <div className="flex items-center gap-2">
-          {/* Logout Button for Testing */}
-          {user && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                console.log('🔓 MANUAL LOGOUT - Testing authentication');
-                signOut();
-              }}
-              className="hover:bg-red-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
-              title="Logout for Testing"
-            >
-              <LogOut className="h-5 w-5 text-red-600" />
-            </Button>
-          )}
+
           
           {/* Cart Icon */}
           <Button
