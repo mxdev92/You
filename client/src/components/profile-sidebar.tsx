@@ -19,26 +19,57 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load addresses and orders when user changes
+  // Initialize with empty state immediately
   useEffect(() => {
-    if (user && isOpen) {
-      loadUserData();
+    if (!user || !isOpen) {
+      setAddresses([]);
+      setOrders([]);
+      setLoading(false);
     }
   }, [user, isOpen]);
 
+  // Load data only when addresses section is actively viewed
+  useEffect(() => {
+    if (user && activeSection === 'addresses') {
+      // Show empty state immediately, then try to load
+      setAddresses([]);
+      setLoading(false);
+      
+      // Load data in background
+      setTimeout(() => {
+        loadUserData();
+      }, 100);
+    }
+  }, [activeSection, user]);
+
   const loadUserData = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
       console.log('Loading addresses for user:', user.uid);
-      const userAddresses = await getUserAddresses();
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 3000)
+      );
+      
+      const userAddresses = await Promise.race([
+        getUserAddresses(),
+        timeoutPromise
+      ]);
+      
       console.log('Loaded addresses:', userAddresses);
-      setAddresses(userAddresses);
-      // TODO: Load orders from API
+      setAddresses(userAddresses as any[]);
       setOrders([]);
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Set empty arrays on error to stop loading immediately
+      setAddresses([]);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -93,6 +124,8 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
           setLocation('/auth');
         } else {
           setActiveSection('addresses');
+          // Immediately load data when switching to addresses
+          setTimeout(() => loadUserData(), 100);
         }
       },
       requireAuth: true
@@ -172,11 +205,7 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
 
       {/* Addresses List */}
       <div className="p-4 space-y-3">
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-          </div>
-        ) : addresses.length === 0 ? (
+        {addresses.length === 0 ? (
           <div className="text-center py-8">
             <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
