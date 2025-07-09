@@ -31,6 +31,27 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
 
       
+      {/* URGENT TEST: Simple button to verify interactions work */}
+      <div className="fixed top-16 left-4 z-[100]">
+        <button 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('EMERGENCY TEST BUTTON CLICKED');
+            alert('EMERGENCY: This button works!');
+          }}
+          className="bg-red-600 text-white px-4 py-2 rounded text-sm font-bold border-2 border-white shadow-lg"
+          style={{ 
+            pointerEvents: 'auto', 
+            cursor: 'pointer', 
+            zIndex: 99999,
+            position: 'relative'
+          }}
+        >
+          EMERGENCY TEST
+        </button>
+      </div>
+
       <Header
         onMenuClick={() => {
           console.log('Home: Menu clicked, setting profile sidebar open');
