@@ -349,7 +349,8 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
       console.log('Auto-loading addresses for user:', user.id);
       loadAddresses(user.id);
     }
-  }, [user, loadAddresses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // Only depend on user, not loadAddresses function
   
   const handleMenuItemClick = (targetView: string, action?: () => void) => {
     if (!user) {
