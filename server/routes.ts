@@ -48,6 +48,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ version: "2.1.0", timestamp: Date.now() });
   });
 
+  // Authentication endpoints for hybrid Firebase + PostgreSQL
+  app.post("/api/auth/create-user", async (req, res) => {
+    try {
+      const { email, firebaseUid, name, phone } = req.body;
+      
+      const user = await storage.createUser({
+        email,
+        firebaseUid,
+        name,
+        phone
+      });
+      
+      res.json({ user });
+    } catch (error) {
+      console.error('Create user error:', error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/auth/user-by-firebase-uid/:uid", async (req, res) => {
+    try {
+      const { uid } = req.params;
+      const user = await storage.getUserByFirebaseUid(uid);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ user });
+    } catch (error) {
+      console.error('Get user by Firebase UID error:', error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Address management endpoints
+  app.post("/api/auth/addresses", async (req, res) => {
+    try {
+      const addressData = req.body;
+      const address = await storage.addAddress(addressData);
+      res.json(address);
+    } catch (error) {
+      console.error('Add address error:', error);
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/auth/addresses/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const addresses = await storage.getUserAddresses(userId);
+      res.json(addresses);
+    } catch (error) {
+      console.error('Get addresses error:', error);
+      res.status(500).json({ message: "Failed to fetch addresses" });
+    }
+  });
+
   // Placeholder image endpoint
   app.get("/api/placeholder/:width/:height", (req, res) => {
     const { width, height } = req.params;

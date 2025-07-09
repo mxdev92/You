@@ -6,8 +6,9 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").unique().notNull(),
-  passwordHash: text("password_hash").notNull(),
-  fullName: text("full_name"),
+  passwordHash: text("password_hash"), // Optional for Firebase-only auth
+  firebaseUid: text("firebase_uid").unique(), // Link to Firebase auth
+  name: text("name").notNull(), // Simplified name field
   phone: text("phone").unique().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

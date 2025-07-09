@@ -2,8 +2,9 @@
 export interface AuthUser {
   id: number;
   email: string;
-  fullName?: string;
+  name?: string;
   phone?: string;
+  firebaseUid?: string;
   createdAt: string;
 }
 
@@ -22,15 +23,15 @@ class PostgresAuthService {
   private currentUser: AuthUser | null = null;
   private authListeners: ((user: AuthUser | null) => void)[] = [];
 
-  // Authentication methods
-  async signUp(email: string, password: string, fullName?: string, phone?: string): Promise<AuthUser> {
-    console.log('PostgreSQL Auth: Creating account for', email);
+  // Create user with Firebase UID
+  async createUser(userData: { email: string; firebaseUid: string; name: string; phone: string }): Promise<AuthUser> {
+    console.log('PostgreSQL Auth: Creating user for', userData.email);
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch('/api/auth/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password, fullName, phone }),
+        body: JSON.stringify(userData),
       });
 
       if (!response.ok) {
@@ -94,6 +95,25 @@ class PostgresAuthService {
 
   getCurrentUser(): AuthUser | null {
     return this.currentUser;
+  }
+
+  // Find user by Firebase UID
+  async getUserByFirebaseUid(firebaseUid: string): Promise<AuthUser | null> {
+    try {
+      const response = await fetch(`/api/auth/user-by-firebase-uid/${firebaseUid}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const { user } = await response.json();
+      return user;
+    } catch (error) {
+      console.error('PostgreSQL Auth: Failed to get user by Firebase UID', error);
+      return null;
+    }
   }
 
   // Address management
@@ -240,6 +260,14 @@ class PostgresAuthService {
 }
 
 export const postgresAuth = new PostgresAuthService();
+
+export const addAddress = async (addressData: Omit<AuthUserAddress, 'id' | 'createdAt'>): Promise<AuthUserAddress> => {
+  return postgresAuth.addAddress(addressData);
+};
+
+export const getUserByFirebaseUid = async (firebaseUid: string): Promise<AuthUser | null> => {
+  return postgresAuth.getUserByFirebaseUid(firebaseUid);
+};
 
 // Initialize authentication with enhanced session restoration
 postgresAuth.initializeAuth();

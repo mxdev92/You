@@ -8,7 +8,7 @@ import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
 import { MetaPixel } from '@/lib/meta-pixel';
-import { addUserAddress } from '@/lib/firebase-user-data';
+import { postgresAuth, addAddress } from '@/lib/postgres-auth';
 
 interface SignupData {
   email: string;
@@ -439,8 +439,18 @@ const AuthPage: React.FC = () => {
       const newUser = await firebaseSignUp(email, signupData.password);
       console.log('User registered successfully:', newUser);
       
-      // Create address record from signup data using Firebase
+      // Create PostgreSQL user record with phone and name
+      const postgresUser = await postgresAuth.createUser({
+        email: email,
+        firebaseUid: newUser.uid, // Link to Firebase auth
+        name: signupData.name,
+        phone: signupData.phone
+      });
+      console.log('PostgreSQL user created:', postgresUser);
+      
+      // Create address record from signup data
       const addressData = {
+        userId: postgresUser.id,
         governorate: signupData.governorate,
         district: signupData.district,
         neighborhood: signupData.landmark,
@@ -448,8 +458,8 @@ const AuthPage: React.FC = () => {
         isDefault: true
       };
       
-      // Add the address to Firebase
-      await addUserAddress(addressData);
+      // Add the address to PostgreSQL
+      await addAddress(addressData);
       console.log('Address created successfully during signup');
       
       // Send welcome messages - Arabic alert + WhatsApp message

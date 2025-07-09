@@ -34,8 +34,10 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
+  getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  addAddress(addressData: InsertUserAddress): Promise<UserAddress>;
 
   // User Addresses
   getUserAddresses(userId: number): Promise<UserAddress[]>;
@@ -533,6 +535,23 @@ export class DatabaseStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
+  }
+
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
+    return user || undefined;
+  }
+
+  async addAddress(addressData: InsertUserAddress): Promise<UserAddress> {
+    // If this is the default address, unset all other default addresses for this user
+    if (addressData.isDefault) {
+      await db.update(userAddresses)
+        .set({ isDefault: false })
+        .where(eq(userAddresses.userId, addressData.userId));
+    }
+    
+    const [newAddress] = await db.insert(userAddresses).values(addressData).returning();
+    return newAddress;
   }
 
   // User Addresses
