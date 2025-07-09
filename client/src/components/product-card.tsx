@@ -68,13 +68,17 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [showShimmer, setShowShimmer] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const addToCart = useCartFlow(state => state.addToCart);
+  const isProductInCart = useCartFlow(state => state.isProductInCart);
   const { t } = useTranslation();
   const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
 
+  // Check if this product is in cart
+  const isInCart = isProductInCart(product.id);
+
   const handleAddToCart = async () => {
-    // Don't allow adding if product is not available
-    if (!product.available) return;
+    // Don't allow adding if product is not available or already in cart
+    if (!product.available || isInCart) return;
     
     // Check if user is authenticated
     if (!user) {
@@ -149,24 +153,30 @@ export default function ProductCard({ product }: ProductCardProps) {
           {formatPrice(product.price)}/{product.unit}
         </p>
         
-        <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
+        <motion.div whileTap={{ scale: product.available && !isInCart ? 0.95 : 1 }}>
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              handleAddToCart();
+              if (!isInCart) {
+                handleAddToCart();
+              }
             }}
-            disabled={isAdding || !product.available}
+            disabled={isAdding || !product.available || isInCart}
             className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 touch-action-manipulation min-h-9 ${
               !product.available
                 ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
+                : isInCart
+                ? "bg-green-500 hover:bg-green-500 text-white cursor-default"
                 : isAdding
                 ? "bg-green-500 hover:bg-green-500 text-white"
                 : "hover:opacity-90 text-black"
             }`}
-            style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#22c55e' }}
+            style={!product.available ? {} : (isInCart || isAdding) ? {} : { backgroundColor: '#22c55e' }}
           >
             {!product.available ? (
               t('outOfStock')
+            ) : isInCart ? (
+              <Check className="h-4 w-4 text-white" />
             ) : isAdding ? (
               <Check className="h-4 w-4 text-white" />
             ) : (

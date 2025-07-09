@@ -18,6 +18,7 @@ interface CartFlowActions {
   clearCart: () => Promise<void>;
   getCartItemsCount: () => number;
   getCartTotal: () => number;
+  isProductInCart: (productId: number) => boolean;
 }
 
 type CartFlowStore = CartFlowState & CartFlowActions;
@@ -145,6 +146,11 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       if (!item.product?.price) return total;
       return total + (parseFloat(item.product.price) * item.quantity);
     }, 0);
+  },
+
+  isProductInCart: (productId: number) => {
+    const { cartItems } = get();
+    return cartItems.some(item => item.productId === productId);
   },
 }));
 
