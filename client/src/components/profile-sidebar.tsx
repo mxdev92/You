@@ -31,7 +31,9 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
     
     setLoading(true);
     try {
+      console.log('Loading addresses for user:', user.uid);
       const userAddresses = await getUserAddresses();
+      console.log('Loaded addresses:', userAddresses);
       setAddresses(userAddresses);
       // TODO: Load orders from API
       setOrders([]);
@@ -180,6 +182,33 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
             <p className="text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
               لا توجد عناوين محفوظة
             </p>
+            <p className="text-xs text-gray-400 mt-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              المستخدم: {user?.email}
+            </p>
+            <Button
+              onClick={async () => {
+                // Add a test address for this user
+                try {
+                  console.log('Adding test address...');
+                  const { addUserAddress } = await import('@/lib/firebase-user-data');
+                  await addUserAddress({
+                    governorate: 'بغداد',
+                    district: 'الكرادة',
+                    neighborhood: 'شارع المتنبي',
+                    notes: 'قرب مقهى الشاهبندر',
+                    isDefault: true
+                  });
+                  await loadUserData(); // Reload data
+                  console.log('Test address added successfully');
+                } catch (error) {
+                  console.error('Error adding test address:', error);
+                }
+              }}
+              className="mt-3 bg-blue-500 hover:bg-blue-600 text-white mr-2"
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
+              إضافة عنوان تجريبي
+            </Button>
             <Button
               onClick={() => {
                 setLocation('/addresses');
