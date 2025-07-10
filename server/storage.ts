@@ -497,7 +497,9 @@ export class DatabaseStorage implements IStorage {
 
     if (existingItem.length > 0) {
       // Update quantity of existing item
-      const updatedQuantity = existingItem[0].quantity + (item.quantity || 1);
+      const currentQty = parseFloat(existingItem[0].quantity) || 0;
+      const addQty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity || 0.5);
+      const updatedQuantity = (currentQty + addQty).toString();
       const [updatedItem] = await db.update(cartItems)
         .set({ quantity: updatedQuantity })
         .where(eq(cartItems.id, existingItem[0].id))
@@ -513,9 +515,10 @@ export class DatabaseStorage implements IStorage {
     return newItem;
   }
 
-  async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem> {
+  async updateCartItemQuantity(id: number, quantity: string | number): Promise<CartItem> {
+    const quantityStr = typeof quantity === 'string' ? quantity : quantity.toString();
     const [updated] = await db.update(cartItems)
-      .set({ quantity })
+      .set({ quantity: quantityStr })
       .where(eq(cartItems.id, id))
       .returning();
     return updated;

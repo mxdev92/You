@@ -78,6 +78,8 @@ export const insertProductSchema = createInsertSchema(products).omit({
 export const insertCartItemSchema = createInsertSchema(cartItems).omit({
   id: true,
   addedAt: true,
+}).extend({
+  quantity: z.number().min(0.5).step(0.5), // Accept numbers with 0.5 minimum and 0.5 increments
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({

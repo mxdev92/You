@@ -279,14 +279,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req as any).session?.userId;
       const validatedData = insertCartItemSchema.parse(req.body);
       
-      // Add userId to cart item if user is authenticated
-      const cartItemData = userId ? { ...validatedData, userId } : validatedData;
+      // Convert quantity to string for database storage
+      const cartItemData = userId 
+        ? { ...validatedData, userId, quantity: validatedData.quantity.toString() } 
+        : { ...validatedData, quantity: validatedData.quantity.toString() };
       
       const cartItem = await storage.addToCart(cartItemData);
       res.status(201).json(cartItem);
     } catch (error) {
       console.error('Add to cart error:', error);
-      res.status(500).json({ message: "Failed to add item to cart" });
+      if (error.name === 'ZodError') {
+        console.error('Validation errors:', error.errors);
+        res.status(400).json({ message: "Invalid cart item data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to add item to cart" });
+      }
     }
   });
 
@@ -298,15 +305,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = insertCartItemSchema.parse(req.body);
       
-      // Add userId to cart item if user is authenticated
-      const cartItemData = userId ? { ...validatedData, userId } : validatedData;
+      // Convert quantity to string for database storage
+      const cartItemData = userId 
+        ? { ...validatedData, userId, quantity: validatedData.quantity.toString() } 
+        : { ...validatedData, quantity: validatedData.quantity.toString() };
       
       const cartItem = await storage.addToCart(cartItemData);
       console.log('Cart item added successfully:', cartItem);
       res.status(201).json(cartItem);
     } catch (error) {
       console.error('Add to cart error:', error);
-      res.status(500).json({ message: "Failed to add item to cart" });
+      if (error.name === 'ZodError') {
+        console.error('Validation errors:', error.errors);
+        res.status(400).json({ message: "Invalid cart item data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to add item to cart" });
+      }
     }
   });
 
@@ -314,7 +328,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { quantity } = req.body;
-      const cartItem = await storage.updateCartItemQuantity(id, quantity);
+      // Convert quantity to string for database storage
+      const cartItem = await storage.updateCartItemQuantity(id, typeof quantity === 'number' ? quantity.toString() : quantity);
       res.json(cartItem);
     } catch (error) {
       console.error('Cart update error:', error);
