@@ -770,21 +770,36 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const newQuantity = item.quantity <= 1 ? 0.5 : item.quantity - 1;
+                        const currentQty = parseFloat(item.quantity);
+                        let newQuantity;
+                        if (currentQty === 1) {
+                          newQuantity = 0.5; // 1kg → 0.5kg
+                        } else if (currentQty > 1) {
+                          newQuantity = currentQty - 1; // 2kg → 1kg, 3kg → 2kg, etc.
+                        } else {
+                          newQuantity = 0.5; // Keep at minimum
+                        }
                         updateQuantity(item.id, newQuantity);
                       }}
-                      disabled={item.quantity <= 0.5}
+                      disabled={parseFloat(item.quantity) <= 0.5}
                       className="h-6 w-6 disabled:cursor-not-allowed text-black rounded-full flex items-center justify-center border-0 outline-0"
-                      style={{ backgroundColor: item.quantity <= 0.5 ? '#fbbf24' : '#22c55e' }}
+                      style={{ backgroundColor: parseFloat(item.quantity) <= 0.5 ? '#fbbf24' : '#22c55e' }}
                     >
                       <Minus className="h-2.5 w-2.5" />
                     </button>
-                    <span className="min-w-5 text-center font-medium text-xs">{parseFloat(item.quantity).toString()}</span>
+                    <span className="min-w-5 text-center font-medium text-xs">{parseFloat(item.quantity) % 1 === 0 ? parseInt(item.quantity) : parseFloat(item.quantity)}</span>
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        updateQuantity(item.id, item.quantity + 1);
+                        const currentQty = parseFloat(item.quantity);
+                        let newQuantity;
+                        if (currentQty === 0.5) {
+                          newQuantity = 1; // 0.5kg → 1kg
+                        } else {
+                          newQuantity = currentQty + 1; // 1kg → 2kg, 2kg → 3kg, etc.
+                        }
+                        updateQuantity(item.id, newQuantity);
                       }}
                       className="h-6 w-6 text-black rounded-full flex items-center justify-center border-0 outline-0"
                       style={{ backgroundColor: '#22c55e' }}

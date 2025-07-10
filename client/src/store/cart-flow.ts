@@ -56,11 +56,13 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       
       // Optimistically update UI immediately
       if (existingItemIndex >= 0) {
-        // Update existing item quantity
+        // Update existing item quantity - ensure proper number arithmetic
         const updatedItems = [...currentItems];
+        const currentQty = parseFloat(updatedItems[existingItemIndex].quantity);
+        const addQty = item.quantity || 1;
         updatedItems[existingItemIndex] = {
           ...updatedItems[existingItemIndex],
-          quantity: updatedItems[existingItemIndex].quantity + (item.quantity || 1)
+          quantity: String(currentQty + addQty)
         };
         set({ cartItems: updatedItems });
       } else {
@@ -126,10 +128,10 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
     try {
       set({ isUpdating: true });
       
-      // Optimistically update UI
+      // Optimistically update UI - ensure quantity is stored as string
       set(state => ({ 
         cartItems: state.cartItems.map(item => 
-          item.id === itemId ? { ...item, quantity } : item
+          item.id === itemId ? { ...item, quantity: String(quantity) } : item
         )
       }));
 
@@ -178,7 +180,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
     const { cartItems } = get();
     return cartItems.reduce((total, item) => {
       if (!item.product?.price) return total;
-      return total + (parseFloat(item.product.price) * item.quantity);
+      return total + (parseFloat(item.product.price) * parseFloat(item.quantity));
     }, 0);
   },
 }));
