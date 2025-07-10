@@ -179,7 +179,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
             {isAdding ? (
               <Check className="h-4 w-4 text-white" />
             ) : (
-              <ShoppingCart className="h-4 w-4 text-white" />
+              "أضف الى السلة"
             )}
           </Button>
         </div>

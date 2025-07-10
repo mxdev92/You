@@ -170,7 +170,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             ) : isAdding ? (
               <Check className="h-4 w-4 text-white" />
             ) : (
-              <ShoppingCart className="h-4 w-4 text-white" />
+              "أضف الى السلة"
             )}
           </Button>
         </motion.div>
