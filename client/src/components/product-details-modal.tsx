@@ -20,7 +20,7 @@ interface ProductDetailsModalProps {
 export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetailsModalProps) {
   const { t } = useTranslation();
   const addToCart = useCartFlow(state => state.addToCart);
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [selectedQuantity, setSelectedQuantity] = useState(0.5);
   const [isAdding, setIsAdding] = useState(false);
 
   // Prevent body scroll when modal is open

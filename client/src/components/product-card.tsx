@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Check, ShoppingCart } from "lucide-react";
+import { Check, ShoppingCart, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
@@ -67,10 +67,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const addToCart = useCartFlow(state => state.addToCart);
+  const { addToCart, updateQuantity, cartItems } = useCartFlow();
   const { t } = useTranslation();
   const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
+
+  // Find current cart item for this product
+  const cartItem = cartItems.find(item => item.productId === product.id);
+  const currentQuantity = cartItem?.quantity || 0;
 
   const handleAddToCart = async () => {
     // Don't allow adding if product is not available
@@ -86,7 +90,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     setShowShimmer(true);
 
     try {
-      await addToCart({ productId: product.id, quantity: 1 });
+      await addToCart({ productId: product.id, quantity: 0.5 });
       
       // Ultra-fast feedback - immediate UI response
       setTimeout(() => {
@@ -97,6 +101,27 @@ export default function ProductCard({ product }: ProductCardProps) {
       console.error('Error adding to cart:', error);
       setIsAdding(false);
       setShowShimmer(false);
+    }
+  };
+
+  const handleIncreaseQuantity = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      setLocation('/auth');
+      return;
+    }
+    
+    if (cartItem) {
+      await updateQuantity(cartItem.id, currentQuantity + 0.5);
+    } else {
+      await handleAddToCart();
+    }
+  };
+
+  const handleDecreaseQuantity = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (cartItem && currentQuantity > 0.5) {
+      await updateQuantity(cartItem.id, Math.max(0.5, currentQuantity - 0.5));
     }
   };
 
@@ -149,31 +174,57 @@ export default function ProductCard({ product }: ProductCardProps) {
           {formatPrice(product.price)}/{product.unit}
         </p>
         
-        <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-            disabled={isAdding || !product.available}
-            className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-100 touch-action-manipulation min-h-9 ${
-              !product.available
-                ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
-                : isAdding
-                ? "bg-green-500 hover:bg-green-500 text-white"
-                : "hover:opacity-90 text-black"
-            }`}
-            style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#22c55e' }}
-          >
-            {!product.available ? (
-              t('outOfStock')
-            ) : isAdding ? (
-              <Check className="h-4 w-4 text-white" />
-            ) : (
-              <ShoppingCart className="h-4 w-4 text-white" />
-            )}
-          </Button>
-        </motion.div>
+        {/* Quantity Controls or Add Button */}
+        {currentQuantity > 0 ? (
+          <div className="flex items-center justify-between w-full py-1">
+            <button
+              onClick={handleDecreaseQuantity}
+              disabled={currentQuantity <= 0.5}
+              className="h-8 w-8 rounded-full flex items-center justify-center transition-colors"
+              style={{ backgroundColor: currentQuantity <= 0.5 ? '#fbbf24' : '#22c55e' }}
+            >
+              <Minus className="h-3 w-3 text-white" />
+            </button>
+            
+            <span className="font-medium text-gray-800 text-sm">
+              {currentQuantity}kg
+            </span>
+            
+            <button
+              onClick={handleIncreaseQuantity}
+              className="h-8 w-8 rounded-full flex items-center justify-center transition-colors"
+              style={{ backgroundColor: '#22c55e' }}
+            >
+              <Plus className="h-3 w-3 text-white" />
+            </button>
+          </div>
+        ) : (
+          <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToCart();
+              }}
+              disabled={isAdding || !product.available}
+              className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-100 touch-action-manipulation min-h-9 ${
+                !product.available
+                  ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
+                  : isAdding
+                  ? "bg-green-500 hover:bg-green-500 text-white"
+                  : "hover:opacity-90 text-black"
+              }`}
+              style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#22c55e' }}
+            >
+              {!product.available ? (
+                t('outOfStock')
+              ) : isAdding ? (
+                <Check className="h-4 w-4 text-white" />
+              ) : (
+                <ShoppingCart className="h-4 w-4 text-white" />
+              )}
+            </Button>
+          </motion.div>
+        )}
       </div>
       </motion.div>
 
