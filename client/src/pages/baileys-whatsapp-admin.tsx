@@ -399,7 +399,7 @@ export default function BaileysWhatsAppAdmin() {
                 3. إشعار الأدمن
               </CardTitle>
               <CardDescription style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                إرسال إشعار إلى 07757250444
+                إرسال إشعار إلى 07511856947
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">

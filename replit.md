@@ -98,6 +98,8 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 10, 2025:
+• ADMIN NUMBER UPDATE: Changed admin WhatsApp number from 07757250444 to 07511856947 for all invoice delivery and notifications
+• Updated Ultra-Stable PDF Delivery, legacy delivery service, WhatsApp services, and admin panel UI with new admin number
 • ULTRA-STABLE WHATSAPP CONNECTION: Enhanced WhatsApp service with ultra-stable configuration for maximum reliability
 • Increased connection timeouts to 120s, keepAlive to 15s intervals, and retry mechanisms with 10 attempts for bulletproof delivery
 • Enhanced socket configuration with optimized browser identification and advanced reconnection handling

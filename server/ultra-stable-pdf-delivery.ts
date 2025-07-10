@@ -19,7 +19,7 @@ interface UltraDeliveryTracker {
 export class UltraStablePDFDelivery {
   private whatsappService: BaileysWhatsAppFreshService;
   private deliveryTracker = new Map<number, UltraDeliveryTracker>();
-  private adminWhatsApp = '07757250444';
+  private adminWhatsApp = '07511856947';
   private maxRetries = 10;
   private baseRetryDelay = 3000;
   private adminRetryDelay = 1000; // Faster retry for admin
