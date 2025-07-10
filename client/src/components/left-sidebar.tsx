@@ -415,14 +415,14 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     <>
       <AnimatePresence mode="wait">
         {isOpen && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 pointer-events-none">
           {/* Enhanced Blur Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-md touch-action-manipulation"
+            className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-md pointer-events-auto"
             onClick={onClose}
           />
           
@@ -437,7 +437,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               stiffness: 300,
               duration: 0.3 
             }}
-            className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-r-2xl flex flex-col safe-area-inset overflow-hidden"
+            className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-r-2xl flex flex-col safe-area-inset overflow-hidden pointer-events-auto"
           >
             {currentView === 'login-prompt' ? (
               // Login Prompt View
