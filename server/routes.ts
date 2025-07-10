@@ -225,6 +225,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add dedicated route for cart/add that frontend expects
+  app.post("/api/cart/add", async (req, res) => {
+    try {
+      const userId = (req as any).session?.userId;
+      console.log('Cart add request - userId:', userId, 'body:', req.body);
+      
+      const validatedData = insertCartItemSchema.parse(req.body);
+      
+      // Add userId to cart item if user is authenticated
+      const cartItemData = userId ? { ...validatedData, userId } : validatedData;
+      
+      const cartItem = await storage.addToCart(cartItemData);
+      console.log('Cart item added successfully:', cartItem);
+      res.status(201).json(cartItem);
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      res.status(500).json({ message: "Failed to add item to cart" });
+    }
+  });
+
   app.patch("/api/cart/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
