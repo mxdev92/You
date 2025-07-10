@@ -21,8 +21,10 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    staleTime: 0, // Always fresh data for real-time admin updates
-    refetchInterval: 2000, // Auto-refetch every 2 seconds for real-time updates
+    staleTime: 30000, // Cache products for 30 seconds for faster switching
+    refetchInterval: 5000, // Reduced refetch to 5 seconds for better performance
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches on focus
+    keepPreviousData: true, // Keep previous data while loading new category
   });
 
   return (
@@ -42,18 +44,23 @@ export default function ProductsGrid() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
+        <motion.div 
+          className="grid grid-cols-3 gap-3 md:gap-4"
+          layout
+          transition={{ duration: 0.2 }}
+        >
           {products?.map((product, index) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.02, duration: 0.2 }}
+              layoutId={`product-${product.id}`}
             >
               <ProductCard product={product} />
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {!isLoading && products?.length === 0 && (

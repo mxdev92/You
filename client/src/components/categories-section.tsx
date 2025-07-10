@@ -14,7 +14,8 @@ export default function CategoriesSection() {
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 60000, // Cache categories for 1 minute for faster performance
+    staleTime: 300000, // Cache categories for 5 minutes for ultra-fast performance
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -64,7 +65,7 @@ export default function CategoriesSection() {
       }
     },
     onSuccess: () => {
-      // Only refetch products, not categories to maintain UI stability
+      // Immediately trigger product fetch with background update
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
     },
   });
@@ -115,14 +116,15 @@ export default function CategoriesSection() {
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: index * 0.03, duration: 0.2 }}
             className="flex-shrink-0 flex flex-col items-center justify-center min-w-16 w-16 h-16"
           >
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.1, ease: "easeOut" }}
               onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-200 relative touch-action-manipulation min-h-12 min-w-12 ${
+              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-100 relative touch-action-manipulation min-h-12 min-w-12 ${
                 category.isSelected
                   ? "shadow-lg"
                   : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
