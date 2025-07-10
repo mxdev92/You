@@ -20,8 +20,21 @@ const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
 // Initialize Ultra-Stable PDF Delivery System
 let ultraStableDelivery: UltraStablePDFDelivery;
 
-// Initialize Baileys WhatsApp service on startup
-whatsappService.initialize().then(() => {
+// Initialize Baileys WhatsApp service on startup with persistent authentication
+const initializeWhatsAppService = async () => {
+  const hasValidCredentials = whatsappService.hasValidCredentials();
+  if (hasValidCredentials) {
+    console.log('🔒 Found saved WhatsApp credentials, auto-connecting...');
+    try {
+      await whatsappService.initialize();
+      console.log('✅ WhatsApp auto-connected with saved credentials');
+    } catch (error) {
+      console.log('⚠️ Auto-connection failed, manual QR scan required');
+    }
+  } else {
+    console.log('📱 No saved credentials found, QR scan required for first-time setup');
+  }
+  
   console.log('🎯 Baileys WhatsApp service initialized on server startup');
   
   // Initialize delivery PDF service after WhatsApp is ready
@@ -31,7 +44,10 @@ whatsappService.initialize().then(() => {
   // Initialize Ultra-Stable PDF Delivery System
   ultraStableDelivery = new UltraStablePDFDelivery(whatsappService);
   console.log('🚀 Ultra-Stable PDF Delivery System initialized - 100% admin guarantee active');
-}).catch((error) => {
+};
+
+// Initialize on startup
+initializeWhatsAppService().catch((error) => {
   console.error('⚠️ Baileys WhatsApp failed to initialize on startup:', error);
 });
 

@@ -38,17 +38,47 @@ export class BaileysWhatsAppFreshService {
   private connectionStabilityCheck: NodeJS.Timeout | null = null;
 
   constructor() {
-    // Complete session reset
-    this.clearAllSessions();
+    // Only clear sessions if explicitly corrupted, otherwise preserve them
+    this.preserveValidSessions();
     
-    // Ensure fresh auth directory
+    // Ensure auth directory exists
     if (!fs.existsSync(this.authPath)) {
       fs.mkdirSync(this.authPath, { recursive: true });
     }
   }
 
-  // Clear all existing session data completely
-  private clearAllSessions(): void {
+  // Only clear corrupted sessions, preserve valid ones for persistent auth
+  private preserveValidSessions(): void {
+    try {
+      // Check if we have a valid session
+      const sessionExists = fs.existsSync(this.authPath) && 
+                           fs.readdirSync(this.authPath).length > 0;
+      
+      if (sessionExists) {
+        console.log('🔒 Preserving existing WhatsApp session for persistent authentication');
+      } else {
+        console.log('📱 No existing session found, will require QR scan for initial setup');
+      }
+      
+      // Only clear other session directories that might conflict
+      const conflictPaths = [
+        './whatsapp_session', 
+        './whatsapp_session_simple'
+      ];
+      
+      conflictPaths.forEach(path => {
+        if (fs.existsSync(path) && path !== this.authPath) {
+          fs.rmSync(path, { recursive: true, force: true });
+          console.log(`🧹 Cleared conflicting session: ${path}`);
+        }
+      });
+    } catch (error) {
+      console.log('⚠️ Session check warning:', error);
+    }
+  }
+
+  // Method to manually reset sessions if needed
+  public clearAllSessions(): void {
     try {
       const sessionPaths = [
         './whatsapp_session', 
@@ -60,7 +90,7 @@ export class BaileysWhatsAppFreshService {
       sessionPaths.forEach(path => {
         if (fs.existsSync(path)) {
           fs.rmSync(path, { recursive: true, force: true });
-          console.log(`🧹 Cleared corrupted session: ${path}`);
+          console.log(`🧹 Manually cleared session: ${path}`);
         }
       });
     } catch (error) {
@@ -152,11 +182,12 @@ export class BaileysWhatsAppFreshService {
         }
 
         if (connection === 'open') {
-          console.log('🎉 Fresh WhatsApp connected successfully!');
+          console.log('🎉 Fresh WhatsApp connected successfully with persistent authentication!');
           this.isConnected = true;
           this.isConnecting = false;
           this.reconnectAttempts = 0;
           this.qrCode = null;
+          this.lastConnectionTime = Date.now();
         } else if (connection === 'connecting') {
           console.log('🔄 Fresh WhatsApp connecting...');
           this.isConnecting = true;
@@ -172,20 +203,23 @@ export class BaileysWhatsAppFreshService {
           if (shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             
-            // Clear session if failed multiple times
-            if (this.reconnectAttempts > 3) {
+            // Only clear session if we've failed many times AND it's not a network issue
+            if (this.reconnectAttempts > 10 && statusCode !== DisconnectReason.connectionLost) {
+              console.log('⚠️ Multiple reconnection failures, clearing session as last resort');
               this.clearAllSessions();
             }
             
-            console.log(`🔄 Fresh reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
+            console.log(`🔄 Fresh reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} (preserving auth)`);
             
+            // Exponential backoff for reconnection
+            const delay = Math.min(5000 * Math.pow(1.5, this.reconnectAttempts - 1), 30000);
             setTimeout(async () => {
               try {
                 await this.initialize();
               } catch (error) {
                 console.error('❌ Fresh reconnection failed:', error);
               }
-            }, 5000);
+            }, delay);
           }
         }
       });
@@ -252,17 +286,27 @@ export class BaileysWhatsAppFreshService {
     return cleaned + '@s.whatsapp.net';
   }
 
-  // Ensure connection is ready (required by existing code)
+  // Enhanced connection readiness with persistent authentication
   async ensureConnectionReady(maxWaitTime: number = 30000): Promise<boolean> {
     const startTime = Date.now();
     
-    console.log('🔄 Ensuring fresh WhatsApp connection is ready...');
+    console.log('🔄 Ensuring fresh WhatsApp connection is ready with persistent auth...');
     
+    // If already connected, verify the connection is actually working
     if (this.isConnected && this.socket) {
-      console.log('✅ Fresh WhatsApp connection verified and ready');
-      return true;
+      try {
+        // Test the connection by checking socket state
+        if (this.socket.readyState === this.socket.OPEN) {
+          console.log('✅ Fresh WhatsApp connection verified and ready');
+          return true;
+        }
+      } catch (error) {
+        console.log('⚠️ Connection test failed, will reinitialize');
+        this.isConnected = false;
+      }
     }
     
+    // Initialize or reconnect if needed
     if (!this.isConnected || !this.socket) {
       try {
         await this.initialize();
@@ -272,23 +316,71 @@ export class BaileysWhatsAppFreshService {
       }
     }
     
+    // Wait for connection with improved checking
+    let lastLogTime = 0;
     while (!this.isConnected && (Date.now() - startTime) < maxWaitTime) {
-      console.log('⏳ Waiting for fresh WhatsApp connection...');
+      const now = Date.now();
+      if (now - lastLogTime > 5000) { // Log every 5 seconds
+        const elapsed = Math.round((now - startTime) / 1000);
+        console.log(`⏳ Waiting for fresh WhatsApp connection... (${elapsed}s elapsed)`);
+        lastLogTime = now;
+      }
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    return this.isConnected;
+    if (this.isConnected) {
+      console.log('✅ Fresh WhatsApp connection established and ready for PDF delivery');
+      return true;
+    } else {
+      console.log('❌ Fresh WhatsApp connection timeout - PDF delivery may fail');
+      return false;
+    }
+  }
+
+  // Check if we have valid saved credentials
+  public hasValidCredentials(): boolean {
+    try {
+      const sessionExists = fs.existsSync(this.authPath) && 
+                           fs.readdirSync(this.authPath).length > 0;
+      
+      if (sessionExists) {
+        // Check for key files
+        const credsFile = path.join(this.authPath, 'creds.json');
+        return fs.existsSync(credsFile);
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Get connection status with more details
+  getDetailedStatus() {
+    const hasCredentials = this.hasValidCredentials();
+    const uptime = this.lastConnectionTime ? Date.now() - this.lastConnectionTime : 0;
+    
+    return {
+      connected: this.isConnected,
+      connecting: this.isConnecting,
+      qrAvailable: !!this.qrCode,
+      hasValidCredentials,
+      reconnectAttempts: this.reconnectAttempts,
+      uptime: Math.round(uptime / 1000), // seconds
+      requiresQR: !hasCredentials && !this.isConnected
+    };
   }
 
   // Send admin notification
   async sendAdminNotification(orderData: any, pdfBuffer: Buffer): Promise<boolean> {
-    if (!this.isConnected || !this.socket) {
-      console.log('⚠️ Fresh WhatsApp not connected for admin notification');
+    // Ensure connection is ready before sending
+    const connectionReady = await this.ensureConnectionReady(15000);
+    if (!connectionReady) {
+      console.log('⚠️ Fresh WhatsApp connection not ready for admin notification');
       return false;
     }
 
     try {
-      const adminNumber = this.formatPhoneNumber('07757250444');
+      const adminNumber = this.formatPhoneNumber('07511856947'); // Updated admin number
       console.log(`📱 Sending fresh admin notification to ${adminNumber}`);
       
       // Prepare PDF media
