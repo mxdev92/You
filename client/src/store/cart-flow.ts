@@ -85,7 +85,9 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
             const items = await updatedResponse.json();
             set({ cartItems: items });
             // Call success callback if provided
+            console.log('Cart store: About to call onSuccess callback:', !!onSuccess);
             if (onSuccess) {
+              console.log('Cart store: Calling onSuccess callback now');
               onSuccess();
             }
           }

@@ -25,9 +25,11 @@ export default function Home() {
     console.log('Cart callback triggered for user:', user?.email);
     if (user?.email === 'mx@x.dev') {
       console.log('Auto-opening cart in 1 second for mx@x.dev');
+      console.log('Current cart sidebar state:', isRightSidebarOpen);
       setTimeout(() => {
         console.log('Opening cart sidebar now');
         setIsRightSidebarOpen(true);
+        console.log('Cart sidebar should be open now');
       }, 1000); // 1 second delay before cart opens
     }
   };
