@@ -251,7 +251,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   // Use first saved address automatically from PostgreSQL
   const primaryAddress = addresses.length > 0 ? addresses[0] : null;
-  const hasAddress = addresses.length > 0 && postgresUser !== null;
+  const hasAddress = addresses.length > 0;
 
   const handlePlaceOrder = async () => {
     console.log('Starting order placement...');
@@ -259,19 +259,28 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     console.log('hasAddress:', hasAddress);
     console.log('primaryAddress:', primaryAddress);
     
+    // Check if user is authenticated
+    if (!postgresUser) {
+      showNotification('يرجى تسجيل الدخول أولاً لإتمام الطلب');
+      setIsPlacingOrder(false);
+      return;
+    }
+
     if (!hasAddress || !primaryAddress) {
       showNotification('يرجى إضافة عنوان للتوصيل أولاً');
       setIsPlacingOrder(false);
       return;
     }
     
-    // Allow orders without authentication by using address data for customer info
-    if (!user) {
-      console.log('No user authenticated, using address data for customer info');
-    }
-    
     if (!deliveryTime) {
       showNotification('يرجى اختيار وقت التوصيل');
+      setIsPlacingOrder(false);
+      return;
+    }
+
+    // Check if cart has items
+    if (!cartItems || cartItems.length === 0) {
+      showNotification('يرجى إضافة منتجات إلى السلة أولاً');
       setIsPlacingOrder(false);
       return;
     }
@@ -280,13 +289,13 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     try {
       console.log('Starting order submission...');
       
-      // Use phone from user profile, fallback to extracting from notes if not available
-      const customerPhone = postgresUser?.phone || '07501234567';
-      const customerName = postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'Customer';
+      // Use phone from user profile (required for authenticated users)
+      const customerPhone = postgresUser.phone;
+      const customerName = postgresUser.fullName || postgresUser.email.split('@')[0];
       
       const orderData = {
         customerName: customerName,
-        customerEmail: postgresUser?.email || 'guest@example.com',
+        customerEmail: postgresUser.email,
         customerPhone: customerPhone,
         address: {
           governorate: primaryAddress.governorate,
