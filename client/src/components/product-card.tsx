@@ -90,7 +90,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     setShowShimmer(true);
 
     try {
-      await addToCart({ productId: product.id, quantity: 0.5 });
+      await addToCart({ productId: product.id, quantity: 1 });
       
       // Ultra-fast feedback - immediate UI response
       setTimeout(() => {
@@ -112,7 +112,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
     
     if (cartItem) {
-      await updateQuantity(cartItem.id, currentQuantity + 0.5);
+      await updateQuantity(cartItem.id, currentQuantity + 1);
     } else {
       await handleAddToCart();
     }
@@ -120,8 +120,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleDecreaseQuantity = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (cartItem && currentQuantity > 0.5) {
-      await updateQuantity(cartItem.id, Math.max(0.5, currentQuantity - 0.5));
+    if (cartItem && currentQuantity > 1) {
+      await updateQuantity(cartItem.id, Math.max(1, currentQuantity - 1));
     }
   };
 
@@ -179,9 +179,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex items-center justify-between w-full py-1">
             <button
               onClick={handleDecreaseQuantity}
-              disabled={currentQuantity <= 0.5}
+              disabled={currentQuantity <= 1}
               className="h-8 w-8 rounded-full flex items-center justify-center transition-colors"
-              style={{ backgroundColor: currentQuantity <= 0.5 ? '#fbbf24' : '#22c55e' }}
+              style={{ backgroundColor: currentQuantity <= 1 ? '#fbbf24' : '#22c55e' }}
             >
               <Minus className="h-3 w-3 text-white" />
             </button>
