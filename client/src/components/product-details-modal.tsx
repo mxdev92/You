@@ -179,7 +179,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
             {isAdding ? (
               <Check className="h-4 w-4 text-white" />
             ) : (
-              "أضف الى السلة"
+              <span className="text-white font-semibold">أضف الى السلة</span>
             )}
           </Button>
         </div>
