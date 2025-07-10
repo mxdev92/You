@@ -11,6 +11,49 @@ import WhatsAppAdmin from "@/pages/whatsapp-admin";
 import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import React from "react";
+
+// Global Error Boundary Component
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Global error caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center p-8">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-md mx-auto">
+              <h2 className="font-bold text-lg mb-2">خطأ في التطبيق</h2>
+              <p className="text-sm">حدث خطأ غير متوقع. يرجى تحديث الصفحة.</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm"
+              >
+                تحديث الصفحة
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Protected Admin Route Component
 function ProtectedAdminRoute() {
@@ -68,12 +111,14 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
