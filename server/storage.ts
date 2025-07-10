@@ -322,43 +322,40 @@ export class MemStorage implements IStorage {
 
   // Orders
   async getOrders(): Promise<Order[]> {
-    // Get orders from database for persistence
-    const result = await db.select().from(orders).orderBy(sql`${orders.orderDate} DESC`);
-    return result;
+    return Array.from(this.orders.values()).sort((a, b) => 
+      new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+    );
   }
 
   async getOrder(id: number): Promise<Order | undefined> {
-    // Get order from database for persistence
-    const [order] = await db.select().from(orders).where(eq(orders.id, id));
-    return order || undefined;
+    return this.orders.get(id);
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    // Save orders to database for persistence even though cart is in memory
-    const [newOrder] = await db.insert(orders).values(insertOrder).returning();
-    
-    // Also store in memory for faster access
-    this.orders.set(newOrder.id, newOrder);
-    return newOrder;
+    const id = this.currentOrderId++;
+    const order: Order = {
+      id,
+      ...insertOrder,
+      status: insertOrder.status || "pending",
+      orderDate: new Date(),
+      deliveryTime: insertOrder.deliveryTime || null,
+      notes: insertOrder.notes || null,
+    };
+    this.orders.set(id, order);
+    return order;
   }
 
   async updateOrderStatus(id: number, status: string): Promise<Order> {
-    // Update order in database for persistence
-    const [updated] = await db.update(orders)
-      .set({ status })
-      .where(eq(orders.id, id))
-      .returning();
-    
-    // Also update in memory
-    this.orders.set(id, updated);
-    return updated;
+    const order = this.orders.get(id);
+    if (!order) {
+      throw new Error(`Order with id ${id} not found`);
+    }
+    const updatedOrder = { ...order, status };
+    this.orders.set(id, updatedOrder);
+    return updatedOrder;
   }
 
   async deleteOrder(id: number): Promise<void> {
-    // Delete from database for persistence
-    await db.delete(orders).where(eq(orders.id, id));
-    
-    // Also delete from memory
     this.orders.delete(id);
   }
 }
@@ -500,9 +497,7 @@ export class DatabaseStorage implements IStorage {
 
     if (existingItem.length > 0) {
       // Update quantity of existing item
-      const currentQty = parseFloat(existingItem[0].quantity) || 0;
-      const addQty = typeof item.quantity === 'string' ? parseFloat(item.quantity) : (item.quantity || 1);
-      const updatedQuantity = (currentQty + addQty).toString();
+      const updatedQuantity = existingItem[0].quantity + (item.quantity || 1);
       const [updatedItem] = await db.update(cartItems)
         .set({ quantity: updatedQuantity })
         .where(eq(cartItems.id, existingItem[0].id))
@@ -518,10 +513,9 @@ export class DatabaseStorage implements IStorage {
     return newItem;
   }
 
-  async updateCartItemQuantity(id: number, quantity: string | number): Promise<CartItem> {
-    const quantityStr = typeof quantity === 'string' ? quantity : quantity.toString();
+  async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem> {
     const [updated] = await db.update(cartItems)
-      .set({ quantity: quantityStr })
+      .set({ quantity })
       .where(eq(cartItems.id, id))
       .returning();
     return updated;
@@ -684,7 +678,7 @@ const initializeDatabase = async () => {
   }
 };
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
 
 // Initialize database on startup
 initializeDatabase();

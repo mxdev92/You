@@ -48,7 +48,7 @@ export const cartItems = pgTable("cart_items", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   productId: integer("product_id").references(() => products.id).notNull(),
-  quantity: decimal("quantity", { precision: 5, scale: 1 }).notNull().default("1"),
+  quantity: integer("quantity").notNull().default(1),
   addedAt: text("added_at").notNull(),
 });
 
@@ -75,19 +75,9 @@ export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
 });
 
-export const insertCartItemSchema = z.object({
-  userId: z.number().optional(),
-  productId: z.number(),
-  quantity: z.union([
-    z.string().transform((val) => {
-      const num = parseFloat(val);
-      if (isNaN(num) || num < 1) {
-        throw new Error('Quantity must be at least 1kg');
-      }
-      return num;
-    }),
-    z.number().min(1, 'Quantity must be at least 1kg')
-  ]),
+export const insertCartItemSchema = createInsertSchema(cartItems).omit({
+  id: true,
+  addedAt: true,
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
