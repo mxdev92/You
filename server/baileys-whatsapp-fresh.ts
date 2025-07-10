@@ -480,12 +480,13 @@ export class BaileysWhatsAppFreshService {
     try {
       const formattedNumber = this.formatPhoneNumber(phoneNumber);
       
-      // Prepare PDF media
-      const media = await prepareWAMessageMedia({
-        document: pdfBuffer,
-        mimetype: 'application/pdf',
-        fileName: `PAKETY-Invoice-${order.id}.pdf`
-      }, { upload: this.socket.waUploadToServer });
+      // Validate PDF buffer
+      if (!pdfBuffer || !Buffer.isBuffer(pdfBuffer) || pdfBuffer.length === 0) {
+        console.error('❌ Invalid PDF buffer provided for order invoice');
+        return false;
+      }
+
+      console.log(`📋 Sending order invoice PDF (${pdfBuffer.length} bytes) to ${phoneNumber}`);
 
       // Send customer invoice message
       const message = `📋 شكراً لطلبكم من PAKETY!
@@ -499,9 +500,9 @@ export class BaileysWhatsAppFreshService {
 
       await this.socket.sendMessage(formattedNumber, { text: message });
       
-      // Send PDF invoice
+      // Send PDF invoice directly
       await this.socket.sendMessage(formattedNumber, {
-        document: media.document,
+        document: pdfBuffer,
         caption: `📊 فاتورة طلبكم - رقم ${order.id}`,
         fileName: `PAKETY-Invoice-${order.id}.pdf`,
         mimetype: 'application/pdf'
@@ -531,17 +532,20 @@ export class BaileysWhatsAppFreshService {
 
       const formattedNumber = this.formatPhoneNumber(phoneNumber);
       
-      // Prepare PDF media
-      const media = await prepareWAMessageMedia({
-        document: pdfBuffer,
-        mimetype: 'application/pdf',
-        fileName: fileName
-      }, { upload: this.socket.waUploadToServer });
+      // Validate PDF buffer
+      if (!pdfBuffer || !Buffer.isBuffer(pdfBuffer) || pdfBuffer.length === 0) {
+        console.error('❌ Invalid PDF buffer provided');
+        return { success: false, message: 'Invalid PDF buffer' };
+      }
 
-      // Send PDF document
+      console.log(`📄 PDF buffer size: ${pdfBuffer.length} bytes`);
+      
+      // First send the text message
+      await this.socket.sendMessage(formattedNumber, { text: message });
+      
+      // Then send the PDF document using proper file handling
       await this.socket.sendMessage(formattedNumber, {
-        document: media.document,
-        caption: message,
+        document: pdfBuffer,
         fileName: fileName,
         mimetype: 'application/pdf'
       });
@@ -550,7 +554,15 @@ export class BaileysWhatsAppFreshService {
       return { success: true, message: 'PDF sent successfully' };
     } catch (error: any) {
       console.error(`❌ PDF document send failed to ${phoneNumber}:`, error);
-      return { success: false, message: error.message || 'Failed to send PDF' };
+      // Try sending just the text message if PDF fails
+      try {
+        const formattedNumber = this.formatPhoneNumber(phoneNumber);
+        await this.socket.sendMessage(formattedNumber, { text: `${message}\n\n⚠️ PDF delivery failed, please contact admin for invoice` });
+        return { success: false, message: 'PDF failed, text message sent' };
+      } catch (textError) {
+        console.error('Text message also failed:', textError);
+        return { success: false, message: error.message || 'Failed to send PDF' };
+      }
     }
   }
 
