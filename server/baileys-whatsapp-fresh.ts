@@ -423,6 +423,45 @@ export class BaileysWhatsAppFreshService {
     }
   }
 
+  // Send PDF document (required for ultra-stable PDF delivery)
+  async sendPDFDocument(
+    phoneNumber: string, 
+    pdfBuffer: Buffer, 
+    fileName: string, 
+    message: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log(`📄 Sending PDF document to ${phoneNumber}`);
+      
+      if (!this.isConnected || !this.socket) {
+        return { success: false, message: 'WhatsApp not connected' };
+      }
+
+      const formattedNumber = this.formatPhoneNumber(phoneNumber);
+      
+      // Prepare PDF media
+      const media = await prepareWAMessageMedia({
+        document: pdfBuffer,
+        mimetype: 'application/pdf',
+        fileName: fileName
+      }, { upload: this.socket.waUploadToServer });
+
+      // Send PDF document
+      await this.socket.sendMessage(formattedNumber, {
+        document: media.document,
+        caption: message,
+        fileName: fileName,
+        mimetype: 'application/pdf'
+      });
+      
+      console.log(`✅ PDF document sent successfully to ${phoneNumber}`);
+      return { success: true, message: 'PDF sent successfully' };
+    } catch (error: any) {
+      console.error(`❌ PDF document send failed to ${phoneNumber}:`, error);
+      return { success: false, message: error.message || 'Failed to send PDF' };
+    }
+  }
+
   // Send order status update (required for existing code)
   async sendOrderStatusUpdate(phoneNumber: string, customerName: string, order: any, status: string): Promise<boolean> {
     if (!this.isConnected || !this.socket) {
