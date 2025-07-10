@@ -1366,10 +1366,33 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
 
 // Users Management Component
 function UsersManagement() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['/api/users'],
     queryFn: () => fetch('/api/users').then(res => res.json()),
     refetchInterval: 3000 // Real-time updates every 3 seconds
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: number) => fetch(`/api/users/${userId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      toast({
+        title: "تم حذف المستخدم",
+        description: "تم حذف المستخدم بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في الحذف",
+        description: "فشل في حذف المستخدم. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   });
 
   if (isLoading) {
@@ -1513,10 +1536,26 @@ function UsersManagement() {
                   </div>
                 </div>
                 
-                <div className="text-right">
-                  <div className="text-xs text-gray-500 mb-1">آخر نشاط</div>
-                  <div className="text-sm font-medium text-gray-900">
-                    {formatDate(user.createdAt)}
+                <div className="flex flex-col items-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('هل أنت متأكد من حذف هذا المستخدم؟ سيتم حذف جميع بياناته بما في ذلك الطلبات والعناوين.')) {
+                        deleteUserMutation.mutate(user.id);
+                      }
+                    }}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
+                    title="حذف المستخدم"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500 mb-1">آخر نشاط</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {formatDate(user.createdAt)}
+                    </div>
                   </div>
                 </div>
               </div>

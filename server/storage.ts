@@ -37,6 +37,7 @@ export interface IStorage {
   getUserByPhone(phone: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  deleteUser(id: number): Promise<void>;
 
   // User Addresses
   getUserAddresses(userId: number): Promise<UserAddress[]>;
@@ -592,6 +593,16 @@ export class DatabaseStorage implements IStorage {
   async createUser(user: InsertUser): Promise<User> {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    // First delete all related data (addresses, cart items, orders) for this user
+    await db.delete(userAddresses).where(eq(userAddresses.userId, id));
+    await db.delete(cartItems).where(eq(cartItems.userId, id));
+    await db.delete(orders).where(eq(orders.userId, id));
+    
+    // Then delete the user
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // User Addresses

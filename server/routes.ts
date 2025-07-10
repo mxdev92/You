@@ -735,6 +735,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user route
+  app.delete('/api/users/:id', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      await storage.deleteUser(userId);
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Delete user error:', error);
+      res.status(500).json({ message: 'Failed to delete user' });
+    }
+  });
+
   // Address routes
   app.post('/api/auth/addresses', async (req, res) => {
     try {
