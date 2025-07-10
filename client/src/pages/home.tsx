@@ -20,13 +20,15 @@ export default function Home() {
     setHasAddedToCartOnce(false);
   }, [user?.id]);
 
-  // Auto-open cart with delay after adding items - only first time and only for mx@x.dev
+  // Auto-open cart with delay after adding items - every time for mx@x.dev
   const handleAddToCartSuccess = () => {
-    if (!hasAddedToCartOnce && user?.email === 'mx@x.dev') {
-      setHasAddedToCartOnce(true);
+    console.log('Cart callback triggered for user:', user?.email);
+    if (user?.email === 'mx@x.dev') {
+      console.log('Auto-opening cart in 1 second for mx@x.dev');
       setTimeout(() => {
+        console.log('Opening cart sidebar now');
         setIsRightSidebarOpen(true);
-      }, 800); // 800ms delay before cart opens
+      }, 1000); // 1 second delay before cart opens
     }
   };
 
