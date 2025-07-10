@@ -31,7 +31,11 @@ export class BaileysWhatsAppFreshService {
   private readonly OTP_EXPIRY_MINUTES = 10;
   private readonly authPath = './whatsapp_session_fresh';
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 10;
+  private maxReconnectAttempts: number = 50;
+  private reconnectDelay: number = 2000;
+  private connectionQuality: 'excellent' | 'good' | 'poor' | 'disconnected' = 'disconnected';
+  private lastConnectionTime: number = 0;
+  private connectionStabilityCheck: NodeJS.Timeout | null = null;
 
   constructor() {
     // Complete session reset
@@ -93,7 +97,7 @@ export class BaileysWhatsAppFreshService {
         fatal: () => {}
       };
 
-      // Create socket with minimal stable configuration
+      // Create socket with ultra-stable configuration
       this.socket = makeWASocket({
         version,
         auth: {
@@ -102,15 +106,15 @@ export class BaileysWhatsAppFreshService {
         },
         printQRInTerminal: false,
         logger: logger,
-        browser: ['PAKETY-Fresh', 'Chrome', '1.0'],
+        browser: ['PAKETY Ultra-Stable', 'Chrome', '122.0.0.0'],
         syncFullHistory: false,
         markOnlineOnConnect: false,
         generateHighQualityLinkPreview: false,
-        connectTimeoutMs: 60000,
-        defaultQueryTimeoutMs: 60000,
-        keepAliveIntervalMs: 30000,
-        retryRequestDelayMs: 1000,
-        maxMsgRetryCount: 2,
+        connectTimeoutMs: 120000,
+        defaultQueryTimeoutMs: 90000,
+        keepAliveIntervalMs: 15000,
+        retryRequestDelayMs: 500,
+        maxMsgRetryCount: 10,
         shouldSyncHistoryMessage: () => false,
         shouldIgnoreJid: () => false,
         getMessage: async (key) => {
