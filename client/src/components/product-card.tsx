@@ -9,7 +9,6 @@ import { ProductDetailsModal } from "./product-details-modal";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useLocation } from "wouter";
 import { formatPrice } from "@/lib/price-utils";
-import { useTutorialStore } from "@/store/tutorial-store";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -72,13 +71,6 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { t } = useTranslation();
   const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
-  
-  // Tutorial state
-  const { tutorialStep, setTutorialStep } = useTutorialStore();
-  
-  // Check if this is the first item in خضروات (vegetables) category that should be highlighted
-  const isFirstVegetableItem = product.id === 80 && product.categoryId === 2;
-  const shouldHighlight = isFirstVegetableItem && tutorialStep === 'product-highlight';
 
   const handleAddToCart = async () => {
     // Don't allow adding if product is not available
@@ -117,16 +109,8 @@ export default function ProductCard({ product }: ProductCardProps) {
         transition={{ duration: 0.08, ease: "easeOut" }}
         className={`product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-150 overflow-hidden relative cursor-pointer ${
           !product.available ? 'opacity-60' : ''
-        } ${shouldHighlight ? 'tutorial-vibrate tutorial-highlight' : ''}`}
-        onClick={(e) => {
-          if (shouldHighlight) {
-            e.preventDefault();
-            // Move to next tutorial step (cart highlighting)
-            setTutorialStep('cart-highlight');
-            return;
-          }
-          setIsModalOpen(true);
-        }}
+        }`}
+        onClick={() => setIsModalOpen(true)}
       >
       {/* Product Image */}
       <div className="relative h-40 md:h-44 overflow-hidden">

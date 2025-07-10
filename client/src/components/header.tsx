@@ -6,8 +6,6 @@ import { useCartFlow } from "@/store/cart-flow";
 import CategoriesSection from "@/components/categories-section";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useLocation } from "wouter";
-import { useTutorialStore } from "@/store/tutorial-store";
-import { useEffect } from "react";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -23,26 +21,6 @@ export default function Header({ onMenuClick, onCartClick, isMenuOpen = false }:
   // Use CartFlow store for cart data (same as sidebar)
   const { cartItems, getCartItemsCount } = useCartFlow();
   const cartItemsCount = cartItems.length; // Count number of unique items (different products)
-  
-  // Tutorial state
-  const { tutorialStep, setTutorialStep, completeTutorial } = useTutorialStore();
-  const shouldHighlightCart = tutorialStep === 'cart-highlight';
-  
-  // Auto-open cart after 2 seconds if user doesn't tap cart icon during tutorial
-  useEffect(() => {
-    if (tutorialStep === 'cart-highlight') {
-      const timer = setTimeout(() => {
-        if (tutorialStep === 'cart-highlight') {
-          // Auto-open cart and complete tutorial
-          onCartClick();
-          setTutorialStep('cart-opened');
-          setTimeout(() => completeTutorial(), 1000);
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [tutorialStep, onCartClick, setTutorialStep, completeTutorial]);
 
   const handleMenuClick = () => {
     if (!user) {
@@ -57,13 +35,6 @@ export default function Header({ onMenuClick, onCartClick, isMenuOpen = false }:
       setLocation('/auth');
       return;
     }
-    
-    // If tutorial is active and user clicked cart, complete tutorial
-    if (shouldHighlightCart) {
-      setTutorialStep('cart-opened');
-      setTimeout(() => completeTutorial(), 1000);
-    }
-    
     onCartClick();
   };
 
@@ -103,9 +74,7 @@ export default function Header({ onMenuClick, onCartClick, isMenuOpen = false }:
           variant="ghost"
           size="icon"
           onClick={handleCartClick}
-          className={`relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 ${
-            shouldHighlightCart ? 'tutorial-vibrate tutorial-highlight' : ''
-          }`}
+          className="relative hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
         >
           <ShoppingCart className="h-6 w-6 text-gray-700" />
           {cartItemsCount > 0 && (
