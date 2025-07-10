@@ -38,6 +38,25 @@ app.use(session({
 // Serve attached assets (uploaded images)
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
 
+// Aggressive cache control for production deployment updates
+app.use((req, res, next) => {
+  // Force no cache for HTML files and main app routes
+  if (req.path === '/' || req.path.endsWith('.html') || req.path.includes('index')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Last-Modified', '0');
+    res.setHeader('If-Modified-Since', '0');
+    res.setHeader('ETag', '');
+  }
+  // API endpoints should never be cached
+  if (req.path.startsWith('/api')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Content-Type', 'application/json');
+  }
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

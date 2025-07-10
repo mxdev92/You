@@ -11,7 +11,7 @@ initializeLanguage();
 const queryClient = new QueryClient();
 
 // App version for cache busting - UPDATE THIS WHEN DEPLOYING
-const APP_VERSION = "2.3.0-stable-admin-fix"; // Fixed admin panel categories and deployment cache
+const APP_VERSION = "2.4.0-arabic-buttons"; // Fixed cart badges and Arabic add-to-cart buttons
 
 // Aggressive cache clearing for deployment issues
 const forceAppUpdate = () => {
@@ -19,11 +19,11 @@ const forceAppUpdate = () => {
   const lastUpdate = localStorage.getItem('pakety_last_update');
   const currentTime = Date.now();
   
-  // Force update conditions
+  // Force update conditions - ALWAYS update for version changes
   const needsUpdate = !storedVersion || 
                      storedVersion !== APP_VERSION ||
                      !lastUpdate ||
-                     (currentTime - parseInt(lastUpdate)) > 24 * 60 * 60 * 1000; // 24 hours
+                     (currentTime - parseInt(lastUpdate)) > 1 * 60 * 60 * 1000; // 1 hour for aggressive updates
   
   if (needsUpdate) {
     console.log('Forcing app update - clearing all cache...');
@@ -73,10 +73,17 @@ const forceAppUpdate = () => {
     localStorage.setItem('pakety_app_version', APP_VERSION);
     localStorage.setItem('pakety_last_update', currentTime.toString());
     
-    // Force a hard reload for users on old versions
-    if (storedVersion && storedVersion !== APP_VERSION) {
+    // Force a hard reload for users on old versions or first time
+    if (!storedVersion || storedVersion !== APP_VERSION) {
       console.log('Hard reloading for version change...');
-      window.location.href = window.location.href + '?v=' + currentTime; // Force reload from server
+      // Multiple methods to ensure cache bypass
+      setTimeout(() => {
+        if (window.location.search.includes('cache-clear')) {
+          window.location.reload(true as any); // Force reload
+        } else {
+          window.location.href = window.location.origin + window.location.pathname + '?cache-clear=' + currentTime; 
+        }
+      }, 500);
     }
   }
 };
