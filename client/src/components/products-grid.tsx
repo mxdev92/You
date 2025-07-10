@@ -3,11 +3,7 @@ import { motion } from "framer-motion";
 import type { Product, Category } from "@shared/schema";
 import ProductCard from "./product-card";
 
-interface ProductsGridProps {
-  onAddToCartSuccess?: () => void;
-}
-
-export default function ProductsGrid({ onAddToCartSuccess }: ProductsGridProps) {
+export default function ProductsGrid() {
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
@@ -61,7 +57,7 @@ export default function ProductsGrid({ onAddToCartSuccess }: ProductsGridProps) 
               transition={{ delay: index * 0.02, duration: 0.2 }}
               layoutId={`product-${product.id}`}
             >
-              <ProductCard product={product} onAddToCart={onAddToCartSuccess} />
+              <ProductCard product={product} />
             </motion.div>
           ))}
         </motion.div>

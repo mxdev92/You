@@ -10,29 +10,9 @@ export default function Home() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt'>('menu');
-  const [hasAddedToCartOnce, setHasAddedToCartOnce] = useState(false);
   
   const { user } = usePostgresAuth();
   const { loadCart } = useCartFlow();
-
-  // Reset first-time add to cart flag when user changes or page refreshes
-  useEffect(() => {
-    setHasAddedToCartOnce(false);
-  }, [user?.id]);
-
-  // Auto-open cart with delay after adding items - every time for mx@x.dev
-  const handleAddToCartSuccess = () => {
-    console.log('Cart callback triggered for user:', user?.email);
-    if (user?.email === 'mx@x.dev') {
-      console.log('Auto-opening cart in 1 second for mx@x.dev');
-      console.log('Current cart sidebar state:', isRightSidebarOpen);
-      setTimeout(() => {
-        console.log('Opening cart sidebar now');
-        setIsRightSidebarOpen(true);
-        console.log('Cart sidebar should be open now');
-      }, 1000); // 1 second delay before cart opens
-    }
-  };
 
   // Load cart only once when user logs in
   useEffect(() => {
@@ -73,7 +53,7 @@ export default function Home() {
       />
 
       <main className="pb-8">
-        <ProductsGrid onAddToCartSuccess={handleAddToCartSuccess} />
+        <ProductsGrid />
       </main>
     </div>
   );

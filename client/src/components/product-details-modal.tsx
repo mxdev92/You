@@ -13,12 +13,11 @@ interface ProductDetailsModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart?: () => void;
 }
 
 // Removed quantityOptions array as we now use +/- buttons
 
-export function ProductDetailsModal({ product, isOpen, onClose, onAddToCart }: ProductDetailsModalProps) {
+export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetailsModalProps) {
   const { t } = useTranslation();
   const addToCart = useCartFlow(state => state.addToCart);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
@@ -50,11 +49,6 @@ export function ProductDetailsModal({ product, isOpen, onClose, onAddToCart }: P
       await addToCart({
         productId: product.id,
         quantity: selectedQuantity,
-      }, () => {
-        // Call the callback when item is successfully added
-        if (onAddToCart) {
-          onAddToCart();
-        }
       });
       
       // Track add to cart event with Meta Pixel
