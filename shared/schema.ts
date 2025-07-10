@@ -48,7 +48,7 @@ export const cartItems = pgTable("cart_items", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
   productId: integer("product_id").references(() => products.id).notNull(),
-  quantity: integer("quantity").notNull().default(1),
+  quantity: decimal("quantity", { precision: 10, scale: 1 }).notNull().default("1"),
   addedAt: text("added_at").notNull(),
 });
 

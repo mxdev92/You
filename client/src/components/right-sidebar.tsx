@@ -770,15 +770,16 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        updateQuantity(item.id, Math.max(1, item.quantity - 1));
+                        const newQuantity = item.quantity <= 1 ? 0.5 : item.quantity - 1;
+                        updateQuantity(item.id, newQuantity);
                       }}
-                      disabled={item.quantity <= 1}
+                      disabled={item.quantity <= 0.5}
                       className="h-6 w-6 disabled:cursor-not-allowed text-black rounded-full flex items-center justify-center border-0 outline-0"
-                      style={{ backgroundColor: item.quantity <= 1 ? '#fbbf24' : '#22c55e' }}
+                      style={{ backgroundColor: item.quantity <= 0.5 ? '#fbbf24' : '#22c55e' }}
                     >
                       <Minus className="h-2.5 w-2.5" />
                     </button>
-                    <span className="min-w-5 text-center font-medium text-xs">{item.quantity}</span>
+                    <span className="min-w-5 text-center font-medium text-xs">{parseFloat(item.quantity).toString()}</span>
                     <button
                       onClick={(e) => {
                         e.preventDefault();
