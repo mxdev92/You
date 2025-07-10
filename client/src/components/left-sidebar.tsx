@@ -549,7 +549,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       <User className="h-8 w-8 text-white" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      {user?.email?.split('@')[0] || 'مستخدم'}
+                      {user?.fullName || user?.email?.split('@')[0] || 'مستخدم'}
                     </h3>
                     <p className="text-sm text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       عضو نشط
@@ -570,7 +570,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               الاسم الكامل
                             </p>
                             <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {user?.email?.split('@')[0] || 'غير محدد'}
+                              {user?.fullName || user?.email?.split('@')[0] || 'غير محدد'}
                             </p>
                           </div>
                         </div>
@@ -612,7 +612,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               رقم الهاتف
                             </p>
                             <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {'غير محدد'}
+                              {user?.phone || 'غير محدد'}
                             </p>
                           </div>
                         </div>

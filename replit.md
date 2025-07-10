@@ -116,6 +116,9 @@ July 10, 2025:
 • ENHANCED SIDEBAR BLUR: Added rounded edges and enhanced blur overlay for premium modern appearance
 • Increased backdrop blur intensity and opacity for better visual separation and focus
 • Added rounded corners to sidebar container for sleek, modern aesthetic
+• PROFILE PHONE NUMBER FIX: Fixed phone number display in sidebar profile showing actual user phone instead of "غير محدد"
+• Enhanced profile display to show real user data including fullName and phone from database
+• Fixed user name display to prioritize fullName over email username for better personalization
 • ADMIN NUMBER UPDATE: Changed admin WhatsApp number from 07757250444 to 07511856947 for all invoice delivery and notifications
 • Updated Ultra-Stable PDF Delivery, legacy delivery service, WhatsApp services, and admin panel UI with new admin number
 • ULTRA-STABLE WHATSAPP CONNECTION: Enhanced WhatsApp service with ultra-stable configuration for maximum reliability
