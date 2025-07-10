@@ -88,11 +88,11 @@ export default function ProductCard({ product }: ProductCardProps) {
     try {
       await addToCart({ productId: product.id, quantity: 1 });
       
-      // Fast feedback - quick shimmer and "Added!" state
+      // Ultra-fast feedback - immediate UI response
       setTimeout(() => {
         setIsAdding(false);
         setShowShimmer(false);
-      }, 400);
+      }, 150);
     } catch (error) {
       console.error('Error adding to cart:', error);
       setIsAdding(false);
@@ -106,7 +106,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     <>
       <motion.div
         whileHover={{ y: product.available ? -2 : 0 }}
-        transition={{ duration: 0.15, ease: "easeOut" }}
+        transition={{ duration: 0.08, ease: "easeOut" }}
         className={`product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-150 overflow-hidden relative cursor-pointer ${
           !product.available ? 'opacity-60' : ''
         }`}
@@ -126,7 +126,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
+            transition={{ duration: 0.05 }}
             className="absolute inset-0 shimmer-effect"
           />
         )}
@@ -156,7 +156,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               handleAddToCart();
             }}
             disabled={isAdding || !product.available}
-            className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 touch-action-manipulation min-h-9 ${
+            className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-100 touch-action-manipulation min-h-9 ${
               !product.available
                 ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
                 : isAdding

@@ -46,6 +46,35 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
 
   addToCart: async (item: InsertCartItem) => {
     try {
+      // Get current state for optimistic update
+      const currentItems = get().cartItems;
+      
+      // Check if item already exists
+      const existingItemIndex = currentItems.findIndex(cartItem => 
+        cartItem.productId === item.productId
+      );
+      
+      // Optimistically update UI immediately
+      if (existingItemIndex >= 0) {
+        // Update existing item quantity
+        const updatedItems = [...currentItems];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + (item.quantity || 1)
+        };
+        set({ cartItems: updatedItems });
+      } else {
+        // Add new item (we'll update with proper data from server)
+        set(state => ({ 
+          cartItems: [...state.cartItems, { 
+            ...item,
+            id: Date.now(), // Temporary ID
+            addedAt: new Date().toISOString()
+          } as any]
+        }));
+      }
+
+      // Send to server (background operation)
       const response = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,17 +82,27 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       });
       
       if (response.ok) {
-        // Optimistically refresh cart without triggering infinite loop
-        const updatedResponse = await fetch("/api/cart");
-        if (updatedResponse.ok) {
-          const items = await updatedResponse.json();
-          set({ cartItems: items });
-        }
+        // Only refresh cart in background to sync with server data
+        setTimeout(async () => {
+          try {
+            const updatedResponse = await fetch("/api/cart");
+            if (updatedResponse.ok) {
+              const items = await updatedResponse.json();
+              set({ cartItems: items });
+            }
+          } catch (error) {
+            console.log("Background cart sync failed:", error);
+          }
+        }, 100);
       } else {
+        // Revert optimistic update on error
+        get().loadCart();
         throw new Error("Failed to add item");
       }
     } catch (error) {
       console.error("CartFlow: Failed to add item:", error);
+      // Revert optimistic update on error
+      get().loadCart();
       throw error;
     }
   },
