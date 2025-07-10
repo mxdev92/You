@@ -64,14 +64,8 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
         };
         set({ cartItems: updatedItems });
       } else {
-        // Add new item (we'll update with proper data from server)
-        set(state => ({ 
-          cartItems: [...state.cartItems, { 
-            ...item,
-            id: Date.now(), // Temporary ID
-            addedAt: new Date().toISOString()
-          } as any]
-        }));
+        // For new items, don't add optimistically - wait for server response
+        // This prevents crashes when product data is missing
       }
 
       // Send to server (background operation)
@@ -82,18 +76,16 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       });
       
       if (response.ok) {
-        // Only refresh cart in background to sync with server data
-        setTimeout(async () => {
-          try {
-            const updatedResponse = await fetch("/api/cart");
-            if (updatedResponse.ok) {
-              const items = await updatedResponse.json();
-              set({ cartItems: items });
-            }
-          } catch (error) {
-            console.log("Background cart sync failed:", error);
+        // Immediately refresh cart to get updated data with product info
+        try {
+          const updatedResponse = await fetch("/api/cart");
+          if (updatedResponse.ok) {
+            const items = await updatedResponse.json();
+            set({ cartItems: items });
           }
-        }, 100);
+        } catch (error) {
+          console.log("Cart sync failed:", error);
+        }
       } else {
         // Revert optimistic update on error
         get().loadCart();
