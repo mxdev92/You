@@ -78,6 +78,8 @@ export const insertProductSchema = createInsertSchema(products).omit({
 export const insertCartItemSchema = createInsertSchema(cartItems).omit({
   id: true,
   addedAt: true,
+}).extend({
+  quantity: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
