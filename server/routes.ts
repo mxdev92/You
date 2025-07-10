@@ -13,12 +13,14 @@ import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
 import { verifyWayService } from './verifyway-service';
 import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
 import { UltraStablePDFDelivery } from './ultra-stable-pdf-delivery';
+import { PDFWorkflowService } from './pdf-workflow-service';
 
 const whatsappService = new BaileysWhatsAppFreshService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
 
 // Initialize Ultra-Stable PDF Delivery System
 let ultraStableDelivery: UltraStablePDFDelivery;
+let pdfWorkflowService: PDFWorkflowService;
 
 // Initialize Baileys WhatsApp service on startup with persistent authentication
 const initializeWhatsAppService = async () => {
@@ -44,6 +46,10 @@ const initializeWhatsAppService = async () => {
   // Initialize Ultra-Stable PDF Delivery System
   ultraStableDelivery = new UltraStablePDFDelivery(whatsappService);
   console.log('🚀 Ultra-Stable PDF Delivery System initialized - 100% admin guarantee active');
+  
+  // Initialize PDF Workflow Service
+  pdfWorkflowService = new PDFWorkflowService(whatsappService);
+  console.log('📋 PDF Workflow Service initialized - Complete server-side workflow active');
 };
 
 // Initialize on startup
@@ -402,63 +408,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
 
-      // Ultra-Stable PDF delivery with 100% admin guarantee
-      console.log(`🚀 Starting Ultra-Stable PDF delivery for Order ${order.id}`);
+      // SILENT PDF WORKFLOW - Complete server-side processing
+      // Order submit > check WhatsApp server > get saved credentials > ensure connection > send PDF
+      console.log(`🚀 Starting Silent PDF Workflow for Order ${order.id}`);
       
-      // Primary: Ultra-Stable PDF delivery with guaranteed admin delivery
+      // Execute complete workflow silently in background
       setTimeout(async () => {
         try {
-          if (ultraStableDelivery) {
-            const ultraResult = await ultraStableDelivery.deliverInvoicePDF(order.id);
-            console.log(`🚀 Ultra-Stable delivery initiated for Order ${order.id}: ${ultraResult.message}`);
+          if (pdfWorkflowService) {
+            // Execute the complete PDF workflow
+            const workflowResult = await pdfWorkflowService.executePDFWorkflow(order.id);
+            console.log(`📋 PDF Workflow completed for Order ${order.id}:`, {
+              success: workflowResult.success,
+              message: workflowResult.message,
+              connectionStatus: workflowResult.connectionStatus,
+              credentialsStatus: workflowResult.credentialsStatus,
+              deliveryStatus: workflowResult.deliveryStatus,
+              adminDelivered: workflowResult.adminDelivered,
+              customerDelivered: workflowResult.customerDelivered
+            });
           } else {
-            console.log(`⚠️ Ultra-Stable service not ready - using fallback delivery`);
-            // Fallback to regular delivery service
-            const deliveryResult = await deliveryPDFService.deliverInvoicePDF(order.id);
-            console.log(`📋 Fallback delivery result for Order ${order.id}: ${deliveryResult.message}`);
-          }
-        } catch (error: any) {
-          console.log(`⚠️ Ultra-Stable delivery error for Order ${order.id}:`, error.message || error);
-        }
-      }, 1000); // Faster initiation - 1 second
-
-      // Silent legacy WhatsApp notifications (fallback)
-      setTimeout(async () => {
-        try {
-          if (whatsappService.getStatus().connected) {
-            try {
-              // Silently generate PDF invoice
-              const pdfBuffer = await generateInvoicePDF(order);
-              
-              // Silently send customer confirmation with PDF
-              await whatsappService.sendOrderInvoice(
-                order.customerPhone, 
-                pdfBuffer,
-                order
-              );
-
-              // Silently send admin notification
-              const orderData = {
-                orderId: order.id,
-                customerName: order.customerName,
-                customerPhone: order.customerPhone,
-                address: order.address?.fullAddress || 'لم يتم تحديد العنوان',
-                total: order.totalAmount,
-                itemCount: order.items.length
-              };
-              await whatsappService.sendAdminNotification(orderData, pdfBuffer);
-
-              console.log(`📱 Silent legacy WhatsApp notifications sent for order #${order.id}`);
-            } catch (whatsappError) {
-              console.log('⚠️ Silent legacy WhatsApp notification failed:', whatsappError.message || whatsappError);
+            console.log(`⚠️ PDF Workflow service not ready - using fallback`);
+            // Fallback to ultra-stable delivery
+            if (ultraStableDelivery) {
+              const ultraResult = await ultraStableDelivery.deliverInvoicePDF(order.id);
+              console.log(`🚀 Fallback Ultra-Stable delivery for Order ${order.id}: ${ultraResult.message}`);
+            } else {
+              console.log(`⚠️ All PDF services unavailable for Order ${order.id}`);
             }
-          } else {
-            console.log('⚠️ Silent legacy WhatsApp service not connected');
           }
         } catch (error: any) {
-          console.log('⚠️ Silent legacy WhatsApp system error:', error.message || error);
+          // Silent error handling - never affect order creation
+          console.log(`⚠️ Silent PDF Workflow error for Order ${order.id}:`, error.message || error);
         }
-      }, 5000); // 5 second delay for legacy fallback
+      }, 500); // Very fast initiation - 0.5 seconds
       
       res.status(201).json(order);
     } catch (error: any) {
@@ -893,6 +876,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: error.message || 'Failed to get delivery stats' 
+      });
+    }
+  });
+
+  // PDF Workflow endpoints - Complete server-side processing
+  app.post('/api/workflow/pdf-trigger/:orderId', async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      console.log(`🚀 Manual PDF workflow trigger for Order ${orderId}`);
+      
+      if (pdfWorkflowService) {
+        const workflowResult = await pdfWorkflowService.executePDFWorkflow(orderId);
+        res.json({
+          ...workflowResult,
+          system: 'PDF Workflow Service',
+          workflow: 'Complete Server-Side Processing',
+          orderId,
+          timestamp: Date.now()
+        });
+      } else {
+        console.log(`⚠️ PDF Workflow service not ready - using fallback`);
+        res.status(503).json({ 
+          success: false, 
+          message: 'PDF Workflow service not available',
+          system: 'Service Unavailable',
+          orderId,
+          timestamp: Date.now()
+        });
+      }
+    } catch (error: any) {
+      console.error('PDF workflow trigger error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'PDF workflow trigger failed',
+        error: error.message,
+        orderId: parseInt(req.params.orderId),
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  app.get('/api/workflow/pdf-stats', async (req, res) => {
+    try {
+      if (pdfWorkflowService) {
+        const stats = pdfWorkflowService.getWorkflowStats();
+        res.json({ 
+          ...stats, 
+          success: true, 
+          timestamp: Date.now(),
+          system: 'PDF Workflow Service',
+          workflow: [
+            'Order Submit',
+            'Check WhatsApp Server',
+            'Get Saved Credentials',
+            'Ensure Connection',
+            'Send PDF Silently'
+          ]
+        });
+      } else {
+        res.status(503).json({ 
+          success: false, 
+          message: 'PDF Workflow service not available',
+          timestamp: Date.now()
+        });
+      }
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || 'Failed to get workflow stats',
+        timestamp: Date.now()
       });
     }
   });
