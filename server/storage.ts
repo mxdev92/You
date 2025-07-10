@@ -26,6 +26,7 @@ export interface IStorage {
 
   // Orders
   getOrders(): Promise<Order[]>;
+  getOrder(id: number): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: string): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
@@ -325,6 +326,10 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getOrder(id: number): Promise<Order | undefined> {
+    return this.orders.get(id);
+  }
+
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const id = this.currentOrderId++;
     const order: Order = {
@@ -540,6 +545,11 @@ export class DatabaseStorage implements IStorage {
   async getOrders(): Promise<Order[]> {
     const result = await db.select().from(orders).orderBy(sql`${orders.orderDate} DESC`);
     return result;
+  }
+
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order || undefined;
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
