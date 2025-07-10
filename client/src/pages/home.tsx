@@ -33,6 +33,7 @@ export default function Home() {
       <Header
         onMenuClick={() => setIsLeftSidebarOpen(true)}
         onCartClick={() => setIsRightSidebarOpen(true)}
+        isMenuOpen={isLeftSidebarOpen}
       />
       
       <LeftSidebar 

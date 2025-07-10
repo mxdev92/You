@@ -1,4 +1,4 @@
-import { Search, Menu, ShoppingCart } from "lucide-react";
+import { Search, Menu, List, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
@@ -10,9 +10,10 @@ import { useLocation } from "wouter";
 interface HeaderProps {
   onMenuClick: () => void;
   onCartClick: () => void;
+  isMenuOpen?: boolean;
 }
 
-export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
+export default function Header({ onMenuClick, onCartClick, isMenuOpen = false }: HeaderProps) {
   const { t } = useTranslation();
   const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
@@ -45,9 +46,15 @@ export default function Header({ onMenuClick, onCartClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={handleMenuClick}
-          className="hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11"
+          className={`hover:bg-gray-100 rounded-lg touch-action-manipulation min-h-11 min-w-11 transition-all duration-200 ${
+            isMenuOpen ? 'bg-gray-100' : ''
+          }`}
         >
-          <Menu className="h-6 w-6 text-gray-700" />
+          {isMenuOpen ? (
+            <List className="h-6 w-6 text-gray-700" />
+          ) : (
+            <Menu className="h-6 w-6 text-gray-700" />
+          )}
         </Button>
 
         {/* Search Bar */}

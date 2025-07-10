@@ -437,7 +437,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
               stiffness: 300,
               duration: 0.3 
             }}
-            className="relative w-80 max-w-[85vw] bg-white h-full shadow-2xl rounded-r-3xl flex flex-col safe-area-inset"
+            className="relative w-80 max-w-[85vw] bg-white h-full shadow-xl flex flex-col safe-area-inset"
           >
             {currentView === 'login-prompt' ? (
               // Login Prompt View
@@ -750,53 +750,72 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                 <OrdersHistoryContent />
               </div>
             ) : (
-              // Menu View
-              <div className="flex-1 pt-8 pb-4">
-                <div className="px-6 mb-8">
-                  {/* Header section hidden as requested */}
-                </div>
-
-                <nav className="px-6 space-y-2">
+              // Menu View - Modern Professional Design
+              <div className="flex-1 pt-12 pb-6">
+                {/* Menu Items */}
+                <nav className="px-6 space-y-3">
                   {menuItems.map((item, index) => (
-                    <Button
+                    <motion.button
                       key={item.label}
-                      variant="ghost"
-                      className="w-full justify-start text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.2 }}
                       onClick={item.onClick}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-all duration-200 group border border-transparent hover:border-gray-200"
+                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                     >
-                      <item.icon className="mr-3 h-4 w-4" />
-                      {item.label}
-                    </Button>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                          <item.icon className="h-5 w-5 text-gray-600 group-hover:text-gray-800" />
+                        </div>
+                        <span className="text-gray-800 font-medium text-base">
+                          {item.label}
+                        </span>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    </motion.button>
                   ))}
                 </nav>
-
               </div>
             )}
 
-            {/* Bottom Section - Only show logout in menu view for authenticated users */}
+            {/* Bottom Section - Logout Button for Authenticated Users */}
             {currentView === 'menu' && user && (
-              <div className="px-6 pb-6">
-                <Button
+              <div className="px-6 pb-6 border-t border-gray-100 pt-4">
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.2 }}
                   onClick={handleLogout}
-                  variant="ghost"
-                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="w-full flex items-center justify-between p-4 rounded-2xl bg-red-50 hover:bg-red-100 transition-all duration-200 group border border-transparent hover:border-red-200"
+                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                 >
-                  <LogOut className="mr-3 h-4 w-4" />
-                  {t('logout')}
-                </Button>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                      <LogOut className="h-5 w-5 text-red-500 group-hover:text-red-600" />
+                    </div>
+                    <span className="text-red-600 font-medium text-base">
+                      تسجيل الخروج
+                    </span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-red-400 group-hover:text-red-600 transition-colors" />
+                </motion.button>
               </div>
             )}
             
             {/* Login Button for Non-Authenticated Users */}
             {currentView === 'menu' && !user && (
-              <div className="px-6 pb-6">
-                <Button
+              <div className="px-6 pb-6 border-t border-gray-100 pt-4">
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.2 }}
                   onClick={() => setShowSignupModal(true)}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-medium py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-medium py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                 >
-                  تسجيل الدخول
-                </Button>
+                  تسجيل الدخول / إنشاء حساب
+                </motion.button>
               </div>
             )}
           </motion.div>
