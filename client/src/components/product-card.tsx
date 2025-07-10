@@ -13,6 +13,7 @@ import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
   product: Product;
+  onAddToCart?: () => void;
 }
 
 // LazyImage component for optimized loading
@@ -63,7 +64,7 @@ function LazyImage({ src, alt, className }: { src: string; alt: string; classNam
   );
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showShimmer, setShowShimmer] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -72,7 +73,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    // Prevent event bubbling to avoid conflicts
+    e.preventDefault();
+    e.stopPropagation();
+    
     // Don't allow adding if product is not available
     if (!product.available) return;
     
@@ -86,7 +91,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     setShowShimmer(true);
 
     try {
-      await addToCart({ productId: product.id, quantity: 1 });
+      await addToCart({ productId: product.id, quantity: 1 }, () => {
+        // Call the callback when item is successfully added
+        if (onAddToCart) {
+          onAddToCart();
+        }
+      });
       
       // Ultra-fast feedback - immediate UI response
       setTimeout(() => {
@@ -151,10 +161,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         
         <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
           <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCart();
-            }}
+            onClick={handleAddToCart}
             disabled={isAdding || !product.available}
             className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-100 touch-action-manipulation min-h-9 ${
               !product.available
@@ -182,6 +189,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         product={product}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onAddToCart={onAddToCart}
       />
 
 

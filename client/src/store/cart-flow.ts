@@ -12,7 +12,7 @@ interface CartFlowState {
 
 interface CartFlowActions {
   loadCart: () => Promise<void>;
-  addToCart: (item: InsertCartItem) => Promise<void>;
+  addToCart: (item: InsertCartItem, onSuccess?: () => void) => Promise<void>;
   removeFromCart: (itemId: number) => Promise<void>;
   updateQuantity: (itemId: number, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -44,7 +44,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
     }
   },
 
-  addToCart: async (item: InsertCartItem) => {
+  addToCart: async (item: InsertCartItem, onSuccess?: () => void) => {
     try {
       // Get current state for optimistic update
       const currentItems = get().cartItems;
@@ -84,6 +84,10 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
           if (updatedResponse.ok) {
             const items = await updatedResponse.json();
             set({ cartItems: items });
+            // Call success callback if provided
+            if (onSuccess) {
+              onSuccess();
+            }
           }
         } catch (error) {
           console.log("Cart sync failed:", error);
