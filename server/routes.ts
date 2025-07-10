@@ -72,6 +72,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Request logger for debugging
+  app.use('/api/*', (req, res, next) => {
+    console.log(`API Request: ${req.method} ${req.url}`);
+    
+    // Override res.send to ensure JSON content-type
+    const originalSend = res.send;
+    res.send = function(data) {
+      // Ensure proper content-type for API responses
+      if (!res.get('Content-Type')) {
+        res.set('Content-Type', 'application/json');
+      }
+      return originalSend.call(this, data);
+    };
+    
+    next();
+  });
+
+  // Global error handler for all API routes to ensure proper JSON responses
+  app.use('/api/*', (err: any, req: any, res: any, next: any) => {
+    console.error('API Error:', {
+      url: req.url,
+      method: req.method,
+      error: err.message,
+      stack: err.stack
+    });
+    
+    // Ensure we always send JSON for API routes
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Server error'
+      });
+    }
+  });
+
   // Version endpoint for cache busting
   app.get("/api/version", (req, res) => {
     res.json({ version: "2.1.0", timestamp: Date.now() });
@@ -1435,6 +1470,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Admin test notification error:', error);
       res.status(500).json({ message: 'Failed to send admin test notification' });
     }
+  });
+
+  // API 404 handler - MUST be after all other API routes
+  app.use('/api/*', (req, res) => {
+    console.log(`API 404 - Route not found: ${req.method} ${req.path}`);
+    res.status(404).json({ 
+      message: 'API endpoint not found',
+      path: req.path,
+      method: req.method
+    });
   });
 
   // Make broadcast function globally available

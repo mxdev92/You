@@ -50,14 +50,41 @@ export const getQueryFn: <T>(options: {
     // Enhanced JSON parsing with error handling
     try {
       const text = await res.text();
+      console.log('API Response URL:', res.url);
+      console.log('API Response Status:', res.status);
+      console.log('API Response Text (first 200 chars):', text.substring(0, 200));
+      
       if (!text || text.trim() === '') {
         throw new Error('Empty response from server');
       }
+      
+      // Check if response is HTML (common for server errors)
+      if (text.includes('<html>') || text.includes('<!DOCTYPE') || text.includes('<title>')) {
+        console.error('Server returned HTML page instead of JSON:', text.substring(0, 500));
+        throw new Error('Server error - received HTML instead of JSON data');
+      }
+      
       return JSON.parse(text);
     } catch (error) {
-      console.error('JSON parsing error:', error);
-      console.error('Response text:', text);
-      throw new Error(`Invalid JSON response: ${error.message}`);
+      console.error('JSON parsing error details:', {
+        url: res.url,
+        status: res.status,
+        error: error.message,
+        responseStart: text?.substring(0, 100)
+      });
+      
+      if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
+        // Log the specific URL and response causing the JSON error
+        console.error('JSON SYNTAX ERROR DETAILS:', {
+          url: res.url,
+          status: res.status,
+          responseHeaders: Object.fromEntries(res.headers.entries()),
+          responseText: text
+        });
+        throw new Error('خطأ في إنشاء الجلسات - يرجى تحديث الصفحة');
+      }
+      
+      throw new Error(`خطأ في البيانات: ${error.message}`);
     }
   };
 
