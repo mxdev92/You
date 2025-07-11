@@ -23,8 +23,8 @@ app.use(session({
     errorLog: (...args) => console.error('PG Session Error:', ...args)
   }),
   secret: process.env.SESSION_SECRET || 'yalla-jeetek-secret-key-12345',
-  resave: false,
-  saveUninitialized: false, // CRITICAL: Don't create sessions for unauthenticated users
+  resave: true, // CRITICAL: Force resave to store to ensure data persistence
+  saveUninitialized: false, // Don't create sessions for unauthenticated users
   rolling: true, // Reset expiration on activity
   name: 'connect.sid', // Must match cookie name exactly
   cookie: {

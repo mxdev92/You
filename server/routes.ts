@@ -557,26 +557,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: phone
       });
       
-      // Store user session with ultra-stable persistence (same as signin)
-      (req as any).session = (req as any).session || {};
-      (req as any).session.userId = user.id;
-      (req as any).session.userEmail = user.email;
-      (req as any).session.loginTime = new Date().toISOString();
-      
-      // Set session to never expire automatically - ultra-stable login
-      (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
-      (req as any).session.cookie.secure = false; // Allow HTTP for development
-      (req as any).session.cookie.httpOnly = true; // Security
-      
-      // Force session save with bulletproof persistence
+      // Store user session with ultra-stable persistence - regenerate for clean session
       await new Promise<void>((resolve, reject) => {
-        (req as any).session.save((err: any) => {
+        (req as any).session.regenerate((err: any) => {
           if (err) {
-            console.error('Session save error during signup:', err);
+            console.error('❌ Session regenerate failed:', err);
             reject(err);
           } else {
-            console.log('✅ Ultra-stable session saved for new user:', user.email);
-            resolve();
+            // Assign session data after regeneration
+            (req as any).session.userId = user.id;
+            (req as any).session.userEmail = user.email;
+            (req as any).session.loginTime = new Date().toISOString();
+            
+            // Set session to never expire automatically - ultra-stable login
+            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
+            (req as any).session.cookie.secure = false; // Allow HTTP for development
+            (req as any).session.cookie.httpOnly = true; // Security
+            
+            // Force session save with bulletproof persistence
+            (req as any).session.save((saveErr: any) => {
+              if (saveErr) {
+                console.error('❌ Session save failed:', saveErr);
+                reject(saveErr);
+              } else {
+                console.log('✅ Ultra-stable session regenerated and saved for new user:', user.email);
+                resolve();
+              }
+            });
           }
         });
       });
@@ -615,26 +622,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      // Store user session with ultra-stable persistence
-      (req as any).session = (req as any).session || {};
-      (req as any).session.userId = user.id;
-      (req as any).session.userEmail = user.email;
-      (req as any).session.loginTime = new Date().toISOString();
-      
-      // Set session to never expire automatically - ultra-stable login
-      (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
-      (req as any).session.cookie.secure = false; // Allow HTTP for development
-      (req as any).session.cookie.httpOnly = true; // Security
-      
-      // Force session save with bulletproof persistence
+      // Store user session with ultra-stable persistence - regenerate for clean session
       await new Promise<void>((resolve, reject) => {
-        (req as any).session.save((err: any) => {
+        (req as any).session.regenerate((err: any) => {
           if (err) {
-            console.error('Session save error:', err);
+            console.error('❌ Session regenerate failed:', err);
             reject(err);
           } else {
-            console.log('✅ Ultra-stable session saved for user:', user.email);
-            resolve();
+            // Assign session data after regeneration
+            (req as any).session.userId = user.id;
+            (req as any).session.userEmail = user.email;
+            (req as any).session.loginTime = new Date().toISOString();
+            
+            // Set session to never expire automatically - ultra-stable login
+            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
+            (req as any).session.cookie.secure = false; // Allow HTTP for development
+            (req as any).session.cookie.httpOnly = true; // Security
+            
+            // Force session save with bulletproof persistence
+            (req as any).session.save((saveErr: any) => {
+              if (saveErr) {
+                console.error('❌ Session save failed:', saveErr);
+                reject(saveErr);
+              } else {
+                console.log('✅ Ultra-stable session regenerated and saved for user:', user.email);
+                resolve();
+              }
+            });
           }
         });
       });
