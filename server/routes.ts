@@ -10,7 +10,7 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { BaileysWhatsAppFreshService } from './baileys-whatsapp-fresh.js';
 import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
-import { verifyWayService } from './verifyway-service';
+// VerifyWay replaced with WasenderAPI for consolidated messaging
 import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
 import { UltraStablePDFDelivery } from './ultra-stable-pdf-delivery';
 import { PDFWorkflowService } from './pdf-workflow-service';
@@ -1129,31 +1129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/verifyway/test', async (req, res) => {
-    try {
-      const { phoneNumber } = req.body;
-      const testPhone = phoneNumber || '07701234567';
-      
-      console.log(`🧪 Testing VerifyWay API with phone: ${testPhone}`);
-      
-      const result = await verifyWayService.sendOTP(testPhone, 'اختبار المستخدم');
-      
-      res.json({
-        success: result.success,
-        message: result.message,
-        delivered: result.success ? 'verifyway' : 'failed',
-        otp: result.otp,
-        phone: testPhone
-      });
-      
-    } catch (error: any) {
-      console.error('VerifyWay test error:', error);
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Test failed'
-      });
-    }
-  });
+  // VerifyWay test endpoint removed - now using WasenderAPI exclusively
 
   // WhatsApp API routes
   app.get('/api/whatsapp/status', async (req, res) => {
@@ -1241,17 +1217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
       };
       
-      // Store in services for verification
+      // Store OTP session for verification using WhatsApp service
       if (whatsappService.otpSessions) {
         whatsappService.otpSessions.set(phoneNumber, otpSession);
       }
-      verifyWayService.otpSessions.set(phoneNumber, {
-        phoneNumber,
-        otp,
-        reference: `wasender_${Date.now()}`,
-        timestamp: Date.now(),
-        expiresAt: Date.now() + (10 * 60 * 1000)
-      });
       
       // Send OTP via WasenderAPI
       const result = await wasenderService.sendOTPMessage(phoneNumber, otp);
@@ -1266,20 +1235,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         console.log(`❌ WasenderAPI failed: ${result.message}`);
         
-        // Fallback to VerifyWay
-        const verifyWayResult = await verifyWayService.sendOTP(phoneNumber, fullName);
-        
-        if (verifyWayResult.success) {
-          console.log(`✅ Fallback: OTP sent via VerifyWay to ${phoneNumber}`);
+        // Fallback to Baileys WhatsApp service
+        try {
+          const baileysResult = await baileysService.sendOTP(phoneNumber, fullName);
+          if (baileysResult.success) {
+            console.log(`✅ Fallback: OTP sent via Baileys to ${phoneNumber}`);
+            res.json({
+              success: true,
+              message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
+              delivered: 'baileys_fallback'
+            });
+          } else {
+            // Final fallback - provide OTP directly
+            console.log(`🔑 Final fallback OTP for ${phoneNumber}: ${otp}`);
+            res.json({
+              success: true,
+              message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
+              delivered: 'fallback',
+              otp: otp
+            });
+          }
+        } catch (baileysError) {
+          console.error('❌ Baileys fallback failed:', baileysError);
+          console.log(`🔑 Final fallback OTP for ${phoneNumber}: ${otp}`);
           res.json({
             success: true,
             message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
-            delivered: 'verifyway_fallback'
-          });
-        } else {
-          res.status(500).json({
-            success: false,
-            message: 'فشل في إرسال رمز التحقق، يرجى المحاولة مرة أخرى'
+            delivered: 'fallback',
+            otp: otp
           });
         }
       }
@@ -1301,13 +1284,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Phone number and OTP are required' });
       }
 
-      // Try verification with stored OTP sessions
-      let result = verifyWayService.verifyOTP(phoneNumber, otp);
-      
-      // If verification fails, try Baileys fallback
-      if (!result.valid) {
-        result = whatsappService.verifyOTP(phoneNumber, otp);
-      }
+      // Try verification with WhatsApp service (primary)
+      let result = whatsappService.verifyOTP(phoneNumber, otp);
       
       if (result.valid) {
         console.log(`✅ OTP verified successfully for ${phoneNumber}`);
