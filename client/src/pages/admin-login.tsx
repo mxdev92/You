@@ -22,20 +22,33 @@ export default function AdminLogin() {
 
     console.log('Login attempt:', { email: formData.email, password: formData.password });
 
-    // Simple hardcoded authentication (case-insensitive email)
+    // Ultra-stable admin authentication with persistent session
     if (formData.email.toLowerCase() === 'mustafa@yalla.com' && formData.password === 'Password1000') {
-      console.log('Authentication successful');
-      // Set admin session
+      console.log('Admin authentication successful');
+      
+      // Set ultra-stable admin session with timestamp and expiry
+      const adminSession = {
+        authenticated: 'true',
+        email: formData.email,
+        loginTime: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year
+        sessionId: 'admin_' + Date.now()
+      };
+      
+      // Store multiple keys for bulletproof persistence
       localStorage.setItem('adminAuthenticated', 'true');
       localStorage.setItem('adminEmail', formData.email);
-      console.log('LocalStorage set, redirecting...');
+      localStorage.setItem('adminSession', JSON.stringify(adminSession));
+      localStorage.setItem('adminLoginTime', new Date().toISOString());
       
-      // Force redirect with timeout to ensure localStorage is set
+      console.log('✅ Ultra-stable admin session created:', adminSession);
+      
+      // Force redirect with guaranteed localStorage persistence
       setTimeout(() => {
         window.location.href = '/admin';
       }, 100);
     } else {
-      console.log('Authentication failed');
+      console.log('Admin authentication failed');
       setError('Invalid email or password');
     }
     

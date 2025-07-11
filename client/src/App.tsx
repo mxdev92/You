@@ -56,13 +56,37 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Protected Admin Route Component
+// Ultra-Stable Protected Admin Route Component
 function ProtectedAdminRoute() {
-  const isAdminAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+  // Multi-layer admin authentication check for maximum stability
+  const adminAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+  const adminEmail = localStorage.getItem('adminEmail');
+  const adminSessionRaw = localStorage.getItem('adminSession');
   
-  console.log('Admin auth check:', { isAdminAuthenticated, localStorage: localStorage.getItem('adminAuthenticated') });
+  let isValidSession = false;
   
-  if (!isAdminAuthenticated) {
+  try {
+    if (adminSessionRaw) {
+      const adminSession = JSON.parse(adminSessionRaw);
+      const isNotExpired = new Date().getTime() < new Date(adminSession.expiresAt).getTime();
+      isValidSession = adminAuthenticated && adminEmail && isNotExpired;
+    } else {
+      // Fallback to basic check for backward compatibility
+      isValidSession = adminAuthenticated && adminEmail;
+    }
+  } catch (error) {
+    console.warn('Admin session parsing error, using fallback check:', error);
+    isValidSession = adminAuthenticated && adminEmail;
+  }
+  
+  console.log('Ultra-stable admin auth check:', { 
+    adminAuthenticated, 
+    adminEmail, 
+    hasSession: !!adminSessionRaw,
+    isValidSession 
+  });
+  
+  if (!isValidSession) {
     return <AdminLogin />;
   }
   

@@ -224,19 +224,22 @@ class PostgresAuthService {
           console.log('PostgreSQL Auth: Session restored for user:', user.email);
         }
       } else {
-        // Session expired or invalid
-        if (this.currentUser !== null) {
-          this.currentUser = null;
-          this.notifyListeners();
-          console.log('PostgreSQL Auth: No valid session found');
+        // CRITICAL FIX: Only logout on explicit 401 unauthorized, not on network errors
+        if (response.status === 401) {
+          console.log('PostgreSQL Auth: Session expired (401), logging out');
+          if (this.currentUser !== null) {
+            this.currentUser = null;
+            this.notifyListeners();
+          }
+        } else {
+          // For other errors (500, network issues), keep user logged in
+          console.warn('PostgreSQL Auth: Session check failed but keeping user logged in. Status:', response.status);
         }
       }
     } catch (error) {
-      console.warn('PostgreSQL Auth: Failed to check session', error);
-      if (this.currentUser !== null) {
-        this.currentUser = null;
-        this.notifyListeners();
-      }
+      // CRITICAL FIX: Never auto-logout on network errors - keep session stable
+      console.warn('PostgreSQL Auth: Session check network error, keeping user logged in:', error);
+      // Don't clear currentUser on network errors - maintain stable login
     } finally {
       this.sessionCheckInProgress = false;
     }
