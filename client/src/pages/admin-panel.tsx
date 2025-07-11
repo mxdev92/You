@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { formatPrice } from '@/lib/price-utils';
 import type { Product, InsertProduct } from '@shared/schema';
 
 // Helper functions for product operations
@@ -2138,10 +2139,10 @@ export default function AdminPanel() {
                       {(selectedOrder.items as any[]).map((item: any, index: number) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="border border-gray-300 px-2 py-1 font-medium">{item.productName}</td>
-                          <td className="border border-gray-300 px-2 py-1">{item.price}</td>
+                          <td className="border border-gray-300 px-2 py-1">{formatPrice(item.price)} د.ع</td>
                           <td className="border border-gray-300 px-2 py-1">{item.quantity} {item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit}</td>
                           <td className="border border-gray-300 px-2 py-1 font-medium">
-                            {(parseFloat(item.price) * item.quantity).toFixed(2)}
+                            {formatPrice(parseFloat(item.price) * item.quantity)} د.ع
                           </td>
                         </tr>
                       ))}
@@ -2154,16 +2155,16 @@ export default function AdminPanel() {
               <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span>المجموع الفرعي:</span>
-                  <span>{selectedOrder.totalAmount.toFixed(2)} د.ع</span>
+                  <span>{formatPrice(selectedOrder.totalAmount)} د.ع</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>رسوم التوصيل:</span>
-                  <span>5.00 د.ع</span>
+                  <span>{formatPrice(2750)} د.ع</span>
                 </div>
                 <div className="border-t border-gray-300 pt-3">
                   <div className="flex justify-between font-bold text-lg">
                     <span>المجموع الكلي:</span>
-                    <span className="text-green-600">{(selectedOrder.totalAmount + 5).toFixed(2)} د.ع</span>
+                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + 2750)} د.ع</span>
                   </div>
                 </div>
               </div>

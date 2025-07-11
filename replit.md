@@ -98,6 +98,14 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 11, 2025:
+• PRICE FORMATTING AND DELIVERY FEE FIXES: Complete price format standardization across entire application
+• Updated delivery fee from 2,000 to 2,750 IQD throughout main app, admin panel, cart, orders, and invoice generation
+• Enhanced admin panel order popup with proper price formatting using comma separators (1,000 format)
+• Fixed all price displays to use formatPrice() function ensuring consistent comma-separated formatting
+• Updated invoice generation server-side to use correct 2,750 IQD delivery fee
+• Enhanced admin panel price breakdown display with proper Arabic formatting and currency symbols
+• Standardized price format: 1,000 / 10,000 / 100,000 format across cart, checkout, orders, and invoices
+July 11, 2025:
 • AUTHENTICATION STABILITY COMPLETELY FIXED: Resolved login after refresh issues with comprehensive session management overhaul
 • Fixed PostgreSQL session store configuration to properly persist userId data across page refreshes and server restarts
 • Enhanced session debugging with detailed logging to track session IDs, user data, and cookie persistence
