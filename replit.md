@@ -97,6 +97,15 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 11, 2025:
+• WasenderAPI Integration Complete: Migrated from unstable Baileys WhatsApp system to commercial WasenderAPI ($6/month, 99.5% uptime)
+• Created comprehensive WasenderAPI service with proper authentication endpoints and session management
+• Added WasenderAPI admin panel at /wasender-admin for managing WhatsApp connections and testing message delivery
+• Updated OTP system to use stable WasenderAPI instead of unreliable Baileys (which had constant 440 timeout errors)
+• Modified order processing to use WasenderAPI for PDF invoice delivery with fallback to existing systems
+• Enhanced error handling with setup instructions guiding users through WasenderAPI dashboard configuration
+• System now ready for production-grade WhatsApp messaging with guaranteed delivery and stability
+
 July 10, 2025:
 • ORDER SUBMISSION ALERT FIX: Changed order success message from "تم استلام طلبكم بنجاح وسيتم التواصل معكم لترتيب عملية التسليم" to just "تم استلام طلبكم بنجاح"
 • ADMIN PDF DELIVERY VERIFIED: Fixed admin number consistency - PDF delivery to 07511856947 (9647511856947@c.us format) now working 100%

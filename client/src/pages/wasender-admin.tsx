@@ -29,8 +29,12 @@ export function WasenderAdminPage() {
   const fetchStatus = async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/api/wasender/status');
-      setStatus(response);
+      const response = await fetch('/api/wasender/status', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      setStatus(data);
     } catch (error: any) {
       setStatus({
         success: false,
@@ -44,10 +48,15 @@ export function WasenderAdminPage() {
   const initializeSession = async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/api/wasender/initialize', {
-        method: 'POST'
+      const response = await fetch('/api/wasender/initialize', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-      setStatus(response);
+      const data = await response.json();
+      setStatus(data);
     } catch (error: any) {
       setStatus({
         success: false,
@@ -61,14 +70,19 @@ export function WasenderAdminPage() {
   const testWasenderAPI = async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/api/wasender/test', {
+      const response = await fetch('/api/wasender/test', {
         method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           phoneNumber: testPhone,
           message: testMessage
         })
       });
-      setTestResult(response);
+      const data = await response.json();
+      setTestResult(data);
     } catch (error: any) {
       setTestResult({
         success: false,
@@ -82,8 +96,12 @@ export function WasenderAdminPage() {
   const getStats = async () => {
     try {
       setLoading(true);
-      const response = await apiRequest('/api/wasender/stats');
-      console.log('WasenderAPI Stats:', response);
+      const response = await fetch('/api/wasender/stats', {
+        method: 'GET',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      console.log('WasenderAPI Stats:', data);
     } catch (error: any) {
       console.error('Stats error:', error);
     } finally {
@@ -232,6 +250,41 @@ export function WasenderAdminPage() {
                 )}
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Setup Instructions Card */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-blue-500" />
+            Setup Instructions
+          </CardTitle>
+          <CardDescription>
+            Complete WasenderAPI setup process
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+              <h3 className="font-semibold text-blue-800 mb-2">Required Setup Steps:</h3>
+              <ol className="text-sm text-blue-700 space-y-2">
+                <li><strong>1.</strong> Sign up at <a href="https://wasenderapi.com" target="_blank" rel="noopener noreferrer" className="underline">wasenderapi.com</a></li>
+                <li><strong>2.</strong> Create a new WhatsApp session in the dashboard</li>
+                <li><strong>3.</strong> Scan QR code with your WhatsApp mobile app</li>
+                <li><strong>4.</strong> Copy session API key and update server configuration</li>
+                <li><strong>5.</strong> Test connection using the buttons above</li>
+              </ol>
+            </div>
+            
+            <div className="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-500">
+              <h4 className="font-semibold text-amber-800 mb-2">Current Status:</h4>
+              <p className="text-sm text-amber-700">
+                WasenderAPI credentials are configured but session needs to be activated on their platform.
+                The "Missing or invalid authorization header" error indicates the session isn't properly authenticated yet.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
