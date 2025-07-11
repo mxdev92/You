@@ -10,21 +10,17 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { BaileysWhatsAppFreshService } from './baileys-whatsapp-fresh.js';
 import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
-import { UltraStableWhatsAppService } from './ultra-stable-whatsapp-service';
 import { verifyWayService } from './verifyway-service';
 import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
 import { UltraStablePDFDelivery } from './ultra-stable-pdf-delivery';
 import { PDFWorkflowService } from './pdf-workflow-service';
-import { BulletproofPDFDelivery } from './bulletproof-pdf-delivery';
 
 const whatsappService = new BaileysWhatsAppFreshService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
-const ultraStableWhatsAppService = new UltraStableWhatsAppService();
 
 // Initialize Ultra-Stable PDF Delivery System
 let ultraStableDelivery: UltraStablePDFDelivery;
 let pdfWorkflowService: PDFWorkflowService;
-let bulletproofDelivery: BulletproofPDFDelivery;
 
 // Initialize Baileys WhatsApp service on startup with persistent authentication
 const initializeWhatsAppService = async () => {
@@ -54,11 +50,6 @@ const initializeWhatsAppService = async () => {
   // Initialize PDF Workflow Service
   pdfWorkflowService = new PDFWorkflowService(whatsappService);
   console.log('📋 PDF Workflow Service initialized - Complete server-side workflow active');
-  
-  // Initialize Bulletproof PDF Delivery System with Fresh Service (enhanced stability)
-  bulletproofDelivery = new BulletproofPDFDelivery(whatsappService);
-  console.log('🛡️ Bulletproof PDF Delivery System initialized - 100% guaranteed delivery');
-  console.log('🛡️ Using Fresh WhatsApp Service with enhanced stability features');
 };
 
 // Initialize on startup
@@ -456,34 +447,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Order submit > check WhatsApp server > get saved credentials > ensure connection > send PDF
       console.log(`🚀 Starting Silent PDF Workflow for Order ${order.id}`);
       
-      // BULLETPROOF PDF DELIVERY - Guaranteed to work
+      // Execute complete workflow silently in background
       setTimeout(async () => {
         try {
-          if (bulletproofDelivery) {
-            console.log(`🛡️ Starting Bulletproof PDF Delivery for Order ${order.id}`);
-            const deliveryResult = await bulletproofDelivery.deliverInvoicePDF(order.id);
-            console.log(`🛡️ Bulletproof delivery completed for Order ${order.id}:`, {
-              success: deliveryResult.success,
-              message: deliveryResult.message,
-              adminDelivered: deliveryResult.adminDelivered,
-              customerDelivered: deliveryResult.customerDelivered,
-              method: deliveryResult.deliveryMethod
-            });
-          } else if (pdfWorkflowService) {
-            // Fallback to PDF workflow service
+          if (pdfWorkflowService) {
+            // Execute the complete PDF workflow
             const workflowResult = await pdfWorkflowService.executePDFWorkflow(order.id);
-            console.log(`📋 Fallback PDF Workflow for Order ${order.id}: ${workflowResult.message}`);
-          } else if (ultraStableDelivery) {
-            // Final fallback to ultra-stable delivery
-            const ultraResult = await ultraStableDelivery.deliverInvoicePDF(order.id);
-            console.log(`🚀 Final fallback delivery for Order ${order.id}: ${ultraResult.message}`);
+            console.log(`📋 PDF Workflow completed for Order ${order.id}:`, {
+              success: workflowResult.success,
+              message: workflowResult.message,
+              connectionStatus: workflowResult.connectionStatus,
+              credentialsStatus: workflowResult.credentialsStatus,
+              deliveryStatus: workflowResult.deliveryStatus,
+              adminDelivered: workflowResult.adminDelivered,
+              customerDelivered: workflowResult.customerDelivered
+            });
           } else {
-            console.log(`❌ All PDF services unavailable for Order ${order.id} - manual processing required`);
+            console.log(`⚠️ PDF Workflow service not ready - using fallback`);
+            // Fallback to ultra-stable delivery
+            if (ultraStableDelivery) {
+              const ultraResult = await ultraStableDelivery.deliverInvoicePDF(order.id);
+              console.log(`🚀 Fallback Ultra-Stable delivery for Order ${order.id}: ${ultraResult.message}`);
+            } else {
+              console.log(`⚠️ All PDF services unavailable for Order ${order.id}`);
+            }
           }
         } catch (error: any) {
           // Silent error handling - never affect order creation
-          console.log(`⚠️ All PDF delivery attempts failed for Order ${order.id}:`, error.message || error);
-          console.log(`📝 Order ${order.id} requires manual PDF generation and delivery`);
+          console.log(`⚠️ Silent PDF Workflow error for Order ${order.id}:`, error.message || error);
         }
       }, 500); // Very fast initiation - 0.5 seconds
       
@@ -1080,122 +1071,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: 'Failed to get ultra-stable delivery stats', 
         success: false,
         error: error.message
-      });
-    }
-  });
-
-  // Bulletproof PDF delivery endpoints
-  app.post('/api/delivery/bulletproof-trigger/:orderId', async (req, res) => {
-    try {
-      const orderId = parseInt(req.params.orderId);
-      if (isNaN(orderId)) {
-        return res.status(400).json({ message: 'Invalid order ID' });
-      }
-
-      console.log(`🛡️ Manual Bulletproof delivery trigger for Order ${orderId}`);
-      
-      if (bulletproofDelivery) {
-        const deliveryResult = await bulletproofDelivery.deliverInvoicePDF(orderId);
-        res.json({
-          ...deliveryResult,
-          system: 'Bulletproof PDF Delivery',
-          trigger: 'Manual',
-          timestamp: Date.now()
-        });
-      } else {
-        console.log(`⚠️ Bulletproof delivery service not ready`);
-        res.status(503).json({ 
-          success: false, 
-          message: 'Bulletproof delivery service not available',
-          system: 'Service Unavailable',
-          orderId,
-          timestamp: Date.now()
-        });
-      }
-    } catch (error: any) {
-      console.error('Bulletproof delivery trigger error:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Bulletproof delivery trigger failed',
-        error: error.message,
-        orderId: parseInt(req.params.orderId),
-        timestamp: Date.now()
-      });
-    }
-  });
-
-  app.get('/api/delivery/bulletproof-stats', async (req, res) => {
-    try {
-      if (bulletproofDelivery) {
-        const stats = bulletproofDelivery.getDeliveryStats();
-        res.json({ ...stats, success: true, timestamp: Date.now() });
-      } else {
-        res.status(503).json({ 
-          success: false, 
-          message: 'Bulletproof delivery service not available',
-          timestamp: Date.now()
-        });
-      }
-    } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
-        message: error.message || 'Failed to get delivery stats',
-        timestamp: Date.now()
-      });
-    }
-  });
-
-  // Ultra-Stable WhatsApp Service endpoints
-  app.get('/api/whatsapp/ultra-stable/status', async (req, res) => {
-    try {
-      const status = ultraStableWhatsAppService.getConnectionStatus();
-      res.json({
-        ...status,
-        success: true,
-        timestamp: Date.now(),
-        service: 'Ultra-Stable WhatsApp Service'
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to get ultra-stable status',
-        timestamp: Date.now()
-      });
-    }
-  });
-
-  app.post('/api/whatsapp/ultra-stable/connect', async (req, res) => {
-    try {
-      console.log('🔌 Manual ultra-stable connection request');
-      const connected = await ultraStableWhatsAppService.connect();
-      res.json({
-        success: connected,
-        message: connected ? 'Connection initiated' : 'Connection failed',
-        timestamp: Date.now()
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to connect',
-        timestamp: Date.now()
-      });
-    }
-  });
-
-  app.post('/api/whatsapp/ultra-stable/reset', async (req, res) => {
-    try {
-      console.log('🔄 Manual ultra-stable reset request');
-      await ultraStableWhatsAppService.resetSession();
-      res.json({
-        success: true,
-        message: 'Session reset successfully',
-        timestamp: Date.now()
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to reset session',
-        timestamp: Date.now()
       });
     }
   });
