@@ -2140,9 +2140,9 @@ export default function AdminPanel() {
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="border border-gray-300 px-2 py-1 font-medium">{item.productName}</td>
                           <td className="border border-gray-300 px-2 py-1">{formatPrice(item.price)} د.ع</td>
-                          <td className="border border-gray-300 px-2 py-1">{item.quantity} {item.unit === 'kg' ? 'كيلو' : item.unit === 'bunch' ? 'حزمة' : item.unit}</td>
+                          <td className="border border-gray-300 px-2 py-1">{parseFloat(item.quantity)} {item.unit === 'kg' ? 'كيلو' : item.unit === 'piece' ? 'قطعة' : item.unit === 'bunch' ? 'حزمة' : item.unit}</td>
                           <td className="border border-gray-300 px-2 py-1 font-medium">
-                            {formatPrice(parseFloat(item.price) * item.quantity)} د.ع
+                            {formatPrice(parseFloat(item.price) * parseFloat(item.quantity))} د.ع
                           </td>
                         </tr>
                       ))}
