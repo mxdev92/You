@@ -14,6 +14,7 @@ import { verifyWayService } from './verifyway-service';
 import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
 import { UltraStablePDFDelivery } from './ultra-stable-pdf-delivery';
 import { PDFWorkflowService } from './pdf-workflow-service';
+import { wasenderService } from './wasender-api-service';
 
 const whatsappService = new BaileysWhatsAppFreshService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
@@ -855,7 +856,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  // Test VerifyWay API endpoint
+  // WasenderAPI endpoints
+  app.get('/api/wasender/status', async (req, res) => {
+    try {
+      const status = await wasenderService.getSessionStatus();
+      res.json(status);
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.post('/api/wasender/initialize', async (req, res) => {
+    try {
+      const result = await wasenderService.initializeSession();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.get('/api/wasender/stats', async (req, res) => {
+    try {
+      const stats = await wasenderService.getConnectionStats();
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.post('/api/wasender/test', async (req, res) => {
+    try {
+      const { phoneNumber, message } = req.body;
+      const testPhone = phoneNumber || '07701234567';
+      const testMessage = message || 'اختبار WasenderAPI - تم الإرسال بنجاح!';
+      
+      console.log(`🧪 Testing WasenderAPI with phone: ${testPhone}`);
+      
+      const result = await wasenderService.sendMessage(testPhone, testMessage);
+      
+      res.json({
+        success: result.success,
+        message: result.message,
+        phone: testPhone,
+        service: 'WasenderAPI'
+      });
+      
+    } catch (error: any) {
+      console.error('WasenderAPI test error:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Test failed'
+      });
+    }
+  });
+
   // Enhanced PDF delivery endpoints
   app.post('/api/delivery/trigger/:orderId', async (req, res) => {
     try {
@@ -1172,55 +1226,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: 'Phone number and full name are required' });
     }
 
-    console.log(`📱 Sending OTP via VerifyWay API to ${phoneNumber}`);
+    console.log(`📱 Sending OTP via WasenderAPI to ${phoneNumber}`);
 
     try {
-      console.log(`🚀 IMMEDIATE OTP GENERATION for ${phoneNumber}`);
+      // Generate 4-digit OTP
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
       
-      // Generate immediate 4-digit OTP for guaranteed delivery
-      const immediateOTP = Math.floor(1000 + Math.random() * 9000).toString();
-      
-      // Store OTP for verification with both services
+      // Store OTP for verification
       const otpSession = {
         phoneNumber,
-        otp: immediateOTP,
+        otp,
         fullName,
         timestamp: Date.now(),
         expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
       };
       
-      // Store in both services for verification
+      // Store in services for verification
       if (whatsappService.otpSessions) {
         whatsappService.otpSessions.set(phoneNumber, otpSession);
       }
       verifyWayService.otpSessions.set(phoneNumber, {
         phoneNumber,
-        otp: immediateOTP,
-        reference: `manual_${Date.now()}`,
+        otp,
+        reference: `wasender_${Date.now()}`,
         timestamp: Date.now(),
         expiresAt: Date.now() + (10 * 60 * 1000)
       });
       
-      console.log(`📱 Sending OTP via VerifyWay to ${phoneNumber}`);
+      // Send OTP via WasenderAPI
+      const result = await wasenderService.sendOTPMessage(phoneNumber, otp);
       
-      // Send OTP via VerifyWay only
-      const verifyWayResult = await verifyWayService.sendOTP(phoneNumber, fullName);
-      
-      if (verifyWayResult.success) {
-        console.log(`✅ OTP sent successfully via VerifyWay to ${phoneNumber}`);
+      if (result.success) {
+        console.log(`✅ OTP sent successfully via WasenderAPI to ${phoneNumber}`);
         res.json({
           success: true,
           message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
-          delivered: 'whatsapp'
+          delivered: 'wasender'
         });
       } else {
-        console.log(`❌ VerifyWay failed: ${verifyWayResult.message}`);
+        console.log(`❌ WasenderAPI failed: ${result.message}`);
         
-        // Handle rate limiting or other errors gracefully
-        if (verifyWayResult.message && verifyWayResult.message.includes('30 seconds')) {
-          res.status(429).json({
-            success: false,
-            message: 'يرجى الانتظار 30 ثانية قبل طلب رمز جديد'
+        // Fallback to VerifyWay
+        const verifyWayResult = await verifyWayService.sendOTP(phoneNumber, fullName);
+        
+        if (verifyWayResult.success) {
+          console.log(`✅ Fallback: OTP sent via VerifyWay to ${phoneNumber}`);
+          res.json({
+            success: true,
+            message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
+            delivered: 'verifyway_fallback'
           });
         } else {
           res.status(500).json({
@@ -1232,28 +1286,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
     } catch (error: any) {
       console.error('❌ OTP service error:', error);
-      
-      // Final fallback - generate local OTP
-      try {
-        const baileyResult = await whatsappService.sendOTP(phoneNumber, fullName);
-        res.json({
-          success: true,
-          message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
-          otp: baileyResult.otp,
-          delivered: 'baileys_emergency'
-        });
-      } catch (baileyError) {
-        // Last resort - manual OTP
-        const emergencyOTP = Math.floor(1000 + Math.random() * 9000).toString();
-        console.log(`🚨 MANUAL OTP for ${phoneNumber}: ${emergencyOTP}`);
-        
-        res.json({
-          success: true,
-          message: 'تم إرسال رمز التحقق (نسخة احتياطية)',
-          otp: emergencyOTP,
-          delivered: 'manual'
-        });
-      }
+      res.status(500).json({
+        success: false,
+        message: 'خطأ في الخدمة، يرجى المحاولة مرة أخرى'
+      });
     }
   });
 
@@ -1265,10 +1301,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Phone number and OTP are required' });
       }
 
-      // Try VerifyWay verification first
+      // Try verification with stored OTP sessions
       let result = verifyWayService.verifyOTP(phoneNumber, otp);
       
-      // If VerifyWay verification fails, try Baileys fallback
+      // If verification fails, try Baileys fallback
       if (!result.valid) {
         result = whatsappService.verifyOTP(phoneNumber, otp);
       }
