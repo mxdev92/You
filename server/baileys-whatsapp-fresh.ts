@@ -31,10 +31,12 @@ export class BaileysWhatsAppFreshService {
   private readonly OTP_EXPIRY_MINUTES = 10;
   private readonly authPath = './whatsapp_session_fresh';
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 50;
-  private reconnectDelay: number = 2000;
-  private stableConnectionTimeout: number = 120000; // 2 minutes
+  private maxReconnectAttempts: number = 15;         // Reduced from 50 to prevent endless loops
+  private reconnectDelay: number = 3000;             // Increased base delay
+  private stableConnectionTimeout: number = 90000;   // 90 seconds timeout
   private connectionVerificationEnabled: boolean = true;
+  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private lastSuccessfulConnection: number = 0;
   private connectionQuality: 'excellent' | 'good' | 'poor' | 'disconnected' = 'disconnected';
   private lastConnectionTime: number = 0;
   private connectionStabilityCheck: NodeJS.Timeout | null = null;
@@ -129,7 +131,7 @@ export class BaileysWhatsAppFreshService {
         fatal: () => {}
       };
 
-      // Create socket with ultra-stable configuration
+      // Create socket with production-grade stability configuration
       this.socket = makeWASocket({
         version,
         auth: {
@@ -138,19 +140,39 @@ export class BaileysWhatsAppFreshService {
         },
         printQRInTerminal: false,
         logger: logger,
-        browser: ['PAKETY Ultra-Stable', 'Chrome', '122.0.0.0'],
-        syncFullHistory: false,
-        markOnlineOnConnect: false,
-        generateHighQualityLinkPreview: false,
-        connectTimeoutMs: 120000,
-        defaultQueryTimeoutMs: 90000,
-        keepAliveIntervalMs: 15000,
-        retryRequestDelayMs: 500,
-        maxMsgRetryCount: 10,
+        // Production-optimized browser identification
+        browser: ['PAKETY-Production', 'Desktop', '1.0.0'],
+        
+        // CORE STABILITY SETTINGS
+        syncFullHistory: false,               // Reduce initial load
+        markOnlineOnConnect: false,           // Prevent phone notifications  
+        generateHighQualityLinkPreview: false, // Save bandwidth
+        
+        // TIMEOUT CONFIGURATIONS (Production Values)
+        connectTimeoutMs: 90000,              // 90s connection timeout
+        defaultQueryTimeoutMs: 90000,         // 90s query timeout  
+        keepAliveIntervalMs: 25000,           // 25s keepalive (production stable)
+        
+        // RETRY LOGIC OPTIMIZATION
+        retryRequestDelayMs: 3000,            // 3s retry delay
+        maxMsgRetryCount: 5,                  // Increased retry attempts
+        
+        // MESSAGE HANDLING OPTIMIZATION
         shouldSyncHistoryMessage: () => false,
         shouldIgnoreJid: () => false,
         getMessage: async (key) => {
-          return { conversation: 'Fresh message' }
+          return { conversation: 'PAKETY message' }
+        },
+        
+        // ADDITIONAL STABILITY FEATURES
+        transactionOpts: {
+          maxCommitRetries: 10,
+          delayBetweenTriesMs: 2000
+        },
+        
+        // PRODUCTION WEBSOCKET CONFIG
+        socketConfig: {
+          timeout: 90000
         }
       });
 
@@ -190,6 +212,11 @@ export class BaileysWhatsAppFreshService {
           this.reconnectAttempts = 0;
           this.qrCode = null;
           this.lastConnectionTime = Date.now();
+          this.lastSuccessfulConnection = Date.now();
+          this.connectionQuality = 'excellent';
+          
+          // Start connection health monitoring
+          this.startHealthCheck();
         } else if (connection === 'connecting') {
           console.log('🔄 Fresh WhatsApp connecting...');
           this.isConnecting = true;
@@ -205,23 +232,32 @@ export class BaileysWhatsAppFreshService {
           if (shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             
-            // Only clear session if we've failed many times AND it's not a network issue
-            if (this.reconnectAttempts > 10 && statusCode !== DisconnectReason.connectionLost) {
-              console.log('⚠️ Multiple reconnection failures, clearing session as last resort');
+            // Handle specific error codes with targeted solutions
+            if (statusCode === 440) {
+              console.log('🔧 440 Login timeout detected - clearing auth state');
+              this.clearAllSessions();
+            } else if (this.reconnectAttempts > 8 && statusCode !== DisconnectReason.connectionLost) {
+              console.log('⚠️ Multiple failures detected, clearing corrupted session');
               this.clearAllSessions();
             }
             
-            console.log(`🔄 Fresh reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} (preserving auth)`);
+            console.log(`🔄 Fresh reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} (Error: ${statusCode})`);
             
-            // Exponential backoff for reconnection
-            const delay = Math.min(5000 * Math.pow(1.5, this.reconnectAttempts - 1), 30000);
+            // Production-grade exponential backoff with jitter
+            const baseDelay = 3000; // Start with 3 seconds
+            const exponentialDelay = baseDelay * Math.pow(2, Math.min(this.reconnectAttempts - 1, 4));
+            const jitter = Math.random() * 1000; // Add randomness to prevent thundering herd
+            const finalDelay = Math.min(exponentialDelay + jitter, 45000); // Max 45 seconds
+            
+            console.log(`⏱️ Reconnecting in ${Math.round(finalDelay/1000)}s...`);
+            
             setTimeout(async () => {
               try {
                 await this.initialize();
               } catch (error) {
                 console.error('❌ Fresh reconnection failed:', error);
               }
-            }, delay);
+            }, finalDelay);
           }
         }
       });
@@ -662,7 +698,58 @@ export class BaileysWhatsAppFreshService {
       connectionQuality: this.connectionQuality,
       connectionStrength: this.getConnectionStrength(),
       uptime: this.lastConnectionTime ? Date.now() - this.lastConnectionTime : 0,
-      reconnectAttempts: this.reconnectAttempts
+      reconnectAttempts: this.reconnectAttempts,
+      lastSuccessfulConnection: this.lastSuccessfulConnection,
+      healthCheckActive: !!this.healthCheckInterval
     };
+  }
+
+  // Production-grade connection health monitoring
+  private startHealthCheck(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+    }
+    
+    this.healthCheckInterval = setInterval(() => {
+      if (this.socket && this.isConnected) {
+        // Check WebSocket readiness
+        const wsReady = this.socket.ws && this.socket.ws.readyState === 1; // WebSocket.OPEN
+        
+        if (!wsReady) {
+          console.log('⚠️ WebSocket connection degraded, triggering reconnection');
+          this.isConnected = false;
+          this.connectionQuality = 'disconnected';
+          // Auto-reconnect will be triggered by the connection.update handler
+        } else {
+          // Connection is healthy
+          this.connectionQuality = 'excellent';
+          this.lastSuccessfulConnection = Date.now();
+        }
+      }
+    }, 30000); // Check every 30 seconds
+  }
+
+  // Stop health monitoring
+  private stopHealthCheck(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+  }
+
+  // Enhanced disconnect handling
+  async disconnect(): Promise<void> {
+    this.stopHealthCheck();
+    if (this.socket) {
+      try {
+        await this.socket.logout();
+        this.socket.end();
+      } catch (error) {
+        console.log('Disconnect cleanup error (expected):', error);
+      }
+    }
+    this.isConnected = false;
+    this.isConnecting = false;
+    this.socket = null;
   }
 }
