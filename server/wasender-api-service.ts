@@ -21,61 +21,61 @@ export class WasenderAPIService {
 
   constructor() {
     this.apiKey = 'e09cac2b770c84cd50a0a7df8d6179a64bcfe26e78655c64b9881298a9b429a5';
-    this.baseUrl = 'https://api.wasenderapi.com';
+    this.baseUrl = 'https://www.wasenderapi.com'; // Correct base URL from documentation
     this.sessionId = 'pakety_main'; // Unique session for this app
+    
+    console.log('🔑 WasenderAPI service initialized with correct endpoints');
   }
 
   /**
-   * Initialize WhatsApp session with QR code
+   * Initialize WasenderAPI - no session setup required, just test connectivity
    */
   async initializeSession(): Promise<WasenderAPIResponse> {
     try {
-      const response = await axios.post(`${this.baseUrl}/api/create_session`, {
-        session_id: this.sessionId,
-        api_key: this.apiKey
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('🚀 WasenderAPI: Session initialization requested');
+      // WasenderAPI doesn't require session initialization like Baileys
+      // Just test that our API key works
+      const testResult = await this.getSessionStatus();
+      
+      console.log('🚀 WasenderAPI: Service initialized and tested');
       return {
-        success: true,
-        message: 'Session initialization started',
-        data: response.data
+        success: testResult.success,
+        message: testResult.success ? 'WasenderAPI ready for use' : 'WasenderAPI initialization failed',
+        data: testResult.data
       };
     } catch (error: any) {
-      console.error('❌ WasenderAPI: Session initialization failed:', error.response?.data || error.message);
+      console.error('❌ WasenderAPI: Initialization failed:', error.message);
       return {
         success: false,
-        message: error.response?.data?.message || error.message
+        message: error.message
       };
     }
   }
 
   /**
-   * Get session status and QR code
+   * Get session status - WasenderAPI doesn't require session management like other APIs
    */
   async getSessionStatus(): Promise<WasenderAPIResponse> {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/session_status`, {
-        params: {
-          session_id: this.sessionId,
-          api_key: this.apiKey
+      // Test API connectivity with a simple request
+      const response = await axios.post(`https://wasenderapi.com/api/send-message`, {
+        to: "+1234567890", // Test number
+        text: "API Status Check"
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
         }
       });
 
-      const status = response.data.status;
-      console.log(`📱 WasenderAPI: Session status - ${status}`);
+      console.log(`📱 WasenderAPI: Connection test successful`);
       
       return {
         success: true,
-        message: `Session status: ${status}`,
-        data: response.data
+        message: 'WasenderAPI connection active',
+        data: { status: 'connected', api_working: true }
       };
     } catch (error: any) {
-      console.error('❌ WasenderAPI: Failed to get session status:', error.response?.data || error.message);
+      console.error('❌ WasenderAPI: Connection test failed:', error.response?.data || error.message);
       return {
         success: false,
         message: error.response?.data?.message || error.message
@@ -84,7 +84,7 @@ export class WasenderAPIService {
   }
 
   /**
-   * Send text message via WhatsApp
+   * Send text message via WhatsApp using correct WasenderAPI format
    */
   async sendMessage(phone: string, message: string): Promise<WasenderAPIResponse> {
     try {
@@ -92,15 +92,14 @@ export class WasenderAPIService {
       const formattedPhone = this.formatPhoneNumber(phone);
       
       const payload = {
-        session_id: this.sessionId,
-        api_key: this.apiKey,
         to: formattedPhone,
-        message: message
+        text: message
       };
 
-      const response = await axios.post(`${this.baseUrl}/api/send_message`, payload, {
+      const response = await axios.post(`https://wasenderapi.com/api/send-message`, payload, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}` // Correct authentication method
         }
       });
 
