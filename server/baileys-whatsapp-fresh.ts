@@ -33,6 +33,8 @@ export class BaileysWhatsAppFreshService {
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 50;
   private reconnectDelay: number = 2000;
+  private stableConnectionTimeout: number = 120000; // 2 minutes
+  private connectionVerificationEnabled: boolean = true;
   private connectionQuality: 'excellent' | 'good' | 'poor' | 'disconnected' = 'disconnected';
   private lastConnectionTime: number = 0;
   private connectionStabilityCheck: NodeJS.Timeout | null = null;
@@ -600,5 +602,67 @@ export class BaileysWhatsAppFreshService {
       console.error('❌ Fresh status update send failed:', error);
       return false;
     }
+  }
+
+  // Enhanced connection verification methods
+  getConnectionStrength(): 'strong' | 'weak' | 'disconnected' {
+    if (!this.isConnected) return 'disconnected';
+    
+    const timeSinceConnection = Date.now() - this.lastConnectionTime;
+    if (timeSinceConnection < 60000 && this.connectionQuality === 'excellent') {
+      return 'strong';
+    } else if (timeSinceConnection < 120000 && this.connectionQuality !== 'disconnected') {
+      return 'weak';
+    }
+    return 'disconnected';
+  }
+
+  /**
+   * Enhanced connection verification for critical operations
+   */
+  async ensureConnectionReady(timeoutMs: number = 30000): Promise<boolean> {
+    if (!this.connectionVerificationEnabled) {
+      return this.isConnected;
+    }
+
+    console.log('🔍 Verifying connection readiness for critical operation...');
+    
+    const startTime = Date.now();
+    const checkInterval = 1000; // Check every second
+    
+    return new Promise((resolve) => {
+      const checkConnection = () => {
+        const elapsed = Date.now() - startTime;
+        
+        if (elapsed > timeoutMs) {
+          console.log('❌ Connection verification timeout');
+          resolve(false);
+          return;
+        }
+        
+        // Check if connection is strong and stable
+        if (this.isConnected && this.getConnectionStrength() === 'strong') {
+          console.log('✅ Connection verified and ready for critical operation');
+          resolve(true);
+          return;
+        }
+        
+        // If not ready, wait a bit and check again
+        setTimeout(checkConnection, checkInterval);
+      };
+      
+      checkConnection();
+    });
+  }
+
+  // Enhanced status method with connection strength
+  getStatus() {
+    return {
+      connected: this.isConnected,
+      connectionQuality: this.connectionQuality,
+      connectionStrength: this.getConnectionStrength(),
+      uptime: this.lastConnectionTime ? Date.now() - this.lastConnectionTime : 0,
+      reconnectAttempts: this.reconnectAttempts
+    };
   }
 }

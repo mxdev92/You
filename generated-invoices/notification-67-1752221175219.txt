@@ -1,0 +1,33 @@
+
+PAKETY ORDER NOTIFICATION
+========================
+Order ID: 67
+Customer: سدف عبد الخالق محمد
+Phone: 07709345934
+Email: ela.gozlu900@gmail.com
+Amount: 18,625 د.ع
+Address: {
+  "notes": "مستشفى تركي",
+  "district": "راس دوميز ",
+  "governorate": "كركوك",
+  "neighborhood": "مستشفى تركي"
+}
+Items: 11 items
+
+PDF Generated: /home/runner/workspace/generated-invoices/invoice-67-1752221175213.pdf
+WhatsApp Delivered: NO
+Timestamp: ١١‏/٧‏/٢٠٢٥، ٨:٠٦:١٥ ص
+
+Items Details:
+- تفاح احمر x1.0 = 2,000 د.ع
+- فلفل اخضر بارد x0.5 = 625 د.ع
+- ورق عنب  x1.0 = 2,500 د.ع
+- شبيت x2.0 = 500 د.ع
+- شجر  x1.0 = 1,000 د.ع
+- بصل x1.0 = 500 د.ع
+- طماطة x2.0 = 1,000 د.ع
+- خيار x2.0 = 1,500 د.ع
+- بطيخ  x4.0 = 3,000 د.ع
+- ركي x4.0 = 3,000 د.ع
+- بطاطا x4.0 = 3,000 د.ع
+========================

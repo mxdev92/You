@@ -22,6 +22,48 @@ export class BulletproofPDFDelivery {
     this.ensureStorageDirectory();
   }
 
+  /**
+   * Verify WhatsApp connection health before delivery
+   */
+  private async verifyConnectionHealth(): Promise<{ ready: boolean; strength: string; message: string }> {
+    try {
+      if (!this.whatsappService) {
+        return { ready: false, strength: 'disconnected', message: 'WhatsApp service not initialized' };
+      }
+
+      // Check basic connection
+      const basicStatus = this.whatsappService.getStatus();
+      if (!basicStatus?.connected) {
+        return { ready: false, strength: 'disconnected', message: 'WhatsApp not connected' };
+      }
+
+      // Check connection strength if available
+      let connectionStrength = 'unknown';
+      if (typeof this.whatsappService.getConnectionStrength === 'function') {
+        connectionStrength = this.whatsappService.getConnectionStrength();
+      }
+
+      // Verify connection readiness for critical operations
+      if (typeof this.whatsappService.ensureConnectionReady === 'function') {
+        console.log('🔍 Verifying connection readiness for PDF delivery...');
+        const ready = await this.whatsappService.ensureConnectionReady(10000); // 10 second timeout
+        
+        if (!ready) {
+          return { ready: false, strength: connectionStrength, message: 'Connection verification failed' };
+        }
+        
+        console.log('✅ Connection verified and ready for PDF delivery');
+        return { ready: true, strength: connectionStrength, message: 'Connection verified and ready' };
+      }
+
+      // Fallback for basic services
+      return { ready: true, strength: connectionStrength, message: 'Basic connection check passed' };
+    } catch (error: any) {
+      console.error('❌ Connection health check failed:', error);
+      return { ready: false, strength: 'error', message: error.message || 'Connection health check failed' };
+    }
+  }
+
   private async ensureStorageDirectory() {
     try {
       await fs.mkdir(this.pdfStoragePath, { recursive: true });
@@ -66,16 +108,19 @@ export class BulletproofPDFDelivery {
       await fs.writeFile(filePath, pdfBuffer);
       console.log(`💾 PDF saved locally: ${filePath}`);
 
-      // Step 4: Try WhatsApp delivery (non-blocking)
+      // Step 4: Verify connection health and attempt WhatsApp delivery
       let whatsappDelivered = false;
       let deliveryMethod: 'whatsapp' | 'email' | 'local-file' | 'fallback' = 'local-file';
 
       try {
-        // Quick connection check
-        if (this.whatsappService && this.isWhatsAppReady()) {
-          console.log(`📱 Attempting WhatsApp delivery...`);
+        // Comprehensive connection health check
+        const healthCheck = await this.verifyConnectionHealth();
+        console.log(`🔍 Connection health check: ${healthCheck.message} (${healthCheck.strength})`);
+
+        if (healthCheck.ready) {
+          console.log(`📱 Connection verified, attempting WhatsApp delivery...`);
           
-          // Try admin delivery
+          // Try admin delivery with verified connection
           const adminResult = await this.attemptWhatsAppDelivery(
             this.adminWhatsApp,
             pdfBuffer,
@@ -100,7 +145,8 @@ export class BulletproofPDFDelivery {
             console.log(`📱 Customer delivery: ${customerResult.success ? 'Success' : 'Failed'}`);
           }
         } else {
-          console.log(`⚠️ WhatsApp not ready, using local file storage`);
+          console.log(`⚠️ WhatsApp connection not ready: ${healthCheck.message}`);
+          console.log(`📁 Using local file storage as primary delivery method`);
         }
       } catch (whatsappError) {
         console.log(`⚠️ WhatsApp delivery failed, using fallback:`, whatsappError);

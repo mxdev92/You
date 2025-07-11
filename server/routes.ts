@@ -10,6 +10,7 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { BaileysWhatsAppFreshService } from './baileys-whatsapp-fresh.js';
 import { SimpleWhatsAppAuth } from './baileys-simple-auth.js';
+import { UltraStableWhatsAppService } from './ultra-stable-whatsapp-service';
 import { verifyWayService } from './verifyway-service';
 import { deliveryPDFService, initializeDeliveryPDFService } from './delivery-pdf-service';
 import { UltraStablePDFDelivery } from './ultra-stable-pdf-delivery';
@@ -18,6 +19,7 @@ import { BulletproofPDFDelivery } from './bulletproof-pdf-delivery';
 
 const whatsappService = new BaileysWhatsAppFreshService();
 const simpleWhatsAppAuth = new SimpleWhatsAppAuth();
+const ultraStableWhatsAppService = new UltraStableWhatsAppService();
 
 // Initialize Ultra-Stable PDF Delivery System
 let ultraStableDelivery: UltraStablePDFDelivery;
@@ -53,9 +55,10 @@ const initializeWhatsAppService = async () => {
   pdfWorkflowService = new PDFWorkflowService(whatsappService);
   console.log('📋 PDF Workflow Service initialized - Complete server-side workflow active');
   
-  // Initialize Bulletproof PDF Delivery System
+  // Initialize Bulletproof PDF Delivery System with Fresh Service (enhanced stability)
   bulletproofDelivery = new BulletproofPDFDelivery(whatsappService);
   console.log('🛡️ Bulletproof PDF Delivery System initialized - 100% guaranteed delivery');
+  console.log('🛡️ Using Fresh WhatsApp Service with enhanced stability features');
 };
 
 // Initialize on startup
@@ -1137,6 +1140,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         success: false, 
         message: error.message || 'Failed to get delivery stats',
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  // Ultra-Stable WhatsApp Service endpoints
+  app.get('/api/whatsapp/ultra-stable/status', async (req, res) => {
+    try {
+      const status = ultraStableWhatsAppService.getConnectionStatus();
+      res.json({
+        ...status,
+        success: true,
+        timestamp: Date.now(),
+        service: 'Ultra-Stable WhatsApp Service'
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to get ultra-stable status',
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  app.post('/api/whatsapp/ultra-stable/connect', async (req, res) => {
+    try {
+      console.log('🔌 Manual ultra-stable connection request');
+      const connected = await ultraStableWhatsAppService.connect();
+      res.json({
+        success: connected,
+        message: connected ? 'Connection initiated' : 'Connection failed',
+        timestamp: Date.now()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to connect',
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  app.post('/api/whatsapp/ultra-stable/reset', async (req, res) => {
+    try {
+      console.log('🔄 Manual ultra-stable reset request');
+      await ultraStableWhatsAppService.resetSession();
+      res.json({
+        success: true,
+        message: 'Session reset successfully',
+        timestamp: Date.now()
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to reset session',
         timestamp: Date.now()
       });
     }
