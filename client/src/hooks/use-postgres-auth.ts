@@ -15,23 +15,26 @@ export const usePostgresAuth = () => {
   });
 
   useEffect(() => {
-    console.log('PostgreSQL Auth: Setting up auth state listener');
+    console.log('PostgreSQL Auth: Setting up ultra-stable auth state listener');
     
     const unsubscribe = postgresAuth.onAuthStateChanged((user) => {
-      console.log('PostgreSQL Auth: State changed', user ? `User: ${user.email}` : 'No user');
+      console.log('PostgreSQL Auth: State changed', user ? `✅ User: ${user.email}` : '❌ No user');
       setAuthState(prev => ({
         ...prev,
         user,
-        loading: false
+        loading: false,
+        lastStateChange: new Date().toISOString()
       }));
     });
 
-    // Only check session once on initial mount
+    // Aggressive session restoration on page load
     const initializeAuth = async () => {
       try {
-        await postgresAuth.checkSession();
+        console.log('🔄 Starting aggressive session restoration...');
+        await postgresAuth.initializeAuth();
+        console.log('✅ Session restoration completed');
       } catch (error) {
-        console.warn('Failed to check session on mount:', error);
+        console.warn('⚠️ Session restoration failed:', error);
         setAuthState(prev => ({ ...prev, loading: false }));
       }
     };
@@ -39,7 +42,7 @@ export const usePostgresAuth = () => {
     initializeAuth();
 
     return unsubscribe.unsubscribe;
-  }, []); // Keep empty dependency array
+  }, []); // Keep empty dependency array for page load only
 
   const register = async (email: string, password: string, fullName?: string, phone?: string) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));

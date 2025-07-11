@@ -20,18 +20,19 @@ app.use(session({
     tableName: 'session',
     createTableIfMissing: true,
     pruneSessionInterval: false, // Don't auto-delete sessions
-    errorLog: console.error
+    errorLog: (...args) => console.error('PG Session Error:', ...args)
   }),
   secret: process.env.SESSION_SECRET || 'yalla-jeetek-secret-key-12345',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: false, // CRITICAL: Don't create sessions for unauthenticated users
   rolling: true, // Reset expiration on activity
-  name: 'connect.sid', // Default session name
+  name: 'connect.sid', // Must match cookie name exactly
   cookie: {
     secure: false, // Set to true if using HTTPS
     httpOnly: true,
     maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year - effectively permanent
-    sameSite: 'lax' // Important for cross-origin requests
+    sameSite: 'lax', // Important for cross-origin requests
+    domain: undefined // Let Express determine the domain automatically
   }
 }));
 

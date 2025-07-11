@@ -557,14 +557,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         phone: phone
       });
       
-      // Set session after successful signup
+      // Store user session with ultra-stable persistence (same as signin)
+      (req as any).session = (req as any).session || {};
       (req as any).session.userId = user.id;
+      (req as any).session.userEmail = user.email;
+      (req as any).session.loginTime = new Date().toISOString();
       
-      // Force session save
+      // Set session to never expire automatically - ultra-stable login
+      (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
+      (req as any).session.cookie.secure = false; // Allow HTTP for development
+      (req as any).session.cookie.httpOnly = true; // Security
+      
+      // Force session save with bulletproof persistence
       await new Promise<void>((resolve, reject) => {
         (req as any).session.save((err: any) => {
-          if (err) reject(err);
-          else resolve();
+          if (err) {
+            console.error('Session save error during signup:', err);
+            reject(err);
+          } else {
+            console.log('✅ Ultra-stable session saved for new user:', user.email);
+            resolve();
+          }
         });
       });
       
@@ -660,8 +673,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/auth/session', async (req, res) => {
     try {
-      const userId = (req as any).session?.userId;
+      // Enhanced session debugging
+      const session = (req as any).session;
+      const userId = session?.userId;
+      const sessionId = session?.id;
+      const cookie = req.headers.cookie;
+      
+      console.log('🔍 Session check debug:', {
+        hasSession: !!session,
+        sessionId: sessionId,
+        userId: userId,
+        hasCookie: !!cookie,
+        cookiePreview: cookie ? cookie.substring(0, 50) + '...' : 'none',
+        sessionData: session ? Object.keys(session) : []
+      });
+      
       if (!userId) {
+        console.log('❌ No userId found in session - returning 401');
         return res.status(401).json({ message: 'Not authenticated' });
       }
 
@@ -679,6 +707,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Refresh session on each successful check for ultra-stable persistence
       (req as any).session.lastChecked = new Date().toISOString();
       (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // Reset to 1 year
+
+      console.log('✅ Session check successful for user:', user.email);
 
       res.json({ 
         user: { 

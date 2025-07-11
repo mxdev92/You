@@ -245,24 +245,28 @@ class PostgresAuthService {
     }
   }
 
-  // Enhanced session restoration with retry mechanism
+  // Enhanced session restoration with aggressive retry mechanism for page refresh
   async initializeAuth(): Promise<void> {
-    console.log('PostgreSQL Auth: Initializing authentication...');
-    let retries = 3;
+    console.log('PostgreSQL Auth: Initializing authentication after page load...');
+    let retries = 5; // More retries for page refresh scenarios
     while (retries > 0) {
       try {
         await this.checkSession();
-        console.log('PostgreSQL Auth: Authentication initialized successfully');
+        if (this.currentUser) {
+          console.log('PostgreSQL Auth: ✅ Session restored successfully for:', this.currentUser.email);
+        } else {
+          console.log('PostgreSQL Auth: No existing session found - user not logged in');
+        }
         return;
       } catch (error) {
         retries--;
-        console.warn(`PostgreSQL Auth: Initialization attempt failed, ${retries} retries left`, error);
+        console.warn(`PostgreSQL Auth: Session restore attempt failed, ${retries} retries left`, error);
         if (retries > 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          await new Promise(resolve => setTimeout(resolve, 500)); // Faster retry for page refresh
         }
       }
     }
-    console.warn('PostgreSQL Auth: Failed to initialize authentication after all retries');
+    console.warn('PostgreSQL Auth: Could not restore session after all retries - treating as logged out');
   }
 }
 
