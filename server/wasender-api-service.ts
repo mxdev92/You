@@ -119,7 +119,7 @@ export class WasenderAPIService {
   }
 
   /**
-   * Send PDF document via WhatsApp
+   * Send PDF document via WhatsApp using WasenderAPI
    */
   async sendPDFDocument(phone: string, pdfBuffer: Buffer, fileName: string, message: string): Promise<{success: boolean, message: string}> {
     try {
@@ -129,18 +129,17 @@ export class WasenderAPIService {
       const base64PDF = pdfBuffer.toString('base64');
       
       const payload = {
-        session_id: this.sessionId,
-        api_key: this.apiKey,
         to: formattedPhone,
-        message: message,
+        text: message,
         file_base64: base64PDF,
         filename: fileName,
         type: 'document'
       };
 
-      const response = await axios.post(`${this.baseUrl}/api/send_file`, payload, {
+      const response = await axios.post(`https://wasenderapi.com/api/send-document`, payload, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
         },
         timeout: 30000 // 30 second timeout for PDF uploads
       });
@@ -189,29 +188,34 @@ export class WasenderAPIService {
   }
 
   /**
-   * Format Iraqi phone numbers for WhatsApp
+   * Format Iraqi phone numbers for WasenderAPI (requires +964 format)
    */
   private formatPhoneNumber(phone: string): string {
     // Remove any non-digit characters
     let cleaned = phone.replace(/\D/g, '');
     
-    // Handle Iraqi format: 07XXXXXXXX -> 9647XXXXXXXX
+    // Handle Iraqi format: 07XXXXXXXX -> +9647XXXXXXXX
     if (cleaned.startsWith('07') && cleaned.length === 11) {
-      return `964${cleaned.substring(1)}`;
+      return `+964${cleaned.substring(1)}`;
     }
     
-    // Handle international format: 9647XXXXXXXX
+    // Handle international format: 9647XXXXXXXX -> +9647XXXXXXXX
     if (cleaned.startsWith('964') && cleaned.length === 13) {
-      return cleaned;
+      return `+${cleaned}`;
     }
     
-    // Handle without country code: 7XXXXXXXX -> 9647XXXXXXXX
+    // Handle without country code: 7XXXXXXXX -> +9647XXXXXXXX
     if (cleaned.startsWith('7') && cleaned.length === 10) {
-      return `964${cleaned}`;
+      return `+964${cleaned}`;
     }
     
-    // Return as-is if format not recognized
-    return cleaned;
+    // Handle already formatted with +
+    if (phone.startsWith('+964')) {
+      return phone;
+    }
+    
+    // Return with + prefix if not already there
+    return phone.startsWith('+') ? phone : `+${cleaned}`;
   }
 
   /**
