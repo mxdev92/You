@@ -97,6 +97,14 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 13, 2025:
+• DELIVERY FEE UPDATE: Changed delivery fee from 2,750 to 2,500 IQD across entire application
+• Updated main app cart checkout to use 2,500 IQD delivery fee for all order calculations
+• Updated admin panel order popup to display 2,500 IQD for "رسوم التوصيل" (delivery fees)
+• Updated invoice generation server-side to use correct 2,500 IQD delivery fee in all PDF invoices
+• Updated Meta Pixel tracking events to include correct 2,500 IQD delivery fee in purchase tracking
+• All price calculations now use standardized 2,500 IQD delivery fee across cart, checkout, orders, invoices, and analytics
+
 July 11, 2025:
 • PRICE FORMATTING AND DELIVERY FEE FIXES: Complete price format standardization across entire application
 • Updated delivery fee from 2,000 to 2,750 IQD throughout main app, admin panel, cart, orders, and invoice generation

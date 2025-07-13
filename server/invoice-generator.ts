@@ -168,7 +168,7 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
   
   // Calculate totals explicitly
   const subtotal = Math.round(order.totalAmount);
-  const deliveryFee = 2750; // Fixed delivery fee of 2,750 IQD
+  const deliveryFee = 2500; // Fixed delivery fee of 2,500 IQD
   const finalTotal = subtotal + deliveryFee;
   
   // Generate QR code for order ID

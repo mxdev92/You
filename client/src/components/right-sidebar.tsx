@@ -240,7 +240,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     };
   }, [isOpen]);
 
-  const shippingFee = 2750; // Fixed delivery fee in IQD
+  const shippingFee = 2500; // Fixed delivery fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
 
   const iraqiGovernorates = [
@@ -333,7 +333,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       console.log('Order created successfully with ID:', orderId);
       
       // Track successful purchase with Meta Pixel
-      MetaPixel.trackPurchase(orderData.totalAmount + 2750, orderId.toString()); // Include delivery fee
+      MetaPixel.trackPurchase(orderData.totalAmount + 2500, orderId.toString()); // Include delivery fee
       
       // Clear cart using CartFlow store for immediate UI update
       await clearCartFlow();
@@ -838,7 +838,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           <Button 
             onClick={() => {
               // Track checkout initiation with Meta Pixel
-              MetaPixel.trackInitiateCheckout(getCartTotal() + 2750); // Include delivery fee
+              MetaPixel.trackInitiateCheckout(getCartTotal() + 2500); // Include delivery fee
               setCurrentView('checkout');
             }}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
