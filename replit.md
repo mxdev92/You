@@ -98,6 +98,12 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 13, 2025:
+• PRIVACY POLICY PAGE: Created comprehensive Arabic privacy policy page at /privacy-policy route
+• Built detailed privacy policy covering app permissions, data collection, usage, protection, and user rights
+• Clearly states app does NOT use GPS, contacts, files, camera, or microphone permissions - grocery delivery only
+• Added privacy policy link to sidebar menu with Shield icon for easy access by all users
+• Privacy policy accessible to both authenticated and anonymous users without login requirement
+• Professional Arabic content with proper RTL text alignment and Cairo font styling
 • DELIVERY FEE UPDATE: Changed delivery fee from 2,750 to 2,500 IQD across entire application
 • Updated main app cart checkout to use 2,500 IQD delivery fee for all order calculations
 • Updated admin panel order popup to display 2,500 IQD for "رسوم التوصيل" (delivery fees)

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, ArrowLeft, ArrowRight, Plus, Download } from "lucide-react";
+import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, ArrowLeft, ArrowRight, Plus, Download, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
@@ -364,12 +364,19 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
     }
   };
 
+  const [, navigate] = useLocation();
+
   const menuItems = [
     { icon: User, label: t('profile'), href: "#", onClick: () => handleMenuItemClick('profile', () => setCurrentView('profile')) },
     { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => handleMenuItemClick('addresses', () => setCurrentView('addresses')) },
     { icon: Wallet, label: t('wallet'), href: "#", onClick: () => handleMenuItemClick('wallet') },
     { icon: ShoppingBag, label: 'طلباتي', href: "#", onClick: () => handleMenuItemClick('orders', () => setCurrentView('orders')) },
     { icon: Settings, label: t('settings'), href: "#", onClick: () => handleMenuItemClick('settings', () => setCurrentView('settings')) },
+    { icon: Shield, label: 'سياسة الخصوصية', href: "#", onClick: () => { 
+        onClose(); 
+        navigate('/privacy-policy'); 
+      }
+    },
   ];
 
   const handleLogout = async () => {
