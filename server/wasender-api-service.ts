@@ -28,57 +28,74 @@ export class WasenderAPIService {
   }
 
   /**
-   * Initialize WasenderAPI - no session setup required, just test connectivity
+   * Initialize WasenderAPI session - Connect WhatsApp session
    */
   async initializeSession(): Promise<WasenderAPIResponse> {
     try {
-      // WasenderAPI doesn't require session initialization like Baileys
-      // Just test that our API key works
-      const testResult = await this.getSessionStatus();
+      // For paid accounts, the session should already exist
+      // We just need to check the status and get QR code if needed
+      const statusResult = await this.getSessionStatus();
       
-      console.log('🚀 WasenderAPI: Service initialized and tested');
+      if (statusResult.success) {
+        if (statusResult.data.status === 'need_scan') {
+          console.log('🔑 WasenderAPI: Session ready for QR code scanning');
+          return {
+            success: true,
+            message: 'WasenderAPI session ready - QR code scanning required',
+            data: statusResult.data
+          };
+        } else if (statusResult.data.status === 'authenticated') {
+          console.log('✅ WasenderAPI: Session already authenticated');
+          return {
+            success: true,
+            message: 'WasenderAPI session authenticated and ready',
+            data: statusResult.data
+          };
+        }
+      }
+      
+      console.log('🚀 WasenderAPI: Session initialization completed');
       return {
-        success: testResult.success,
-        message: testResult.success ? 'WasenderAPI ready for use' : 'WasenderAPI initialization failed',
-        data: testResult.data
+        success: true,
+        message: 'WasenderAPI session initialized',
+        data: statusResult.data
       };
     } catch (error: any) {
-      console.error('❌ WasenderAPI: Initialization failed:', error.message);
+      console.error('❌ WasenderAPI: Session initialization failed:', error.message);
       return {
         success: false,
-        message: error.message
+        message: error.response?.data?.message || error.message,
+        data: error.response?.data
       };
     }
   }
 
   /**
-   * Get session status - WasenderAPI doesn't require session management like other APIs
+   * Get session status - Check if WhatsApp session is connected
    */
   async getSessionStatus(): Promise<WasenderAPIResponse> {
     try {
-      // Test API connectivity with a simple request
-      const response = await axios.post(`https://wasenderapi.com/api/send-message`, {
-        to: "+1234567890", // Test number
-        text: "API Status Check"
-      }, {
+      // Check session status using the proper endpoint
+      const response = await axios.get(`https://wasenderapi.com/api/status`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         }
       });
 
-      console.log(`📱 WasenderAPI: Connection test successful`);
+      console.log(`📱 WasenderAPI: Session status check successful - Status: ${response.data.status}`);
       
       return {
         success: true,
-        message: 'WasenderAPI connection active',
-        data: { status: 'connected', api_working: true }
+        message: `WasenderAPI session status: ${response.data.status}`,
+        data: response.data
       };
     } catch (error: any) {
-      console.error('❌ WasenderAPI: Connection test failed:', error.response?.data || error.message);
+      console.error('❌ WasenderAPI: Session status check failed:', error.response?.data || error.message);
       return {
         success: false,
-        message: error.response?.data?.message || error.message
+        message: error.response?.data?.message || error.message,
+        data: error.response?.data
       };
     }
   }
@@ -270,7 +287,7 @@ export class WasenderAPIService {
   async isSessionReady(): Promise<boolean> {
     try {
       const status = await this.getSessionStatus();
-      return status.success && status.data?.status === 'authenticated';
+      return status.success && (status.data?.status === 'connected' || status.data?.status === 'authenticated');
     } catch {
       return false;
     }
@@ -281,10 +298,10 @@ export class WasenderAPIService {
    */
   async getConnectionStats(): Promise<any> {
     try {
-      const response = await axios.get(`${this.baseUrl}/api/session_status`, {
-        params: {
-          session_id: this.sessionId,
-          api_key: this.apiKey
+      const response = await axios.get(`https://wasenderapi.com/api/status`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
         }
       });
 

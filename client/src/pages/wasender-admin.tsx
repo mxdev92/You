@@ -21,7 +21,7 @@ export function WasenderAdminPage() {
   const [testMessage, setTestMessage] = useState('اختبار WasenderAPI - تم الإرسال بنجاح!');
   const [testResult, setTestResult] = useState<any>(null);
 
-  // Helper function to determine if API is working (trial rate limit means it's working)
+  // Helper function to determine if API is working
   const isApiWorking = (status: WasenderStatus | null): boolean => {
     if (!status) return false;
     if (status.success) return true;
@@ -123,7 +123,15 @@ export function WasenderAdminPage() {
     // Check if API is working (includes trial rate limit case)
     if (isApiWorking(status)) {
       if (status.success) {
-        return <Badge variant="default" className="bg-green-500">🟢 Connected</Badge>;
+        // Check if status indicates connected
+        const isConnected = status.data?.status === 'connected' || status.data?.status === 'authenticated';
+        if (isConnected) {
+          return <Badge variant="default" className="bg-green-500">🟢 Connected (Paid)</Badge>;
+        } else if (status.data?.status === 'need_scan') {
+          return <Badge variant="default" className="bg-yellow-500">🟡 Needs QR Scan</Badge>;
+        } else {
+          return <Badge variant="default" className="bg-blue-500">🔵 Ready</Badge>;
+        }
       } else if (status.message?.includes('free trial') || status.message?.includes('minute')) {
         return <Badge variant="default" className="bg-yellow-500">🟡 Connected (Trial)</Badge>;
       }
@@ -181,7 +189,9 @@ export function WasenderAdminPage() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-700">
-                  {status.message?.includes('free trial') 
+                  {status.data?.status === 'connected' 
+                    ? 'WasenderAPI connected successfully. Paid account with unlimited messaging.'
+                    : status.message?.includes('free trial') 
                     ? 'WasenderAPI connected successfully. Trial account has rate limiting (1 message per minute).'
                     : status.message
                   }
