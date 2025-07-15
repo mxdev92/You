@@ -18,13 +18,11 @@ export class WasenderAPIService {
   private apiKey: string;
   private baseUrl: string;
   private sessionId: string;
-  private whatsappSessionId: number;
 
   constructor() {
     this.apiKey = 'e09cac2b770c84cd50a0a7df8d6179a64bcfe26e78655c64b9881298a9b429a5';
     this.baseUrl = 'https://www.wasenderapi.com'; // Correct base URL from documentation
     this.sessionId = 'pakety_main'; // Unique session for this app
-    this.whatsappSessionId = 1; // Default session ID, will be updated dynamically
     
     console.log('🔑 WasenderAPI service initialized with correct endpoints');
   }
@@ -54,83 +52,30 @@ export class WasenderAPIService {
   }
 
   /**
-   * Get session status - Check if WhatsApp session is connected
+   * Get session status - WasenderAPI doesn't require session management like other APIs
    */
   async getSessionStatus(): Promise<WasenderAPIResponse> {
     try {
-      // Check session status instead of sending test message
-      const response = await axios.get(`${this.baseUrl}/api/status`, {
+      // Test API connectivity with a simple request
+      const response = await axios.post(`https://wasenderapi.com/api/send-message`, {
+        to: "+1234567890", // Test number
+        text: "API Status Check"
+      }, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         }
       });
 
-      console.log(`📱 WasenderAPI: Session status check successful`);
+      console.log(`📱 WasenderAPI: Connection test successful`);
       
       return {
         success: true,
-        message: 'WasenderAPI session checked',
-        data: response.data
+        message: 'WasenderAPI connection active',
+        data: { status: 'connected', api_working: true }
       };
     } catch (error: any) {
-      console.error('❌ WasenderAPI: Session status check failed:', error.response?.data || error.message);
-      return {
-        success: false,
-        message: error.response?.data?.message || error.message
-      };
-    }
-  }
-
-  /**
-   * Get QR code for WhatsApp session connection
-   */
-  async getQRCode(): Promise<WasenderAPIResponse> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/api/whatsapp-sessions/${this.whatsappSessionId}/qrcode`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-
-      console.log(`📱 WasenderAPI: QR code retrieved successfully`);
-      
-      return {
-        success: true,
-        message: 'QR code retrieved',
-        data: response.data
-      };
-    } catch (error: any) {
-      console.error('❌ WasenderAPI: QR code retrieval failed:', error.response?.data || error.message);
-      return {
-        success: false,
-        message: error.response?.data?.message || error.message
-      };
-    }
-  }
-
-  /**
-   * Connect WhatsApp session
-   */
-  async connectSession(): Promise<WasenderAPIResponse> {
-    try {
-      const response = await axios.post(`${this.baseUrl}/api/whatsapp-sessions/${this.whatsappSessionId}/connect`, {}, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-
-      console.log(`📱 WasenderAPI: Session connection initiated`);
-      
-      return {
-        success: true,
-        message: 'Session connection initiated',
-        data: response.data
-      };
-    } catch (error: any) {
-      console.error('❌ WasenderAPI: Session connection failed:', error.response?.data || error.message);
+      console.error('❌ WasenderAPI: Connection test failed:', error.response?.data || error.message);
       return {
         success: false,
         message: error.response?.data?.message || error.message
@@ -320,12 +265,12 @@ export class WasenderAPIService {
   }
 
   /**
-   * Check if WhatsApp session is ready and connected
+   * Check if WhatsApp session is ready
    */
   async isSessionReady(): Promise<boolean> {
     try {
       const status = await this.getSessionStatus();
-      return status.success && (status.data?.status === 'authenticated' || status.data?.connected === true);
+      return status.success && status.data?.status === 'authenticated';
     } catch {
       return false;
     }

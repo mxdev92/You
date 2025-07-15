@@ -8,6 +8,8 @@ import AuthPage from "@/pages/auth";
 import AdminPanel from "@/pages/admin-panel";
 import AdminLogin from "@/pages/admin-login";
 import WhatsAppAdmin from "@/pages/whatsapp-admin";
+import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
+import { WasenderAdminPage } from "@/pages/wasender-admin";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
