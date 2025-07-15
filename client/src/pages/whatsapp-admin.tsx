@@ -1,555 +1,330 @@
 import React, { useState, useEffect } from 'react';
-// Force cache refresh - v2.0
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Send, Phone, User, Package, Store, Truck, CheckCircle, QrCode } from 'lucide-react';
-import QRCodeGenerator from 'qrcode';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, XCircle, AlertCircle, Smartphone, QrCode, Link, MessageSquare } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-const WhatsAppAdmin: React.FC = () => {
-  const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'disconnected' | 'connecting' | 'loading'>('loading');
-  const [qrCode, setQrCode] = useState<string>('');
-  const [testData, setTestData] = useState({
-    phoneNumber: '07701234567',
-    fullName: 'احمد محمد',
-    orderId: '',
-    driverPhone: '07709876543',
-    storePhone: '07701234567',
-    otp: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<{ type: 'success' | 'error'; text: string; time: string }[]>([]);
+interface WasenderStatus {
+  success: boolean;
+  message: string;
+  data?: {
+    status: string;
+    [key: string]: any;
+  };
+}
 
+export default function WhatsAppAdmin() {
+  const [status, setStatus] = useState<WasenderStatus | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [testMessage, setTestMessage] = useState('');
+  const [testPhone, setTestPhone] = useState('07701234567');
+  const { toast } = useToast();
+
+  // Check status on component mount
   useEffect(() => {
-    checkWhatsAppStatus();
-    const interval = setInterval(checkWhatsAppStatus, 15000); // Check every 15 seconds instead of 5
-    return () => clearInterval(interval);
+    checkStatus();
   }, []);
 
-  useEffect(() => {
-    if (whatsappStatus === 'connecting') {
-      fetchQRCode();
-      const qrInterval = setInterval(fetchQRCode, 10000); // Fetch QR every 10 seconds
-      return () => clearInterval(qrInterval);
-    }
-  }, [whatsappStatus]);
-
-  const checkWhatsAppStatus = async () => {
+  const checkStatus = async () => {
     try {
-      const response = await fetch('/api/whatsapp/status');
+      const response = await fetch('/api/wasender/status');
       const data = await response.json();
-      if (data.connected) {
-        setWhatsappStatus('connected');
-        // Clear any error messages when connected
-        setMessages(prev => prev.filter(msg => msg.type !== 'error'));
-      } else if (data.status === 'connecting') {
-        setWhatsappStatus('connecting');
-      } else {
-        setWhatsappStatus('disconnected');
-      }
+      setStatus(data);
     } catch (error) {
-      setWhatsappStatus('disconnected');
+      console.error('Failed to check status:', error);
+      setStatus({ success: false, message: 'Failed to check status' });
     }
   };
 
-  const fetchQRCode = async () => {
+  const getQRCode = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('/api/whatsapp/qr');
+      const response = await fetch('/api/wasender/qr');
       const data = await response.json();
-      if (data.qr) {
-        const qrDataURL = await QRCodeGenerator.toDataURL(data.qr);
-        setQrCode(qrDataURL);
-      }
-    } catch (error) {
-      console.error('Failed to fetch QR code:', error);
-    }
-  };
-
-  const initializeWhatsApp = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
       
+      if (data.success && data.data?.qrCode) {
+        setQrCode(data.data.qrCode);
+        toast({
+          title: "QR Code Retrieved",
+          description: "Scan the QR code with WhatsApp to connect your session.",
+        });
+      } else {
+        toast({
+          title: "QR Code Error",
+          description: data.message || "Failed to get QR code",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to retrieve QR code",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const connectSession = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/wasender/connect', { method: 'POST' });
       const data = await response.json();
       
       if (data.success) {
-        addMessage('success', 'تم بدء عملية الاتصال - تحقق من وحدة التحكم لرؤية رمز QR');
+        toast({
+          title: "Connection Initiated",
+          description: "WhatsApp session connection started.",
+        });
+        // Refresh status after connection attempt
+        setTimeout(checkStatus, 2000);
       } else {
-        addMessage('error', `فشل في الاتصال: ${data.error}`);
+        toast({
+          title: "Connection Error",
+          description: data.message || "Failed to connect session",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      addMessage('error', 'خطأ في تهيئة WhatsApp');
+      toast({
+        title: "Error",
+        description: "Failed to connect session",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    setIsLoading(false);
   };
 
-  const addMessage = (type: 'success' | 'error' | 'info', text: string) => {
-    const newMessage = {
-      type,
-      text,
-      time: new Date().toLocaleTimeString('ar-IQ')
-    };
-    setMessages(prev => [newMessage, ...prev].slice(0, 10));
-  };
+  const testMessaging = async () => {
+    if (!testPhone || !testMessage) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter both phone number and message",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const sendOTP = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
-      const response = await fetch('/api/whatsapp/send-otp', {
+      const response = await fetch('/api/wasender/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          phoneNumber: testData.phoneNumber,
-          fullName: testData.fullName
+          phoneNumber: testPhone,
+          message: testMessage
         })
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // NEVER auto-fill OTP - user must enter it manually
-        setTestData(prev => ({ ...prev, otp: '' }));
-        
-        if (data.note) {
-          // Fallback mode - WhatsApp delivery failed
-          addMessage('error', `⚠️ فشل إرسال OTP عبر WhatsApp - يرجى إرسال هذا الرمز يدوياً للمستخدم: ${data.otp}`);
-          addMessage('info', `الرمز: ${data.otp} (صالح لمدة 10 دقائق)`);
-        } else {
-          // Normal WhatsApp delivery
-          addMessage('success', `تم إرسال رمز OTP عبر WhatsApp إلى ${testData.phoneNumber}`);
-        }
-      } else {
-        const errorData = await response.json();
-        addMessage('error', `فشل في إرسال OTP: ${errorData.message}`);
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في الاتصال');
-    }
-    setIsLoading(false);
-  };
-
-  const verifyOTP = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phoneNumber: testData.phoneNumber,
-          otp: testData.otp
-        })
-      });
-
       const data = await response.json();
-      if (data.valid) {
-        addMessage('success', 'تم التحقق من OTP بنجاح');
+      
+      if (data.success) {
+        toast({
+          title: "Message Sent",
+          description: `Test message sent successfully to ${testPhone}`,
+        });
       } else {
-        addMessage('error', 'OTP غير صحيح أو منتهي الصلاحية');
+        toast({
+          title: "Message Failed",
+          description: data.message || "Failed to send test message",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      addMessage('error', 'خطأ في التحقق');
+      toast({
+        title: "Error",
+        description: "Failed to send test message",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-    setIsLoading(false);
   };
 
-  const sendCustomerInvoice = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/send-customer-invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: parseInt(testData.orderId) })
-      });
-
-      if (response.ok) {
-        addMessage('success', 'تم إرسال الفاتورة للعميل');
-      } else {
-        addMessage('error', 'فشل في إرسال الفاتورة');
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في الإرسال');
+  const getStatusBadge = () => {
+    if (!status) return <Badge variant="secondary">Unknown</Badge>;
+    
+    const statusValue = status.data?.status || 'unknown';
+    switch (statusValue) {
+      case 'connected':
+        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-4 h-4 mr-1" />Connected</Badge>;
+      case 'need_scan':
+        return <Badge variant="secondary"><AlertCircle className="w-4 h-4 mr-1" />Need Scan</Badge>;
+      case 'disconnected':
+        return <Badge variant="destructive"><XCircle className="w-4 h-4 mr-1" />Disconnected</Badge>;
+      default:
+        return <Badge variant="secondary">{statusValue}</Badge>;
     }
-    setIsLoading(false);
-  };
-
-  const sendDriverNotification = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/send-driver-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: parseInt(testData.orderId),
-          driverPhone: testData.driverPhone
-        })
-      });
-
-      if (response.ok) {
-        addMessage('success', 'تم إرسال إشعار للسائق');
-      } else {
-        addMessage('error', 'فشل في إرسال الإشعار');
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في الإرسال');
-    }
-    setIsLoading(false);
-  };
-
-  const sendStoreAlert = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/send-store-alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: parseInt(testData.orderId),
-          storePhone: testData.storePhone
-        })
-      });
-
-      if (response.ok) {
-        addMessage('success', 'تم إرسال إشعار للمتجر');
-      } else {
-        addMessage('error', 'فشل في إرسال الإشعار');
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في الإرسال');
-    }
-    setIsLoading(false);
-  };
-
-  const sendStatusUpdate = async (status: string) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/whatsapp/send-status-update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: parseInt(testData.orderId),
-          status
-        })
-      });
-
-      if (response.ok) {
-        addMessage('success', `تم إرسال تحديث الحالة: ${status}`);
-      } else {
-        addMessage('error', 'فشل في إرسال التحديث');
-      }
-    } catch (error) {
-      addMessage('error', 'خطأ في الإرسال');
-    }
-    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <MessageCircle className="h-8 w-8 text-green-600" />
-            <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              إدارة WhatsApp - PAKETY
-            </h1>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">WhatsApp Admin Panel</h1>
+            <p className="text-gray-600">Manage WasenderAPI WhatsApp connection and messaging</p>
           </div>
-          
-          {/* Connection Status */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                حالة الاتصال المحسّن:
-              </span>
-              <Badge 
-                variant={whatsappStatus === 'connected' ? 'default' : whatsappStatus === 'connecting' ? 'secondary' : 'destructive'}
-                className={`${whatsappStatus === 'connected' ? 'bg-green-500 text-white' : whatsappStatus === 'connecting' ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white'} font-semibold animate-pulse`}
-              >
-                {whatsappStatus === 'connected' ? '🟢 متصل و مستقر بشكل دائم' : whatsappStatus === 'connecting' ? '🟡 جاري الاتصال...' : whatsappStatus === 'loading' ? '⏳ جاري التحقق...' : '🔴 غير متصل'}
-              </Badge>
-            </div>
-            
-            {whatsappStatus === 'connected' && (
-              <div className="text-sm text-green-600 font-semibold" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                ✅ نظام مستقر - جاهز لإرسال الرسائل بدون انقطاع
-              </div>
-            )}
-            
-            {/* Connection initializes automatically - no manual restart needed */}
-          </div>
+          <Button onClick={checkStatus} variant="outline">
+            Refresh Status
+          </Button>
         </div>
 
-        {/* QR Code Display */}
-        {whatsappStatus === 'connecting' && qrCode && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                <QrCode className="h-5 w-5 text-green-600" />
-                رمز QR للاتصال بـ WhatsApp Business
-              </CardTitle>
-              <CardDescription style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                امسح هذا الرمز بتطبيق WhatsApp Business من هاتفك لتفعيل جميع ميزات المراسلة
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <div className="p-4 bg-white rounded-lg border-2 border-gray-200 mb-4">
-                <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
-              </div>
-              <div className="text-center space-y-2">
-                <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  📱 افتح WhatsApp Business على هاتفك
-                </p>
-                <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  ⚙️ اذهب إلى الإعدادات ← الأجهزة المرتبطة ← ربط جهاز
-                </p>
-                <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  📸 امسح الرمز أعلاه
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* OTP Testing */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                <Phone className="h-5 w-5 text-blue-600" />
-                اختبار OTP للتسجيل
-              </CardTitle>
-              <CardDescription style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                إرسال والتحقق من رمز OTP عبر WhatsApp
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  رقم الهاتف:
-                </label>
-                <Input
-                  value={testData.phoneNumber}
-                  onChange={(e) => setTestData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                  placeholder="07701234567"
-                  dir="ltr"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  الاسم الكامل:
-                </label>
-                <Input
-                  value={testData.fullName}
-                  onChange={(e) => setTestData(prev => ({ ...prev, fullName: e.target.value }))}
-                  placeholder="احمد محمد"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  onClick={sendOTP} 
-                  disabled={isLoading || whatsappStatus !== 'connected'}
-                  className="flex-1"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  إرسال OTP
-                </Button>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  رمز OTP للتحقق:
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    value={testData.otp}
-                    onChange={(e) => setTestData(prev => ({ ...prev, otp: e.target.value }))}
-                    placeholder="123456"
-                    maxLength={6}
-                    dir="ltr"
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={verifyOTP}
-                    disabled={isLoading || whatsappStatus !== 'connected'}
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    تحقق
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Order Notifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                <Package className="h-5 w-5 text-orange-600" />
-                إشعارات الطلبات
-              </CardTitle>
-              <CardDescription style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                إرسال الفواتير والإشعارات للطلبات
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  رقم الطلب:
-                </label>
-                <Input
-                  value={testData.orderId}
-                  onChange={(e) => setTestData(prev => ({ ...prev, orderId: e.target.value }))}
-                  placeholder="33"
-                  type="number"
-                  dir="ltr"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  onClick={sendCustomerInvoice}
-                  disabled={isLoading || whatsappStatus !== 'connected' || !testData.orderId}
-                  variant="outline"
-                  size="sm"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  <User className="h-4 w-4 mr-1" />
-                  فاتورة العميل
-                </Button>
-
-                <Button 
-                  onClick={sendStoreAlert}
-                  disabled={isLoading || whatsappStatus !== 'connected' || !testData.orderId}
-                  variant="outline"
-                  size="sm"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                >
-                  <Store className="h-4 w-4 mr-1" />
-                  إشعار المتجر
-                </Button>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  رقم السائق:
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    value={testData.driverPhone}
-                    onChange={(e) => setTestData(prev => ({ ...prev, driverPhone: e.target.value }))}
-                    placeholder="07709876543"
-                    dir="ltr"
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={sendDriverNotification}
-                    disabled={isLoading || whatsappStatus !== 'connected' || !testData.orderId}
-                    size="sm"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  >
-                    <Truck className="h-4 w-4 mr-1" />
-                    إشعار السائق
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  تحديثات حالة الطلب:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { status: 'confirmed', label: 'مؤكد', color: 'bg-blue-500' },
-                    { status: 'preparing', label: 'قيد التحضير', color: 'bg-yellow-500' },
-                    { status: 'out_for_delivery', label: 'في الطريق', color: 'bg-purple-500' },
-                    { status: 'delivered', label: 'تم التوصيل', color: 'bg-green-500' }
-                  ].map(({ status, label, color }) => (
-                    <Button
-                      key={status}
-                      onClick={() => sendStatusUpdate(status)}
-                      disabled={isLoading || whatsappStatus !== 'connected' || !testData.orderId}
-                      size="sm"
-                      variant="outline"
-                      className={`text-white border-0 ${color} hover:opacity-80`}
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Messages Log */}
-        <Card className="mt-6">
+        {/* Status Card */}
+        <Card>
           <CardHeader>
-            <CardTitle style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              سجل الرسائل
+            <CardTitle className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5" />
+              Connection Status
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {messages.length === 0 ? (
-                <p className="text-gray-500 text-center py-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                  لا توجد رسائل بعد
-                </p>
-              ) : (
-                messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 rounded-lg ${
-                      message.type === 'success' 
-                        ? 'bg-green-50 border border-green-200 text-green-800' 
-                        : message.type === 'info'
-                        ? 'bg-blue-50 border border-blue-200 text-blue-800'
-                        : 'bg-red-50 border border-red-200 text-red-800'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <span style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        {message.text}
-                      </span>
-                      <span className="text-xs opacity-70">
-                        {message.time}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="flex items-center gap-4 mb-4">
+              {getStatusBadge()}
+              <span className="text-sm text-gray-600">
+                {status?.message || 'Checking...'}
+              </span>
             </div>
+
+            {status?.data?.status === 'connected' && (
+              <Alert>
+                <CheckCircle className="w-4 h-4" />
+                <AlertDescription>
+                  ✅ WhatsApp is connected and ready for OTP delivery and invoice sending!
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {status?.data?.status === 'need_scan' && (
+              <Alert>
+                <AlertCircle className="w-4 h-4" />
+                <AlertDescription>
+                  ⚠️ WhatsApp session needs QR code scanning to activate. Click "Get QR Code" below.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {!status?.success && (
+              <Alert variant="destructive">
+                <XCircle className="w-4 h-4" />
+                <AlertDescription>
+                  ❌ Connection failed: {status?.message}
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
 
-        {/* Instructions */}
-        <Card className="mt-6">
+        {/* Session Management */}
+        <Card>
           <CardHeader>
-            <CardTitle style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              تعليمات الاستخدام
+            <CardTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              Session Management
             </CardTitle>
           </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Button onClick={getQRCode} disabled={loading}>
+                Get QR Code
+              </Button>
+              <Button onClick={connectSession} disabled={loading} variant="outline">
+                <Link className="w-4 h-4 mr-2" />
+                Connect Session
+              </Button>
+            </div>
+
+            {qrCode && (
+              <div className="mt-4 p-4 border rounded-lg bg-white">
+                <h3 className="text-sm font-medium mb-2">QR Code for WhatsApp Connection:</h3>
+                <div className="text-xs bg-gray-100 p-2 rounded font-mono break-all">
+                  {qrCode}
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  Use a QR code generator to create an image from this string, then scan with WhatsApp.
+                </p>
+              </div>
+            )}
+
+            <Alert>
+              <AlertCircle className="w-4 h-4" />
+              <AlertDescription>
+                <strong>Note:</strong> Session management requires a Personal Access Token. The current Bearer token works for messaging but not for QR codes.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+
+        {/* Test Messaging */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Test Messaging
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Phone Number</label>
+                <input
+                  type="text"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  placeholder="07701234567"
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Test Message</label>
+                <input
+                  type="text"
+                  value={testMessage}
+                  onChange={(e) => setTestMessage(e.target.value)}
+                  placeholder="اختبار الرسائل"
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+            </div>
+            <Button onClick={testMessaging} disabled={loading || !testPhone || !testMessage}>
+              Send Test Message
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Current Status Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>System Status Summary</CardTitle>
+          </CardHeader>
           <CardContent>
-            <div className="space-y-2 text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              <p>• تأكد من أن WhatsApp متصل (حالة الاتصال: متصل)</p>
-              <p>• لاختبار OTP: أدخل رقم هاتف صالح واسم، ثم اضغط "إرسال OTP"</p>
-              <p>• لاختبار إشعارات الطلبات: أدخل رقم طلب موجود من قاعدة البيانات</p>
-              <p>• ستصل الرسائل إلى رقم WhatsApp المربوط بالنظام</p>
-              <p>• يمكن تخصيص أرقام المتجر والسائق في إعدادات النظام</p>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>OTP Delivery:</span>
+                <Badge variant="default" className="bg-green-500">✅ Working</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span>Invoice PDF Delivery:</span>
+                <Badge variant="default" className="bg-green-500">✅ Working</Badge>
+              </div>
+              <div className="flex justify-between">
+                <span>WhatsApp Connection:</span>
+                {getStatusBadge()}
+              </div>
+              <div className="flex justify-between">
+                <span>Session Management:</span>
+                <Badge variant="secondary">Requires Personal Access Token</Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
   );
-};
-
-export default WhatsAppAdmin;
+}

@@ -905,6 +905,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/wasender/qr', async (req, res) => {
+    try {
+      console.log('📱 Getting WasenderAPI QR code...');
+      const result = await wasenderService.getQRCode();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.post('/api/wasender/connect', async (req, res) => {
+    try {
+      console.log('🔗 Connecting WasenderAPI session...');
+      const result = await wasenderService.connectSession();
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
   app.post('/api/wasender/test', async (req, res) => {
     try {
       const { phoneNumber, message } = req.body;
