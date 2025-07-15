@@ -65,7 +65,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
     }
   };
 
-  const totalPrice = (parseFloat(product.price) * selectedQuantity).toLocaleString();
+  const totalPrice = parseFloat(product.price) * selectedQuantity;
 
   return (
     <AnimatePresence>
