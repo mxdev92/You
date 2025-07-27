@@ -14,7 +14,6 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import WalletPage from "@/pages/wallet";
 import WalletSuccess from "@/pages/wallet-success";
 import WalletFailed from "@/pages/wallet-failed";
-import DriverPage from "@/pages/driver";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import React from "react";

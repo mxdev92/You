@@ -65,8 +65,7 @@ export const getQueryFn: <T>(options: {
       }
       
       return JSON.parse(text);
-    } catch (error: any) {
-      const text = await res.text();
+    } catch (error) {
       console.error('JSON parsing error details:', {
         url: res.url,
         status: res.status,
