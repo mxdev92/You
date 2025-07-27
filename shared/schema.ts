@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   fullName: text("full_name"),
   phone: text("phone").unique().notNull(),
+  walletBalance: decimal("wallet_balance", { precision: 10, scale: 2 }).default("0.00").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -52,6 +53,19 @@ export const cartItems = pgTable("cart_items", {
   addedAt: text("added_at").notNull(),
 });
 
+// Wallet transactions
+export const walletTransactions = pgTable("wallet_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  type: text("type").notNull(), // 'deposit', 'payment', 'refund'
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description").notNull(),
+  zaincashTransactionId: text("zaincash_transaction_id"),
+  status: text("status").notNull().default("pending"), // 'pending', 'completed', 'failed'
+  orderId: text("order_id"), // Reference to related order if applicable
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
@@ -59,8 +73,10 @@ export const orders = pgTable("orders", {
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone").notNull(),
   address: jsonb("address").notNull(),
+  paymentMethod: text("payment_method").default("cash").notNull(),
   items: jsonb("items").notNull(),
   totalAmount: integer("total_amount").notNull(),
+
   status: text("status").notNull().default("pending"),
   orderDate: timestamp("order_date", { withTimezone: true }).defaultNow().notNull(),
   deliveryTime: text("delivery_time"),
@@ -97,15 +113,22 @@ export const insertUserAddressSchema = createInsertSchema(userAddresses).omit({
   createdAt: true,
 });
 
+export const insertWalletTransactionSchema = createInsertSchema(walletTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type UserAddress = typeof userAddresses.$inferSelect;
+export type WalletTransaction = typeof walletTransactions.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertUserAddress = z.infer<typeof insertUserAddressSchema>;
+export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;

@@ -369,7 +369,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   const menuItems = [
     { icon: User, label: t('profile'), href: "#", onClick: () => handleMenuItemClick('profile', () => setCurrentView('profile')) },
     { icon: MapPin, label: 'عنوان التوصيل', href: "#", onClick: () => handleMenuItemClick('addresses', () => setCurrentView('addresses')) },
-    { icon: Wallet, label: t('wallet'), href: "#", onClick: () => handleMenuItemClick('wallet') },
+    { icon: Wallet, label: t('wallet'), href: "#", onClick: () => handleMenuItemClick('wallet', () => { onClose(); navigate('/wallet'); }) },
     { icon: ShoppingBag, label: 'طلباتي', href: "#", onClick: () => handleMenuItemClick('orders', () => setCurrentView('orders')) },
     { icon: Settings, label: t('settings'), href: "#", onClick: () => handleMenuItemClick('settings', () => setCurrentView('settings')) },
     { icon: Shield, label: 'سياسة الخصوصية', href: "#", onClick: () => { 

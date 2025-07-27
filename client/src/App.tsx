@@ -11,6 +11,7 @@ import WhatsAppAdmin from "@/pages/whatsapp-admin";
 import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
 import { WasenderAdminPage } from "@/pages/wasender-admin";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import WalletPage from "@/pages/wallet";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import React from "react";
@@ -131,6 +132,9 @@ function Router() {
       
       {/* Privacy Policy - public access */}
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      
+      {/* Wallet page - protected route */}
+      <Route path="/wallet" render={() => <ProtectedRoute component={WalletPage} />} />
       
       {/* Auth page */}
       <Route path="/auth" component={AuthPage} />

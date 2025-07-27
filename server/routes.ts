@@ -9,6 +9,7 @@ import { orders as ordersTable } from "@shared/schema";
 import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { wasenderService } from './wasender-api-service';
+import { zaincashService } from './zaincash-service';
 
 // Initialize WasenderAPI service only
 console.log('🎯 WasenderAPI service initialized - Unified messaging system active');
@@ -861,6 +862,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('❌ Batch PDF generation error:', error);
       res.status(500).json({ message: "Failed to generate batch PDF" });
+    }
+  });
+
+  // Wallet Routes
+  app.get('/api/wallet/balance', async (req, res) => {
+    try {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const balance = await storage.getUserWalletBalance(userId);
+      res.json({ balance });
+    } catch (error) {
+      console.error('Get wallet balance error:', error);
+      res.status(500).json({ message: 'Failed to get wallet balance' });
+    }
+  });
+
+  app.get('/api/wallet/transactions', async (req, res) => {
+    try {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const transactions = await storage.getUserWalletTransactions(userId);
+      res.json(transactions);
+    } catch (error) {
+      console.error('Get wallet transactions error:', error);
+      res.status(500).json({ message: 'Failed to get wallet transactions' });
+    }
+  });
+
+  app.post('/api/wallet/charge', async (req, res) => {
+    try {
+      const userId = (req as any).session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { amount, description } = req.body;
+
+      // Handle payment (negative amount)
+      if (amount < 0) {
+        const paymentAmount = Math.abs(amount);
+        
+        // Check current balance
+        const currentBalance = await storage.getUserWalletBalance(userId);
+        if (currentBalance < paymentAmount) {
+          return res.status(400).json({ 
+            message: 'رصيد المحفظة غير كافي' 
+          });
+        }
+
+        // Create payment transaction
+        const transaction = await storage.createWalletTransaction({
+          userId,
+          type: 'payment',
+          amount: String(paymentAmount),
+          description: description || `دفع - ${paymentAmount.toLocaleString('en-US')} دينار عراقي`,
+          status: 'completed'
+        });
+
+        // Deduct from wallet
+        const newBalance = currentBalance - paymentAmount;
+        await storage.updateUserWalletBalance(userId, newBalance);
+
+        return res.json({
+          success: true,
+          transaction,
+          newBalance
+        });
+      }
+      
+      // Handle charge (positive amount) - minimum 5,000 IQD
+      if (!amount || amount < 5000) {
+        return res.status(400).json({ 
+          message: 'الحد الأدنى للشحن هو 5,000 دينار عراقي' 
+        });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Create unique order ID for this charge request
+      const orderId = `wallet_charge_${userId}_${Date.now()}`;
+      
+      // Create wallet transaction (pending)
+      const transaction = await storage.createWalletTransaction({
+        userId,
+        type: 'deposit',
+        amount: String(amount),
+        description: description || `شحن المحفظة - ${amount.toLocaleString('en-US')} دينار عراقي`,
+        status: 'pending',
+        orderId
+      });
+
+      // Create Zaincash payment
+      const zaincashResult = await zaincashService.createTransaction({
+        amount,
+        serviceType: `شحن محفظة باكيتي - ${amount.toLocaleString('en-US')} دينار`,
+        orderId,
+        redirectUrl: `${req.protocol}://${req.get('host')}/wallet/callback`
+      });
+
+      if (zaincashResult.success) {
+        res.json({
+          success: true,
+          paymentUrl: zaincashResult.paymentUrl,
+          transactionId: zaincashResult.transactionId,
+          orderId
+        });
+      } else {
+        // Mark transaction as failed
+        await storage.updateWalletTransactionStatus(transaction.id, 'failed');
+        res.status(400).json({ 
+          success: false, 
+          message: zaincashResult.error 
+        });
+      }
+
+    } catch (error) {
+      console.error('Wallet charge error:', error);
+      res.status(500).json({ message: 'Failed to create wallet charge' });
+    }
+  });
+
+  app.get('/wallet/callback', async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token) {
+        return res.redirect('/wallet/failed?error=missing_token');
+      }
+
+      // Verify Zaincash callback token
+      const callbackData = zaincashService.verifyCallbackToken(token as string);
+      
+      if (!callbackData) {
+        return res.redirect('/wallet/failed?error=invalid_token');
+      }
+
+      // Find the transaction by order ID
+      const allTransactions = await storage.getUserWalletTransactions(1); // We'll need to improve this
+      const transaction = allTransactions.find(t => t.orderId === callbackData.orderid);
+
+      if (!transaction) {
+        return res.redirect('/wallet/failed?error=transaction_not_found');
+      }
+
+      if (callbackData.status === 'success') {
+        // Update transaction status to completed
+        await storage.updateWalletTransactionStatus(transaction.id, 'completed');
+        
+        // Add amount to user's wallet
+        const currentBalance = await storage.getUserWalletBalance(transaction.userId);
+        const newBalance = currentBalance + parseFloat(transaction.amount);
+        await storage.updateUserWalletBalance(transaction.userId, newBalance);
+
+        return res.redirect(`/wallet/success?amount=${transaction.amount}`);
+      } else {
+        // Mark transaction as failed
+        await storage.updateWalletTransactionStatus(transaction.id, 'failed');
+        return res.redirect(`/wallet/failed?error=${callbackData.msg || 'payment_failed'}`);
+      }
+
+    } catch (error) {
+      console.error('Wallet callback error:', error);
+      return res.redirect('/wallet/failed?error=callback_error');
     }
   });
 

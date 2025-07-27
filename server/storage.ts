@@ -1,4 +1,4 @@
-import { categories, products, cartItems, orders, users, userAddresses, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress } from "@shared/schema";
+import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -42,6 +42,13 @@ export interface IStorage {
   // User Addresses
   getUserAddresses(userId: number): Promise<UserAddress[]>;
   createUserAddress(address: InsertUserAddress): Promise<UserAddress>;
+
+  // Wallet Operations
+  getUserWalletBalance(userId: number): Promise<number>;
+  updateUserWalletBalance(userId: number, amount: number): Promise<User>;
+  createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction>;
+  getUserWalletTransactions(userId: number): Promise<WalletTransaction[]>;
+  updateWalletTransactionStatus(transactionId: number, status: string): Promise<WalletTransaction>;
 }
 
 export class MemStorage implements IStorage {
@@ -622,6 +629,42 @@ export class DatabaseStorage implements IStorage {
 
     const [newAddress] = await db.insert(userAddresses).values(address).returning();
     return newAddress;
+  }
+
+  // Wallet Operations
+  async getUserWalletBalance(userId: number): Promise<number> {
+    const [user] = await db.select({ walletBalance: users.walletBalance })
+      .from(users)
+      .where(eq(users.id, userId));
+    return user ? parseFloat(user.walletBalance) : 0;
+  }
+
+  async updateUserWalletBalance(userId: number, amount: number): Promise<User> {
+    const [updatedUser] = await db.update(users)
+      .set({ walletBalance: String(amount) })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
+  async createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction> {
+    const [newTransaction] = await db.insert(walletTransactions).values(transaction).returning();
+    return newTransaction;
+  }
+
+  async getUserWalletTransactions(userId: number): Promise<WalletTransaction[]> {
+    return await db.select()
+      .from(walletTransactions)
+      .where(eq(walletTransactions.userId, userId))
+      .orderBy(sql`${walletTransactions.createdAt} DESC`);
+  }
+
+  async updateWalletTransactionStatus(transactionId: number, status: string): Promise<WalletTransaction> {
+    const [updatedTransaction] = await db.update(walletTransactions)
+      .set({ status })
+      .where(eq(walletTransactions.id, transactionId))
+      .returning();
+    return updatedTransaction;
   }
 }
 

@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import { useCartFlow } from "@/store/cart-flow";
 import { useTranslation } from "@/hooks/use-translation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
-import { formatPrice } from "@/lib/price-utils";
+import { formatPrice } from "@/lib/utils";
 import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
 
@@ -217,7 +217,15 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   });
   const [deliveryTime, setDeliveryTime] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'wallet'>('cash');
   const deliveryNotesRef = useRef<HTMLTextAreaElement>(null);
+
+  // Get wallet balance
+  const { data: walletData } = useQuery({
+    queryKey: ['/api/wallet/balance'],
+    enabled: !!postgresUser,
+    retry: 1
+  });
 
   const showNotification = (message: string, type: 'success' | 'error' = 'error') => {
     setNotification({ show: true, message, type });
@@ -284,6 +292,16 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       setIsPlacingOrder(false);
       return;
     }
+
+    // Check wallet balance if paying with wallet
+    if (paymentMethod === 'wallet') {
+      const walletBalance = walletData?.balance || 0;
+      if (walletBalance < totalWithShipping) {
+        showNotification(`رصيد المحفظة غير كافي. الرصيد الحالي: ${formatPrice(walletBalance)} دينار والمطلوب: ${formatPrice(totalWithShipping)} دينار`);
+        setIsPlacingOrder(false);
+        return;
+      }
+    }
     
     setIsPlacingOrder(true);
     try {
@@ -311,6 +329,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           unit: item.product.unit
         })) : [],
         totalAmount: getCartTotal(),
+        paymentMethod: paymentMethod,
         status: 'pending',
         deliveryTime: deliveryTime,
         notes: globalDeliveryNotesRef.current || ''
@@ -331,6 +350,21 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       
       const orderId = await createOrderMutation.mutateAsync(orderData);
       console.log('Order created successfully with ID:', orderId);
+
+      // If paying with wallet, deduct amount from wallet
+      if (paymentMethod === 'wallet') {
+        try {
+          await apiRequest('POST', '/api/wallet/charge', { 
+            amount: -totalWithShipping, // Negative amount for payment
+            description: `دفع طلب #${orderId} - ${formatPrice(totalWithShipping)} دينار`
+          });
+          console.log('Wallet payment processed successfully');
+        } catch (walletError) {
+          console.error('Wallet payment failed:', walletError);
+          // Order is already created, so we just warn the user
+          showNotification('تم إنشاء الطلب ولكن فشل خصم المبلغ من المحفظة', 'error');
+        }
+      }
       
       // Track successful purchase with Meta Pixel
       MetaPixel.trackPurchase(orderData.totalAmount + 2500, orderId.toString()); // Include delivery fee
@@ -339,9 +373,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       await clearCartFlow();
       console.log('Cart cleared successfully');
       
-      // Invalidate order queries to refresh order history
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['user-orders'] });
-      console.log('Order history cache invalidated');
+      queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
+      console.log('Caches invalidated');
       
       showNotification('تم استلام طلبكم بنجاح', 'success');
       setCurrentView('cart');
@@ -697,15 +733,64 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           </div>
         </div>
 
+        {/* Payment Method Selection */}
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            طريقة الدفع:
+          </h3>
+          <div className="space-y-3">
+            {/* Cash Payment */}
+            <button
+              onClick={() => setPaymentMethod('cash')}
+              className={`w-full p-4 text-sm rounded-xl transition-all border ${
+                paymentMethod === 'cash' 
+                  ? 'bg-green-500 text-white shadow-md border-green-500' 
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
+              }`}
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
+              💸 الدفع عند التسليم (نقداً)
+            </button>
+            
+            {/* Wallet Payment */}
+            <button
+              onClick={() => setPaymentMethod('wallet')}
+              className={`w-full p-4 text-sm rounded-xl transition-all border ${
+                paymentMethod === 'wallet' 
+                  ? 'bg-blue-500 text-white shadow-md border-blue-500' 
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
+              }`}
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
+              <div className="flex items-center justify-between">
+                <span>💳 الدفع من المحفظة</span>
+                <span className="text-xs">
+                  (الرصيد: {formatPrice(walletData?.balance || 0)})
+                </span>
+              </div>
+              {paymentMethod === 'wallet' && walletData && walletData.balance < totalWithShipping && (
+                <div className="mt-2 text-xs text-red-200 bg-red-600/20 rounded-lg p-2">
+                  رصيد غير كافي - يرجى شحن المحفظة أولاً
+                </div>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Total Payment - Clean */}
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-            المبلغ الكلي الواجب دفعه عند التوصيل:
+            {paymentMethod === 'cash' ? 'المبلغ الكلي الواجب دفعه عند التوصيل:' : 'المبلغ الكلي المطلوب خصمه من المحفظة:'}
           </h3>
-          <div className="bg-green-50 rounded-lg p-4 text-center">
-            <p className="text-2xl font-bold text-green-600">
+          <div className={`${paymentMethod === 'wallet' ? 'bg-blue-50' : 'bg-green-50'} rounded-lg p-4 text-center`}>
+            <p className={`text-2xl font-bold ${paymentMethod === 'wallet' ? 'text-blue-600' : 'text-green-600'}`}>
               {formatPrice(totalWithShipping)} IQD
             </p>
+            {paymentMethod === 'wallet' && (
+              <p className="text-xs text-gray-600 mt-1">
+                الرصيد المتبقي: {formatPrice((walletData?.balance || 0) - totalWithShipping)} IQD
+              </p>
+            )}
           </div>
         </div>
       </div>
