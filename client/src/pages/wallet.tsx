@@ -91,10 +91,10 @@ export default function WalletPage() {
 
   // Monitor payment status changes for real-time updates
   useEffect(() => {
-    if (paymentStatus && monitoringOrderId) {
+    if (paymentStatus && monitoringOrderId && typeof paymentStatus === 'object' && 'status' in paymentStatus) {
       console.log('💰 Real-time payment status update:', paymentStatus);
       
-      if (paymentStatus.status === 'completed') {
+      if ((paymentStatus as any).status === 'completed') {
         console.log('✅ Payment completed! Refreshing wallet data...');
         // Stop monitoring and refresh wallet data
         setMonitoringOrderId(null);
@@ -102,7 +102,7 @@ export default function WalletPage() {
         queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
         setIsPaymentDialogOpen(false);
         setPaymentData(null);
-      } else if (paymentStatus.status === 'failed') {
+      } else if ((paymentStatus as any).status === 'failed') {
         console.log('❌ Payment failed! Stopping monitoring...');
         // Stop monitoring on failure
         setMonitoringOrderId(null);
@@ -144,11 +144,11 @@ export default function WalletPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">مكتمل</Badge>;
+        return <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">مكتمل</span>;
       case 'failed':
-        return <Badge variant="destructive">فاشل</Badge>;
+        return <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">فاشل</span>;
       default:
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">قيد الانتظار</Badge>;
+        return <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full">معلق</span>;
     }
   };
 
@@ -166,159 +166,186 @@ export default function WalletPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Wallet className="h-8 w-8 text-green-600" />
-        <h1 className="text-3xl font-bold text-gray-900">محفظة باكيتي</h1>
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      {/* Modern Header */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Wallet className="h-5 w-5 text-green-600" />
+            </div>
+            <h1 className="text-lg font-semibold text-gray-900">محفظة باكيتي</h1>
+          </div>
+        </div>
       </div>
 
-      {/* Wallet Balance Card */}
-      <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold flex items-center gap-2">
-            <Wallet className="h-6 w-6" />
-            رصيد المحفظة
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-4xl font-bold mb-2">
-            {isLoadingBalance ? (
-              <div className="animate-pulse bg-white/20 h-12 w-48 rounded"></div>
-            ) : (
-              `${formatPrice(walletData?.balance || 0)} دينار`
-            )}
+      <div className="max-w-md mx-auto px-4 py-4 space-y-4">
+        {/* Modern Balance Card */}
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <Wallet className="h-4 w-4" />
+              </div>
+              <span className="text-sm font-medium opacity-90">رصيد المحفظة</span>
+            </div>
           </div>
-          <p className="text-green-100">متاح للاستخدام في جميع طلباتك</p>
-        </CardContent>
-      </Card>
-
-      {/* Charge Wallet Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5 text-green-600" />
-            شحن المحفظة
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              المبلغ (دينار عراقي)
-            </label>
-            <Input
-              type="number"
-              placeholder="ادخل المبلغ (الحد الأدنى 250 دينار)"
-              value={chargeAmount}
-              onChange={(e) => setChargeAmount(e.target.value)}
-              min="250"
-              step="100"
-              className="text-right"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              الحد الأدنى للشحن هو 250 دينار عراقي
-            </p>
+          
+          <div className="space-y-2">
+            <div className="text-2xl font-bold">
+              {isLoadingBalance ? (
+                <div className="animate-pulse bg-white/20 h-8 w-32 rounded-lg"></div>
+              ) : (
+                `${formatPrice(walletData?.balance || 0)} دينار`
+              )}
+            </div>
+            <p className="text-xs text-green-100 opacity-80">متاح للاستخدام في جميع طلباتك</p>
           </div>
+        </div>
 
-          {/* Quick Amount Buttons */}
-          <div className="grid grid-cols-3 gap-2">
-            {[1000, 5000, 10000].map((amount) => (
-              <Button
-                key={amount}
-                variant="outline"
-                onClick={() => setChargeAmount(String(amount))}
-                className="text-sm"
+        {/* Modern Charge Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-green-100 rounded-lg">
+                <Plus className="h-4 w-4 text-green-600" />
+              </div>
+              <h2 className="text-base font-semibold text-gray-900">شحن المحفظة</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">
+                  المبلغ (دينار عراقي)
+                </label>
+                <input
+                  type="number"
+                  placeholder="1000"
+                  value={chargeAmount}
+                  onChange={(e) => setChargeAmount(e.target.value)}
+                  min="250"
+                  step="100"
+                  className="w-full px-4 py-3 text-right text-base font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  الحد الأدنى للشحن هو 250 دينار عراقي
+                </p>
+              </div>
+
+              {/* Modern Quick Amount Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                {[1000, 5000].map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => setChargeAmount(String(amount))}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 mobile-scale"
+                  >
+                    {formatPrice(amount)}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleChargeWallet}
+                disabled={isCharging || chargeMutation.isPending}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-medium py-3 px-4 rounded-xl button-press shadow-sm"
               >
-                {formatPrice(amount)}
-              </Button>
-            ))}
+                {isCharging || chargeMutation.isPending ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    <span className="text-sm">جاري المعالجة...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span className="text-sm">شحن عبر ZainCash</span>
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
+        </div>
 
-          <Button
-            onClick={handleChargeWallet}
-            disabled={isCharging || chargeMutation.isPending}
-            className="w-full bg-green-600 hover:bg-green-700"
-          >
-            {isCharging || chargeMutation.isPending ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                جاري المعالجة...
+        {/* Modern Transaction History */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 bg-blue-100 rounded-lg">
+                <History className="h-4 w-4 text-blue-600" />
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                شحن عبر ZainCash
-              </div>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+              <h2 className="text-base font-semibold text-gray-900">سجل المعاملات</h2>
+            </div>
 
-      {/* Transaction History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-blue-600" />
-            سجل المعاملات
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingTransactions ? (
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-gray-200 rounded-full"></div>
-                      <div className="space-y-1">
-                        <div className="h-4 w-32 bg-gray-200 rounded"></div>
-                        <div className="h-3 w-24 bg-gray-200 rounded"></div>
+            {isLoadingTransactions ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+                        <div className="space-y-1">
+                          <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                          <div className="h-2 w-16 bg-gray-200 rounded"></div>
+                        </div>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <div className="h-3 w-12 bg-gray-200 rounded"></div>
+                        <div className="h-2 w-8 bg-gray-200 rounded"></div>
                       </div>
                     </div>
-                    <div className="h-6 w-16 bg-gray-200 rounded"></div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : transactions && transactions.length > 0 ? (
-            <div className="space-y-3">
-              {transactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center h-10 w-10 bg-white rounded-full border">
-                      {getTypeIcon(transaction.type)}
+                ))}
+              </div>
+            ) : transactions && transactions.length > 0 ? (
+              <div className="space-y-2">
+                {transactions.map((transaction, index) => (
+                  <div 
+                    key={transaction.id} 
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-150 mobile-scale"
+                    style={{
+                      animationDelay: `${index * 100}ms`,
+                      animation: 'fadeInUp 0.3s ease-out forwards'
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center h-8 w-8 bg-white rounded-lg border shadow-sm">
+                        {getTypeIcon(transaction.type)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(transaction.createdAt).toLocaleDateString('ar-IQ', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{transaction.description}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(transaction.createdAt).toLocaleDateString('ar-IQ', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                    <div className="text-left space-y-1">
+                      <p className={`text-sm font-bold ${transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
+                        {transaction.type === 'deposit' ? '+' : '-'}{formatPrice(parseFloat(transaction.amount))}
                       </p>
+                      <div className="flex justify-end">
+                        {getStatusBadge(transaction.status)}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-left space-y-1">
-                    <p className={`font-bold ${transaction.type === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.type === 'deposit' ? '+' : '-'}{formatPrice(parseFloat(transaction.amount))}
-                    </p>
-                    {getStatusBadge(transaction.status)}
-                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <div className="p-3 bg-gray-100 rounded-full w-fit mx-auto mb-3">
+                  <History className="h-8 w-8 text-gray-400" />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>لا توجد معاملات بعد</p>
-              <p className="text-sm">ابدأ بشحن محفظتك</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <p className="text-sm font-medium">لا توجد معاملات بعد</p>
+                <p className="text-xs text-gray-400 mt-1">ابدأ بشحن محفظتك</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Payment Methods Dialog - Direct Payment Only */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
