@@ -97,6 +97,16 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 ## Recent Changes
 
 ```
+July 27, 2025:
+• WALLET FUNCTIONALITY COMPLETED: Fixed critical wallet page implementation with full payment integration
+• Fixed API request method signature error - changed from fetch options to apiRequest(method, url, data) format  
+• Wallet page now fully functional with balance display, transaction history, and Zaincash charging
+• Added wallet storage methods to both MemStorage and DatabaseStorage implementations
+• Database schema updated with walletBalance field and walletTransactions table
+• Wallet charging supports 5,000 IQD minimum with quick amount buttons (5,000 / 10,000 / 25,000)
+• Protected wallet routes require authentication - redirects to payment page after successful charge request
+• Ready for complete wallet payment integration in checkout flow
+
 July 13, 2025:
 • PRIVACY POLICY PAGE: Created comprehensive Arabic privacy policy page at /privacy-policy route
 • Built detailed privacy policy covering app permissions, data collection, usage, protection, and user rights

@@ -43,10 +43,8 @@ export default function WalletPage() {
   // Charge wallet mutation
   const chargeMutation = useMutation({
     mutationFn: async (amount: number) => {
-      return await apiRequest('/api/wallet/charge', {
-        method: 'POST',
-        body: JSON.stringify({ amount })
-      });
+      const response = await apiRequest('POST', '/api/wallet/charge', { amount });
+      return await response.json();
     },
     onSuccess: (data) => {
       if (data.success && data.paymentUrl) {
