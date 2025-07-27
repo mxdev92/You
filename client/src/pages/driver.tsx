@@ -89,8 +89,8 @@ export default function DriverPage() {
     return audio;
   });
 
-  // Vibration pattern for urgent notifications
-  const urgentVibrationPattern = [200, 100, 200, 100, 400, 100, 200];
+  // Extended vibration pattern for urgent notifications (longer and more intense)
+  const urgentVibrationPattern = [800, 200, 800, 200, 1000, 200, 800, 200, 800, 200, 1000, 200, 600];
 
   // Check authentication on mount
   useEffect(() => {
@@ -115,21 +115,43 @@ export default function DriverPage() {
     }
   };
 
-  // Show urgent notification with sound and vibration
+  // Show urgent notification with extended sound and vibration
   const showUrgentNotification = (order: any) => {
-    // Play urgent notification sound immediately
+    // Play urgent notification sound multiple times for longer duration
     try {
+      // Play sound immediately
+      notificationAudio.currentTime = 0;
       notificationAudio.play().catch(console.error);
       console.log("🔊 Playing urgent notification sound");
+      
+      // Play sound again after 1 second for extended duration
+      setTimeout(() => {
+        notificationAudio.currentTime = 0;
+        notificationAudio.play().catch(console.error);
+        console.log("🔊 Playing second urgent notification sound");
+      }, 1000);
+      
+      // Play sound third time after 2 seconds
+      setTimeout(() => {
+        notificationAudio.currentTime = 0;
+        notificationAudio.play().catch(console.error);
+        console.log("🔊 Playing third urgent notification sound");
+      }, 2000);
     } catch (error) {
       console.error("Failed to play sound:", error);
     }
 
-    // Trigger vibration if supported
+    // Trigger extended vibration if supported
     if ("vibrator" in navigator || "vibrate" in navigator) {
       try {
         navigator.vibrate(urgentVibrationPattern);
-        console.log("📳 Triggering urgent vibration");
+        console.log("📳 Triggering extended urgent vibration");
+        
+        // Repeat vibration after 2 seconds for extended duration
+        setTimeout(() => {
+          navigator.vibrate(urgentVibrationPattern);
+          console.log("📳 Triggering second vibration pattern");
+        }, 2500);
       } catch (error) {
         console.error("Failed to vibrate:", error);
       }
@@ -137,7 +159,7 @@ export default function DriverPage() {
 
     // Show in-app notification immediately
     setCurrentNotification({ order, timestamp: Date.now() });
-    console.log("🚨 Urgent notification displayed");
+    console.log("🚨 Urgent notification displayed with extended alerts");
   };
 
   // Setup WebSocket connection when authenticated
