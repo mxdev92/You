@@ -29,16 +29,22 @@ export default function WalletPage() {
   const [isCharging, setIsCharging] = useState(false);
   const queryClient = useQueryClient();
 
-  // Get wallet balance
+  // Get wallet balance with user-specific cache key
   const { data: walletData, isLoading: isLoadingBalance } = useQuery<WalletBalance>({
-    queryKey: ['/api/wallet/balance'],
-    retry: 1
+    queryKey: ['/api/wallet/balance', 'user-specific'],
+    retry: 1,
+    staleTime: 0, // Always fetch fresh data for wallet balance
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
-  // Get wallet transactions
+  // Get wallet transactions with user-specific cache key
   const { data: transactions, isLoading: isLoadingTransactions } = useQuery<WalletTransaction[]>({
-    queryKey: ['/api/wallet/transactions'],
-    retry: 1
+    queryKey: ['/api/wallet/transactions', 'user-specific'],
+    retry: 1,
+    staleTime: 0, // Always fetch fresh data for transactions
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // State for payment dialog

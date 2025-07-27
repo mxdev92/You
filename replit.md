@@ -98,6 +98,14 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 27, 2025:
+• CRITICAL SECURITY FIX: Fixed wallet payment system targeting issue - payments now correctly target only the paying user's account
+• Previously wallet updates accidentally affected all users - now properly uses WHERE clause with specific user ID
+• Database corrected: reset all non-paying users to 0.00 IQD balance, only paying user retains correct balance
+• CRITICAL FRONTEND CACHE SECURITY FIX: Fixed React Query infinite cache causing new users to see other users' wallet balances
+• Added mandatory cache clearing on login, logout, and registration to prevent cross-user data contamination
+• Changed staleTime from Infinity to 30 seconds to prevent permanent cache of sensitive financial data
+• Enhanced wallet queries with user-specific cache keys and forced fresh data fetching for financial security
+• Fixed critical security vulnerability where User A's wallet balance could be displayed to User B due to cached data
 • WALLET SUCCESS/FAILURE PAGES: Created missing wallet redirect pages to fix "Not Found" error after payment
 • Added proper /wallet/success and /wallet/failed routes with professional Arabic UI and auto-redirect functionality  
 • Fixed critical user experience issue where Zaincash redirects showed "Not Found" instead of success confirmation

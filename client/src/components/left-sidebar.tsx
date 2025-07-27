@@ -10,7 +10,7 @@ import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import SignupModal from "@/components/signup-modal";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 
 function OrdersHistoryContent() {
