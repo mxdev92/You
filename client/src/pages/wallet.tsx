@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wallet, Plus, History, CreditCard, ArrowUp, ArrowDown, Clock, QrCode, Smartphone } from 'lucide-react';
+import { Wallet, Plus, History, CreditCard, ArrowUp, ArrowDown, Clock, Smartphone } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { formatPrice } from '@/lib/utils';
 
@@ -273,91 +272,56 @@ export default function WalletPage() {
         </CardContent>
       </Card>
 
-      {/* Payment Methods Dialog */}
+      {/* Payment Methods Dialog - Direct Payment Only */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-semibold">
-              اختر طريقة الدفع
+              دفع مباشر عبر زين كاش
             </DialogTitle>
           </DialogHeader>
           
-          <Tabs defaultValue="qr" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="qr" className="flex items-center gap-2">
-                <QrCode className="h-4 w-4" />
-                رمز QR
-              </TabsTrigger>
-              <TabsTrigger value="webview" className="flex items-center gap-2">
-                <Smartphone className="h-4 w-4" />
-                دفع مباشر
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="qr" className="text-center space-y-4">
-              <div className="bg-white p-4 rounded-lg border">
-                {paymentData?.qrCodeData && (
-                  <img 
-                    src={paymentData.qrCodeData} 
-                    alt="QR Code للدفع"
-                    className="mx-auto w-64 h-64"
-                  />
-                )}
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold text-green-600">امسح الرمز بتطبيق زين كاش</h3>
-                <p className="text-sm text-gray-600">
-                  افتح تطبيق زين كاش واختر "مسح QR" لإكمال الدفع
-                </p>
-                <p className="text-lg font-bold">
-                  المبلغ: {formatPrice(parseInt(chargeAmount))} دينار عراقي
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="webview" className="text-center space-y-4">
-              <div className="space-y-3">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <Smartphone className="h-12 w-12 mx-auto text-blue-500 mb-2" />
-                  <h3 className="font-semibold text-blue-600">دفع مباشر</h3>
-                  <p className="text-sm text-gray-600">
-                    ادفع مباشرة برقم محفظتك وكلمة المرور
-                  </p>
-                </div>
-                
-                <Button 
-                  onClick={() => {
-                    if (paymentData?.webviewUrl) {
-                      // Open payment in embedded iframe for WebView compatibility
-                      const paymentWindow = window.open(
-                        paymentData.webviewUrl, 
-                        '_blank',
-                        'width=400,height=600,scrollbars=yes,resizable=yes'
-                      );
-                      
-                      // Check for payment completion
-                      const checkClosed = setInterval(() => {
-                        if (paymentWindow?.closed) {
-                          clearInterval(checkClosed);
-                          // Refresh wallet balance
-                          queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
-                          queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
-                          setIsPaymentDialogOpen(false);
-                          setPaymentData(null);
-                        }
-                      }, 1000);
+          <div className="text-center space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <Smartphone className="h-12 w-12 mx-auto text-blue-500 mb-2" />
+              <h3 className="font-semibold text-blue-600">دفع مباشر</h3>
+              <p className="text-sm text-gray-600">
+                ادفع مباشرة برقم محفظتك وكلمة المرور
+              </p>
+              <p className="text-lg font-bold mt-2">
+                المبلغ: {formatPrice(parseInt(chargeAmount))} دينار عراقي
+              </p>
+            </div>
+            
+            <Button 
+              onClick={() => {
+                if (paymentData?.paymentUrl) {
+                  // Open payment in new window for WebView compatibility
+                  const paymentWindow = window.open(
+                    paymentData.paymentUrl, 
+                    '_blank',
+                    'width=400,height=600,scrollbars=yes,resizable=yes'
+                  );
+                  
+                  // Check for payment completion
+                  const checkClosed = setInterval(() => {
+                    if (paymentWindow?.closed) {
+                      clearInterval(checkClosed);
+                      // Refresh wallet balance
+                      queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
+                      setIsPaymentDialogOpen(false);
+                      setPaymentData(null);
                     }
-                  }}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  ادفع الآن - {formatPrice(parseInt(chargeAmount))} دينار
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
+                  }, 1000);
+                }
+              }}
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              <CreditCard className="mr-2 h-4 w-4" />
+              ادفع الآن - {formatPrice(parseInt(chargeAmount))} دينار
+            </Button>
 
-          <div className="text-center">
             <Button 
               variant="outline" 
               onClick={() => {
