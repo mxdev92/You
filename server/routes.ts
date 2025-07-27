@@ -347,10 +347,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Orders
   app.get("/api/orders", async (req, res) => {
     try {
+      console.log('📦 Fetching orders from storage...');
       const orders = await storage.getOrders();
+      console.log(`📦 Retrieved ${orders.length} orders successfully`);
       res.json(orders);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch orders" });
+      console.error('❌ Orders fetch error:', error);
+      res.status(500).json({ message: "Failed to fetch orders", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
