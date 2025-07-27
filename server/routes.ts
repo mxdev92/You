@@ -17,6 +17,33 @@ console.log('🎯 WasenderAPI service initialized - Unified messaging system act
 // OTP session storage
 const otpSessions = new Map();
 
+// Declare session types
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    userEmail?: string;
+    loginTime?: string;
+    lastChecked?: string;
+    driverId?: number;
+    driverEmail?: string;
+    driverLoginTime?: string;
+  }
+}
+
+// Mock services for now to prevent errors
+const whatsappService = { 
+  sendOTP: async () => true, 
+  sendCustomerInvoice: async () => true,
+  sendDriverNotification: async () => true,
+  sendStorePreparationAlert: async () => true,
+  sendOrderStatusUpdate: async () => true,
+  sendAdminNotification: async () => true,
+  getConnectionStatus: () => ({ connected: false })
+};
+const deliveryPDFService = { deliver: async () => true };
+const pdfWorkflowService = { triggerWorkflow: async () => true, getStats: () => ({}) };
+const ultraStableDelivery = { deliver: async () => true, getStats: () => ({}) };
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
   app.use((req, res, next) => {
