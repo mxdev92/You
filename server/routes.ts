@@ -72,6 +72,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ version: "2.1.0", timestamp: Date.now() });
   });
 
+  // Test endpoint to verify API connectivity
+  app.get("/api/test", (req, res) => {
+    res.json({ 
+      status: "API Working", 
+      timestamp: new Date().toISOString(),
+      message: "Authentication API is operational" 
+    });
+  });
+
   // Placeholder image endpoint
   app.get("/api/placeholder/:width/:height", (req, res) => {
     const { width, height } = req.params;
@@ -669,6 +678,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Signin error:', error);
       res.status(500).json({ message: 'Failed to sign in' });
+    }
+  });
+
+  // Test login endpoint for debugging
+  app.post('/api/auth/test-login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      console.log('🧪 Testing login for:', email);
+      
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      if (user.passwordHash !== password) {
+        return res.status(401).json({ message: 'Invalid password' });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Login test successful', 
+        user: { id: user.id, email: user.email } 
+      });
+    } catch (error: any) {
+      console.error('Test login error:', error);
+      res.status(500).json({ message: 'Test login failed', error: error.message });
     }
   });
 
