@@ -12,6 +12,8 @@ import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
 import { WasenderAdminPage } from "@/pages/wasender-admin";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import WalletPage from "@/pages/wallet";
+import WalletSuccess from "@/pages/wallet-success";
+import WalletFailed from "@/pages/wallet-failed";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import React from "react";
@@ -133,8 +135,10 @@ function Router() {
       {/* Privacy Policy - public access */}
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       
-      {/* Wallet page - protected route */}
+      {/* Wallet pages */}
       <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
+      <Route path="/wallet/success" component={WalletSuccess} />
+      <Route path="/wallet/failed" component={WalletFailed} />
       
       {/* Auth page */}
       <Route path="/auth" component={AuthPage} />
