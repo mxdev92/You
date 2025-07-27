@@ -3282,5 +3282,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================================================= 
+  // CRITICAL DRIVER ENDPOINTS - EMERGENCY FIX FOR 404 ERRORS
+  // =============================================================================
+  
+  // Emergency PATCH status endpoint to fix 404 errors
+  app.patch('/api/driver/status', async (req: any, res: any) => {
+    try {
+      console.log('🔧 Emergency PATCH status endpoint called');
+      const driverId = req.session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const { isOnline } = req.body;
+      console.log(`🔧 Updating driver ${driverId} status to: ${isOnline}`);
+      
+      const driver = await storage.updateDriverStatus(driverId, isOnline);
+      
+      console.log(`✅ Driver ${driver.fullName} status updated to: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+      
+      res.json({ 
+        success: true, 
+        driver: {
+          id: driver.id,
+          isOnline: driver.isOnline
+        }
+      });
+    } catch (error: any) {
+      console.error('Emergency driver status update error:', error);
+      res.status(500).json({ message: 'Status update failed' });
+    }
+  });
+
+  // Emergency pending orders endpoint to fix 404 errors
+  app.get('/api/driver/pending-orders', async (req: any, res: any) => {
+    try {
+      console.log('🔧 Emergency pending orders endpoint called');
+      const driverId = req.session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orders = await storage.getDriverOrders(driverId, 'assigned');
+      
+      res.json({ 
+        orders: orders.map((order: any) => ({
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address,
+          items: order.items,
+          totalAmount: order.totalAmount,
+          deliveryFee: order.deliveryFee || 2500,
+          status: order.status,
+          assignedAt: order.assignedAt
+        }))
+      });
+    } catch (error: any) {
+      console.error('Emergency pending orders error:', error);
+      res.status(500).json({ message: 'Failed to fetch pending orders' });
+    }
+  });
+
   return httpServer;
 }
