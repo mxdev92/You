@@ -115,8 +115,8 @@ export default function WalletPage() {
   const handleChargeWallet = async () => {
     const amount = parseInt(chargeAmount);
     
-    if (!amount || amount < 250) {
-      alert('الحد الأدنى للشحن هو 250 دينار عراقي');
+    if (!amount || amount < 5000) {
+      alert('الحد الأدنى للشحن هو 5,000 دينار عراقي');
       return;
     }
 
@@ -226,8 +226,8 @@ export default function WalletPage() {
                     placeholder="ادخل المبلغ"
                     value={chargeAmount}
                     onChange={(e) => setChargeAmount(e.target.value)}
-                    min="250"
-                    step="100"
+                    min="5000"
+                    step="1000"
                     className="w-full px-4 py-3 text-right text-lg font-semibold border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-gray-50"
                   />
                   <div className="absolute left-3 top-3 text-sm text-gray-500 font-medium">
@@ -236,7 +236,7 @@ export default function WalletPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                   <span className="w-1 h-1 bg-green-500 rounded-full"></span>
-                  الحد الأدنى للشحن هو 250 دينار عراقي
+                  الحد الأدنى للشحن هو 5,000 دينار عراقي
                 </p>
               </div>
 

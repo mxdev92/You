@@ -104,6 +104,7 @@ July 27, 2025:
 • Enhanced wallet UI with gradient headers, professional input styling, and improved visual hierarchy
 • Added currency indicator (IQD) and consistent green styling for all charge amounts
 • Modern input design with larger font, focus states, and professional visual indicators
+• MINIMUM CHARGE UPDATE: Changed minimum wallet charge from 250 to 5,000 IQD for professional standards
 July 27, 2025:
 • CRITICAL PAYMENT FRAUD VULNERABILITY FIXED: Removed dangerous auto-completion system that credited wallets for failed payments
 • Auto-completion was incorrectly marking all processing payments as "completed" after 2 minutes regardless of actual payment status
