@@ -1,6 +1,6 @@
 import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, driverLocations, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type DriverLocation, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertDriverLocation } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, ilike } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -813,7 +813,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDriverByEmail(email: string): Promise<Driver | undefined> {
-    const [driver] = await db.select().from(drivers).where(eq(drivers.email, email));
+    const [driver] = await db.select().from(drivers).where(ilike(drivers.email, email));
     return driver || undefined;
   }
 
