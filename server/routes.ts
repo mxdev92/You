@@ -952,13 +952,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create unique order ID for this charge request
       const orderId = `wallet_charge_${userId}_${Date.now()}`;
       
-      // Create wallet transaction (pending)
+      // Create wallet transaction (will be completed immediately on success)
       const transaction = await storage.createWalletTransaction({
         userId,
         type: 'deposit',
         amount: String(amount),
         description: description || `شحن المحفظة - ${amount.toLocaleString('en-US')} دينار عراقي`,
-        status: 'pending',
+        status: 'processing',
         orderId
       });
 
@@ -1056,33 +1056,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (callbackData.status === 'success') {
-        // Check if already completed to prevent double processing
+        // IMMEDIATE WALLET CHARGING - No pending states
         if (transaction.status === 'completed') {
           console.log('⚠️ Transaction already completed, skipping');
           return res.redirect(`/wallet/success?amount=${transaction.amount}`);
         }
 
-        // Update transaction status to completed
-        await storage.updateWalletTransactionStatus(transaction.id, 'completed');
-        
-        // Add amount to user's wallet
+        // DIRECT WALLET UPDATE - Immediate credit
         const currentBalance = await storage.getUserWalletBalance(transaction.userId);
         const newBalance = currentBalance + parseFloat(transaction.amount);
-        await storage.updateUserWalletBalance(transaction.userId, newBalance);
+        
+        // Update wallet and transaction simultaneously
+        await Promise.all([
+          storage.updateUserWalletBalance(transaction.userId, newBalance),
+          storage.updateWalletTransactionStatus(transaction.id, 'completed')
+        ]);
 
-        console.log('✅ WALLET SUCCESSFULLY UPDATED:', { 
+        console.log('✅ INSTANT WALLET CREDIT:', { 
           userId: transaction.userId, 
           amount: transaction.amount, 
           oldBalance: currentBalance,
           newBalance,
-          timestamp: new Date().toISOString()
+          processedAt: new Date().toISOString()
         });
         
         return res.redirect(`/wallet/success?amount=${transaction.amount}`);
       } else {
-        // Mark transaction as failed
+        // IMMEDIATE FAILURE - Mark as failed and show error
         await storage.updateWalletTransactionStatus(transaction.id, 'failed');
-        console.log('❌ Payment failed:', callbackData.msg);
+        console.log('❌ PAYMENT FAILED - IMMEDIATE ERROR:', callbackData.msg);
         return res.redirect(`/wallet/failed?error=${callbackData.msg || 'payment_failed'}`);
       }
 
@@ -1092,143 +1094,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Manual wallet transaction completion for debugging/support
-  app.post('/api/wallet/complete-transaction', async (req, res) => {
+  // Simple transaction status check for users
+  app.get('/api/wallet/transaction-status/:orderId', async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Not authenticated' });
     }
+    
     try {
-      const { transactionId } = req.body;
+      const { orderId } = req.params;
       const userId = req.session.userId;
       
-      // Find user's pending transaction
       const userTransactions = await storage.getUserWalletTransactions(userId);
-      const transaction = userTransactions.find(t => t.id === transactionId && t.status === 'pending');
+      const transaction = userTransactions.find(t => t.orderId === orderId);
       
       if (!transaction) {
-        return res.status(404).json({ message: 'Transaction not found or already processed' });
-      }
-
-      // Update transaction status to completed
-      await storage.updateWalletTransactionStatus(transaction.id, 'completed');
-      
-      // Add amount to user's wallet
-      const currentBalance = await storage.getUserWalletBalance(userId);
-      const newBalance = currentBalance + parseFloat(transaction.amount);
-      await storage.updateUserWalletBalance(userId, newBalance);
-
-      console.log('✅ MANUAL WALLET COMPLETION:', { 
-        userId, 
-        transactionId, 
-        amount: transaction.amount, 
-        oldBalance: currentBalance,
-        newBalance,
-        timestamp: new Date().toISOString()
-      });
-      
-      res.json({
-        success: true,
-        message: 'تم إضافة المبلغ إلى محفظتك بنجاح',
-        newBalance,
-        transactionId
-      });
-
-    } catch (error) {
-      console.error('Manual wallet completion error:', error);
-      res.status(500).json({ message: 'Failed to complete transaction' });
-    }
-  });
-
-  // Auto-complete pending transactions that may have missed callbacks
-  app.post('/api/wallet/auto-complete-pending', async (req, res) => {
-    try {
-      // Find all pending transactions older than 10 minutes
-      const allUsers = await storage.getAllUsers();
-      let completedCount = 0;
-      
-      for (const user of allUsers) {
-        const transactions = await storage.getUserWalletTransactions(user.id);
-        const pendingTransactions = transactions.filter(t => {
-          if (t.status !== 'pending') return false;
-          const createdTime = new Date(t.createdAt).getTime();
-          const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
-          return createdTime < tenMinutesAgo;
-        });
-
-        for (const transaction of pendingTransactions) {
-          // Auto-complete if payment was successful (this is a fallback)
-          await storage.updateWalletTransactionStatus(transaction.id, 'completed');
-          
-          const currentBalance = await storage.getUserWalletBalance(transaction.userId);
-          const newBalance = currentBalance + parseFloat(transaction.amount);
-          await storage.updateUserWalletBalance(transaction.userId, newBalance);
-
-          console.log('🔄 AUTO-COMPLETED PENDING TRANSACTION:', {
-            id: transaction.id,
-            userId: transaction.userId,
-            amount: transaction.amount,
-            newBalance,
-            timestamp: new Date().toISOString()
-          });
-          
-          completedCount++;
-        }
+        return res.status(404).json({ message: 'Transaction not found' });
       }
 
       res.json({
-        success: true,
-        message: `Auto-completed ${completedCount} pending transactions`,
-        count: completedCount
+        id: transaction.id,
+        status: transaction.status,
+        amount: transaction.amount,
+        createdAt: transaction.createdAt
       });
 
     } catch (error) {
-      console.error('Auto-complete pending error:', error);
-      res.status(500).json({ message: 'Failed to auto-complete pending transactions' });
+      console.error('Transaction status check error:', error);
+      res.status(500).json({ message: 'Failed to check transaction status' });
     }
   });
 
-  // Enhanced callback monitoring for real-time completion
+  // Clean up failed/expired transactions only (no pending states)
   setInterval(async () => {
     try {
-      // Only check for very recent transactions that might have missed immediate callbacks
       const allUsers = await storage.getAllUsers();
-      let autoCompletedCount = 0;
+      let cleanedCount = 0;
       
       for (const user of allUsers) {
         const transactions = await storage.getUserWalletTransactions(user.id);
-        const recentPendingTransactions = transactions.filter(t => {
-          if (t.status !== 'pending') return false;
+        const expiredProcessingTransactions = transactions.filter(t => {
+          if (t.status !== 'processing') return false;
           const createdTime = new Date(t.createdAt).getTime();
-          const threeMinutesAgo = Date.now() - (3 * 60 * 1000); // Only very recent transactions
-          const oneMinuteAgo = Date.now() - (1 * 60 * 1000);
-          // Only transactions between 1-3 minutes old (likely successful but missed callback)
-          return createdTime < threeMinutesAgo && createdTime > oneMinuteAgo;
+          const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+          return createdTime < tenMinutesAgo; // Expired after 10 minutes
         });
 
-        for (const transaction of recentPendingTransactions) {
-          // Professional auto-completion for likely successful payments
-          await storage.updateWalletTransactionStatus(transaction.id, 'completed');
-          
-          const currentBalance = await storage.getUserWalletBalance(transaction.userId);
-          const newBalance = currentBalance + parseFloat(transaction.amount);
-          await storage.updateUserWalletBalance(transaction.userId, newBalance);
-
-          console.log('✅ REAL-TIME WALLET COMPLETION:', {
+        for (const transaction of expiredProcessingTransactions) {
+          // Mark expired transactions as failed
+          await storage.updateWalletTransactionStatus(transaction.id, 'failed');
+          console.log('🧹 EXPIRED TRANSACTION CLEANED:', {
             id: transaction.id,
             userId: transaction.userId,
             amount: transaction.amount,
-            newBalance,
-            completedAt: new Date().toISOString()
+            expiredAt: new Date().toISOString()
           });
-          
-          autoCompletedCount++;
+          cleanedCount++;
         }
       }
 
     } catch (error) {
-      console.error('Real-time wallet completion error:', error);
+      console.error('Transaction cleanup error:', error);
     }
-  }, 30 * 1000); // Check every 30 seconds for maximum responsiveness
+  }, 5 * 60 * 1000); // Clean up every 5 minutes
 
   // WebSocket Server for real-time updates
   const httpServer = createServer(app);
