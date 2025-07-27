@@ -104,7 +104,7 @@ export default function DriverPage() {
 
   const checkDriverAuth = async () => {
     try {
-      const response = await apiRequest("GET", "/api/driver/session");
+      const response = await apiRequest("GET", "/api/driver/session") as any;
       if (response.driver) {
         setDriver(response.driver);
         setIsAuthenticated(true);
@@ -177,8 +177,8 @@ export default function DriverPage() {
   const loadDashboardData = async () => {
     try {
       const [ordersRes, statsRes] = await Promise.all([
-        apiRequest("GET", "/api/driver/pending-orders"),
-        apiRequest("GET", "/api/driver/stats")
+        apiRequest("GET", "/api/driver/pending-orders") as any,
+        apiRequest("GET", "/api/driver/stats") as any
       ]);
       
       setPendingOrders(ordersRes.orders || []);
@@ -197,7 +197,7 @@ export default function DriverPage() {
       const response = await apiRequest("POST", "/api/driver/login", {
         email: email.trim(),
         password
-      });
+      }) as any;
 
       if (response.driver) {
         setDriver(response.driver);
