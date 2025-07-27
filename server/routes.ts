@@ -2590,5 +2590,300 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // =============================================================================
+  // DRIVER AUTHENTICATION AND DASHBOARD API
+  // =============================================================================
+
+  // Driver login endpoint
+  app.post('/api/driver/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
+      // Get driver by email
+      const driver = await storage.getDriverByEmail(email.toLowerCase().trim());
+      if (!driver || driver.password !== password) {
+        return res.status(401).json({ message: 'Invalid email or password' });
+      }
+
+      if (!driver.isActive) {
+        return res.status(403).json({ message: 'Driver account is deactivated' });
+      }
+
+      // Store driver session
+      req.session.driverId = driver.id;
+      req.session.driverEmail = driver.email;
+      req.session.driverLoginTime = new Date().toISOString();
+      
+      console.log('🚗 Driver login successful:', {
+        id: driver.id,
+        email: driver.email,
+        name: driver.fullName
+      });
+
+      res.json({
+        success: true,
+        driver: {
+          id: driver.id,
+          email: driver.email,
+          fullName: driver.fullName,
+          phone: driver.phone,
+          vehicleType: driver.vehicleType,
+          vehicleModel: driver.vehicleModel || driver.vehiclePlate, // Use vehiclePlate if vehicleModel doesn't exist
+          licensePlate: driver.licensePlate || driver.vehiclePlate,
+          isOnline: driver.isOnline,
+          isActive: driver.isActive,
+          totalDeliveries: driver.totalDeliveries,
+          totalEarnings: driver.totalEarnings || '0.00',
+          rating: driver.rating
+        }
+      });
+    } catch (error) {
+      console.error('Driver login error:', error);
+      res.status(500).json({ message: 'Login failed' });
+    }
+  });
+
+  // Driver session check
+  app.get('/api/driver/session', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'No driver session' });
+      }
+
+      const driver = await storage.getDriver(req.session.driverId);
+      if (!driver || !driver.isActive) {
+        req.session.destroy(() => {});
+        return res.status(401).json({ message: 'Driver session invalid' });
+      }
+
+      res.json({
+        driver: {
+          id: driver.id,
+          email: driver.email,
+          fullName: driver.fullName,
+          phone: driver.phone,
+          vehicleType: driver.vehicleType,
+          vehicleModel: driver.vehicleModel || driver.vehiclePlate,
+          licensePlate: driver.licensePlate || driver.vehiclePlate,
+          isOnline: driver.isOnline,
+          isActive: driver.isActive,
+          totalDeliveries: driver.totalDeliveries,
+          totalEarnings: driver.totalEarnings || '0.00',
+          rating: driver.rating
+        }
+      });
+    } catch (error) {
+      console.error('Driver session check error:', error);
+      res.status(500).json({ message: 'Session check failed' });
+    }
+  });
+
+  // Driver logout
+  app.post('/api/driver/logout', async (req, res) => {
+    try {
+      const driverId = req.session.driverId;
+      
+      if (driverId) {
+        // Set driver offline when logging out
+        await storage.updateDriverStatus(driverId, false);
+      }
+      
+      req.session.destroy(() => {
+        res.json({ success: true });
+      });
+    } catch (error) {
+      console.error('Driver logout error:', error);
+      res.status(500).json({ message: 'Logout failed' });
+    }
+  });
+
+  // Update driver online/offline status
+  app.patch('/api/driver/status', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const { isOnline } = req.body;
+      const driver = await storage.updateDriverStatus(req.session.driverId, isOnline);
+      
+      console.log(`🚗 Driver ${driver.fullName} status updated to: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+      
+      res.json({ 
+        success: true, 
+        driver: {
+          id: driver.id,
+          isOnline: driver.isOnline
+        }
+      });
+    } catch (error) {
+      console.error('Driver status update error:', error);
+      res.status(500).json({ message: 'Status update failed' });
+    }
+  });
+
+  // Update driver location
+  app.post('/api/driver/location', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const { latitude, longitude } = req.body;
+      
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: 'Latitude and longitude are required' });
+      }
+
+      // Create location record
+      await storage.createDriverLocation({
+        driverId: req.session.driverId,
+        latitude: latitude.toString(),
+        longitude: longitude.toString()
+      });
+
+      console.log(`📍 Driver ${req.session.driverId} location updated: ${latitude}, ${longitude}`);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Driver location update error:', error);
+      res.status(500).json({ message: 'Location update failed' });
+    }
+  });
+
+  // Get driver pending orders
+  app.get('/api/driver/pending-orders', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orders = await storage.getDriverOrders(req.session.driverId, 'assigned');
+      
+      res.json({ 
+        orders: orders.map(order => ({
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address,
+          items: order.items,
+          totalAmount: order.totalAmount,
+          deliveryFee: order.deliveryFee,
+          status: order.status,
+          assignedAt: order.assignedAt
+        }))
+      });
+    } catch (error) {
+      console.error('Driver pending orders error:', error);
+      res.status(500).json({ message: 'Failed to fetch pending orders' });
+    }
+  });
+
+  // Get driver statistics
+  app.get('/api/driver/stats', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const driver = await storage.getDriver(req.session.driverId);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      // Get today's deliveries
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const allOrders = await storage.getDriverOrders(req.session.driverId);
+      const todayOrders = allOrders.filter(order => 
+        order.deliveredAt && new Date(order.deliveredAt) >= today
+      );
+
+      const todayDeliveries = todayOrders.length;
+      const todayEarnings = todayDeliveries * 2500; // 2,500 IQD per delivery
+
+      res.json({
+        stats: {
+          todayDeliveries,
+          todayEarnings,
+          totalDeliveries: driver.totalDeliveries || 0,
+          totalEarnings: parseFloat(driver.totalEarnings || '0'),
+          rating: parseFloat(driver.rating || '5.0')
+        }
+      });
+    } catch (error) {
+      console.error('Driver stats error:', error);
+      res.status(500).json({ message: 'Failed to fetch driver stats' });
+    }
+  });
+
+  // Driver order response (accept/decline)
+  app.post('/api/driver/order-response', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const { orderId, action } = req.body;
+      
+      if (!orderId || !action || !['accept', 'decline'].includes(action)) {
+        return res.status(400).json({ message: 'Valid order ID and action required' });
+      }
+
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      if (action === 'accept') {
+        // Accept the order
+        await storage.updateOrderStatusByDriver(orderId, 'picked_up');
+        
+        // Update driver's total deliveries counter
+        const driver = await storage.getDriver(req.session.driverId);
+        if (driver) {
+          await storage.updateDriverTotalDeliveries(
+            req.session.driverId, 
+            (driver.totalDeliveries || 0) + 1
+          );
+        }
+
+        console.log(`✅ Driver ${req.session.driverId} accepted order ${orderId}`);
+        
+        // Broadcast status update to admin panel via WebSocket
+        if (wss) {
+          const statusUpdate = {
+            type: 'ORDER_STATUS_UPDATED',
+            orderId,
+            status: 'picked_up',
+            driverId: req.session.driverId,
+            timestamp: new Date().toISOString()
+          };
+          
+          wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify(statusUpdate));
+            }
+          });
+        }
+        
+      } else {
+        // Decline the order - remove driver assignment
+        await storage.updateOrderStatus(orderId, 'pending');
+        console.log(`❌ Driver ${req.session.driverId} declined order ${orderId}`);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Driver order response error:', error);
+      res.status(500).json({ message: 'Order response failed' });
+    }
+  });
+
   return httpServer;
 }
