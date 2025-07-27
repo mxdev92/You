@@ -104,11 +104,12 @@ export default function DriverPage() {
 
   const checkDriverAuth = async () => {
     try {
-      const response = await apiRequest("GET", "/api/driver/session") as any;
-      if (response.driver) {
-        setDriver(response.driver);
+      const response = await apiRequest("GET", "/api/driver/session");
+      const data = await response.json();
+      if (data.driver) {
+        setDriver(data.driver);
         setIsAuthenticated(true);
-        setIsOnline(response.driver.isOnline);
+        setIsOnline(data.driver.isOnline);
       }
     } catch (error) {
       console.log("No driver session found");
@@ -177,12 +178,15 @@ export default function DriverPage() {
   const loadDashboardData = async () => {
     try {
       const [ordersRes, statsRes] = await Promise.all([
-        apiRequest("GET", "/api/driver/pending-orders") as any,
-        apiRequest("GET", "/api/driver/stats") as any
+        apiRequest("GET", "/api/driver/pending-orders"),
+        apiRequest("GET", "/api/driver/stats")
       ]);
       
-      setPendingOrders(ordersRes.orders || []);
-      setStats(statsRes.stats || stats);
+      const ordersData = await ordersRes.json();
+      const statsData = await statsRes.json();
+      
+      setPendingOrders(ordersData.orders || []);
+      setStats(statsData.stats || stats);
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
     }
@@ -197,16 +201,20 @@ export default function DriverPage() {
       const response = await apiRequest("POST", "/api/driver/login", {
         email: email.trim(),
         password
-      }) as any;
+      });
+      
+      const data = await response.json();
+      console.log("Login response data:", data);
 
-      if (response.driver) {
-        setDriver(response.driver);
+      if (data.driver) {
+        setDriver(data.driver);
         setIsAuthenticated(true);
-        setIsOnline(response.driver.isOnline);
+        setIsOnline(data.driver.isOnline);
       } else {
         setLoginError("بيانات تسجيل الدخول غير صحيحة");
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       setLoginError(error.message || "خطأ في تسجيل الدخول");
     } finally {
       setIsLoggingIn(false);
