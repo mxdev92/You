@@ -75,6 +75,9 @@ export default function DriverPage() {
 
   // WebSocket for real-time notifications
   const [ws, setWs] = useState<WebSocket | null>(null);
+  
+  // Notification permission state
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
 
   // Enhanced notification audio system
   const [notificationAudio] = useState(() => {
@@ -92,7 +95,51 @@ export default function DriverPage() {
   // Check authentication on mount
   useEffect(() => {
     checkDriverAuth();
+    requestNotificationPermission();
   }, []);
+
+  // Request notification permission
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      console.log("🔔 Notification permission:", permission);
+    }
+  };
+
+  // Show browser notification
+  const showBrowserNotification = (title: string, body: string, order?: any) => {
+    if (notificationPermission === "granted") {
+      const notification = new Notification(title, {
+        body,
+        icon: "/favicon.ico",
+        badge: "/favicon.ico",
+        tag: "pakety-order",
+        requireInteraction: true,
+        vibrate: urgentVibrationPattern,
+        data: order
+      });
+
+      // Play notification sound
+      notificationAudio.play().catch(console.error);
+
+      // Auto-close after 10 seconds
+      setTimeout(() => notification.close(), 10000);
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+        if (order) {
+          setCurrentNotification({ order, timestamp: Date.now() });
+        }
+      };
+
+      return notification;
+    } else {
+      console.warn("🚫 Notification permission not granted");
+      return null;
+    }
+  };
 
   // Setup WebSocket connection when authenticated
   useEffect(() => {
@@ -460,9 +507,34 @@ export default function DriverPage() {
             <Button
               onClick={async () => {
                 try {
+                  // Check and request permission if needed
+                  if (notificationPermission !== "granted") {
+                    const permission = await Notification.requestPermission();
+                    setNotificationPermission(permission);
+                    if (permission !== "granted") {
+                      alert("يرجى السماح بالإشعارات لتلقي تنبيهات الطلبات");
+                      return;
+                    }
+                  }
+
                   const response = await apiRequest("POST", "/api/driver/test-notification");
                   const data = await response.json();
                   console.log("🧪 Test notification triggered:", data);
+                  
+                  if (data.success && data.testOrder) {
+                    // Show browser notification
+                    showBrowserNotification(
+                      "🚨 طلب جديد - باكيتي",
+                      `طلب من ${data.testOrder.customerName}\nالمبلغ: ${data.testOrder.totalAmount.toLocaleString()} IQD\nالعنوان: ${data.testOrder.address.governorate} - ${data.testOrder.address.district}`,
+                      data.testOrder
+                    );
+                    
+                    // Show in-app notification as well
+                    setCurrentNotification({ 
+                      order: data.testOrder, 
+                      timestamp: Date.now() 
+                    });
+                  }
                 } catch (error) {
                   console.error("Test notification failed:", error);
                 }
