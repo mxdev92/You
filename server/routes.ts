@@ -2613,15 +2613,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Driver account is deactivated' });
       }
 
-      // Store driver session
+      // Store driver session with forced save
       req.session.driverId = driver.id;
       req.session.driverEmail = driver.email;
       req.session.driverLoginTime = new Date().toISOString();
       
+      // Force save session
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      
       console.log('🚗 Driver login successful:', {
         id: driver.id,
         email: driver.email,
-        name: driver.fullName
+        name: driver.fullName,
+        sessionId: req.sessionID
       });
 
       res.json({
@@ -2632,7 +2641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fullName: driver.fullName,
           phone: driver.phone,
           vehicleType: driver.vehicleType,
-          vehicleModel: driver.vehicleModel || driver.vehiclePlate, // Use vehiclePlate if vehicleModel doesn't exist
+          vehicleModel: driver.vehicleModel || driver.vehiclePlate,
           licensePlate: driver.licensePlate || driver.vehiclePlate,
           isOnline: driver.isOnline,
           isActive: driver.isActive,
