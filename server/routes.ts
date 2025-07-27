@@ -2605,8 +2605,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get driver by email
       const driver = await storage.getDriverByEmail(email.toLowerCase().trim());
-      if (!driver || driver.password !== password) {
-        return res.status(401).json({ message: 'Invalid email or password' });
+      if (!driver || driver.passwordHash !== password) {
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       if (!driver.isActive) {
