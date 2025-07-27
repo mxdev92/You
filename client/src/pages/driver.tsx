@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Car, MapPin, DollarSign, Package, LogOut, CheckCircle, XCircle } from "lucide-react";
+import { Bell, Car, MapPin, DollarSign, Package, LogOut, CheckCircle, XCircle, Phone } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Driver {
@@ -491,254 +491,308 @@ export default function DriverPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Avatar className="w-12 h-12">
-              <AvatarFallback className="bg-green-600 text-white">
-                {driver?.fullName?.charAt(0) || "D"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">
-                مرحباً، {driver?.fullName}
-              </h1>
-              <p className="text-gray-600">
-                {driver?.vehicleType} - {driver?.licensePlate}
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Modern Mobile Header */}
+      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-xl">
+        <div className="px-4 py-6 safe-area-top">
+          {/* Driver Profile Section */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/10">
+              <span className="text-white font-bold text-xl">{driver?.fullName?.charAt(0) || "D"}</span>
+            </div>
+            <div className="flex-1">
+              <h1 className="font-bold text-xl text-white mb-1">مرحباً، {driver?.fullName || driver?.email}</h1>
+              <div className="flex items-center gap-2 text-green-100 text-sm">
+                <Car className="w-4 h-4" />
+                <span>ID: {driver?.id}</span>
+              </div>
+              <div className="flex items-center gap-2 text-green-100 text-sm mt-1">
+                <Phone className="w-4 h-4" />
+                <span>{driver?.phone || 'غير محدد'}</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Online/Offline Toggle */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">
-                {isOnline ? "متصل" : "غير متصل"}
-              </span>
-              <Switch
-                checked={isOnline}
-                onCheckedChange={toggleOnlineStatus}
-                className="data-[state=checked]:bg-green-600"
-              />
-              <Badge variant={isOnline ? "default" : "secondary"} className={isOnline ? "bg-green-600" : ""}>
-                {isOnline ? "متاح" : "غير متاح"}
-              </Badge>
-            </div>
-            <Button
-              onClick={async () => {
-                try {
-                  console.log("🧪 Testing urgent notification...");
 
-                  const response = await apiRequest("POST", "/api/driver/test-notification");
-                  const data = await response.json();
-                  console.log("🧪 Test notification triggered:", data);
-                  
-                  if (data.success && data.testOrder) {
-                    // Show urgent notification with sound and vibration
-                    showUrgentNotification(data.testOrder);
+          {/* Status Controls Row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm border border-white/10">
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-300 animate-pulse shadow-lg shadow-green-400/50' : 'bg-gray-400'}`}></div>
+                  <span className="text-white font-medium text-sm">
+                    {isOnline ? "متاح للتوصيل" : "غير متاح"}
+                  </span>
+                  <Switch
+                    checked={isOnline}
+                    onCheckedChange={toggleOnlineStatus}
+                    className="data-[state=checked]:bg-green-400 scale-90"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={async () => {
+                  try {
+                    console.log("🧪 Testing urgent notification...");
+                    const response = await apiRequest("POST", "/api/driver/test-notification");
+                    const data = await response.json();
+                    console.log("🧪 Test notification triggered:", data);
+                    
+                    if (data.success && data.testOrder) {
+                      showUrgentNotification(data.testOrder);
+                    }
+                  } catch (error) {
+                    console.error("Test notification failed:", error);
                   }
-                } catch (error) {
-                  console.error("Test notification failed:", error);
-                }
-              }}
-              variant="outline"
-              size="sm"
-              className="text-purple-600 border-purple-600 hover:bg-purple-50"
-            >
-              🧪 اختبار التنبيه
-            </Button>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              size="sm"
-              className="text-red-600 border-red-600 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4 ml-2" />
-              تسجيل خروج
-            </Button>
+                }}
+                variant="outline"
+                size="sm"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm"
+              >
+                🧪
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline" 
+                size="sm"
+                className="bg-red-500/20 border-red-400/30 text-red-100 hover:bg-red-500/30 backdrop-blur-sm"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">اليوم</p>
+      <div className="px-4 pb-4 mt-6">
+
+        {/* Modern Mobile Stats Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {/* Today's Deliveries */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                <Package className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="text-right">
                 <p className="text-2xl font-bold text-gray-900">{stats.todayDeliveries}</p>
-                <p className="text-sm text-gray-500">توصيلة</p>
+                <p className="text-xs text-gray-500">توصيلة اليوم</p>
               </div>
-              <Package className="w-8 h-8 text-green-600" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">أرباح اليوم</p>
+          {/* Today's Earnings */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="text-right">
                 <p className="text-2xl font-bold text-gray-900">{stats.todayEarnings.toLocaleString()}</p>
-                <p className="text-sm text-gray-500">دينار</p>
+                <p className="text-xs text-gray-500">دينار اليوم</p>
               </div>
-              <DollarSign className="w-8 h-8 text-green-600" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">إجمالي التوصيلات</p>
+          {/* Total Deliveries */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                <Car className="w-5 h-5 text-purple-600" />
+              </div>
+              <div className="text-right">
                 <p className="text-2xl font-bold text-gray-900">{stats.totalDeliveries}</p>
-                <p className="text-sm text-gray-500">توصيلة</p>
+                <p className="text-xs text-gray-500">إجمالي التوصيلات</p>
               </div>
-              <Car className="w-8 h-8 text-green-600" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">التقييم</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.rating}</p>
-                <p className="text-sm text-gray-500">من 5</p>
+          {/* Total Earnings */}
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-orange-600" />
               </div>
-              <Bell className="w-8 h-8 text-green-600" />
+              <div className="text-right">
+                <p className="text-2xl font-bold text-gray-900">{stats.totalEarnings.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">إجمالي الأرباح</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
-      {/* Pending Orders */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            الطلبات المعلقة
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {pendingOrders.length === 0 ? (
-            <div className="text-center py-8">
-              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">لا توجد طلبات معلقة حالياً</p>
-              {!isOnline && (
-                <p className="text-sm text-gray-500 mt-2">
-                  قم بتفعيل حالة الاتصال لاستقبال الطلبات
-                </p>
+        {/* Modern Mobile Orders Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-3 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <Package className="w-4 h-4 text-green-600" />
+              </div>
+              <h2 className="font-bold text-gray-900">الطلبات المعلقة</h2>
+              {pendingOrders.length > 0 && (
+                <div className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-medium">
+                  {pendingOrders.length}
+                </div>
               )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingOrders.map((order) => (
-                <div key={order.id} className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold">طلب #{order.id}</h3>
-                      <p className="text-gray-600">{order.customerName}</p>
-                    </div>
-                    <Badge>معلق</Badge>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <MapPin className="w-4 h-4" />
-                    {order.address.governorate} - {order.address.district}
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-green-600">
-                      {order.totalAmount.toLocaleString()} دينار
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleAcceptOrder(order.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        قبول
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeclineOrder(order.id)}
-                      >
-                        رفض
-                      </Button>
-                    </div>
-                  </div>
+          </div>
+          
+          <div className="p-4">
+            {pendingOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Package className="w-8 h-8 text-gray-400" />
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <p className="text-gray-600 font-medium mb-2">لا توجد طلبات معلقة حالياً</p>
+                {!isOnline && (
+                  <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                    قم بتفعيل حالة الاتصال لاستقبال الطلبات
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pendingOrders.map((order) => (
+                  <div key={order.id} className="bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl p-4 border border-blue-100">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <span className="font-bold text-blue-600">#{order.id}</span>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900">{order.customerName}</h3>
+                          <p className="text-sm text-gray-600">{order.customerPhone}</p>
+                        </div>
+                      </div>
+                      <div className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-medium">
+                        معلق
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-3 bg-white/50 rounded-lg px-3 py-2">
+                      <MapPin className="w-4 h-4 text-green-600" />
+                      <span>{order.address.governorate} - {order.address.district}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="bg-green-100 text-green-700 px-3 py-2 rounded-lg">
+                        <span className="font-bold text-lg">{order.totalAmount.toLocaleString()}</span>
+                        <span className="text-sm"> دينار</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAcceptOrder(order.id)}
+                          className="bg-green-600 hover:bg-green-700 rounded-xl px-4"
+                        >
+                          <CheckCircle className="w-4 h-4 ml-1" />
+                          قبول
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeclineOrder(order.id)}
+                          className="border-red-200 text-red-600 hover:bg-red-50 rounded-xl px-4"
+                        >
+                          <XCircle className="w-4 h-4 ml-1" />
+                          رفض
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-      {/* Urgent Order Notification Modal */}
+      {/* Modern Mobile Notification Modal */}
       {currentNotification && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md mx-auto border-2 border-red-500">
-            <CardHeader className="bg-red-600 text-white text-center pb-3">
-              <CardTitle className="text-lg font-bold flex items-center justify-center gap-2">
-                🚨 URGENT ORDER
-                <span className="text-sm bg-red-700 px-2 py-1 rounded">
-                  قبل {Math.floor((Date.now() - currentNotification.timestamp) / 1000)}s
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-top">
+          <div className="w-full max-w-sm mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-red-500 animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-5">
               <div className="text-center">
-                <div className="bg-blue-100 p-3 rounded-lg border-l-4 border-blue-500 mb-4">
-                  <p className="font-bold text-blue-800">👤 اسم العميل:</p>
-                  <p className="text-xl font-bold text-blue-700">{currentNotification.order.customerName}</p>
-                  <p className="text-blue-600">{currentNotification.order.customerPhone}</p>
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Bell className="w-8 h-8 text-white animate-pulse" />
                 </div>
-                
-                <div className="bg-orange-100 p-3 rounded-lg border-l-4 border-orange-500 mb-4">
-                  <p className="font-bold text-orange-800">📍 العنوان:</p>
-                  <p className="text-orange-700 font-semibold">
-                    {currentNotification.order.address.governorate} - {currentNotification.order.address.district}
-                    {currentNotification.order.address.notes && (
-                      <span className="block text-sm text-orange-600 mt-1">{currentNotification.order.address.notes}</span>
-                    )}
-                  </p>
-                </div>
-                
-                <div className="bg-green-100 p-3 rounded-lg border-l-4 border-green-500">
-                  <p className="font-bold text-green-800">💰 المبلغ الإجمالي:</p>
-                  <p className="text-2xl font-bold text-green-700">
-                    {currentNotification.order.totalAmount.toLocaleString()} IQD
-                  </p>
-                  <p className="text-sm text-green-600">+ رسوم توصيل 2,500 IQD</p>
-                </div>
-
-                <div className="bg-blue-100 p-3 rounded-lg border-l-4 border-blue-500">
-                  <p className="font-bold text-blue-800">📦 عدد المنتجات:</p>
-                  <p className="text-blue-700">{currentNotification.order.items.length} منتج</p>
-                </div>
-                
-                <div className="flex gap-3 mt-6">
-                  <Button 
-                    onClick={() => handleAcceptOrder(currentNotification.order.id)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg"
-                  >
-                    ✅ قبول الطلب فوراً
-                  </Button>
-                  <Button 
-                    onClick={() => handleDeclineOrder(currentNotification.order.id)}
-                    variant="outline"
-                    className="flex-1 border-red-500 text-red-600 hover:bg-red-50 font-bold py-3"
-                  >
-                    ❌ رفض الطلب
-                  </Button>
+                <h2 className="text-xl font-bold mb-2">طلب عاجل</h2>
+                <div className="bg-red-800/50 rounded-full px-3 py-1 text-sm">
+                  منذ {Math.floor((Date.now() - currentNotification.timestamp) / 1000)} ثانية
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Customer Info */}
+              <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-bold text-lg">{currentNotification.order.customerName.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900">{currentNotification.order.customerName}</p>
+                    <p className="text-sm text-gray-600">{currentNotification.order.customerPhone}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address */}
+              <div className="bg-green-50 rounded-2xl p-4 border border-green-100">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-6 h-6 text-green-600 mt-1" />
+                  <div>
+                    <p className="font-bold text-gray-900">{currentNotification.order.address.governorate}</p>
+                    <p className="text-sm text-gray-600">{currentNotification.order.address.district}</p>
+                    {currentNotification.order.address.notes && (
+                      <p className="text-xs text-gray-500 mt-2 bg-white/50 rounded-lg px-2 py-1">{currentNotification.order.address.notes}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Amount & Items */}
+              <div className="bg-yellow-50 rounded-2xl p-4 border border-yellow-100">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-1">المبلغ الإجمالي</p>
+                  <p className="text-3xl font-bold text-green-600">{currentNotification.order.totalAmount.toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">دينار عراقي</p>
+                  <div className="mt-2 bg-white/50 rounded-lg px-3 py-1">
+                    <p className="text-xs text-gray-600">{currentNotification.order.items.length} منتج + رسوم توصيل 2,500</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    handleAcceptOrder(currentNotification.order.id);
+                    setCurrentNotification(null);
+                  }}
+                  className="flex-1 bg-green-600 hover:bg-green-700 rounded-2xl py-4 text-lg font-bold shadow-lg"
+                >
+                  <CheckCircle className="w-5 h-5 ml-2" />
+                  قبول
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleDeclineOrder(currentNotification.order.id);
+                    setCurrentNotification(null);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-2 border-red-500 text-red-600 hover:bg-red-50 rounded-2xl py-4 text-lg font-bold shadow-lg"
+                >
+                  <XCircle className="w-5 h-5 ml-2" />
+                  رفض
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
