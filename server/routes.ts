@@ -1870,6 +1870,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =============================================================================
+  // ADMIN DRIVERS MANAGEMENT API - For Admin Panel Driver Management
+  // =============================================================================
+
+  // Get all drivers for admin panel
+  app.get('/api/drivers', async (req, res) => {
+    try {
+      const drivers = await storage.getAllDrivers();
+      res.json(drivers);
+    } catch (error) {
+      console.error('Get all drivers error:', error);
+      res.status(500).json({ message: 'Failed to fetch drivers' });
+    }
+  });
+
+  // Delete driver by admin
+  app.delete('/api/drivers/:id', async (req, res) => {
+    try {
+      const driverId = parseInt(req.params.id);
+      if (isNaN(driverId)) {
+        return res.status(400).json({ message: 'Invalid driver ID' });
+      }
+
+      await storage.deleteDriver(driverId);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Delete driver error:', error);
+      res.status(500).json({ message: 'Failed to delete driver' });
+    }
+  });
+
+  // Update driver active status (ban/unban)
+  app.patch('/api/drivers/:id/status', async (req, res) => {
+    try {
+      const driverId = parseInt(req.params.id);
+      if (isNaN(driverId)) {
+        return res.status(400).json({ message: 'Invalid driver ID' });
+      }
+
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: 'isActive must be boolean' });
+      }
+
+      const updatedDriver = await storage.updateDriverActiveStatus(driverId, isActive);
+      const { passwordHash, ...driverResponse } = updatedDriver;
+      
+      res.json(driverResponse);
+    } catch (error) {
+      console.error('Update driver status error:', error);
+      res.status(500).json({ message: 'Failed to update driver status' });
+    }
+  });
+
+  // =============================================================================
   // DRIVER API ENDPOINTS - For Expo React Native Driver App Integration
   // =============================================================================
 
