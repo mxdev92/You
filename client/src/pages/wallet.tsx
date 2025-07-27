@@ -203,65 +203,89 @@ export default function WalletPage() {
           </div>
         </div>
 
-        {/* Modern Charge Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-4">
+        {/* Professional Charge Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-3 border-b border-green-100">
+            <div className="flex items-center gap-2">
               <div className="p-1.5 bg-green-100 rounded-lg">
                 <Plus className="h-4 w-4 text-green-600" />
               </div>
               <h2 className="text-base font-semibold text-gray-900">شحن المحفظة</h2>
             </div>
+          </div>
+          <div className="p-4">
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-2">
-                  المبلغ (دينار عراقي)
+                  المبلغ المطلوب (دينار عراقي)
                 </label>
-                <input
-                  type="number"
-                  placeholder="1000"
-                  value={chargeAmount}
-                  onChange={(e) => setChargeAmount(e.target.value)}
-                  min="250"
-                  step="100"
-                  className="w-full px-4 py-3 text-right text-base font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                />
-                <p className="text-xs text-gray-500 mt-1">
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="ادخل المبلغ"
+                    value={chargeAmount}
+                    onChange={(e) => setChargeAmount(e.target.value)}
+                    min="250"
+                    step="100"
+                    className="w-full px-4 py-3 text-right text-lg font-semibold border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-gray-50"
+                  />
+                  <div className="absolute left-3 top-3 text-sm text-gray-500 font-medium">
+                    IQD
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <span className="w-1 h-1 bg-green-500 rounded-full"></span>
                   الحد الأدنى للشحن هو 250 دينار عراقي
                 </p>
               </div>
 
-              {/* Modern Quick Amount Buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                {[1000, 5000].map((amount) => (
-                  <button
-                    key={amount}
-                    onClick={() => setChargeAmount(String(amount))}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 mobile-scale"
-                  >
-                    {formatPrice(amount)}
-                  </button>
-                ))}
+              {/* Professional Quick Amount Grid */}
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-gray-600">المبالغ المقترحة</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[1000, 5000, 15000, 20000].map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setChargeAmount(String(amount))}
+                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 mobile-scale"
+                    >
+                      {formatPrice(amount)}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[25000, 50000, 100000].map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setChargeAmount(String(amount))}
+                      className="px-2 py-2 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg mobile-scale shadow-sm"
+                    >
+                      {formatPrice(amount)}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <button
-                onClick={handleChargeWallet}
-                disabled={isCharging || chargeMutation.isPending}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-medium py-3 px-4 rounded-xl button-press shadow-sm"
-              >
-                {isCharging || chargeMutation.isPending ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    <span className="text-sm">جاري المعالجة...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    <span className="text-sm">شحن عبر ZainCash</span>
-                  </div>
-                )}
-              </button>
+              <div className="pt-2">
+                <button
+                  onClick={handleChargeWallet}
+                  disabled={isCharging || chargeMutation.isPending}
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 text-white font-semibold py-3.5 px-4 rounded-xl button-press shadow-lg transition-all duration-300"
+                >
+                  {isCharging || chargeMutation.isPending ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      <span className="text-sm">جاري المعالجة...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      <span className="text-sm">شحن فوري عبر ZainCash</span>
+                    </div>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
