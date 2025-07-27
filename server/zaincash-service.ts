@@ -7,7 +7,7 @@ const ZAINCASH_CONFIG = {
   MERCHANT_SECRET: '$2y$10$KZwH97wNAwMr4peVfCcgJOXhkcpTDaGuwkiGjaI0zDO9mauCAyGUq',
   MSISDN: '9647702337832', // Production wallet phone number
   TEST_API_URL: 'https://test.zaincash.iq',
-  PRODUCTION_API_URL: 'https://api.zaincash.iq',
+  PRODUCTION_API_URL: 'https://api.zaincash.iq/transaction',
   IS_PRODUCTION: true
 };
 
@@ -78,7 +78,14 @@ export class ZaincashService {
       });
 
       // Make request to Zaincash
-      const response = await fetch(`${this.getApiUrl()}/transaction/init`, {
+      console.log('🔄 Creating Zaincash transaction with data:', {
+        amount: request.amount,
+        orderId: request.orderId,
+        redirectUrl: request.redirectUrl,
+        apiUrl: this.getApiUrl()
+      });
+      
+      const response = await fetch(`${this.getApiUrl()}/init`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -87,9 +94,10 @@ export class ZaincashService {
       });
 
       const result = await response.json();
+      console.log('💰 Zaincash API response:', result);
 
       if (result.id) {
-        const paymentUrl = `${this.getApiUrl()}/transaction/pay?id=${result.id}`;
+        const paymentUrl = `${this.getApiUrl()}/pay?id=${result.id}`;
         const qrCodeDataURL = await this.generateQRCode(paymentUrl);
         
         return {
@@ -100,9 +108,10 @@ export class ZaincashService {
           qrCodeData: qrCodeDataURL
         };
       } else {
+        console.error('❌ Zaincash transaction failed:', result);
         return {
           success: false,
-          error: result.msg || 'خطأ في إنشاء المعاملة'
+          error: result.msg || result.message || 'خطأ في إنشاء المعاملة'
         };
       }
 
@@ -147,7 +156,7 @@ export class ZaincashService {
         merchantId: ZAINCASH_CONFIG.MERCHANT_ID
       });
 
-      const response = await fetch(`${this.getApiUrl()}/transaction/get`, {
+      const response = await fetch(`${this.getApiUrl()}/get`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
