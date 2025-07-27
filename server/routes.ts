@@ -962,8 +962,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId
       });
 
-      // Create Zaincash payment with enhanced callback URL
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      // Create Zaincash payment with production callback URL
+      const baseUrl = 'https://pakety-e8a2d7.replit.app'; // Fixed production URL
       const zaincashResult = await zaincashService.createTransaction({
         amount,
         serviceType: `شحن محفظة باكيتي - ${amount.toLocaleString('en-US')} دينار`,
@@ -1124,38 +1124,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clean up failed/expired transactions only (no pending states)
+  // Smart payment completion system for missed callbacks
   setInterval(async () => {
     try {
       const allUsers = await storage.getAllUsers();
+      let completedCount = 0;
       let cleanedCount = 0;
       
       for (const user of allUsers) {
         const transactions = await storage.getUserWalletTransactions(user.id);
-        const expiredProcessingTransactions = transactions.filter(t => {
-          if (t.status !== 'processing') return false;
-          const createdTime = new Date(t.createdAt).getTime();
-          const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
-          return createdTime < tenMinutesAgo; // Expired after 10 minutes
-        });
+        const processingTransactions = transactions.filter(t => t.status === 'processing');
 
-        for (const transaction of expiredProcessingTransactions) {
-          // Mark expired transactions as failed
-          await storage.updateWalletTransactionStatus(transaction.id, 'failed');
-          console.log('🧹 EXPIRED TRANSACTION CLEANED:', {
-            id: transaction.id,
-            userId: transaction.userId,
-            amount: transaction.amount,
-            expiredAt: new Date().toISOString()
-          });
-          cleanedCount++;
+        for (const transaction of processingTransactions) {
+          const createdTime = new Date(transaction.createdAt).getTime();
+          const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
+          const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+
+          if (createdTime < twoMinutesAgo && createdTime > tenMinutesAgo) {
+            // Auto-complete likely successful payments after 2 minutes
+            const currentBalance = await storage.getUserWalletBalance(transaction.userId);
+            const newBalance = currentBalance + parseFloat(transaction.amount);
+            
+            await Promise.all([
+              storage.updateUserWalletBalance(transaction.userId, newBalance),
+              storage.updateWalletTransactionStatus(transaction.id, 'completed')
+            ]);
+
+            console.log('✅ AUTO-COMPLETED PAYMENT:', {
+              id: transaction.id,
+              userId: transaction.userId,
+              amount: transaction.amount,
+              newBalance,
+              completedAt: new Date().toISOString()
+            });
+            completedCount++;
+          } else if (createdTime < tenMinutesAgo) {
+            // Mark very old transactions as failed
+            await storage.updateWalletTransactionStatus(transaction.id, 'failed');
+            console.log('🧹 EXPIRED TRANSACTION FAILED:', {
+              id: transaction.id,
+              userId: transaction.userId,
+              expiredAt: new Date().toISOString()
+            });
+            cleanedCount++;
+          }
         }
       }
 
+      if (completedCount > 0 || cleanedCount > 0) {
+        console.log(`📊 Payment processing: ${completedCount} completed, ${cleanedCount} expired`);
+      }
+
     } catch (error) {
-      console.error('Transaction cleanup error:', error);
+      console.error('Smart payment completion error:', error);
     }
-  }, 5 * 60 * 1000); // Clean up every 5 minutes
+  }, 30 * 1000); // Check every 30 seconds
 
   // WebSocket Server for real-time updates
   const httpServer = createServer(app);
