@@ -974,6 +974,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           paymentUrl: zaincashResult.paymentUrl,
+          webviewUrl: zaincashResult.webviewUrl,
+          qrCodeData: zaincashResult.qrCodeData,
           transactionId: zaincashResult.transactionId,
           orderId
         });

@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import QRCode from 'qrcode';
 
 // Zaincash Test Credentials
 const ZAINCASH_CONFIG = {
@@ -21,6 +22,8 @@ export interface ZaincashTransactionResponse {
   success: boolean;
   transactionId?: string;
   paymentUrl?: string;
+  webviewUrl?: string;
+  qrCodeData?: string;
   error?: string;
 }
 
@@ -86,10 +89,15 @@ export class ZaincashService {
       const result = await response.json();
 
       if (result.id) {
+        const paymentUrl = `${this.getApiUrl()}/transaction/pay?id=${result.id}`;
+        const qrCodeDataURL = await this.generateQRCode(paymentUrl);
+        
         return {
           success: true,
           transactionId: result.id,
-          paymentUrl: `${this.getApiUrl()}/transaction/pay?id=${result.id}`
+          paymentUrl,
+          webviewUrl: paymentUrl,
+          qrCodeData: qrCodeDataURL
         };
       } else {
         return {
@@ -152,6 +160,27 @@ export class ZaincashService {
     } catch (error) {
       console.error('Transaction status check error:', error);
       return null;
+    }
+  }
+
+  /**
+   * Generate QR code for payment URL
+   */
+  async generateQRCode(paymentUrl: string): Promise<string> {
+    try {
+      const qrCodeDataURL = await QRCode.toDataURL(paymentUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      });
+      return qrCodeDataURL;
+    } catch (error) {
+      console.error('QR Code generation error:', error);
+      throw new Error('Failed to generate QR code');
     }
   }
 
