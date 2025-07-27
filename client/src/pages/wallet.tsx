@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Wallet, Plus, History, CreditCard, ArrowUp, ArrowDown, Clock } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import { formatPrice } from '@/lib/price-utils';
+import { formatPrice } from '@/lib/utils';
 
 interface WalletTransaction {
   id: number;

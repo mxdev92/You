@@ -134,7 +134,9 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       
       {/* Wallet page - protected route */}
-      <Route path="/wallet" render={() => <ProtectedRoute component={WalletPage} />} />
+      <Route path="/wallet">
+        <ProtectedRoute component={WalletPage} />
+      </Route>
       
       {/* Auth page */}
       <Route path="/auth" component={AuthPage} />

@@ -365,6 +365,61 @@ export class MemStorage implements IStorage {
   async deleteOrder(id: number): Promise<void> {
     this.orders.delete(id);
   }
+
+  async deleteUser(id: number): Promise<void> {
+    this.users.delete(id);
+  }
+
+  // Wallet Operations (MemStorage stub implementations)
+  async getUserWalletBalance(userId: number): Promise<number> {
+    const user = this.users.get(userId);
+    return user ? parseFloat(user.walletBalance || "0") : 0;
+  }
+
+  async updateUserWalletBalance(userId: number, amount: number): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error(`User with id ${userId} not found`);
+    }
+    const updatedUser = { ...user, walletBalance: String(amount) };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction> {
+    // MemStorage stub - returning a mock transaction for development
+    return {
+      id: Math.floor(Math.random() * 1000),
+      userId: transaction.userId,
+      type: transaction.type,
+      amount: transaction.amount,
+      description: transaction.description,
+      status: transaction.status || 'pending',
+      zaincashTransactionId: transaction.zaincashTransactionId || null,
+      orderId: transaction.orderId || null,
+      createdAt: new Date()
+    };
+  }
+
+  async getUserWalletTransactions(userId: number): Promise<WalletTransaction[]> {
+    // MemStorage stub - returning empty array for development
+    return [];
+  }
+
+  async updateWalletTransactionStatus(transactionId: number, status: string): Promise<WalletTransaction> {
+    // MemStorage stub - returning a mock transaction for development
+    return {
+      id: transactionId,
+      userId: 1,
+      type: 'deposit',
+      amount: '0',
+      description: 'Mock transaction',
+      status,
+      zaincashTransactionId: null,
+      orderId: null,
+      createdAt: new Date()
+    };
+  }
 }
 
 export class DatabaseStorage implements IStorage {
