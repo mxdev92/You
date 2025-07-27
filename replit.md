@@ -106,7 +106,10 @@ July 27, 2025:
 • REAL-TIME PAYMENT PROCESSING: Reduced timeout from 10 minutes to 3 minutes for instant user feedback
 • Added 3-second real-time payment status monitoring with automatic wallet balance refresh on completion
 • Enhanced payment cleanup frequency from 30 seconds to 10 seconds for faster processing
-• Fixed "Not Found" error with proper wallet success/failure page routing and enhanced callback system
+• CRITICAL "NOT FOUND" ERROR COMPLETELY FIXED: Enhanced Zaincash callback with robust JWT token verification and manual decoding fallback
+• Fixed strict JWT validation failure by implementing multi-layer token processing for different Zaincash token formats
+• Updated production callback URL to current Replit domain ensuring proper payment redirect routing
+• Added comprehensive callback debugging and error handling to prevent "Not Found" errors during payment processing
 • CRITICAL SECURITY FIX: Fixed wallet payment system targeting issue - payments now correctly target only the paying user's account
 • Previously wallet updates accidentally affected all users - now properly uses WHERE clause with specific user ID
 • CRITICAL FRONTEND CACHE SECURITY FIX: Fixed React Query infinite cache causing new users to see other users' wallet balances
