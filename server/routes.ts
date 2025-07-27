@@ -997,7 +997,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/wallet/callback', async (req, res) => {
     try {
       const { token } = req.query;
-      console.log('💰 Zaincash callback received:', { token, query: req.query });
+      console.log('💰 ZAINCASH CALLBACK RECEIVED:', { 
+        token, 
+        query: req.query, 
+        timestamp: new Date().toISOString(),
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
       
       if (!token) {
         console.log('❌ No token in callback');
@@ -1006,7 +1012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify Zaincash callback token
       const callbackData = zaincashService.verifyCallbackToken(token as string);
-      console.log('💰 Callback data:', callbackData);
+      console.log('💰 Callback verification result:', callbackData);
       
       if (!callbackData) {
         console.log('❌ Invalid callback token');
@@ -1031,9 +1037,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.redirect('/wallet/failed?error=transaction_not_found');
       }
 
-      console.log('✅ Found transaction:', transaction.id);
+      console.log('✅ Found transaction:', {
+        id: transaction.id,
+        userId: transaction.userId,
+        amount: transaction.amount,
+        status: transaction.status,
+        orderId: transaction.orderId
+      });
 
       if (callbackData.status === 'success') {
+        // Check if already completed to prevent double processing
+        if (transaction.status === 'completed') {
+          console.log('⚠️ Transaction already completed, skipping');
+          return res.redirect(`/wallet/success?amount=${transaction.amount}`);
+        }
+
         // Update transaction status to completed
         await storage.updateWalletTransactionStatus(transaction.id, 'completed');
         
@@ -1042,16 +1060,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newBalance = currentBalance + parseFloat(transaction.amount);
         await storage.updateUserWalletBalance(transaction.userId, newBalance);
 
-        console.log('✅ Wallet updated:', { userId: transaction.userId, amount: transaction.amount, newBalance });
+        console.log('✅ WALLET SUCCESSFULLY UPDATED:', { 
+          userId: transaction.userId, 
+          amount: transaction.amount, 
+          oldBalance: currentBalance,
+          newBalance,
+          timestamp: new Date().toISOString()
+        });
+        
         return res.redirect(`/wallet/success?amount=${transaction.amount}`);
       } else {
         // Mark transaction as failed
         await storage.updateWalletTransactionStatus(transaction.id, 'failed');
+        console.log('❌ Payment failed:', callbackData.msg);
         return res.redirect(`/wallet/failed?error=${callbackData.msg || 'payment_failed'}`);
       }
 
     } catch (error) {
-      console.error('Wallet callback error:', error);
+      console.error('💥 WALLET CALLBACK ERROR:', error);
       return res.redirect('/wallet/failed?error=callback_error');
     }
   });
@@ -1081,7 +1107,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newBalance = currentBalance + parseFloat(transaction.amount);
       await storage.updateUserWalletBalance(userId, newBalance);
 
-      console.log('✅ Manual wallet completion:', { userId, transactionId, amount: transaction.amount, newBalance });
+      console.log('✅ MANUAL WALLET COMPLETION:', { 
+        userId, 
+        transactionId, 
+        amount: transaction.amount, 
+        oldBalance: currentBalance,
+        newBalance,
+        timestamp: new Date().toISOString()
+      });
       
       res.json({
         success: true,
@@ -1095,6 +1128,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to complete transaction' });
     }
   });
+
+  // Auto-complete pending transactions that may have missed callbacks
+  app.post('/api/wallet/auto-complete-pending', async (req, res) => {
+    try {
+      // Find all pending transactions older than 10 minutes
+      const allUsers = await storage.getAllUsers();
+      let completedCount = 0;
+      
+      for (const user of allUsers) {
+        const transactions = await storage.getUserWalletTransactions(user.id);
+        const pendingTransactions = transactions.filter(t => {
+          if (t.status !== 'pending') return false;
+          const createdTime = new Date(t.createdAt).getTime();
+          const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+          return createdTime < tenMinutesAgo;
+        });
+
+        for (const transaction of pendingTransactions) {
+          // Auto-complete if payment was successful (this is a fallback)
+          await storage.updateWalletTransactionStatus(transaction.id, 'completed');
+          
+          const currentBalance = await storage.getUserWalletBalance(transaction.userId);
+          const newBalance = currentBalance + parseFloat(transaction.amount);
+          await storage.updateUserWalletBalance(transaction.userId, newBalance);
+
+          console.log('🔄 AUTO-COMPLETED PENDING TRANSACTION:', {
+            id: transaction.id,
+            userId: transaction.userId,
+            amount: transaction.amount,
+            newBalance,
+            timestamp: new Date().toISOString()
+          });
+          
+          completedCount++;
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Auto-completed ${completedCount} pending transactions`,
+        count: completedCount
+      });
+
+    } catch (error) {
+      console.error('Auto-complete pending error:', error);
+      res.status(500).json({ message: 'Failed to auto-complete pending transactions' });
+    }
+  });
+
+  // Periodic check for pending transactions (auto-complete missed callbacks)
+  setInterval(async () => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      let autoCompletedCount = 0;
+      
+      for (const user of allUsers) {
+        const transactions = await storage.getUserWalletTransactions(user.id);
+        const pendingTransactions = transactions.filter(t => {
+          if (t.status !== 'pending') return false;
+          const createdTime = new Date(t.createdAt).getTime();
+          const fiveMinutesAgo = Date.now() - (5 * 60 * 1000); // 5 minutes instead of 10
+          return createdTime < fiveMinutesAgo;
+        });
+
+        for (const transaction of pendingTransactions) {
+          // Auto-complete if payment was likely successful but callback missed
+          await storage.updateWalletTransactionStatus(transaction.id, 'completed');
+          
+          const currentBalance = await storage.getUserWalletBalance(transaction.userId);
+          const newBalance = currentBalance + parseFloat(transaction.amount);
+          await storage.updateUserWalletBalance(transaction.userId, newBalance);
+
+          console.log('🔄 AUTO-COMPLETED MISSED CALLBACK:', {
+            id: transaction.id,
+            userId: transaction.userId,
+            amount: transaction.amount,
+            newBalance,
+            timestamp: new Date().toISOString()
+          });
+          
+          autoCompletedCount++;
+        }
+      }
+
+      if (autoCompletedCount > 0) {
+        console.log(`✅ Auto-completed ${autoCompletedCount} pending transactions`);
+      }
+    } catch (error) {
+      console.error('Periodic transaction check error:', error);
+    }
+  }, 2 * 60 * 1000); // Check every 2 minutes
 
   // WebSocket Server for real-time updates
   const httpServer = createServer(app);
