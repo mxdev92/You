@@ -1597,10 +1597,57 @@ function DriversManagement() {
                         <div className="flex items-center gap-2 text-blue-600 font-medium">
                           <span>🆔 رقم التسليم: {driver.id}</span>
                         </div>
+                        <div className="flex items-center gap-2 text-purple-600 text-xs">
+                          <span>📱 Expo Token:</span>
+                          {driver.expoNotificationToken ? (
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md font-mono text-xs">
+                              {driver.expoNotificationToken.substring(0, 20)}...
+                            </span>
+                          ) : (
+                            <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded-md text-xs">
+                              غير مسجل
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {driver.expoNotificationToken && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/drivers/${driver.id}/test-expo-notification`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' }
+                            });
+                            
+                            if (response.ok) {
+                              toast({
+                                title: "تم إرسال الإشعار التجريبي",
+                                description: `تم إرسال إشعار تجريبي إلى ${driver.fullName}`,
+                                duration: 3000,
+                              });
+                            } else {
+                              throw new Error('Failed to send test notification');
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "خطأ في الإشعار",
+                              description: "فشل في إرسال الإشعار التجريبي",
+                              variant: "destructive",
+                              duration: 3000,
+                            });
+                          }
+                        }}
+                        className="text-purple-600 hover:bg-purple-50"
+                        title="إرسال إشعار تجريبي"
+                      >
+                        🔔
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

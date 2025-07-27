@@ -1,6 +1,6 @@
 import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, driverLocations, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type DriverLocation, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertDriverLocation } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql, and, ilike } from "drizzle-orm";
+import { eq, sql, and, ilike, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -73,6 +73,10 @@ export interface IStorage {
   // Driver Location Tracking
   createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation>;
   getDriverLocations(driverId: number, limit?: number): Promise<DriverLocation[]>;
+
+  // Expo Notification Token Management
+  updateDriverExpoToken(driverId: number, expoToken: string): Promise<Driver>;
+  getDriversWithExpoTokens(): Promise<Driver[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -500,6 +504,10 @@ export class MemStorage implements IStorage {
     };
   }
   async getDriverLocations(driverId: number, limit?: number): Promise<DriverLocation[]> { return []; }
+  async updateDriverExpoToken(driverId: number, expoToken: string): Promise<Driver> {
+    throw new Error("MemStorage Expo token operations not implemented");
+  }
+  async getDriversWithExpoTokens(): Promise<Driver[]> { return []; }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -952,6 +960,24 @@ export class DatabaseStorage implements IStorage {
       .where(eq(driverLocations.driverId, driverId))
       .orderBy(sql`${driverLocations.timestamp} DESC`)
       .limit(limit);
+  }
+
+  // Expo Notification Token Management
+  async updateDriverExpoToken(driverId: number, expoToken: string): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ 
+        expoNotificationToken: expoToken,
+        tokenRegisteredAt: new Date()
+      })
+      .where(eq(drivers.id, driverId))
+      .returning();
+    return updatedDriver;
+  }
+
+  async getDriversWithExpoTokens(): Promise<Driver[]> {
+    return await db.select()
+      .from(drivers)
+      .where(isNotNull(drivers.expoNotificationToken));
   }
 }
 

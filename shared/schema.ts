@@ -79,6 +79,8 @@ export const drivers = pgTable("drivers", {
   isOnline: boolean("is_online").default(false).notNull(),
   currentLocation: jsonb("current_location"), // {lat, lng}
   fcmToken: text("fcm_token"), // For push notifications
+  expoNotificationToken: text("expo_notification_token"), // For Expo push notifications
+  tokenRegisteredAt: timestamp("token_registered_at"), // When token was added
   totalDeliveries: integer("total_deliveries").default(0).notNull(),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("5.00").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

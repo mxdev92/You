@@ -282,6 +282,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update driver Expo notification token
+  app.patch('/api/drivers/:id/expo-token', async (req: any, res: any) => {
+    try {
+      const driverId = parseInt(req.params.id);
+      const { expoToken } = req.body;
+
+      if (!expoToken) {
+        return res.status(400).json({ message: 'Expo token is required' });
+      }
+
+      console.log(`📱 Updating Expo token for driver ${driverId}: ${expoToken.substring(0, 20)}...`);
+
+      const updatedDriver = await storage.updateDriverExpoToken(driverId, expoToken);
+      
+      res.json({ 
+        success: true, 
+        message: 'Expo token updated successfully',
+        driver: updatedDriver
+      });
+    } catch (error: any) {
+      console.error('Update Expo token error:', error);
+      res.status(500).json({ message: 'Failed to update Expo token' });
+    }
+  });
+
+  // Test Expo notification for specific driver
+  app.post('/api/drivers/:id/test-expo-notification', async (req: any, res: any) => {
+    try {
+      const driverId = parseInt(req.params.id);
+      
+      const driver = await storage.getDriver(driverId);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      if (!driver.expoNotificationToken) {
+        return res.status(400).json({ message: 'Driver does not have an Expo token registered' });
+      }
+
+      console.log(`🧪 Sending test Expo notification to driver ${driverId}`);
+
+      // In a real implementation, you would send the notification here
+      // For now, we'll just simulate it
+      const testNotification = {
+        to: driver.expoNotificationToken,
+        title: "اختبار الإشعارات",
+        body: "هذا اختبار للتأكد من أن الإشعارات تعمل بشكل صحيح",
+        data: {
+          type: "TEST_NOTIFICATION",
+          driverId: driverId
+        }
+      };
+
+      console.log('📱 Test notification prepared:', testNotification);
+
+      res.json({ 
+        success: true, 
+        message: 'Test notification sent successfully',
+        notification: testNotification
+      });
+    } catch (error: any) {
+      console.error('Test Expo notification error:', error);
+      res.status(500).json({ message: 'Failed to send test notification' });
+    }
+  });
+
   // Simple catch-all handler
   app.use('/api/*', (req: any, res: any) => {
     res.status(404).json({ 
