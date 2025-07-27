@@ -98,10 +98,10 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 27, 2025:
-• PROFESSIONAL WALLET UI ENHANCEMENT: Added premium charge amounts (15,000 / 20,000 / 25,000 / 50,000 / 100,000 IQD) with modern grid layout
+• PROFESSIONAL WALLET UI ENHANCEMENT: Added premium charge amounts (15,000 / 20,000 / 25,000 / 50,000 / 100,000 IQD) with unified grid layout
 • Enhanced wallet UI with gradient headers, professional input styling, and improved visual hierarchy
-• Added currency indicator (IQD) and premium styling for higher denomination buttons
-• Implemented professional two-tier button layout: standard amounts in gray, premium amounts in green gradient
+• Added currency indicator (IQD) and consistent green styling for all charge amounts
+• Implemented single professional grid layout: 3-column uniform design with all amounts in green
 • Modern input design with larger font, focus states, and professional visual indicators
 July 27, 2025:
 • CRITICAL PAYMENT FRAUD VULNERABILITY FIXED: Removed dangerous auto-completion system that credited wallets for failed payments

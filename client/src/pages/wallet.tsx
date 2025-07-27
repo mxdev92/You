@@ -240,26 +240,15 @@ export default function WalletPage() {
                 </p>
               </div>
 
-              {/* Professional Quick Amount Grid */}
+              {/* Professional Single Grid */}
               <div className="space-y-3">
                 <p className="text-xs font-medium text-gray-600">المبالغ المقترحة</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[1000, 5000, 15000, 20000].map((amount) => (
-                    <button
-                      key={amount}
-                      onClick={() => setChargeAmount(String(amount))}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 mobile-scale"
-                    >
-                      {formatPrice(amount)}
-                    </button>
-                  ))}
-                </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {[25000, 50000, 100000].map((amount) => (
+                  {[1000, 5000, 15000, 20000, 25000, 50000, 100000].map((amount) => (
                     <button
                       key={amount}
                       onClick={() => setChargeAmount(String(amount))}
-                      className="px-2 py-2 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg mobile-scale shadow-sm"
+                      className="px-2 py-2.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg mobile-scale shadow-sm transition-all duration-150"
                     >
                       {formatPrice(amount)}
                     </button>
