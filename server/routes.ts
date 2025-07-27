@@ -1872,6 +1872,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test driver notification endpoint
+  app.post('/api/driver/test-notification', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      // Create a test order for notification
+      const testOrder = {
+        id: 999,
+        customerName: "زياد أحمد العراقي",
+        customerPhone: "07701234567",
+        address: {
+          governorate: "بغداد",
+          district: "الكرادة",
+          notes: "بجانب مطعم البيت العراقي - الطابق الثاني"
+        },
+        items: [
+          { productName: "خبز عربي", quantity: "2", price: "1500" },
+          { productName: "حليب طازج", quantity: "1", price: "3500" },
+          { productName: "جبن أبيض", quantity: "1", price: "5000" }
+        ],
+        totalAmount: 10000,
+        deliveryFee: 2500,
+        status: "assigned"
+      };
+
+      // Broadcast test notification to the logged-in driver
+      if (global.wss) {
+        console.log(`🧪 Sending test notification to driver ${req.session.driverId}`);
+        
+        // Send to all connected WebSocket clients (drivers)
+        global.wss.clients.forEach((ws: any) => {
+          if (ws.readyState === 1) { // WebSocket.OPEN
+            ws.send(JSON.stringify({
+              type: 'NEW_ORDER_ASSIGNMENT',
+              order: testOrder,
+              timestamp: new Date().toISOString()
+            }));
+          }
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Test notification sent successfully',
+        testOrder 
+      });
+    } catch (error) {
+      console.error('Test notification error:', error);
+      res.status(500).json({ message: 'Failed to send test notification' });
+    }
+  });
+
   // =============================================================================
   // ADMIN DRIVERS MANAGEMENT API - For Admin Panel Driver Management
   // =============================================================================
@@ -2771,6 +2825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Driver not authenticated' });
       }
 
+      // Get all assigned orders for this driver
       const orders = await storage.getDriverOrders(req.session.driverId, 'assigned');
       
       res.json({ 
@@ -2781,9 +2836,315 @@ export async function registerRoutes(app: Express): Promise<Server> {
           address: order.address,
           items: order.items,
           totalAmount: order.totalAmount,
-          deliveryFee: order.deliveryFee,
+          deliveryFee: order.deliveryFee || 2500,
           status: order.status,
           assignedAt: order.assignedAt
+        }))
+      });
+    } catch (error) {
+      console.error('Driver pending orders error:', error);
+      res.status(500).json({ message: 'Failed to fetch pending orders' });
+    }
+  });
+
+  // Accept order assignment
+  app.post('/api/driver/orders/:id/accept', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.id);
+      
+      // Update order status to accepted
+      const order = await storage.updateOrderStatusByDriver(orderId, 'accepted');
+      
+      // Broadcast to admin panel
+      if (global.broadcastToStoreClients) {
+        global.broadcastToStoreClients({
+          type: 'ORDER_ACCEPTED',
+          orderId: orderId,
+          driverId: req.session.driverId,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      console.log(`✅ Driver ${req.session.driverId} accepted order ${orderId}`);
+      
+      res.json({ success: true, order });
+    } catch (error) {
+      console.error('Accept order error:', error);
+      res.status(500).json({ message: 'Failed to accept order' });
+    }
+  });
+
+  // Decline order assignment
+  app.post('/api/driver/orders/:id/decline', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.id);
+      
+      // Remove assignment and make order available to other drivers
+      const order = await storage.updateOrderStatusByDriver(orderId, 'confirmed');
+      
+      // Broadcast to admin panel
+      if (global.broadcastToStoreClients) {
+        global.broadcastToStoreClients({
+          type: 'ORDER_DECLINED',
+          orderId: orderId,
+          driverId: req.session.driverId,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      console.log(`❌ Driver ${req.session.driverId} declined order ${orderId}`);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Decline order error:', error);
+      res.status(500).json({ message: 'Failed to decline order' });
+    }
+  });
+
+  // Update order status (picked up, delivering, delivered)
+  app.post('/api/driver/orders/:id/status', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.id);
+      const { status, notes } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: 'Status is required' });
+      }
+
+      const order = await storage.updateOrderStatusByDriver(orderId, status, notes);
+      
+      // Update driver stats if delivered
+      if (status === 'delivered') {
+        const driver = await storage.getDriver(req.session.driverId);
+        await storage.updateDriverTotalDeliveries(req.session.driverId, driver.totalDeliveries + 1);
+      }
+      
+      // Broadcast to admin panel
+      if (global.broadcastToStoreClients) {
+        global.broadcastToStoreClients({
+          type: 'ORDER_STATUS_UPDATED',
+          orderId: orderId,
+          status: status,
+          driverId: req.session.driverId,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      console.log(`📦 Driver ${req.session.driverId} updated order ${orderId} status to: ${status}`);
+      
+      res.json({ success: true, order });
+    } catch (error) {
+      console.error('Update order status error:', error);
+      res.status(500).json({ message: 'Failed to update order status' });
+    }
+  });
+
+  // Accept order endpoint
+  app.post('/api/driver/orders/:orderId/accept', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Update order status and assign driver
+      const updatedOrder = await storage.updateOrderStatusByDriver(orderId, 'picked_up', 'طلب مقبول من قبل السائق');
+      await storage.assignOrderToDriver(orderId, req.session.driverId);
+
+      // Update driver's total deliveries counter
+      const driver = await storage.getDriver(req.session.driverId);
+      if (driver) {
+        await storage.updateDriverTotalDeliveries(
+          req.session.driverId, 
+          (driver.totalDeliveries || 0) + 1
+        );
+      }
+
+      console.log(`✅ Driver ${req.session.driverId} accepted order ${orderId}`);
+      
+      // Broadcast status update to admin panel via WebSocket
+      if (global.wss) {
+        const statusUpdate = {
+          type: 'ORDER_STATUS_UPDATED',
+          orderId: orderId,
+          status: 'picked_up',
+          driverId: req.session.driverId,
+          driverName: driver?.fullName,
+          timestamp: new Date().toISOString()
+        };
+        
+        global.wss.clients.forEach((ws: any) => {
+          if (ws.readyState === 1) { // WebSocket.OPEN
+            ws.send(JSON.stringify(statusUpdate));
+          }
+        });
+      }
+
+      res.json({ success: true, order: updatedOrder });
+    } catch (error) {
+      console.error('Accept order error:', error);
+      res.status(500).json({ message: 'Failed to accept order' });
+    }
+  });
+
+  // Decline order endpoint
+  app.post('/api/driver/orders/:orderId/decline', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      console.log(`❌ Driver ${req.session.driverId} declined order ${orderId}`);
+      
+      // Broadcast order decline to admin panel
+      if (global.wss) {
+        const declineUpdate = {
+          type: 'ORDER_DECLINED',
+          orderId: orderId,
+          driverId: req.session.driverId,
+          timestamp: new Date().toISOString()
+        };
+        
+        global.wss.clients.forEach((ws: any) => {
+          if (ws.readyState === 1) { // WebSocket.OPEN
+            ws.send(JSON.stringify(declineUpdate));
+          }
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Decline order error:', error);
+      res.status(500).json({ message: 'Failed to decline order' });
+    }
+  });
+
+  // Update order status endpoint
+  app.post('/api/driver/orders/:orderId/status', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      const { status, notes } = req.body;
+      if (!status) {
+        return res.status(400).json({ message: 'Status is required' });
+      }
+
+      const updatedOrder = await storage.updateOrderStatusByDriver(orderId, status, notes);
+
+      // If delivered, add profit to driver
+      if (status === 'delivered') {
+        const driver = await storage.getDriver(req.session.driverId);
+        if (driver) {
+          const currentEarnings = parseFloat(driver.totalEarnings || '0');
+          await storage.updateDriverEarnings(req.session.driverId, currentEarnings + 2500);
+        }
+      }
+
+      // Broadcast status update to admin panel
+      if (global.wss) {
+        const driver = await storage.getDriver(req.session.driverId);
+        const statusUpdate = {
+          type: 'ORDER_STATUS_UPDATED',
+          orderId: orderId,
+          status: status,
+          driverId: req.session.driverId,
+          driverName: driver?.fullName,
+          notes: notes,
+          timestamp: new Date().toISOString()
+        };
+        
+        global.wss.clients.forEach((ws: any) => {
+          if (ws.readyState === 1) { // WebSocket.OPEN
+            ws.send(JSON.stringify(statusUpdate));
+          }
+        });
+      }
+
+      console.log(`📦 Driver ${req.session.driverId} updated order ${orderId} status to: ${status}`);
+      
+      res.json({ success: true, order: updatedOrder });
+    } catch (error) {
+      console.error('Update order status error:', error);
+      res.status(500).json({ message: 'Failed to update order status' });
+    }
+  });
+
+  // Get driver pending orders
+  app.get('/api/driver/pending-orders', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'Driver not authenticated' });
+      }
+
+      // Check if driver is online and available
+      const driver = await storage.getDriver(req.session.driverId);
+      if (!driver || !driver.isOnline || !driver.isActive) {
+        return res.json({ orders: [], message: 'Driver must be online to receive orders' });
+      }
+
+      // Get orders that are confirmed but not yet assigned to a driver
+      const allOrders = await storage.getOrders();
+      const availableOrders = allOrders.filter(order => 
+        order.status === 'confirmed' && !order.driverId
+      );
+
+      // Sort orders by most recent first (latest orders get priority)
+      const sortedOrders = availableOrders.sort((a, b) => 
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+
+      // Limit to first 10 orders to avoid overwhelming the driver
+      const limitedOrders = sortedOrders.slice(0, 10);
+
+      res.json({ 
+        orders: limitedOrders.map(order => ({
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address,
+          items: order.items,
+          totalAmount: order.totalAmount,
+          deliveryFee: order.deliveryFee || 2500,
+          status: order.status,
+          createdAt: order.createdAt
         }))
       });
     } catch (error) {

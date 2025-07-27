@@ -76,13 +76,18 @@ export default function DriverPage() {
   // WebSocket for real-time notifications
   const [ws, setWs] = useState<WebSocket | null>(null);
 
-  // Audio for notifications
+  // Enhanced notification audio system
   const [notificationAudio] = useState(() => {
     const audio = new Audio();
-    audio.src = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LNeSMFl+3NmDx2T1uJR8dLHV6jKfvUMWqnFzNmJNvBqGOkNf3LMm5HJWMQJmRGASFWdROKGlRHuGPARY/DKj7x1K9rwbhqb5aR";
-    audio.volume = 0.7;
+    // Professional urgent notification sound (base64 encoded WAV)
+    audio.src = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LNeSMFMnHF8N6LNwcYZ7zq5Z9NEAtQp+LvtmQcBjiR1/LNeSMFMnHF8N6LNwcYZ7zq5Z9NEAtQp+LvtmQcBjiR1/LNeSMF";
+    audio.volume = 0.9; // High volume for urgent notifications
+    audio.loop = false;
     return audio;
   });
+
+  // Vibration pattern for urgent notifications
+  const urgentVibrationPattern = [200, 100, 200, 100, 400, 100, 200];
 
   // Check authentication on mount
   useEffect(() => {
@@ -133,8 +138,15 @@ export default function DriverPage() {
     websocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        console.log("📥 WebSocket message received:", data);
+        
         if (data.type === "NEW_ORDER_ASSIGNMENT" && isOnline) {
+          console.log("🚨 New order assignment for driver:", data.order);
           handleOrderNotification(data.order);
+        } else if (data.type === "ORDER_CANCELLED") {
+          // Handle order cancellation
+          setCurrentNotification(null);
+          setPendingOrders(prev => prev.filter(order => order.id !== data.orderId));
         }
       } catch (error) {
         console.error("WebSocket message error:", error);
@@ -155,24 +167,45 @@ export default function DriverPage() {
   };
 
   const handleOrderNotification = (order: Order) => {
-    // Play notification sound
-    notificationAudio.play().catch(console.error);
+    console.log("🚨 URGENT ORDER NOTIFICATION:", order);
     
-    // Trigger vibration if supported
+    // Play urgent notification sound multiple times
+    const playUrgentSound = () => {
+      notificationAudio.currentTime = 0;
+      notificationAudio.play().catch(console.error);
+    };
+    
+    playUrgentSound();
+    // Repeat sound 3 times with 1-second intervals
+    setTimeout(playUrgentSound, 1000);
+    setTimeout(playUrgentSound, 2000);
+    
+    // Strong vibration pattern for urgent notifications
     if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200]);
+      navigator.vibrate(urgentVibrationPattern);
+      // Repeat vibration after 2 seconds
+      setTimeout(() => navigator.vibrate(urgentVibrationPattern), 2000);
     }
 
-    // Show notification popup
+    // Flash the screen for visual alert
+    document.body.style.backgroundColor = '#ff4444';
+    setTimeout(() => {
+      document.body.style.backgroundColor = '';
+    }, 200);
+
+    // Show urgent notification popup
     setCurrentNotification({
       order,
       timestamp: Date.now()
     });
 
-    // Auto-decline after 30 seconds if no action
+    // Auto-decline after 45 seconds if no action (extended time for important orders)
     setTimeout(() => {
-      setCurrentNotification(null);
-    }, 30000);
+      if (currentNotification?.timestamp === Date.now()) {
+        handleDeclineOrder(order.id);
+        setCurrentNotification(null);
+      }
+    }, 45000);
   };
 
   const loadDashboardData = async () => {
@@ -265,28 +298,72 @@ export default function DriverPage() {
         latitude,
         longitude
       });
+      console.log(`📍 Location updated: ${latitude}, ${longitude}`);
     } catch (error) {
       console.error("Failed to update location:", error);
     }
   };
 
-  const handleOrderResponse = async (orderId: number, action: "accept" | "decline") => {
+  const handleAcceptOrder = async (orderId: number) => {
     try {
-      await apiRequest("POST", "/api/driver/order-response", {
-        orderId,
-        action
-      });
+      const response = await apiRequest("POST", `/api/driver/orders/${orderId}/accept`);
+      const data = await response.json();
       
-      setCurrentNotification(null);
-      
-      if (action === "accept") {
-        // Refresh dashboard data
-        loadDashboardData();
+      if (data.success) {
+        setCurrentNotification(null);
+        loadDashboardData(); // Refresh orders
+        
+        // Play success sound
+        const successAudio = new Audio();
+        successAudio.src = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LNeSMF";
+        successAudio.volume = 0.5;
+        successAudio.play().catch(console.error);
+        
+        console.log("✅ Order accepted successfully");
       }
     } catch (error) {
-      console.error("Failed to respond to order:", error);
+      console.error("Failed to accept order:", error);
     }
   };
+
+  const handleDeclineOrder = async (orderId: number) => {
+    try {
+      const response = await apiRequest("POST", `/api/driver/orders/${orderId}/decline`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setCurrentNotification(null);
+        loadDashboardData(); // Refresh orders
+        console.log("❌ Order declined");
+      }
+    } catch (error) {
+      console.error("Failed to decline order:", error);
+    }
+  };
+
+  const updateOrderStatus = async (orderId: number, status: string, notes?: string) => {
+    try {
+      const response = await apiRequest("POST", `/api/driver/orders/${orderId}/status`, {
+        status,
+        notes
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        loadDashboardData(); // Refresh data
+        setStats(prev => ({
+          ...prev,
+          todayDeliveries: status === 'delivered' ? prev.todayDeliveries + 1 : prev.todayDeliveries,
+          todayEarnings: status === 'delivered' ? prev.todayEarnings + 2500 : prev.todayEarnings
+        }));
+        console.log(`📦 Order ${orderId} status updated to: ${status}`);
+      }
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+    }
+  };;
+
+
 
   if (!isAuthenticated) {
     return (
@@ -380,6 +457,22 @@ export default function DriverPage() {
                 {isOnline ? "متاح" : "غير متاح"}
               </Badge>
             </div>
+            <Button
+              onClick={async () => {
+                try {
+                  const response = await apiRequest("POST", "/api/driver/test-notification");
+                  const data = await response.json();
+                  console.log("🧪 Test notification triggered:", data);
+                } catch (error) {
+                  console.error("Test notification failed:", error);
+                }
+              }}
+              variant="outline"
+              size="sm"
+              className="text-purple-600 border-purple-600 hover:bg-purple-50"
+            >
+              🧪 اختبار التنبيه
+            </Button>
             <Button
               onClick={handleLogout}
               variant="outline"
@@ -489,7 +582,7 @@ export default function DriverPage() {
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => handleOrderResponse(order.id, "accept")}
+                        onClick={() => handleAcceptOrder(order.id)}
                         className="bg-green-600 hover:bg-green-700"
                       >
                         قبول
@@ -497,7 +590,7 @@ export default function DriverPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleOrderResponse(order.id, "decline")}
+                        onClick={() => handleDeclineOrder(order.id)}
                       >
                         رفض
                       </Button>
@@ -510,63 +603,60 @@ export default function DriverPage() {
         </CardContent>
       </Card>
 
-      {/* Order Notification Popup */}
+      {/* URGENT Order Notification Popup */}
       {currentNotification && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md animate-in zoom-in-95 duration-300">
-            <CardHeader className="text-center bg-green-600 text-white rounded-t-lg">
-              <CardTitle className="flex items-center justify-center gap-2">
-                <Bell className="w-5 h-5" />
-                طلب جديد!
+        <div className="fixed inset-0 bg-red-900 bg-opacity-80 flex items-center justify-center z-50 p-4 animate-pulse">
+          <Card className="w-full max-w-md bg-white shadow-2xl border-4 border-red-500 animate-bounce">
+            <CardHeader className="bg-gradient-to-r from-red-600 to-red-700 text-white">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Bell className="w-6 h-6 animate-ping" />
+                🚨 طلب عاجل - URGENT ORDER
               </CardTitle>
+              <p className="text-red-200 text-sm">45 ثانية للرد قبل الإلغاء التلقائي</p>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 bg-yellow-50">
               <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {currentNotification.order.customerName}
-                  </h3>
-                  <p className="text-gray-600">{currentNotification.order.customerPhone}</p>
+                <div className="bg-white p-3 rounded-lg border-l-4 border-red-500">
+                  <h3 className="font-bold text-lg text-red-800">العميل: {currentNotification.order.customerName}</h3>
+                  <p className="text-red-600 font-semibold">{currentNotification.order.customerPhone}</p>
                 </div>
                 
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-gray-500 mt-1" />
-                  <div>
-                    <p className="font-medium">
-                      {currentNotification.order.address.governorate} - {currentNotification.order.address.district}
-                    </p>
+                <div className="bg-white p-3 rounded-lg border-l-4 border-orange-500">
+                  <p className="font-bold text-orange-800">📍 العنوان:</p>
+                  <p className="text-orange-700 font-semibold">
+                    {currentNotification.order.address.governorate} - {currentNotification.order.address.district}
                     {currentNotification.order.address.notes && (
-                      <p className="text-sm text-gray-600">
-                        {currentNotification.order.address.notes}
-                      </p>
+                      <span className="block text-sm text-orange-600 mt-1">{currentNotification.order.address.notes}</span>
                     )}
-                  </div>
-                </div>
-
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="font-semibold text-green-800 text-xl text-center">
-                    {currentNotification.order.totalAmount.toLocaleString()} دينار
-                  </p>
-                  <p className="text-sm text-green-600 text-center">
-                    المبلغ الإجمالي
                   </p>
                 </div>
+                
+                <div className="bg-green-100 p-3 rounded-lg border-l-4 border-green-500">
+                  <p className="font-bold text-green-800">💰 المبلغ الإجمالي:</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {currentNotification.order.totalAmount.toLocaleString()} IQD
+                  </p>
+                  <p className="text-sm text-green-600">+ رسوم توصيل 2,500 IQD</p>
+                </div>
 
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => handleOrderResponse(currentNotification.order.id, "accept")}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                <div className="bg-blue-100 p-3 rounded-lg border-l-4 border-blue-500">
+                  <p className="font-bold text-blue-800">📦 عدد المنتجات:</p>
+                  <p className="text-blue-700">{currentNotification.order.items.length} منتج</p>
+                </div>
+                
+                <div className="flex gap-3 mt-6">
+                  <Button 
+                    onClick={() => handleAcceptOrder(currentNotification.order.id)}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg animate-pulse"
                   >
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    قبول
+                    ✅ قبول الطلب فوراً
                   </Button>
-                  <Button
-                    onClick={() => handleOrderResponse(currentNotification.order.id, "decline")}
+                  <Button 
+                    onClick={() => handleDeclineOrder(currentNotification.order.id)}
                     variant="outline"
-                    className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
+                    className="flex-1 border-red-500 text-red-600 hover:bg-red-50 font-bold py-3"
                   >
-                    <XCircle className="w-4 h-4 ml-2" />
-                    رفض
+                    ❌ رفض الطلب
                   </Button>
                 </div>
               </div>

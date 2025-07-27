@@ -68,6 +68,7 @@ export interface IStorage {
   getDriverOrders(driverId: number, status?: string): Promise<Order[]>;
   updateOrderStatusByDriver(orderId: number, status: string, driverNotes?: string): Promise<Order>;
   updateDriverTotalDeliveries(id: number, totalDeliveries: number): Promise<Driver>;
+  updateDriverEarnings(id: number, totalEarnings: number): Promise<Driver>;
   
   // Driver Location Tracking
   createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation>;
@@ -480,6 +481,15 @@ export class MemStorage implements IStorage {
     throw new Error("MemStorage driver operations not implemented");
   }
   async updateDriverTotalDeliveries(id: number, totalDeliveries: number): Promise<Driver> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async updateDriverEarnings(id: number, totalEarnings: number): Promise<Driver> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async deleteDriver(id: number): Promise<void> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async updateDriverActiveStatus(id: number, isActive: boolean): Promise<Driver> {
     throw new Error("MemStorage driver operations not implemented");
   }
   async createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation> {
@@ -905,6 +915,26 @@ export class DatabaseStorage implements IStorage {
   async updateDriverTotalDeliveries(id: number, totalDeliveries: number): Promise<Driver> {
     const [updatedDriver] = await db.update(drivers)
       .set({ totalDeliveries })
+      .where(eq(drivers.id, id))
+      .returning();
+    return updatedDriver;
+  }
+
+  async updateDriverEarnings(id: number, totalEarnings: number): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ totalEarnings: totalEarnings.toString() })
+      .where(eq(drivers.id, id))
+      .returning();
+    return updatedDriver;
+  }
+
+  async deleteDriver(id: number): Promise<void> {
+    await db.delete(drivers).where(eq(drivers.id, id));
+  }
+
+  async updateDriverActiveStatus(id: number, isActive: boolean): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ isActive })
       .where(eq(drivers.id, id))
       .returning();
     return updatedDriver;
