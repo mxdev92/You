@@ -240,19 +240,35 @@ export default function WalletPage() {
                 </p>
               </div>
 
-              {/* Professional Single Grid */}
+              {/* Compact Horizontal Buttons Grid */}
               <div className="space-y-3">
                 <p className="text-xs font-medium text-gray-600">المبالغ المقترحة</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[1000, 5000, 15000, 20000, 25000, 50000, 100000].map((amount) => (
-                    <button
-                      key={amount}
-                      onClick={() => setChargeAmount(String(amount))}
-                      className="px-2 py-2.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg mobile-scale shadow-sm transition-all duration-150"
-                    >
-                      {formatPrice(amount)}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Column 1: 5,000 / 10,000 / 15,000 */}
+                  <div className="space-y-2">
+                    {[5000, 10000, 15000].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setChargeAmount(String(amount))}
+                        className="w-full px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg mobile-scale transition-all duration-150"
+                      >
+                        {formatPrice(amount)}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Column 2: 25,000 / 50,000 / 100,000 */}
+                  <div className="space-y-2">
+                    {[25000, 50000, 100000].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setChargeAmount(String(amount))}
+                        className="w-full px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-lg mobile-scale transition-all duration-150"
+                      >
+                        {formatPrice(amount)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
