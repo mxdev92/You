@@ -101,9 +101,17 @@ export default function DriverPage() {
   // Request notification permission
   const requestNotificationPermission = async () => {
     if ("Notification" in window) {
-      const permission = await Notification.requestPermission();
-      setNotificationPermission(permission);
-      console.log("🔔 Notification permission:", permission);
+      // Check current permission without requesting
+      const currentPermission = Notification.permission;
+      setNotificationPermission(currentPermission);
+      console.log("🔔 Current notification permission:", currentPermission);
+      
+      // Only request if not already determined
+      if (currentPermission === "default") {
+        console.log("🔔 Permission is default, will request when needed");
+      }
+    } else {
+      console.error("🚫 Browser doesn't support notifications");
     }
   };
 
@@ -507,29 +515,34 @@ export default function DriverPage() {
             <Button
               onClick={async () => {
                 try {
-                  // Check and request permission if needed
-                  if (notificationPermission !== "granted") {
-                    const permission = await Notification.requestPermission();
-                    setNotificationPermission(permission);
-                    if (permission !== "granted") {
-                      alert("يرجى السماح بالإشعارات لتلقي تنبيهات الطلبات");
-                      return;
-                    }
+                  // Always request permission first, don't rely on state
+                  console.log("🔔 Requesting notification permission...");
+                  
+                  if (!("Notification" in window)) {
+                    console.error("Browser doesn't support notifications");
+                    return;
                   }
+
+                  // Force permission request
+                  const permission = await Notification.requestPermission();
+                  setNotificationPermission(permission);
+                  console.log("🔔 Permission result:", permission);
 
                   const response = await apiRequest("POST", "/api/driver/test-notification");
                   const data = await response.json();
                   console.log("🧪 Test notification triggered:", data);
                   
                   if (data.success && data.testOrder) {
-                    // Show browser notification
-                    showBrowserNotification(
-                      "🚨 طلب جديد - باكيتي",
-                      `طلب من ${data.testOrder.customerName}\nالمبلغ: ${data.testOrder.totalAmount.toLocaleString()} IQD\nالعنوان: ${data.testOrder.address.governorate} - ${data.testOrder.address.district}`,
-                      data.testOrder
-                    );
+                    // Show browser notification if permission granted
+                    if (permission === "granted") {
+                      showBrowserNotification(
+                        "🚨 طلب جديد - باكيتي",
+                        `طلب من ${data.testOrder.customerName}\nالمبلغ: ${data.testOrder.totalAmount.toLocaleString()} IQD\nالعنوان: ${data.testOrder.address.governorate} - ${data.testOrder.address.district}`,
+                        data.testOrder
+                      );
+                    }
                     
-                    // Show in-app notification as well
+                    // Always show in-app notification
                     setCurrentNotification({ 
                       order: data.testOrder, 
                       timestamp: Date.now() 
