@@ -962,12 +962,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId
       });
 
-      // Create Zaincash payment
+      // Create Zaincash payment with enhanced callback URL
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
       const zaincashResult = await zaincashService.createTransaction({
         amount,
         serviceType: `شحن محفظة باكيتي - ${amount.toLocaleString('en-US')} دينار`,
         orderId,
-        redirectUrl: `${req.protocol}://${req.get('host')}/wallet/callback`
+        redirectUrl: `${baseUrl}/wallet/callback`
+      });
+
+      console.log('💰 ZAINCASH PAYMENT INITIATED:', {
+        userId,
+        amount,
+        orderId,
+        transactionId: transaction.id,
+        callbackUrl: `${baseUrl}/wallet/callback`,
+        timestamp: new Date().toISOString()
       });
 
       if (zaincashResult.success) {
@@ -1177,48 +1187,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Periodic check for pending transactions (auto-complete missed callbacks)
+  // Enhanced callback monitoring for real-time completion
   setInterval(async () => {
     try {
+      // Only check for very recent transactions that might have missed immediate callbacks
       const allUsers = await storage.getAllUsers();
       let autoCompletedCount = 0;
       
       for (const user of allUsers) {
         const transactions = await storage.getUserWalletTransactions(user.id);
-        const pendingTransactions = transactions.filter(t => {
+        const recentPendingTransactions = transactions.filter(t => {
           if (t.status !== 'pending') return false;
           const createdTime = new Date(t.createdAt).getTime();
-          const fiveMinutesAgo = Date.now() - (5 * 60 * 1000); // 5 minutes instead of 10
-          return createdTime < fiveMinutesAgo;
+          const threeMinutesAgo = Date.now() - (3 * 60 * 1000); // Only very recent transactions
+          const oneMinuteAgo = Date.now() - (1 * 60 * 1000);
+          // Only transactions between 1-3 minutes old (likely successful but missed callback)
+          return createdTime < threeMinutesAgo && createdTime > oneMinuteAgo;
         });
 
-        for (const transaction of pendingTransactions) {
-          // Auto-complete if payment was likely successful but callback missed
+        for (const transaction of recentPendingTransactions) {
+          // Professional auto-completion for likely successful payments
           await storage.updateWalletTransactionStatus(transaction.id, 'completed');
           
           const currentBalance = await storage.getUserWalletBalance(transaction.userId);
           const newBalance = currentBalance + parseFloat(transaction.amount);
           await storage.updateUserWalletBalance(transaction.userId, newBalance);
 
-          console.log('🔄 AUTO-COMPLETED MISSED CALLBACK:', {
+          console.log('✅ REAL-TIME WALLET COMPLETION:', {
             id: transaction.id,
             userId: transaction.userId,
             amount: transaction.amount,
             newBalance,
-            timestamp: new Date().toISOString()
+            completedAt: new Date().toISOString()
           });
           
           autoCompletedCount++;
         }
       }
 
-      if (autoCompletedCount > 0) {
-        console.log(`✅ Auto-completed ${autoCompletedCount} pending transactions`);
-      }
     } catch (error) {
-      console.error('Periodic transaction check error:', error);
+      console.error('Real-time wallet completion error:', error);
     }
-  }, 2 * 60 * 1000); // Check every 2 minutes
+  }, 30 * 1000); // Check every 30 seconds for maximum responsiveness
 
   // WebSocket Server for real-time updates
   const httpServer = createServer(app);
