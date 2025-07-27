@@ -938,9 +938,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle charge (positive amount) - minimum 5,000 IQD
-      if (!amount || amount < 5000) {
+      if (!amount || amount < 250) {
         return res.status(400).json({ 
-          message: 'الحد الأدنى للشحن هو 5,000 دينار عراقي' 
+          message: 'الحد الأدنى للشحن هو 250 دينار عراقي' 
         });
       }
 

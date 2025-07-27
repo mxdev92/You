@@ -1,14 +1,14 @@
 import jwt from 'jsonwebtoken';
 import QRCode from 'qrcode';
 
-// Zaincash Test Credentials
+// Zaincash Production Credentials
 const ZAINCASH_CONFIG = {
-  MERCHANT_ID: '5ffacf6612b5777c6d44266f',
-  MERCHANT_SECRET: '$2y$10$hBbAZo2GfSSvyqAyV2SaqOfYewgYpfR1O19gIh4SqyGWdmySZYPuS',
-  MSISDN: '9647835077893', // Test wallet phone number
+  MERCHANT_ID: '6885cb72ba076bebb59d6bd9',
+  MERCHANT_SECRET: '$2y$10$KZwH97wNAwMr4peVfCcgJOXhkcpTDaGuwkiGjaI0zDO9mauCAyGUq',
+  MSISDN: '9647702337832', // Production wallet phone number
   TEST_API_URL: 'https://test.zaincash.iq',
   PRODUCTION_API_URL: 'https://api.zaincash.iq',
-  IS_PRODUCTION: false
+  IS_PRODUCTION: true
 };
 
 export interface ZaincashTransactionRequest {
@@ -49,10 +49,10 @@ export class ZaincashService {
   async createTransaction(request: ZaincashTransactionRequest): Promise<ZaincashTransactionResponse> {
     try {
       // Validate minimum amount
-      if (request.amount < 5000) {
+      if (request.amount < 250) {
         return {
           success: false,
-          error: 'الحد الأدنى للشحن هو 5,000 دينار عراقي'
+          error: 'الحد الأدنى للشحن هو 250 دينار عراقي'
         };
       }
 
