@@ -51,6 +51,18 @@ export default function WalletPage() {
   const [paymentData, setPaymentData] = useState<any>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [showPaymentIframe, setShowPaymentIframe] = useState(false);
+  
+  // Real-time payment status monitoring
+  const [monitoringOrderId, setMonitoringOrderId] = useState<string | null>(null);
+  
+  // Real-time status check with faster polling
+  const { data: paymentStatus } = useQuery({
+    queryKey: ['/api/wallet/transaction-status', monitoringOrderId],
+    enabled: !!monitoringOrderId,
+    refetchInterval: 3000, // Check every 3 seconds for real-time updates
+    retry: 10, // Keep trying for real-time monitoring
+    staleTime: 0 // Always fetch fresh status
+  });
 
   // Charge wallet mutation
   const chargeMutation = useMutation({
@@ -63,6 +75,12 @@ export default function WalletPage() {
         setPaymentData(data);
         setIsPaymentDialogOpen(true);
         setIsCharging(false);
+        
+        // Start monitoring payment status in real-time
+        if (data.orderId) {
+          setMonitoringOrderId(data.orderId);
+          console.log('🔄 Started real-time payment monitoring for:', data.orderId);
+        }
       }
     },
     onError: (error: any) => {
@@ -70,6 +88,29 @@ export default function WalletPage() {
       setIsCharging(false);
     }
   });
+
+  // Monitor payment status changes for real-time updates
+  useEffect(() => {
+    if (paymentStatus && monitoringOrderId) {
+      console.log('💰 Real-time payment status update:', paymentStatus);
+      
+      if (paymentStatus.status === 'completed') {
+        console.log('✅ Payment completed! Refreshing wallet data...');
+        // Stop monitoring and refresh wallet data
+        setMonitoringOrderId(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
+        setIsPaymentDialogOpen(false);
+        setPaymentData(null);
+      } else if (paymentStatus.status === 'failed') {
+        console.log('❌ Payment failed! Stopping monitoring...');
+        // Stop monitoring on failure
+        setMonitoringOrderId(null);
+        setIsPaymentDialogOpen(false);
+        setPaymentData(null);
+      }
+    }
+  }, [paymentStatus, monitoringOrderId, queryClient]);
 
   const handleChargeWallet = async () => {
     const amount = parseInt(chargeAmount);

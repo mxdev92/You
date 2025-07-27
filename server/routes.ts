@@ -1077,6 +1077,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: transaction.amount, 
           oldBalance: currentBalance,
           newBalance,
+          orderId: callbackData.orderid,
+          zaincashTransactionId: callbackData.id,
           processedAt: new Date().toISOString()
         });
         
@@ -1084,8 +1086,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // IMMEDIATE FAILURE - Mark as failed and show error
         await storage.updateWalletTransactionStatus(transaction.id, 'failed');
-        console.log('❌ PAYMENT FAILED - IMMEDIATE ERROR:', callbackData.msg);
-        return res.redirect(`/wallet/failed?error=${callbackData.msg || 'payment_failed'}`);
+        console.log('❌ PAYMENT FAILED - IMMEDIATE ERROR:', {
+          orderId: callbackData.orderid,
+          status: callbackData.status,
+          message: callbackData.msg,
+          userId: transaction.userId
+        });
+        return res.redirect(`/wallet/failed?error=${encodeURIComponent(callbackData.msg || 'payment_failed')}`);
       }
 
     } catch (error) {
@@ -1140,14 +1147,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const createdTime = new Date(transaction.createdAt).getTime();
           const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
 
-          // Only mark very old transactions as failed - NEVER auto-complete
-          if (createdTime < tenMinutesAgo) {
+          // Mark old transactions as failed after 3 minutes for real-time processing
+          const threeMinutesAgo = Date.now() - (3 * 60 * 1000);
+          if (createdTime < threeMinutesAgo) {
             await storage.updateWalletTransactionStatus(transaction.id, 'failed');
-            console.log('🧹 EXPIRED TRANSACTION FAILED:', {
+            console.log('⏰ REAL-TIME TRANSACTION TIMEOUT (3min):', {
               id: transaction.id,
               userId: transaction.userId,
               amount: transaction.amount,
-              expiredAt: new Date().toISOString()
+              timeoutAt: new Date().toISOString()
             });
             cleanedCount++;
           }
@@ -1161,7 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Payment cleanup error:', error);
     }
-  }, 30 * 1000); // Check every 30 seconds
+  }, 10 * 1000); // Check every 10 seconds for real-time processing
 
   // WebSocket Server for real-time updates
   const httpServer = createServer(app);
