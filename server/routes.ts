@@ -1876,7 +1876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all drivers for admin panel
   app.get('/api/drivers', async (req, res) => {
     try {
-      const drivers = await storage.getAllDrivers();
+      const drivers = await storage.getDrivers();
       res.json(drivers);
     } catch (error) {
       console.error('Get all drivers error:', error);

@@ -1381,7 +1381,14 @@ function DriversManagement() {
 
   const { data: drivers = [], isLoading, error } = useQuery({
     queryKey: ['/api/drivers'],
-    queryFn: () => fetch('/api/drivers').then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch('/api/drivers');
+      if (!response.ok) {
+        throw new Error('Failed to fetch drivers');
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
     refetchInterval: 3000
   });
 

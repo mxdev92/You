@@ -56,7 +56,9 @@ export interface IStorage {
   getDriverByEmail(email: string): Promise<Driver | undefined>;
   getDriverByPhone(phone: string): Promise<Driver | undefined>;
   createDriver(driver: InsertDriver): Promise<Driver>;
+  deleteDriver(id: number): Promise<void>;
   updateDriverStatus(id: number, isOnline: boolean): Promise<Driver>;
+  updateDriverActiveStatus(id: number, isActive: boolean): Promise<Driver>;
   updateDriverLocation(id: number, location: {lat: number, lng: number}): Promise<Driver>;
   updateDriverFCMToken(id: number, fcmToken: string): Promise<Driver>;
   getAvailableDrivers(): Promise<Driver[]>;
@@ -815,9 +817,21 @@ export class DatabaseStorage implements IStorage {
     return newDriver;
   }
 
+  async deleteDriver(id: number): Promise<void> {
+    await db.delete(drivers).where(eq(drivers.id, id));
+  }
+
   async updateDriverStatus(id: number, isOnline: boolean): Promise<Driver> {
     const [updatedDriver] = await db.update(drivers)
       .set({ isOnline })
+      .where(eq(drivers.id, id))
+      .returning();
+    return updatedDriver;
+  }
+
+  async updateDriverActiveStatus(id: number, isActive: boolean): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ isActive })
       .where(eq(drivers.id, id))
       .returning();
     return updatedDriver;
