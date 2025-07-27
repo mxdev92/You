@@ -997,25 +997,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/wallet/callback', async (req, res) => {
     try {
       const { token } = req.query;
+      console.log('💰 Zaincash callback received:', { token, query: req.query });
       
       if (!token) {
+        console.log('❌ No token in callback');
         return res.redirect('/wallet/failed?error=missing_token');
       }
 
       // Verify Zaincash callback token
       const callbackData = zaincashService.verifyCallbackToken(token as string);
+      console.log('💰 Callback data:', callbackData);
       
       if (!callbackData) {
+        console.log('❌ Invalid callback token');
         return res.redirect('/wallet/failed?error=invalid_token');
       }
 
-      // Find the transaction by order ID
-      const allTransactions = await storage.getUserWalletTransactions(1); // We'll need to improve this
-      const transaction = allTransactions.find(t => t.orderId === callbackData.orderid);
+      // Find the transaction by order ID - search all users
+      const allUsers = await storage.getAllUsers();
+      let transaction = null;
+      
+      for (const user of allUsers) {
+        const userTransactions = await storage.getUserWalletTransactions(user.id);
+        const found = userTransactions.find(t => t.orderId === callbackData.orderid);
+        if (found) {
+          transaction = found;
+          break;
+        }
+      }
 
       if (!transaction) {
+        console.log('❌ Transaction not found for orderId:', callbackData.orderid);
         return res.redirect('/wallet/failed?error=transaction_not_found');
       }
+
+      console.log('✅ Found transaction:', transaction.id);
 
       if (callbackData.status === 'success') {
         // Update transaction status to completed
@@ -1026,6 +1042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newBalance = currentBalance + parseFloat(transaction.amount);
         await storage.updateUserWalletBalance(transaction.userId, newBalance);
 
+        console.log('✅ Wallet updated:', { userId: transaction.userId, amount: transaction.amount, newBalance });
         return res.redirect(`/wallet/success?amount=${transaction.amount}`);
       } else {
         // Mark transaction as failed
@@ -1036,6 +1053,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Wallet callback error:', error);
       return res.redirect('/wallet/failed?error=callback_error');
+    }
+  });
+
+  // Manual wallet transaction completion for debugging/support
+  app.post('/api/wallet/complete-transaction', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    try {
+      const { transactionId } = req.body;
+      const userId = req.session.userId;
+      
+      // Find user's pending transaction
+      const userTransactions = await storage.getUserWalletTransactions(userId);
+      const transaction = userTransactions.find(t => t.id === transactionId && t.status === 'pending');
+      
+      if (!transaction) {
+        return res.status(404).json({ message: 'Transaction not found or already processed' });
+      }
+
+      // Update transaction status to completed
+      await storage.updateWalletTransactionStatus(transaction.id, 'completed');
+      
+      // Add amount to user's wallet
+      const currentBalance = await storage.getUserWalletBalance(userId);
+      const newBalance = currentBalance + parseFloat(transaction.amount);
+      await storage.updateUserWalletBalance(userId, newBalance);
+
+      console.log('✅ Manual wallet completion:', { userId, transactionId, amount: transaction.amount, newBalance });
+      
+      res.json({
+        success: true,
+        message: 'تم إضافة المبلغ إلى محفظتك بنجاح',
+        newBalance,
+        transactionId
+      });
+
+    } catch (error) {
+      console.error('Manual wallet completion error:', error);
+      res.status(500).json({ message: 'Failed to complete transaction' });
     }
   });
 
