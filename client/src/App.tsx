@@ -71,14 +71,14 @@ function ProtectedAdminRoute() {
     if (adminSessionRaw) {
       const adminSession = JSON.parse(adminSessionRaw);
       const isNotExpired = new Date().getTime() < new Date(adminSession.expiresAt).getTime();
-      isValidSession = adminAuthenticated && adminEmail && isNotExpired;
+      isValidSession = Boolean(adminAuthenticated) && Boolean(adminEmail) && isNotExpired;
     } else {
       // Fallback to basic check for backward compatibility
-      isValidSession = adminAuthenticated && adminEmail;
+      isValidSession = Boolean(adminAuthenticated) && Boolean(adminEmail);
     }
   } catch (error) {
     console.warn('Admin session parsing error, using fallback check:', error);
-    isValidSession = adminAuthenticated && adminEmail;
+    isValidSession = Boolean(adminAuthenticated) && Boolean(adminEmail);
   }
   
   console.log('Ultra-stable admin auth check:', { 
@@ -134,9 +134,7 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       
       {/* Wallet page - protected route */}
-      <Route path="/wallet">
-        <ProtectedRoute component={WalletPage} />
-      </Route>
+      <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
       
       {/* Auth page */}
       <Route path="/auth" component={AuthPage} />
