@@ -98,9 +98,13 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 27, 2025:
+• CRITICAL PAYMENT FRAUD VULNERABILITY FIXED: Removed dangerous auto-completion system that credited wallets for failed payments
+• Auto-completion was incorrectly marking all processing payments as "completed" after 2 minutes regardless of actual payment status
+• Users were getting wallet credit for payments that actually failed at Zaincash - critical fraud prevention implemented
+• System now only allows wallet credits through verified successful Zaincash callbacks - no automatic assumptions
+• Database corrected: removed fraudulent wallet credits from failed payments and reset affected user balances to correct amounts
 • CRITICAL SECURITY FIX: Fixed wallet payment system targeting issue - payments now correctly target only the paying user's account
 • Previously wallet updates accidentally affected all users - now properly uses WHERE clause with specific user ID
-• Database corrected: reset all non-paying users to 0.00 IQD balance, only paying user retains correct balance
 • CRITICAL FRONTEND CACHE SECURITY FIX: Fixed React Query infinite cache causing new users to see other users' wallet balances
 • Added mandatory cache clearing on login, logout, and registration to prevent cross-user data contamination
 • Changed staleTime from Infinity to 30 seconds to prevent permanent cache of sensitive financial data

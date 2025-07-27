@@ -1124,11 +1124,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Smart payment completion system for missed callbacks
+  // CRITICAL SECURITY FIX: Removed dangerous auto-completion system
+  // Auto-completion was incorrectly marking failed payments as successful
+  // Only mark transactions as failed after 10 minutes to prevent fraud
   setInterval(async () => {
     try {
       const allUsers = await storage.getAllUsers();
-      let completedCount = 0;
       let cleanedCount = 0;
       
       for (const user of allUsers) {
@@ -1137,33 +1138,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const transaction of processingTransactions) {
           const createdTime = new Date(transaction.createdAt).getTime();
-          const twoMinutesAgo = Date.now() - (2 * 60 * 1000);
           const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
 
-          if (createdTime < twoMinutesAgo && createdTime > tenMinutesAgo) {
-            // Auto-complete likely successful payments after 2 minutes
-            const currentBalance = await storage.getUserWalletBalance(transaction.userId);
-            const newBalance = currentBalance + parseFloat(transaction.amount);
-            
-            await Promise.all([
-              storage.updateUserWalletBalance(transaction.userId, newBalance),
-              storage.updateWalletTransactionStatus(transaction.id, 'completed')
-            ]);
-
-            console.log('✅ AUTO-COMPLETED PAYMENT:', {
-              id: transaction.id,
-              userId: transaction.userId,
-              amount: transaction.amount,
-              newBalance,
-              completedAt: new Date().toISOString()
-            });
-            completedCount++;
-          } else if (createdTime < tenMinutesAgo) {
-            // Mark very old transactions as failed
+          // Only mark very old transactions as failed - NEVER auto-complete
+          if (createdTime < tenMinutesAgo) {
             await storage.updateWalletTransactionStatus(transaction.id, 'failed');
             console.log('🧹 EXPIRED TRANSACTION FAILED:', {
               id: transaction.id,
               userId: transaction.userId,
+              amount: transaction.amount,
               expiredAt: new Date().toISOString()
             });
             cleanedCount++;
@@ -1171,12 +1154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      if (completedCount > 0 || cleanedCount > 0) {
-        console.log(`📊 Payment processing: ${completedCount} completed, ${cleanedCount} expired`);
+      if (cleanedCount > 0) {
+        console.log(`📊 Payment cleanup: ${cleanedCount} expired transactions marked as failed`);
       }
 
     } catch (error) {
-      console.error('Smart payment completion error:', error);
+      console.error('Payment cleanup error:', error);
     }
   }, 30 * 1000); // Check every 30 seconds
 
