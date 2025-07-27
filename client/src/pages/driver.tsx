@@ -709,74 +709,67 @@ export default function DriverPage() {
         </div>
       </div>
 
-      {/* Modern Mobile Notification Modal */}
+      {/* Professional Order Notification */}
       {currentNotification && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 safe-area-top">
-          <div className="w-full max-w-sm mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-red-500 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 animate-in fade-in-0 zoom-in-95 duration-200">
             {/* Header */}
-            <div className="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-5">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Bell className="w-8 h-8 text-white animate-pulse" />
+            <div className="bg-gradient-to-r from-blue-50 to-gray-50 px-6 py-4 rounded-t-2xl border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Package className="w-6 h-6 text-blue-600" />
                 </div>
-                <h2 className="text-xl font-bold mb-2">طلب عاجل</h2>
-                <div className="bg-red-800/50 rounded-full px-3 py-1 text-sm">
-                  منذ {Math.floor((Date.now() - currentNotification.timestamp) / 1000)} ثانية
+                <div>
+                  <h3 className="font-bold text-gray-900">طلب جديد</h3>
+                  <p className="text-sm text-gray-500">منذ {Math.floor((Date.now() - currentNotification.timestamp) / 1000)} ثانية</p>
                 </div>
               </div>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-4">
-              {/* Customer Info */}
-              <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-bold text-lg">{currentNotification.order.customerName.charAt(0)}</span>
+              {/* Customer & Address Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-bold text-sm">{currentNotification.order.customerName.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{currentNotification.order.customerName}</p>
+                      <p className="text-xs text-gray-600">{currentNotification.order.customerPhone}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-gray-900">{currentNotification.order.customerName}</p>
-                    <p className="text-sm text-gray-600">{currentNotification.order.customerPhone}</p>
+                </div>
+                
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{currentNotification.order.address.governorate}</p>
+                      <p className="text-xs text-gray-600">{currentNotification.order.address.district}</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Address */}
-              <div className="bg-green-50 rounded-2xl p-4 border border-green-100">
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-6 h-6 text-green-600 mt-1" />
-                  <div>
-                    <p className="font-bold text-gray-900">{currentNotification.order.address.governorate}</p>
-                    <p className="text-sm text-gray-600">{currentNotification.order.address.district}</p>
-                    {currentNotification.order.address.notes && (
-                      <p className="text-xs text-gray-500 mt-2 bg-white/50 rounded-lg px-2 py-1">{currentNotification.order.address.notes}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Amount & Items */}
-              <div className="bg-yellow-50 rounded-2xl p-4 border border-yellow-100">
-                <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-1">المبلغ الإجمالي</p>
-                  <p className="text-3xl font-bold text-green-600">{currentNotification.order.totalAmount.toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">دينار عراقي</p>
-                  <div className="mt-2 bg-white/50 rounded-lg px-3 py-1">
-                    <p className="text-xs text-gray-600">{currentNotification.order.items.length} منتج + رسوم توصيل 2,500</p>
-                  </div>
-                </div>
+              {/* Order Details */}
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 text-center">
+                <p className="text-sm text-gray-600 mb-1">المبلغ الإجمالي</p>
+                <p className="text-2xl font-bold text-gray-900">{currentNotification.order.totalAmount.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">{currentNotification.order.items.length} منتج • رسوم توصيل 2,500</p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3">
                 <Button
                   onClick={() => {
                     handleAcceptOrder(currentNotification.order.id);
                     setCurrentNotification(null);
                   }}
-                  className="flex-1 bg-green-600 hover:bg-green-700 rounded-2xl py-4 text-lg font-bold shadow-lg"
+                  className="flex-1 bg-green-600 hover:bg-green-700 rounded-xl py-3 font-semibold"
                 >
-                  <CheckCircle className="w-5 h-5 ml-2" />
+                  <CheckCircle className="w-4 h-4 ml-2" />
                   قبول
                 </Button>
                 <Button
@@ -785,9 +778,9 @@ export default function DriverPage() {
                     setCurrentNotification(null);
                   }}
                   variant="outline"
-                  className="flex-1 border-2 border-red-500 text-red-600 hover:bg-red-50 rounded-2xl py-4 text-lg font-bold shadow-lg"
+                  className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl py-3 font-semibold"
                 >
-                  <XCircle className="w-5 h-5 ml-2" />
+                  <XCircle className="w-4 h-4 ml-2" />
                   رفض
                 </Button>
               </div>
