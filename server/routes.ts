@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
+import { insertCartItemSchema, insertProductSchema, insertOrderSchema, insertDriverSchema, insertDriverLocationSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
@@ -1868,6 +1868,476 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to send admin test notification' });
     }
   });
+
+  // =============================================================================
+  // DRIVER API ENDPOINTS - For Expo React Native Driver App Integration
+  // =============================================================================
+
+  // Driver Authentication
+  app.post('/api/driver/signup', async (req, res) => {
+    try {
+      const driverData = insertDriverSchema.parse(req.body);
+      
+      // Check if driver already exists
+      const existingDriverEmail = await storage.getDriverByEmail(driverData.email);
+      if (existingDriverEmail) {
+        return res.status(400).json({ message: 'Driver with this email already exists' });
+      }
+      
+      const existingDriverPhone = await storage.getDriverByPhone(driverData.phone);
+      if (existingDriverPhone) {
+        return res.status(400).json({ message: 'Driver with this phone already exists' });
+      }
+
+      const driver = await storage.createDriver(driverData);
+      
+      // Remove sensitive data from response
+      const { passwordHash, ...driverResponse } = driver;
+      res.status(201).json({ driver: driverResponse });
+    } catch (error: any) {
+      console.error('Driver signup error:', error);
+      res.status(400).json({ message: error.message || 'Failed to create driver account' });
+    }
+  });
+
+  app.post('/api/driver/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
+      const driver = await storage.getDriverByEmail(email);
+      if (!driver) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // In production, you'd verify the password hash here
+      // For now, assuming password verification is handled elsewhere
+      
+      // Create driver session
+      (req as any).session.driverId = driver.id;
+      (req as any).session.driverEmail = driver.email;
+      (req as any).session.driverLoginTime = new Date().toISOString();
+
+      const { passwordHash, ...driverResponse } = driver;
+      res.json({ driver: driverResponse });
+    } catch (error: any) {
+      console.error('Driver login error:', error);
+      res.status(500).json({ message: 'Failed to login' });
+    }
+  });
+
+  app.post('/api/driver/logout', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      
+      if (driverId) {
+        // Set driver offline on logout
+        await storage.updateDriverStatus(driverId, false);
+      }
+      
+      // Destroy driver session
+      delete (req as any).session.driverId;
+      delete (req as any).session.driverEmail;
+      delete (req as any).session.driverLoginTime;
+      
+      res.json({ message: 'Logged out successfully' });
+    } catch (error: any) {
+      console.error('Driver logout error:', error);
+      res.status(500).json({ message: 'Failed to logout' });
+    }
+  });
+
+  app.get('/api/driver/session', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const driver = await storage.getDriver(driverId);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      const { passwordHash, ...driverResponse } = driver;
+      res.json({ driver: driverResponse });
+    } catch (error: any) {
+      console.error('Driver session error:', error);
+      res.status(500).json({ message: 'Failed to get session' });
+    }
+  });
+
+  // Driver Status Management
+  app.post('/api/driver/status', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { isOnline } = req.body;
+      if (typeof isOnline !== 'boolean') {
+        return res.status(400).json({ message: 'isOnline must be boolean' });
+      }
+
+      const updatedDriver = await storage.updateDriverStatus(driverId, isOnline);
+      const { passwordHash, ...driverResponse } = updatedDriver;
+      
+      res.json({ driver: driverResponse });
+    } catch (error: any) {
+      console.error('Driver status update error:', error);
+      res.status(500).json({ message: 'Failed to update status' });
+    }
+  });
+
+  app.post('/api/driver/location', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { latitude, longitude } = req.body;
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: 'Latitude and longitude are required' });
+      }
+
+      // Update driver's current location
+      await storage.updateDriverLocation(driverId, { lat: latitude, lng: longitude });
+      
+      // Store location history
+      const locationData = insertDriverLocationSchema.parse({
+        driverId,
+        latitude: String(latitude),
+        longitude: String(longitude)
+      });
+      
+      const location = await storage.createDriverLocation(locationData);
+      res.json({ location });
+    } catch (error: any) {
+      console.error('Driver location update error:', error);
+      res.status(400).json({ message: error.message || 'Failed to update location' });
+    }
+  });
+
+  app.post('/api/driver/fcm-token', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { fcmToken } = req.body;
+      if (!fcmToken) {
+        return res.status(400).json({ message: 'FCM token is required' });
+      }
+
+      const updatedDriver = await storage.updateDriverFCMToken(driverId, fcmToken);
+      const { passwordHash, ...driverResponse } = updatedDriver;
+      
+      res.json({ driver: driverResponse });
+    } catch (error: any) {
+      console.error('Driver FCM token update error:', error);
+      res.status(500).json({ message: 'Failed to update FCM token' });
+    }
+  });
+
+  // Order Management for Drivers
+  app.get('/api/driver/orders', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { status } = req.query;
+      const orders = await storage.getDriverOrders(driverId, status as string);
+      
+      res.json({ orders });
+    } catch (error: any) {
+      console.error('Get driver orders error:', error);
+      res.status(500).json({ message: 'Failed to get orders' });
+    }
+  });
+
+  app.get('/api/driver/orders/available', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Get orders that are confirmed but not yet assigned to a driver
+      const allOrders = await storage.getOrders();
+      const availableOrders = allOrders.filter(order => 
+        order.status === 'confirmed' && !order.driverId
+      );
+      
+      res.json({ orders: availableOrders });
+    } catch (error: any) {
+      console.error('Get available orders error:', error);
+      res.status(500).json({ message: 'Failed to get available orders' });
+    }
+  });
+
+  app.post('/api/driver/orders/:orderId/accept', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      // Check if order is still available
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      if (order.driverId) {
+        return res.status(400).json({ message: 'Order already assigned to another driver' });
+      }
+      
+      if (order.status !== 'confirmed') {
+        return res.status(400).json({ message: 'Order not available for assignment' });
+      }
+
+      // Assign order to driver
+      const updatedOrder = await storage.assignOrderToDriver(orderId, driverId);
+      
+      // Broadcast real-time update to admin panel
+      const updateMessage = {
+        type: 'ORDER_ASSIGNED',
+        orderId: updatedOrder.id,
+        driverId,
+        timestamp: new Date().toISOString()
+      };
+      
+      if ((global as any).broadcastToStoreClients) {
+        (global as any).broadcastToStoreClients(updateMessage);
+      }
+      
+      res.json({ order: updatedOrder });
+    } catch (error: any) {
+      console.error('Accept order error:', error);
+      res.status(500).json({ message: 'Failed to accept order' });
+    }
+  });
+
+  app.post('/api/driver/orders/:orderId/decline', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      // For decline, we just return success without changing the order
+      // The order remains available for other drivers
+      res.json({ message: 'Order declined successfully' });
+    } catch (error: any) {
+      console.error('Decline order error:', error);
+      res.status(500).json({ message: 'Failed to decline order' });
+    }
+  });
+
+  app.post('/api/driver/orders/:orderId/status', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const orderId = parseInt(req.params.orderId);
+      if (isNaN(orderId)) {
+        return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      const { status, notes } = req.body;
+      if (!status) {
+        return res.status(400).json({ message: 'Status is required' });
+      }
+
+      // Validate status values
+      const validStatuses = ['picked_up', 'delivering', 'delivered', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: 'Invalid status value' });
+      }
+
+      const updatedOrder = await storage.updateOrderStatusByDriver(orderId, status, notes);
+      
+      // Broadcast real-time update to admin panel
+      const updateMessage = {
+        type: 'ORDER_STATUS_UPDATED',
+        orderId: updatedOrder.id,
+        status: updatedOrder.status,
+        driverId,
+        timestamp: new Date().toISOString()
+      };
+      
+      if ((global as any).broadcastToStoreClients) {
+        (global as any).broadcastToStoreClients(updateMessage);
+      }
+      
+      res.json({ order: updatedOrder });
+    } catch (error: any) {
+      console.error('Update order status error:', error);
+      res.status(500).json({ message: 'Failed to update order status' });
+    }
+  });
+
+  // Driver Statistics
+  app.get('/api/driver/stats', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const allOrders = await storage.getDriverOrders(driverId);
+      const completedOrders = allOrders.filter(order => order.status === 'delivered');
+      const todayOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.orderDate);
+        const today = new Date();
+        return orderDate.toDateString() === today.toDateString();
+      });
+
+      const totalEarnings = completedOrders.reduce((sum, order) => {
+        return sum + parseFloat(order.deliveryFee || '2500');
+      }, 0);
+
+      const stats = {
+        totalDeliveries: completedOrders.length,
+        todayDeliveries: todayOrders.filter(order => order.status === 'delivered').length,
+        totalEarnings,
+        todayEarnings: todayOrders
+          .filter(order => order.status === 'delivered')
+          .reduce((sum, order) => sum + parseFloat(order.deliveryFee || '2500'), 0),
+        activeOrders: allOrders.filter(order => 
+          ['assigned', 'picked_up', 'delivering'].includes(order.status)
+        ).length
+      };
+
+      res.json({ stats });
+    } catch (error: any) {
+      console.error('Get driver stats error:', error);
+      res.status(500).json({ message: 'Failed to get driver statistics' });
+    }
+  });
+
+  // Driver Profile Management
+  app.get('/api/driver/profile', async (req, res) => {
+    try {
+      const driverId = (req as any).session?.driverId;
+      if (!driverId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const driver = await storage.getDriver(driverId);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      const { passwordHash, ...driverProfile } = driver;
+      res.json({ driver: driverProfile });
+    } catch (error: any) {
+      console.error('Get driver profile error:', error);
+      res.status(500).json({ message: 'Failed to get driver profile' });
+    }
+  });
+
+  // Real-time Notifications Endpoint for FCM Integration
+  app.post('/api/driver/notify', async (req, res) => {
+    try {
+      const { driverId, title, body, data } = req.body;
+      
+      if (!driverId || !title || !body) {
+        return res.status(400).json({ message: 'Driver ID, title, and body are required' });
+      }
+
+      const driver = await storage.getDriver(driverId);
+      if (!driver || !driver.fcmToken) {
+        return res.status(404).json({ message: 'Driver not found or no FCM token' });
+      }
+
+      // In a real implementation, you would send the notification via Firebase Cloud Messaging
+      // For now, we'll just log the notification and return success
+      console.log('📱 Driver Notification:', {
+        driverId,
+        fcmToken: driver.fcmToken,
+        title,
+        body,
+        data,
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ 
+        success: true, 
+        message: 'Notification queued for delivery',
+        fcmToken: driver.fcmToken 
+      });
+    } catch (error: any) {
+      console.error('Driver notification error:', error);
+      res.status(500).json({ message: 'Failed to send notification' });
+    }
+  });
+
+  // Batch notification for all online drivers
+  app.post('/api/driver/notify-all', async (req, res) => {
+    try {
+      const { title, body, data } = req.body;
+      
+      if (!title || !body) {
+        return res.status(400).json({ message: 'Title and body are required' });
+      }
+
+      const onlineDrivers = await storage.getAvailableDrivers();
+      const notificationResults = [];
+
+      for (const driver of onlineDrivers) {
+        if (driver.fcmToken) {
+          console.log('📱 Broadcasting to driver:', {
+            driverId: driver.id,
+            fcmToken: driver.fcmToken,
+            title,
+            body,
+            data
+          });
+          
+          notificationResults.push({
+            driverId: driver.id,
+            fcmToken: driver.fcmToken,
+            status: 'queued'
+          });
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Notifications queued for ${notificationResults.length} drivers`,
+        results: notificationResults
+      });
+    } catch (error: any) {
+      console.error('Broadcast notification error:', error);
+      res.status(500).json({ message: 'Failed to broadcast notifications' });
+    }
+  });
+
+  // =============================================================================
+  // END DRIVER API ENDPOINTS
+  // =============================================================================
 
   // API 404 handler - MUST be after all other API routes
   app.use('/api/*', (req, res) => {

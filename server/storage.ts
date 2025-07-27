@@ -1,4 +1,4 @@
-import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction } from "@shared/schema";
+import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, driverLocations, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type DriverLocation, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertDriverLocation } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -49,6 +49,26 @@ export interface IStorage {
   createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction>;
   getUserWalletTransactions(userId: number): Promise<WalletTransaction[]>;
   updateWalletTransactionStatus(transactionId: number, status: string): Promise<WalletTransaction>;
+
+  // Driver Operations
+  getDrivers(): Promise<Driver[]>;
+  getDriver(id: number): Promise<Driver | undefined>;
+  getDriverByEmail(email: string): Promise<Driver | undefined>;
+  getDriverByPhone(phone: string): Promise<Driver | undefined>;
+  createDriver(driver: InsertDriver): Promise<Driver>;
+  updateDriverStatus(id: number, isOnline: boolean): Promise<Driver>;
+  updateDriverLocation(id: number, location: {lat: number, lng: number}): Promise<Driver>;
+  updateDriverFCMToken(id: number, fcmToken: string): Promise<Driver>;
+  getAvailableDrivers(): Promise<Driver[]>;
+  
+  // Order Assignment
+  assignOrderToDriver(orderId: number, driverId: number): Promise<Order>;
+  getDriverOrders(driverId: number, status?: string): Promise<Order[]>;
+  updateOrderStatusByDriver(orderId: number, status: string, driverNotes?: string): Promise<Order>;
+  
+  // Driver Location Tracking
+  createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation>;
+  getDriverLocations(driverId: number, limit?: number): Promise<DriverLocation[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -420,6 +440,50 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     };
   }
+
+  // Driver Operations (MemStorage stubs)
+  async getDrivers(): Promise<Driver[]> { return []; }
+  async getDriver(id: number): Promise<Driver | undefined> { return undefined; }
+  async getDriverByEmail(email: string): Promise<Driver | undefined> { return undefined; }
+  async getDriverByPhone(phone: string): Promise<Driver | undefined> { return undefined; }
+  async createDriver(driver: InsertDriver): Promise<Driver> {
+    return {
+      id: Math.floor(Math.random() * 1000),
+      ...driver,
+      isActive: true,
+      isOnline: false,
+      currentLocation: null,
+      fcmToken: null,
+      totalDeliveries: 0,
+      rating: '5.00',
+      createdAt: new Date()
+    };
+  }
+  async updateDriverStatus(id: number, isOnline: boolean): Promise<Driver> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async updateDriverLocation(id: number, location: {lat: number, lng: number}): Promise<Driver> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async updateDriverFCMToken(id: number, fcmToken: string): Promise<Driver> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async getAvailableDrivers(): Promise<Driver[]> { return []; }
+  async assignOrderToDriver(orderId: number, driverId: number): Promise<Order> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async getDriverOrders(driverId: number, status?: string): Promise<Order[]> { return []; }
+  async updateOrderStatusByDriver(orderId: number, status: string, driverNotes?: string): Promise<Order> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
+  async createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation> {
+    return {
+      id: Math.floor(Math.random() * 1000),
+      ...location,
+      timestamp: new Date()
+    };
+  }
+  async getDriverLocations(driverId: number, limit?: number): Promise<DriverLocation[]> { return []; }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -720,6 +784,118 @@ export class DatabaseStorage implements IStorage {
       .where(eq(walletTransactions.id, transactionId))
       .returning();
     return updatedTransaction;
+  }
+
+  // Driver Operations
+  async getDrivers(): Promise<Driver[]> {
+    return await db.select().from(drivers).orderBy(drivers.createdAt);
+  }
+
+  async getDriver(id: number): Promise<Driver | undefined> {
+    const [driver] = await db.select().from(drivers).where(eq(drivers.id, id));
+    return driver || undefined;
+  }
+
+  async getDriverByEmail(email: string): Promise<Driver | undefined> {
+    const [driver] = await db.select().from(drivers).where(eq(drivers.email, email));
+    return driver || undefined;
+  }
+
+  async getDriverByPhone(phone: string): Promise<Driver | undefined> {
+    const [driver] = await db.select().from(drivers).where(eq(drivers.phone, phone));
+    return driver || undefined;
+  }
+
+  async createDriver(driver: InsertDriver): Promise<Driver> {
+    const [newDriver] = await db.insert(drivers).values(driver).returning();
+    return newDriver;
+  }
+
+  async updateDriverStatus(id: number, isOnline: boolean): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ isOnline })
+      .where(eq(drivers.id, id))
+      .returning();
+    return updatedDriver;
+  }
+
+  async updateDriverLocation(id: number, location: {lat: number, lng: number}): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ currentLocation: location })
+      .where(eq(drivers.id, id))
+      .returning();
+    return updatedDriver;
+  }
+
+  async updateDriverFCMToken(id: number, fcmToken: string): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ fcmToken })
+      .where(eq(drivers.id, id))
+      .returning();
+    return updatedDriver;
+  }
+
+  async getAvailableDrivers(): Promise<Driver[]> {
+    return await db.select()
+      .from(drivers)
+      .where(and(eq(drivers.isActive, true), eq(drivers.isOnline, true)));
+  }
+  
+  // Order Assignment
+  async assignOrderToDriver(orderId: number, driverId: number): Promise<Order> {
+    const [updatedOrder] = await db.update(orders)
+      .set({ 
+        driverId,
+        status: 'assigned',
+        assignedAt: new Date()
+      })
+      .where(eq(orders.id, orderId))
+      .returning();
+    return updatedOrder;
+  }
+
+  async getDriverOrders(driverId: number, status?: string): Promise<Order[]> {
+    let query = db.select().from(orders).where(eq(orders.driverId, driverId));
+    
+    if (status) {
+      query = query.where(and(eq(orders.driverId, driverId), eq(orders.status, status)));
+    }
+    
+    return await query.orderBy(sql`${orders.orderDate} DESC`);
+  }
+
+  async updateOrderStatusByDriver(orderId: number, status: string, driverNotes?: string): Promise<Order> {
+    const updateData: any = { status };
+    
+    if (status === 'picked_up') {
+      updateData.pickedUpAt = new Date();
+    } else if (status === 'delivered') {
+      updateData.deliveredAt = new Date();
+    }
+    
+    if (driverNotes) {
+      updateData.driverNotes = driverNotes;
+    }
+
+    const [updatedOrder] = await db.update(orders)
+      .set(updateData)
+      .where(eq(orders.id, orderId))
+      .returning();
+    return updatedOrder;
+  }
+  
+  // Driver Location Tracking
+  async createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation> {
+    const [newLocation] = await db.insert(driverLocations).values(location).returning();
+    return newLocation;
+  }
+
+  async getDriverLocations(driverId: number, limit: number = 50): Promise<DriverLocation[]> {
+    return await db.select()
+      .from(driverLocations)
+      .where(eq(driverLocations.driverId, driverId))
+      .orderBy(sql`${driverLocations.timestamp} DESC`)
+      .limit(limit);
   }
 }
 
