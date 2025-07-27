@@ -115,38 +115,29 @@ export default function DriverPage() {
     }
   };
 
-  // Show browser notification
-  const showBrowserNotification = (title: string, body: string, order?: any) => {
-    if (notificationPermission === "granted") {
-      const notification = new Notification(title, {
-        body,
-        icon: "/favicon.ico",
-        badge: "/favicon.ico",
-        tag: "pakety-order",
-        requireInteraction: true,
-        vibrate: urgentVibrationPattern,
-        data: order
-      });
-
-      // Play notification sound
+  // Show urgent notification with sound and vibration
+  const showUrgentNotification = (order: any) => {
+    // Play urgent notification sound immediately
+    try {
       notificationAudio.play().catch(console.error);
-
-      // Auto-close after 10 seconds
-      setTimeout(() => notification.close(), 10000);
-
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-        if (order) {
-          setCurrentNotification({ order, timestamp: Date.now() });
-        }
-      };
-
-      return notification;
-    } else {
-      console.warn("🚫 Notification permission not granted");
-      return null;
+      console.log("🔊 Playing urgent notification sound");
+    } catch (error) {
+      console.error("Failed to play sound:", error);
     }
+
+    // Trigger vibration if supported
+    if ("vibrator" in navigator || "vibrate" in navigator) {
+      try {
+        navigator.vibrate(urgentVibrationPattern);
+        console.log("📳 Triggering urgent vibration");
+      } catch (error) {
+        console.error("Failed to vibrate:", error);
+      }
+    }
+
+    // Show in-app notification immediately
+    setCurrentNotification({ order, timestamp: Date.now() });
+    console.log("🚨 Urgent notification displayed");
   };
 
   // Setup WebSocket connection when authenticated
@@ -515,38 +506,15 @@ export default function DriverPage() {
             <Button
               onClick={async () => {
                 try {
-                  // Always request permission first, don't rely on state
-                  console.log("🔔 Requesting notification permission...");
-                  
-                  if (!("Notification" in window)) {
-                    console.error("Browser doesn't support notifications");
-                    return;
-                  }
-
-                  // Force permission request
-                  const permission = await Notification.requestPermission();
-                  setNotificationPermission(permission);
-                  console.log("🔔 Permission result:", permission);
+                  console.log("🧪 Testing urgent notification...");
 
                   const response = await apiRequest("POST", "/api/driver/test-notification");
                   const data = await response.json();
                   console.log("🧪 Test notification triggered:", data);
                   
                   if (data.success && data.testOrder) {
-                    // Show browser notification if permission granted
-                    if (permission === "granted") {
-                      showBrowserNotification(
-                        "🚨 طلب جديد - باكيتي",
-                        `طلب من ${data.testOrder.customerName}\nالمبلغ: ${data.testOrder.totalAmount.toLocaleString()} IQD\nالعنوان: ${data.testOrder.address.governorate} - ${data.testOrder.address.district}`,
-                        data.testOrder
-                      );
-                    }
-                    
-                    // Always show in-app notification
-                    setCurrentNotification({ 
-                      order: data.testOrder, 
-                      timestamp: Date.now() 
-                    });
+                    // Show urgent notification with sound and vibration
+                    showUrgentNotification(data.testOrder);
                   }
                 } catch (error) {
                   console.error("Test notification failed:", error);
@@ -688,25 +656,27 @@ export default function DriverPage() {
         </CardContent>
       </Card>
 
-      {/* URGENT Order Notification Popup */}
+      {/* Urgent Order Notification Modal */}
       {currentNotification && (
-        <div className="fixed inset-0 bg-red-900 bg-opacity-80 flex items-center justify-center z-50 p-4 animate-pulse">
-          <Card className="w-full max-w-md bg-white shadow-2xl border-4 border-red-500 animate-bounce">
-            <CardHeader className="bg-gradient-to-r from-red-600 to-red-700 text-white">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Bell className="w-6 h-6 animate-ping" />
-                🚨 طلب عاجل - URGENT ORDER
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md mx-auto border-2 border-red-500">
+            <CardHeader className="bg-red-600 text-white text-center pb-3">
+              <CardTitle className="text-lg font-bold flex items-center justify-center gap-2">
+                🚨 URGENT ORDER
+                <span className="text-sm bg-red-700 px-2 py-1 rounded">
+                  قبل {Math.floor((Date.now() - currentNotification.timestamp) / 1000)}s
+                </span>
               </CardTitle>
-              <p className="text-red-200 text-sm">45 ثانية للرد قبل الإلغاء التلقائي</p>
             </CardHeader>
-            <CardContent className="p-6 bg-yellow-50">
-              <div className="space-y-4">
-                <div className="bg-white p-3 rounded-lg border-l-4 border-red-500">
-                  <h3 className="font-bold text-lg text-red-800">العميل: {currentNotification.order.customerName}</h3>
-                  <p className="text-red-600 font-semibold">{currentNotification.order.customerPhone}</p>
+            <CardContent className="p-4 space-y-4">
+              <div className="text-center">
+                <div className="bg-blue-100 p-3 rounded-lg border-l-4 border-blue-500 mb-4">
+                  <p className="font-bold text-blue-800">👤 اسم العميل:</p>
+                  <p className="text-xl font-bold text-blue-700">{currentNotification.order.customerName}</p>
+                  <p className="text-blue-600">{currentNotification.order.customerPhone}</p>
                 </div>
                 
-                <div className="bg-white p-3 rounded-lg border-l-4 border-orange-500">
+                <div className="bg-orange-100 p-3 rounded-lg border-l-4 border-orange-500 mb-4">
                   <p className="font-bold text-orange-800">📍 العنوان:</p>
                   <p className="text-orange-700 font-semibold">
                     {currentNotification.order.address.governorate} - {currentNotification.order.address.district}
@@ -732,7 +702,7 @@ export default function DriverPage() {
                 <div className="flex gap-3 mt-6">
                   <Button 
                     onClick={() => handleAcceptOrder(currentNotification.order.id)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg animate-pulse"
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-lg"
                   >
                     ✅ قبول الطلب فوراً
                   </Button>
