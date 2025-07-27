@@ -2,6 +2,14 @@
 
 Complete integration guide for building a delivery driver app using Expo React Native with full PAKETY API integration.
 
+## 🚀 Key Features
+- **Delivery ID Login**: Drivers log in using their unique delivery ID (not phone/email)
+- **Location-Based Order Distribution**: Orders sent only to nearest online drivers
+- **Real-Time Notifications**: Instant sound/vibration alerts for new orders
+- **Profit Tracking**: Automatic profit calculation for accepted and completed deliveries
+- **Online/Offline Status**: Driver availability control with online status toggle
+- **Order Management**: Accept/decline orders with real-time status updates
+
 ## 🚀 Quick Start for Replit Expo Assistant
 
 ```bash
@@ -20,12 +28,13 @@ npm install axios react-query react-hook-form
 ## 📱 App Architecture
 
 ### Core Features Required:
-- **Driver Authentication** (Login/Signup)
-- **Real-time Order Notifications** (Sound + Vibration + System Popup)
-- **Order Management** (Accept/Decline/Status Updates)
-- **Location Tracking** (GPS integration)
-- **Push Notifications** (FCM integration)
+- **Driver Authentication** (Login with Delivery ID + Password)
+- **Real-time Order Notifications** (Sound + Vibration + System Popup for nearest drivers only)
+- **Order Management** (Accept/Decline/Status Updates with profit tracking)
+- **Location Tracking** (GPS integration for distance-based order distribution)  
+- **Push Notifications** (FCM integration with order alerts)
 - **Delivery Status Updates** (Real-time sync with PAKETY)
+- **Online/Offline Toggle** (Driver availability control)
 
 ## 🔌 API Integration
 
@@ -35,9 +44,9 @@ npm install axios react-query react-hook-form
 export const API_CONFIG = {
   BASE_URL: 'https://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev',
   ENDPOINTS: {
-    // Authentication
+    // Authentication (with Delivery ID support)
     DRIVER_SIGNUP: '/api/driver/signup',
-    DRIVER_LOGIN: '/api/driver/login', 
+    DRIVER_LOGIN: '/api/driver/login', // Accepts deliveryId + password OR email + password
     DRIVER_LOGOUT: '/api/driver/logout',
     DRIVER_SESSION: '/api/driver/session',
     

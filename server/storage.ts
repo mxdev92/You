@@ -65,6 +65,7 @@ export interface IStorage {
   assignOrderToDriver(orderId: number, driverId: number): Promise<Order>;
   getDriverOrders(driverId: number, status?: string): Promise<Order[]>;
   updateOrderStatusByDriver(orderId: number, status: string, driverNotes?: string): Promise<Order>;
+  updateDriverTotalDeliveries(id: number, totalDeliveries: number): Promise<Driver>;
   
   // Driver Location Tracking
   createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation>;
@@ -476,6 +477,9 @@ export class MemStorage implements IStorage {
   async updateOrderStatusByDriver(orderId: number, status: string, driverNotes?: string): Promise<Order> {
     throw new Error("MemStorage driver operations not implemented");
   }
+  async updateDriverTotalDeliveries(id: number, totalDeliveries: number): Promise<Driver> {
+    throw new Error("MemStorage driver operations not implemented");
+  }
   async createDriverLocation(location: InsertDriverLocation): Promise<DriverLocation> {
     return {
       id: Math.floor(Math.random() * 1000),
@@ -882,6 +886,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, orderId))
       .returning();
     return updatedOrder;
+  }
+
+  async updateDriverTotalDeliveries(id: number, totalDeliveries: number): Promise<Driver> {
+    const [updatedDriver] = await db.update(drivers)
+      .set({ totalDeliveries })
+      .where(eq(drivers.id, id))
+      .returning();
+    return updatedDriver;
   }
   
   // Driver Location Tracking

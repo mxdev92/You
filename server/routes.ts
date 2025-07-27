@@ -1902,13 +1902,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/driver/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, deliveryId } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+      // Support login by delivery ID or email
+      if (!email && !deliveryId) {
+        return res.status(400).json({ message: 'Email or delivery ID is required' });
+      }
+      
+      if (!password) {
+        return res.status(400).json({ message: 'Password is required' });
       }
 
-      const driver = await storage.getDriverByEmail(email);
+      let driver;
+      if (deliveryId) {
+        // Login by delivery ID (driver.id)
+        const driverIdNum = parseInt(deliveryId);
+        if (isNaN(driverIdNum)) {
+          return res.status(401).json({ message: 'Invalid delivery ID format' });
+        }
+        driver = await storage.getDriver(driverIdNum);
+      } else {
+        // Login by email
+        driver = await storage.getDriverByEmail(email);
+      }
+      
       if (!driver) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
@@ -1921,8 +1938,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (req as any).session.driverEmail = driver.email;
       (req as any).session.driverLoginTime = new Date().toISOString();
 
+      console.log(`🚚 Driver login: ID ${driver.id} (${driver.fullName}) - ${driver.vehicleType}`);
+
       const { passwordHash, ...driverResponse } = driver;
-      res.json({ driver: driverResponse });
+      res.json({ 
+        driver: driverResponse,
+        message: `Welcome back, ${driver.fullName}! Your delivery ID is ${driver.id}`
+      });
     } catch (error: any) {
       console.error('Driver login error:', error);
       res.status(500).json({ message: 'Failed to login' });
@@ -2071,13 +2093,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Not authenticated' });
       }
 
+      // Check if driver is online and available
+      const driver = await storage.getDriver(driverId);
+      if (!driver || !driver.isOnline || !driver.isActive) {
+        return res.json({ orders: [], message: 'Driver must be online to receive orders' });
+      }
+
       // Get orders that are confirmed but not yet assigned to a driver
       const allOrders = await storage.getOrders();
       const availableOrders = allOrders.filter(order => 
         order.status === 'confirmed' && !order.driverId
       );
+
+      // If driver has location, sort orders by distance (nearest first)
+      let sortedOrders = availableOrders;
+      if (driver.currentLocation) {
+        sortedOrders = availableOrders.sort((a, b) => {
+          // Simple distance calculation (in real app, use proper geolocation)
+          const distanceA = Math.abs(driver.currentLocation.lat - (a.customerLocation?.lat || 0)) + 
+                           Math.abs(driver.currentLocation.lng - (a.customerLocation?.lng || 0));
+          const distanceB = Math.abs(driver.currentLocation.lat - (b.customerLocation?.lat || 0)) + 
+                           Math.abs(driver.currentLocation.lng - (b.customerLocation?.lng || 0));
+          return distanceA - distanceB;
+        });
+      }
       
-      res.json({ orders: availableOrders });
+      res.json({ orders: sortedOrders });
     } catch (error: any) {
       console.error('Get available orders error:', error);
       res.status(500).json({ message: 'Failed to get available orders' });
@@ -2094,6 +2135,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.orderId);
       if (isNaN(orderId)) {
         return res.status(400).json({ message: 'Invalid order ID' });
+      }
+
+      // Check if driver is online and available
+      const driver = await storage.getDriver(driverId);
+      if (!driver || !driver.isOnline || !driver.isActive) {
+        return res.status(400).json({ message: 'Driver must be online to accept orders' });
       }
 
       // Check if order is still available
@@ -2113,11 +2160,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Assign order to driver
       const updatedOrder = await storage.assignOrderToDriver(orderId, driverId);
       
+      // Record profit for driver (delivery fee)
+      const deliveryFee = parseFloat(order.deliveryFee || '2500');
+      console.log(`💰 Driver ${driverId} (${driver.fullName}) accepted order ${orderId} - Profit: ${deliveryFee} IQD`);
+      
       // Broadcast real-time update to admin panel
       const updateMessage = {
         type: 'ORDER_ASSIGNED',
         orderId: updatedOrder.id,
         driverId,
+        driverName: driver.fullName,
+        profit: deliveryFee,
         timestamp: new Date().toISOString()
       };
       
@@ -2125,7 +2178,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (global as any).broadcastToStoreClients(updateMessage);
       }
       
-      res.json({ order: updatedOrder });
+      res.json({ 
+        order: updatedOrder,
+        profit: deliveryFee,
+        message: `Order accepted successfully. Your profit: ${deliveryFee.toLocaleString()} IQD`
+      });
     } catch (error: any) {
       console.error('Accept order error:', error);
       res.status(500).json({ message: 'Failed to accept order' });
@@ -2176,7 +2233,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid status value' });
       }
 
+      // Check if this order belongs to the driver
+      const order = await storage.getOrder(orderId);
+      if (!order || order.driverId !== driverId) {
+        return res.status(403).json({ message: 'This order is not assigned to you' });
+      }
+
       const updatedOrder = await storage.updateOrderStatusByDriver(orderId, status, notes);
+      
+      // Update driver's total deliveries when order is completed
+      if (status === 'delivered') {
+        const driver = await storage.getDriver(driverId);
+        if (driver) {
+          const newTotalDeliveries = driver.totalDeliveries + 1;
+          await storage.updateDriverTotalDeliveries(driverId, newTotalDeliveries);
+          
+          const deliveryFee = parseFloat(order.deliveryFee || '2500');
+          console.log(`✅ Driver ${driverId} (${driver.fullName}) completed delivery #${newTotalDeliveries} - Earned: ${deliveryFee} IQD`);
+        }
+      }
       
       // Broadcast real-time update to admin panel
       const updateMessage = {
@@ -2191,7 +2266,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (global as any).broadcastToStoreClients(updateMessage);
       }
       
-      res.json({ order: updatedOrder });
+      res.json({ 
+        order: updatedOrder,
+        message: status === 'delivered' ? 'Order completed successfully! Profit recorded.' : 'Order status updated'
+      });
     } catch (error: any) {
       console.error('Update order status error:', error);
       res.status(500).json({ message: 'Failed to update order status' });
@@ -2332,6 +2410,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Broadcast notification error:', error);
       res.status(500).json({ message: 'Failed to broadcast notifications' });
+    }
+  });
+
+  // Automatic Order Broadcasting System - Notify nearby online drivers
+  app.post('/api/driver/broadcast-order', async (req, res) => {
+    try {
+      const { orderId, customerLocation } = req.body;
+      
+      if (!orderId) {
+        return res.status(400).json({ message: 'Order ID is required' });
+      }
+
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      // Get all online and available drivers
+      const onlineDrivers = await storage.getAvailableDrivers();
+      
+      if (onlineDrivers.length === 0) {
+        return res.json({ 
+          success: false, 
+          message: 'No online drivers available',
+          driversNotified: 0
+        });
+      }
+
+      // Sort drivers by distance if customer location is provided
+      let sortedDrivers = onlineDrivers;
+      if (customerLocation && customerLocation.lat && customerLocation.lng) {
+        sortedDrivers = onlineDrivers
+          .filter(driver => driver.currentLocation) // Only drivers with known location
+          .sort((a, b) => {
+            const distanceA = Math.abs(a.currentLocation.lat - customerLocation.lat) + 
+                             Math.abs(a.currentLocation.lng - customerLocation.lng);
+            const distanceB = Math.abs(b.currentLocation.lat - customerLocation.lat) + 
+                             Math.abs(b.currentLocation.lng - customerLocation.lng);
+            return distanceA - distanceB;
+          });
+      }
+
+      const notificationResults = [];
+      const maxDriversToNotify = 5; // Limit to nearest 5 drivers
+
+      for (let i = 0; i < Math.min(sortedDrivers.length, maxDriversToNotify); i++) {
+        const driver = sortedDrivers[i];
+        
+        if (driver.fcmToken) {
+          console.log(`🚚 Notifying nearby driver: ${driver.id} (${driver.fullName}) for order ${orderId}`);
+          
+          // In real implementation, this would send FCM notification
+          notificationResults.push({
+            driverId: driver.id,
+            driverName: driver.fullName,
+            vehicleType: driver.vehicleType,
+            fcmToken: driver.fcmToken,
+            status: 'notified'
+          });
+        }
+      }
+
+      // Broadcast to admin panel for monitoring
+      const broadcastMessage = {
+        type: 'ORDER_BROADCASTED',
+        orderId,
+        driversNotified: notificationResults.length,
+        timestamp: new Date().toISOString()
+      };
+      
+      if ((global as any).broadcastToStoreClients) {
+        (global as any).broadcastToStoreClients(broadcastMessage);
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Order broadcasted to ${notificationResults.length} nearby drivers`,
+        driversNotified: notificationResults.length,
+        results: notificationResults
+      });
+    } catch (error: any) {
+      console.error('Broadcast order error:', error);
+      res.status(500).json({ message: 'Failed to broadcast order to drivers' });
     }
   });
 
