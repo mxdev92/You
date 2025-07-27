@@ -44,6 +44,7 @@ export default function WalletPage() {
   // State for payment dialog
   const [paymentData, setPaymentData] = useState<any>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [showPaymentIframe, setShowPaymentIframe] = useState(false);
 
   // Charge wallet mutation
   const chargeMutation = useMutation({
@@ -296,24 +297,8 @@ export default function WalletPage() {
             <Button 
               onClick={() => {
                 if (paymentData?.paymentUrl) {
-                  // Open payment in new window for WebView compatibility
-                  const paymentWindow = window.open(
-                    paymentData.paymentUrl, 
-                    '_blank',
-                    'width=400,height=600,scrollbars=yes,resizable=yes'
-                  );
-                  
-                  // Check for payment completion
-                  const checkClosed = setInterval(() => {
-                    if (paymentWindow?.closed) {
-                      clearInterval(checkClosed);
-                      // Refresh wallet balance
-                      queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
-                      queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
-                      setIsPaymentDialogOpen(false);
-                      setPaymentData(null);
-                    }
-                  }, 1000);
+                  // Show embedded payment iframe within the app
+                  setShowPaymentIframe(true);
                 }
               }}
               className="w-full bg-green-600 hover:bg-green-700"
@@ -331,6 +316,78 @@ export default function WalletPage() {
             >
               إلغاء
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile-Friendly Payment Bottom Sheet */}
+      <Dialog open={showPaymentIframe} onOpenChange={setShowPaymentIframe}>
+        <DialogContent className="max-w-full w-full h-[95vh] sm:h-[80vh] m-0 sm:m-4 p-0 overflow-hidden rounded-t-3xl sm:rounded-xl">
+          <DialogHeader className="p-4 border-b bg-white sticky top-0 z-10">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-semibold">
+                دفع عبر زين كاش
+              </DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowPaymentIframe(false);
+                  setIsPaymentDialogOpen(false);
+                  setPaymentData(null);
+                  // Refresh wallet data
+                  queryClient.invalidateQueries({ queryKey: ['/api/wallet/balance'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
+                }}
+                className="h-8 w-8 p-0 hover:bg-gray-100"
+              >
+                ✕
+              </Button>
+            </div>
+            <p className="text-center text-green-600 font-bold">
+              المبلغ: {formatPrice(parseInt(chargeAmount))} دينار عراقي
+            </p>
+          </DialogHeader>
+          
+          <div className="flex-1 relative bg-gray-50">
+            {paymentData?.paymentUrl ? (
+              <iframe
+                src={paymentData.paymentUrl}
+                className="w-full h-full border-0"
+                title="ZainCash Payment"
+                onLoad={() => {
+                  console.log('Payment iframe loaded successfully');
+                }}
+                style={{ 
+                  minHeight: '400px',
+                  background: 'white'
+                }}
+                allowFullScreen
+                allow="payment"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin h-8 w-8 border-2 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-600">جاري تحميل صفحة الدفع...</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Payment Instructions */}
+          <div className="p-4 bg-blue-50 border-t">
+            <div className="flex items-start gap-3">
+              <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mt-1">
+                ℹ
+              </div>
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-1">تعليمات الدفع:</p>
+                <p>• ادخل رقم محفظتك زين كاش وكلمة المرور</p>
+                <p>• تأكد من المبلغ ثم اضغط تأكيد الدفع</p>
+                <p>• سيتم تحديث رصيدك تلقائياً بعد نجاح العملية</p>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
