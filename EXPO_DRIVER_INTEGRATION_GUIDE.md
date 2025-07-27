@@ -116,6 +116,219 @@ export const TEST_DRIVER = {
 };
 ```
 
+## 🔐 Authentication Service (Fixed Implementation)
+
+### Simple Authentication Service for Expo
+```typescript
+// services/AuthService.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_BASE = 'https://6b59b381-e4d0-4c17-a9f1-1df7a6597619-00-3rkq1ca0174q0.riker.replit.dev';
+
+export class AuthService {
+  
+  // Driver login using delivery ID
+  static async loginDriver(deliveryId: string, password: string) {
+    try {
+      console.log('🔐 Attempting driver login...', deliveryId);
+      
+      const response = await fetch(`${API_BASE}/api/driver/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          deliveryId,
+          password
+        }),
+        credentials: 'include' // Important for session cookies
+      });
+
+      const data = await response.json();
+      console.log('📱 Login response:', response.status, data);
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Store driver data locally
+      await AsyncStorage.setItem('driver_session', JSON.stringify(data.driver));
+      await AsyncStorage.setItem('driver_id', deliveryId);
+      
+      return {
+        success: true,
+        driver: data.driver,
+        message: data.message
+      };
+      
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  }
+
+  // Test login endpoint for debugging
+  static async testDriverLogin(deliveryId: string, password: string) {
+    try {
+      console.log('🧪 Testing driver login...', deliveryId);
+      
+      const response = await fetch(`${API_BASE}/api/driver/test-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          deliveryId,
+          password
+        })
+      });
+
+      const data = await response.json();
+      console.log('🧪 Test response:', response.status, data);
+
+      return {
+        success: response.ok,
+        data,
+        status: response.status
+      };
+      
+    } catch (error) {
+      console.error('❌ Test login error:', error);
+      return {
+        success: false,
+        error: error.message || 'Network error'
+      };
+    }
+  }
+
+  // Get stored driver session
+  static async getStoredDriver() {
+    try {
+      const driverSession = await AsyncStorage.getItem('driver_session');
+      return driverSession ? JSON.parse(driverSession) : null;
+    } catch (error) {
+      console.error('Error getting stored driver:', error);
+      return null;
+    }
+  }
+
+  // Logout driver
+  static async logoutDriver() {
+    try {
+      await fetch(`${API_BASE}/api/driver/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      await AsyncStorage.removeItem('driver_session');
+      await AsyncStorage.removeItem('driver_id');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Logout error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Check if driver is logged in
+  static async isLoggedIn() {
+    const driver = await this.getStoredDriver();
+    return !!driver;
+  }
+}
+```
+
+### Usage Example in Expo Component
+```typescript
+// screens/LoginScreen.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { AuthService } from '../services/AuthService';
+
+export default function LoginScreen({ navigation }) {
+  const [deliveryId, setDeliveryId] = useState('1'); // Test with ID: 1
+  const [password, setPassword] = useState('123456'); // Test password
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!deliveryId || !password) {
+      Alert.alert('خطأ', 'يرجى ادخال رقم التوصيل وكلمة المرور');
+      return;
+    }
+
+    setLoading(true);
+    
+    // First test the connection
+    const testResult = await AuthService.testDriverLogin(deliveryId, password);
+    console.log('🧪 Test result:', testResult);
+    
+    if (!testResult.success) {
+      Alert.alert('خطأ في الاتصال', testResult.error || 'فشل في الاتصال بالسيرفر');
+      setLoading(false);
+      return;
+    }
+
+    // Now try actual login
+    const result = await AuthService.loginDriver(deliveryId, password);
+    
+    if (result.success) {
+      Alert.alert('نجح تسجيل الدخول', `أهلاً وسهلاً ${result.driver.fullName}`);
+      navigation.replace('Dashboard');
+    } else {
+      Alert.alert('خطأ في تسجيل الدخول', result.error || 'فشل في تسجيل الدخول');
+    }
+    
+    setLoading(false);
+  };
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
+      <Text style={{ fontSize: 24, textAlign: 'center', marginBottom: 30 }}>
+        تسجيل دخول السائق
+      </Text>
+      
+      <TextInput
+        style={{ borderWidth: 1, padding: 15, marginBottom: 15, borderRadius: 8 }}
+        placeholder="رقم التوصيل (Delivery ID)"
+        value={deliveryId}
+        onChangeText={setDeliveryId}
+        keyboardType="numeric"
+      />
+      
+      <TextInput
+        style={{ borderWidth: 1, padding: 15, marginBottom: 20, borderRadius: 8 }}
+        placeholder="كلمة المرور"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      
+      <TouchableOpacity
+        style={{
+          backgroundColor: '#22C55E',
+          padding: 15,
+          borderRadius: 8,
+          opacity: loading ? 0.6 : 1
+        }}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={{ color: 'white', textAlign: 'center', fontSize: 16 }}>
+          {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
+        </Text>
+      </TouchableOpacity>
+      
+      <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>
+        للاختبار: رقم التوصيل: 1، كلمة المرور: 123456
+      </Text>
+    </View>
+  );
+}
+```
+
 ## 🔔 Complete Notification System Implementation
 
 ### 1. App Configuration (app.json)

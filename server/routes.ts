@@ -681,6 +681,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test driver login endpoint for Expo debugging
+  app.post('/api/driver/test-login', async (req, res) => {
+    try {
+      const { deliveryId, password } = req.body;
+      console.log('🧪 Testing driver login for delivery ID:', deliveryId);
+      
+      if (!deliveryId || !password) {
+        return res.status(400).json({ message: 'Delivery ID and password are required' });
+      }
+      
+      const driverIdNum = parseInt(deliveryId);
+      if (isNaN(driverIdNum)) {
+        return res.status(400).json({ message: 'Invalid delivery ID format' });
+      }
+      
+      const driver = await storage.getDriver(driverIdNum);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+      
+      if (driver.passwordHash !== password) {
+        return res.status(401).json({ message: 'Invalid password' });
+      }
+      
+      res.json({ 
+        success: true, 
+        message: 'Driver login test successful', 
+        driver: { 
+          id: driver.id, 
+          email: driver.email, 
+          fullName: driver.fullName,
+          phone: driver.phone,
+          vehicleType: driver.vehicleType 
+        } 
+      });
+    } catch (error: any) {
+      console.error('Test driver login error:', error);
+      res.status(500).json({ message: 'Test driver login failed', error: error.message });
+    }
+  });
+
   // Test login endpoint for debugging
   app.post('/api/auth/test-login', async (req, res) => {
     try {
@@ -2022,8 +2063,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      // In production, you'd verify the password hash here
-      // For now, assuming password verification is handled elsewhere
+      // Verify password (simple comparison for now - in production use bcrypt)
+      if (driver.passwordHash !== password) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
       
       // Create driver session
       (req as any).session.driverId = driver.id;
