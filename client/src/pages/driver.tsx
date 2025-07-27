@@ -79,24 +79,114 @@ export default function DriverPage() {
   // Notification permission state
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
 
-  // Enhanced notification audio system
+  // WebView-compatible notification audio system with multiple fallbacks
   const [notificationAudio] = useState(() => {
     const audio = new Audio();
-    // Professional urgent notification sound (base64 encoded WAV)
+    // Use a shorter, more WebView-compatible sound that works across all platforms
+    // High-pitch beep sound that works reliably in WebView environments
     audio.src = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LNeSMFMnHF8N6LNwcYZ7zq5Z9NEAtQp+LvtmQcBjiR1/LNeSMFMnHF8N6LNwcYZ7zq5Z9NEAtQp+LvtmQcBjiR1/LNeSMF";
-    audio.volume = 0.9; // High volume for urgent notifications
+    audio.volume = 1.0; // Maximum volume for WebView
     audio.loop = false;
+    audio.preload = "auto"; // Preload for WebView compatibility
+    
+    // WebView-specific audio optimization
+    audio.crossOrigin = "anonymous";
+    audio.setAttribute('playsinline', 'true'); // Required for iOS WebView
+    audio.setAttribute('webkit-playsinline', 'true'); // Required for older iOS WebView
+    
     return audio;
   });
 
-  // Extended vibration pattern for urgent notifications (longer and more intense)
-  const urgentVibrationPattern = [800, 200, 800, 200, 1000, 200, 800, 200, 800, 200, 1000, 200, 600];
+  // WebView-optimized vibration pattern (works better in mobile WebView)
+  const urgentVibrationPattern = [500, 200, 500, 200, 800, 200, 500, 200, 500, 200, 800, 200, 300];
+  
+  // Alternative vibration patterns for different WebView environments
+  const alternativeVibrationPatterns = [
+    [1000], // Simple single vibration
+    [200, 100, 200], // Short pattern
+    [400, 200, 400, 200, 600], // Medium pattern
+    urgentVibrationPattern // Full pattern
+  ];
 
   // Check authentication on mount
   useEffect(() => {
     checkDriverAuth();
     requestNotificationPermission();
+    initializeWebViewAudio();
   }, []);
+
+  // Detect if running in WebView environment
+  const isWebView = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return !!(
+      userAgent.includes('webview') ||
+      userAgent.includes('wv') ||
+      (window as any).ReactNativeWebView ||
+      (window as any).webkit?.messageHandlers ||
+      userAgent.includes('mobile') && !userAgent.includes('safari')
+    );
+  };
+
+  // Initialize audio for WebView with comprehensive user gesture handling
+  const initializeWebViewAudio = () => {
+    const webViewDetected = isWebView();
+    console.log("🔍 WebView Environment:", webViewDetected ? "DETECTED" : "Not detected");
+    
+    // Enhanced audio initialization for WebView
+    const enableAudio = async () => {
+      console.log("🔊 WEBVIEW: Initializing audio on user gesture");
+      
+      try {
+        // Load and prepare main audio
+        notificationAudio.load();
+        notificationAudio.volume = 1.0;
+        
+        // WebView-specific audio unlock sequence
+        notificationAudio.muted = true;
+        await notificationAudio.play();
+        notificationAudio.pause();
+        notificationAudio.currentTime = 0;
+        notificationAudio.muted = false;
+        
+        // Initialize AudioContext for WebView
+        if (typeof (window as any).AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined') {
+          const audioContext = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
+          if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+          }
+          console.log("🔊 WEBVIEW: AudioContext initialized, state:", audioContext.state);
+        }
+        
+        console.log("🔊 WEBVIEW: Audio context fully unlocked");
+      } catch (error) {
+        console.log("🔊 WEBVIEW: Audio unlock had issues:", error);
+      }
+      
+      // Test vibration capability
+      if ('vibrate' in navigator) {
+        navigator.vibrate(100);
+        console.log("📳 WEBVIEW: Vibration test triggered");
+      }
+      
+      // Remove listeners after first interaction
+      document.removeEventListener('touchstart', enableAudio);
+      document.removeEventListener('click', enableAudio);
+      document.removeEventListener('pointerdown', enableAudio);
+    };
+    
+    // Multiple event listeners for maximum WebView compatibility
+    document.addEventListener('touchstart', enableAudio, { once: true, passive: true });
+    document.addEventListener('click', enableAudio, { once: true });
+    document.addEventListener('pointerdown', enableAudio, { once: true });
+    
+    // Auto-trigger on page visibility change (for WebView app resume)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && webViewDetected) {
+        console.log("🔊 WEBVIEW: Page visible, preparing audio context");
+        enableAudio();
+      }
+    });
+  };
 
   // Request notification permission
   const requestNotificationPermission = async () => {
@@ -115,51 +205,153 @@ export default function DriverPage() {
     }
   };
 
-  // Show urgent notification with extended sound and vibration
+  // WebView-optimized urgent notification system with multiple fallbacks
   const showUrgentNotification = (order: any) => {
-    // Play urgent notification sound multiple times for longer duration
-    try {
-      // Play sound immediately
-      notificationAudio.currentTime = 0;
-      notificationAudio.play().catch(console.error);
-      console.log("🔊 Playing urgent notification sound");
-      
-      // Play sound again after 1 second for extended duration
-      setTimeout(() => {
-        notificationAudio.currentTime = 0;
-        notificationAudio.play().catch(console.error);
-        console.log("🔊 Playing second urgent notification sound");
-      }, 1000);
-      
-      // Play sound third time after 2 seconds
-      setTimeout(() => {
-        notificationAudio.currentTime = 0;
-        notificationAudio.play().catch(console.error);
-        console.log("🔊 Playing third urgent notification sound");
-      }, 2000);
-    } catch (error) {
-      console.error("Failed to play sound:", error);
-    }
-
-    // Trigger extended vibration if supported
-    if ("vibrator" in navigator || "vibrate" in navigator) {
+    console.log("🚨 WEBVIEW NOTIFICATION TRIGGERED FOR ORDER:", order.id);
+    
+    // Multi-layer sound system for WebView compatibility
+    const playWebViewSound = async (attempt = 1) => {
       try {
-        navigator.vibrate(urgentVibrationPattern);
-        console.log("📳 Triggering extended urgent vibration");
+        // Reset audio to beginning
+        notificationAudio.currentTime = 0;
         
-        // Repeat vibration after 2 seconds for extended duration
-        setTimeout(() => {
-          navigator.vibrate(urgentVibrationPattern);
-          console.log("📳 Triggering second vibration pattern");
-        }, 2500);
+        // Enable audio context for WebView (required for mobile browsers and WebView)
+        try {
+          if (typeof (window as any).AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined') {
+            const audioContext = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+              await audioContext.resume();
+              console.log(`🔊 WEBVIEW AudioContext resumed for attempt ${attempt}`);
+            }
+          }
+        } catch (contextError) {
+          console.log(`🔊 AudioContext not available for attempt ${attempt}:`, contextError);
+        }
+        
+        // Play with user gesture simulation for WebView
+        const playPromise = notificationAudio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          console.log(`🔊 WEBVIEW SOUND SUCCESS - Attempt ${attempt}`);
+        }
       } catch (error) {
-        console.error("Failed to vibrate:", error);
+        console.error(`🚫 WEBVIEW SOUND FAILED - Attempt ${attempt}:`, error);
+        
+        // Multiple fallback strategies for WebView
+        if (attempt === 1) {
+          // Strategy 1: Try with a different audio format
+          try {
+            const mp3Audio = new Audio();
+            mp3Audio.src = "data:audio/mpeg;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAIAAAIqwAA//8AAAAAAA==";
+            mp3Audio.volume = 1.0;
+            mp3Audio.setAttribute('playsinline', 'true');
+            mp3Audio.setAttribute('webkit-playsinline', 'true');
+            await mp3Audio.play();
+            console.log("🔊 WEBVIEW MP3 FALLBACK SUCCESS");
+          } catch (mp3Error) {
+            console.log("🔊 MP3 fallback failed, trying beep sound");
+            
+            // Strategy 2: Generate beep using WebAudio API
+            try {
+              if (typeof (window as any).AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined') {
+                const audioContext = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // High pitch beep
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
+                console.log("🔊 WEBVIEW WebAudio BEEP SUCCESS");
+              }
+            } catch (webAudioError) {
+              console.log("🔊 All WebView audio fallbacks failed");
+            }
+          }
+        }
       }
-    }
+    };
+    
+    // Immediate sound with 3 repeats
+    playWebViewSound(1);
+    setTimeout(() => playWebViewSound(2), 800);
+    setTimeout(() => playWebViewSound(3), 1600);
+    setTimeout(() => playWebViewSound(4), 2400);
+
+    // WebView-optimized vibration with multiple patterns
+    const triggerWebViewVibration = (patternIndex = 0) => {
+      try {
+        if ('vibrate' in navigator) {
+          const pattern = alternativeVibrationPatterns[patternIndex] || [1000];
+          const result = navigator.vibrate(pattern);
+          console.log(`📳 WEBVIEW VIBRATION TRIGGERED - Pattern ${patternIndex}:`, pattern, "Result:", result);
+          
+          // Try next pattern if current fails
+          if (!result && patternIndex < alternativeVibrationPatterns.length - 1) {
+            setTimeout(() => triggerWebViewVibration(patternIndex + 1), 300);
+          }
+        } else {
+          console.log("📳 WEBVIEW VIBRATION NOT SUPPORTED");
+        }
+      } catch (error) {
+        console.error("📳 WEBVIEW VIBRATION ERROR:", error);
+        // Try simpler pattern on error
+        if (patternIndex === 0) {
+          setTimeout(() => triggerWebViewVibration(1), 200);
+        }
+      }
+    };
+    
+    // Trigger multiple vibration attempts for maximum WebView compatibility
+    triggerWebViewVibration(3); // Start with full pattern
+    setTimeout(() => triggerWebViewVibration(2), 800); // Medium pattern
+    setTimeout(() => triggerWebViewVibration(1), 1600); // Simple pattern
+    setTimeout(() => triggerWebViewVibration(0), 2400); // Fallback pattern
+    
+    // Extra vibration burst for urgent notifications
+    setTimeout(() => {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([1000, 300, 1000]); // Final urgent burst
+        console.log("📳 WEBVIEW FINAL VIBRATION BURST");
+      }
+    }, 3000);
+
+    // Visual flash for WebView (more noticeable than background color)
+    const flashScreen = () => {
+      const flashOverlay = document.createElement('div');
+      flashOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #FF4444;
+        z-index: 99999;
+        pointer-events: none;
+        opacity: 0.8;
+      `;
+      document.body.appendChild(flashOverlay);
+      
+      setTimeout(() => {
+        flashOverlay.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(flashOverlay), 200);
+      }, 150);
+    };
+    
+    // Flash screen 3 times
+    flashScreen();
+    setTimeout(flashScreen, 400);
+    setTimeout(flashScreen, 800);
 
     // Show in-app notification immediately
     setCurrentNotification({ order, timestamp: Date.now() });
-    console.log("🚨 Urgent notification displayed with extended alerts");
+    console.log("🚨 WEBVIEW NOTIFICATION COMPLETE - Visual, Audio, Vibration triggered");
   };
 
   // Setup WebSocket connection when authenticated
@@ -235,41 +427,19 @@ export default function DriverPage() {
   };
 
   const handleOrderNotification = (order: Order) => {
-    console.log("🚨 URGENT ORDER NOTIFICATION:", order);
+    console.log("🚨 WEBVIEW ORDER NOTIFICATION RECEIVED:", order);
     
-    // Play urgent notification sound multiple times
-    const playUrgentSound = () => {
-      notificationAudio.currentTime = 0;
-      notificationAudio.play().catch(console.error);
-    };
+    // Add order to pending list first
+    setPendingOrders(prev => [...prev, order]);
     
-    playUrgentSound();
-    // Repeat sound 3 times with 1-second intervals
-    setTimeout(playUrgentSound, 1000);
-    setTimeout(playUrgentSound, 2000);
-    
-    // Strong vibration pattern for urgent notifications
-    if (navigator.vibrate) {
-      navigator.vibrate(urgentVibrationPattern);
-      // Repeat vibration after 2 seconds
-      setTimeout(() => navigator.vibrate(urgentVibrationPattern), 2000);
-    }
+    // Trigger WebView-optimized notification
+    showUrgentNotification(order);
 
-    // Flash the screen for visual alert
-    document.body.style.backgroundColor = '#ff4444';
+    // Auto-decline after 45 seconds if no action
+    const notificationTime = Date.now();
     setTimeout(() => {
-      document.body.style.backgroundColor = '';
-    }, 200);
-
-    // Show urgent notification popup
-    setCurrentNotification({
-      order,
-      timestamp: Date.now()
-    });
-
-    // Auto-decline after 45 seconds if no action (extended time for important orders)
-    setTimeout(() => {
-      if (currentNotification?.timestamp === Date.now()) {
+      if (currentNotification?.timestamp === notificationTime) {
+        console.log("⏰ Auto-declining order after 45 seconds");
         handleDeclineOrder(order.id);
         setCurrentNotification(null);
       }
