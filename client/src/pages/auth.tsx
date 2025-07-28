@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, ArrowRight, Eye, EyeOff, ChevronDown } from 'lucide-react';
-import { usePostgresAuth } from '@/hooks/use-postgres-auth';
-import { usePostgresAddressStore } from '@/store/postgres-address-store';
+import { useAuth } from '@/hooks/use-auth';
 import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
 import { MetaPixel } from '@/lib/meta-pixel';
@@ -150,8 +149,7 @@ const AuthPage: React.FC = () => {
     };
   }, []);
 
-  const { user, login, register } = usePostgresAuth();
-  const { addAddress } = usePostgresAddressStore();
+  const { user, login, register } = useAuth();
 
   const showNotification = (message: string, type: 'success' | 'error' = 'error') => {
     setNotification({ show: true, message, type });
@@ -224,7 +222,7 @@ const AuthPage: React.FC = () => {
         setOtpSent(true);
         showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق الواتساب', 'success');
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error.name === 'AbortError') {
         // Set OtpSent to true even on timeout since backend likely processed it
         setOtpSent(true);
@@ -411,22 +409,23 @@ const AuthPage: React.FC = () => {
       // NEW WORKFLOW: Create account only on final step completion
       const email = signupData.email;
       
-      // Register user with full name and phone
-      const newUser = await register(email, signupData.password, signupData.name, signupData.phone);
-      console.log('User registered successfully:', newUser);
+      // Register user with Firebase (only email and password)
+      const newUser = await register(email, signupData.password);
+      console.log('🔥 Firebase User registered successfully:', newUser.email);
       
-      // Create address record from signup data
-      const addressData = {
-        userId: newUser.id,
-        governorate: signupData.governorate,
-        district: signupData.district,
-        neighborhood: signupData.landmark,
-        notes: signupData.landmark,
-        isDefault: true
-      };
-      
-      // Add the address to the user's profile
-      await addAddress(addressData);
+      // TODO: Store additional user data (name, phone, address) in PostgreSQL
+      // This will be handled by the server-side user data sync
+      console.log('📋 User signup data:', {
+        uid: newUser.uid,
+        email: newUser.email,
+        name: signupData.name,
+        phone: signupData.phone,
+        address: {
+          governorate: signupData.governorate,
+          district: signupData.district,
+          landmark: signupData.landmark
+        }
+      });
       console.log('Address created successfully during signup');
       
       // Send welcome messages - Arabic alert + WhatsApp message

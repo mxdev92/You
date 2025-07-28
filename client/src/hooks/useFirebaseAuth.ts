@@ -1,76 +1,67 @@
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { onAuthStateChange, getAuthToken, checkDriverRole } from '@/lib/firebase';
+import { onAuthStateChange, signInUser, signUpUser, signOutUser } from '@/lib/firebase';
 
-interface FirebaseAuthState {
-  user: User | null;
-  loading: boolean;
-  isDriver: boolean;
-  token: string | null;
-}
-
-export const useFirebaseAuth = () => {
-  const [authState, setAuthState] = useState<FirebaseAuthState>({
-    user: null,
-    loading: true,
-    isDriver: false,
-    token: null
-  });
+export function useFirebaseAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChange(async (user) => {
-      if (user) {
-        try {
-          const [token, isDriver] = await Promise.all([
-            getAuthToken(),
-            checkDriverRole()
-          ]);
-          
-          setAuthState({
-            user,
-            loading: false,
-            isDriver,
-            token
-          });
-        } catch (error) {
-          console.error('Error getting user data:', error);
-          setAuthState({
-            user,
-            loading: false,
-            isDriver: false,
-            token: null
-          });
-        }
-      } else {
-        setAuthState({
-          user: null,
-          loading: false,
-          isDriver: false,
-          token: null
-        });
-      }
+    const unsubscribe = onAuthStateChange((user) => {
+      setUser(user);
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const refreshToken = async () => {
-    if (authState.user) {
-      try {
-        const token = await getAuthToken();
-        setAuthState(prev => ({ ...prev, token }));
-        return token;
-      } catch (error) {
-        console.error('Error refreshing token:', error);
-        return null;
-      }
+  const signIn = async (email: string, password: string) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      const user = await signInUser(email, password);
+      return user;
+    } catch (error: any) {
+      setError(error.message || 'Sign in failed');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-    return null;
+  };
+
+  const signUp = async (email: string, password: string) => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      const user = await signUpUser(email, password);
+      return user;
+    } catch (error: any) {
+      setError(error.message || 'Sign up failed');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      setError(null);
+      await signOutUser();
+    } catch (error: any) {
+      setError(error.message || 'Sign out failed');
+      throw error;
+    }
   };
 
   return {
-    ...authState,
-    isAuthenticated: !!authState.user,
-    refreshToken
+    user,
+    isLoading,
+    error,
+    isAuthenticated: !!user,
+    signIn,
+    signUp,
+    signOut,
+    clearError: () => setError(null)
   };
-};
+}
