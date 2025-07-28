@@ -1719,6 +1719,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId
       );
 
+      // REAL-TIME WEBSOCKET NOTIFICATION - Send popup to connected drivers like real orders
+      try {
+        if ((global as any).notifyDriversOfNewOrder) {
+          const testNotificationData = {
+            id: orderId || 9999, // Use provided orderId or test ID
+            customerName: 'طلب تجريبي من الإدارة',
+            customerPhone: '07700000000',
+            address: orderAddress,
+            totalAmount: 25000, // Test amount
+            items: [
+              { name: orderName, quantity: 1, price: 22500 },
+              { name: 'رسوم التوصيل', quantity: 1, price: 2500 }
+            ]
+          };
+          
+          (global as any).notifyDriversOfNewOrder(testNotificationData);
+          console.log(`🚗 Test WebSocket notification sent to all connected drivers for test order: ${orderName}`);
+        }
+      } catch (wsError: any) {
+        console.log(`⚠️ WebSocket notification error for test notification:`, wsError.message || wsError);
+      }
+
       if (result.success) {
         res.json({ 
           success: true, 

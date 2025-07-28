@@ -1514,7 +1514,11 @@ function DriversManagement() {
     setIsNotificationTokenOpen(true);
   };
 
+  const [isSendingTestNotification, setIsSendingTestNotification] = useState<number | null>(null);
+
   const sendTestNotification = async (driverId: number) => {
+    setIsSendingTestNotification(driverId);
+    
     try {
       const response = await fetch(`/api/drivers/${driverId}/send-notification`, {
         method: 'POST',
@@ -1530,9 +1534,9 @@ function DriversManagement() {
 
       if (result.success) {
         toast({
-          title: "تم إرسال الإشعار",
-          description: "تم إرسال الإشعار التجريبي بنجاح",
-          duration: 3000,
+          title: "تم إرسال الإشعار التجريبي",
+          description: "تم إرسال الإشعار مع النافذة المنبثقة والدفع للسائق بنجاح",
+          duration: 4000,
         });
       } else {
         toast({
@@ -1549,6 +1553,8 @@ function DriversManagement() {
         variant: "destructive",
         duration: 3000,
       });
+    } finally {
+      setIsSendingTestNotification(null);
     }
   };
 
@@ -1702,10 +1708,15 @@ function DriversManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => sendTestNotification(driver.id)}
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      disabled={isSendingTestNotification === driver.id}
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50 disabled:opacity-50"
                       title="إرسال إشعار تجريبي"
                     >
-                      <Send className="h-4 w-4" />
+                      {isSendingTestNotification === driver.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
                     </Button>
                     <Button
                       variant="outline"
