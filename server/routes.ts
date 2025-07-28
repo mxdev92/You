@@ -100,6 +100,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Development endpoint to clear user data for fresh account creation
+  app.post('/api/dev/reset-users', async (req, res) => {
+    try {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ message: 'Not available in production' });
+      }
+
+      // Clear all users, their addresses, cart items, and orders
+      await db.delete(cartItems);
+      await db.delete(userAddresses);  
+      await db.delete(orders);
+      await db.delete(users);
+      
+      console.log('🧹 Development reset: All user data cleared for fresh account creation');
+      
+      res.json({ 
+        message: 'All user data cleared successfully',
+        timestamp: Date.now()
+      });
+    } catch (error: any) {
+      console.error('Reset users error:', error);
+      res.status(500).json({ message: 'Failed to reset user data' });
+    }
+  });
+
   // Placeholder image endpoint
   app.get("/api/placeholder/:width/:height", (req, res) => {
     const { width, height } = req.params;
