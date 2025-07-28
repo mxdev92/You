@@ -646,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Phone number validation endpoint
+  // Phone number validation endpoint - Firebase Authentication Only
   app.post('/api/auth/validate-phone', async (req, res) => {
     try {
       const { phone } = req.body;
@@ -655,15 +655,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Phone number is required' });
       }
 
-      const existingUser = await storage.getUserByPhone(phone);
-      
-      if (existingUser) {
-        return res.status(409).json({ 
-          message: 'هذا الرقم مستخدم بالفعل. كل رقم واتساب يحتاج حساب واحد فقط.',
-          isUsed: true 
-        });
-      }
-      
+      // With Firebase authentication, phone validation is not needed
+      // Firebase handles duplicate detection automatically
       res.json({ 
         message: 'Phone number is available',
         isUsed: false 
@@ -674,138 +667,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Authentication routes
-  app.post('/api/auth/signup', async (req, res) => {
-    try {
-      const { email, password, fullName, phone } = req.body;
-      
-      if (!email || !password || !phone) {
-        return res.status(400).json({ message: 'Email, password, and phone are required' });
-      }
-
-      // Check if phone is already used
-      const existingPhone = await storage.getUserByPhone(phone);
-      if (existingPhone) {
-        return res.status(409).json({ message: 'Phone number already exists' });
-      }
-
-      const user = await storage.createUser({ 
-        email, 
-        passwordHash: password, 
-        fullName: fullName || null,
-        phone: phone
-      });
-      
-      // Store user session with ultra-stable persistence - regenerate for clean session
-      await new Promise<void>((resolve, reject) => {
-        (req as any).session.regenerate((err: any) => {
-          if (err) {
-            console.error('❌ Session regenerate failed:', err);
-            reject(err);
-          } else {
-            // Assign session data after regeneration
-            (req as any).session.userId = user.id;
-            (req as any).session.userEmail = user.email;
-            (req as any).session.loginTime = new Date().toISOString();
-            
-            // Set session to never expire automatically - ultra-stable login
-            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
-            (req as any).session.cookie.secure = false; // Allow HTTP for development
-            (req as any).session.cookie.httpOnly = true; // Security
-            
-            // Force session save with bulletproof persistence
-            (req as any).session.save((saveErr: any) => {
-              if (saveErr) {
-                console.error('❌ Session save failed:', saveErr);
-                reject(saveErr);
-              } else {
-                console.log('✅ Ultra-stable session regenerated and saved for new user:', user.email);
-                resolve();
-              }
-            });
-          }
-        });
-      });
-      
-      res.json({ 
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          fullName: user.fullName,
-          phone: user.phone,
-          createdAt: user.createdAt.toISOString() 
-        } 
-      });
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      if (error.message?.includes('duplicate') || error.code === '23505') {
-        if (error.message?.includes('phone')) {
-          return res.status(409).json({ message: 'Phone number already exists' });
-        }
-        return res.status(409).json({ message: 'Email already exists' });
-      }
-      res.status(500).json({ message: 'Failed to create user' });
-    }
-  });
-
-  app.post('/api/auth/signin', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
-      }
-
-      const user = await storage.getUserByEmail(email);
-      if (!user || user.passwordHash !== password) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      // Store user session with ultra-stable persistence - regenerate for clean session
-      await new Promise<void>((resolve, reject) => {
-        (req as any).session.regenerate((err: any) => {
-          if (err) {
-            console.error('❌ Session regenerate failed:', err);
-            reject(err);
-          } else {
-            // Assign session data after regeneration
-            (req as any).session.userId = user.id;
-            (req as any).session.userEmail = user.email;
-            (req as any).session.loginTime = new Date().toISOString();
-            
-            // Set session to never expire automatically - ultra-stable login
-            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
-            (req as any).session.cookie.secure = false; // Allow HTTP for development
-            (req as any).session.cookie.httpOnly = true; // Security
-            
-            // Force session save with bulletproof persistence
-            (req as any).session.save((saveErr: any) => {
-              if (saveErr) {
-                console.error('❌ Session save failed:', saveErr);
-                reject(saveErr);
-              } else {
-                console.log('✅ Ultra-stable session regenerated and saved for user:', user.email);
-                resolve();
-              }
-            });
-          }
-        });
-      });
-
-      res.json({ 
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          fullName: user.fullName,
-          phone: user.phone,
-          createdAt: user.createdAt.toISOString() 
-        } 
-      });
-    } catch (error) {
-      console.error('Signin error:', error);
-      res.status(500).json({ message: 'Failed to sign in' });
-    }
-  });
+  // Firebase Authentication Routes (replaces PostgreSQL auth)
+  app.use('/api/auth', firebaseAuthRoutes);
 
   app.post('/api/auth/signout', async (req, res) => {
     try {
