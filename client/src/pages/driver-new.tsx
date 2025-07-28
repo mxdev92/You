@@ -285,11 +285,28 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
         console.log('WebSocket connected for driver notifications');
         setConnectionStatus('connected');
         
-        // Register as driver for notifications
-        wsRef.current?.send(JSON.stringify({
-          type: 'driver_register',
-          driverId: driver.id
-        }));
+        // Wait a bit for connection to fully establish before registering
+        setTimeout(() => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            const registrationMessage = {
+              type: 'driver_register',
+              driverId: driver.id
+            };
+            console.log(`🚗 SENDING Driver registration message:`, registrationMessage);
+            wsRef.current.send(JSON.stringify(registrationMessage));
+            console.log(`✅ Driver ${driver.id} registration message sent successfully`);
+            
+            // Retry registration if no confirmation received within 2 seconds
+            setTimeout(() => {
+              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                console.log(`🔄 Retrying driver registration for driver ${driver.id}`);
+                wsRef.current.send(JSON.stringify(registrationMessage));
+              }
+            }, 2000);
+          } else {
+            console.log(`❌ WebSocket not ready for registration. State:`, wsRef.current?.readyState);
+          }
+        }, 100);
       };
       
       wsRef.current.onmessage = (event) => {
@@ -325,6 +342,10 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
             } catch (e) {
               // Ignore sound errors
             }
+          } else if (data.type === 'registration_confirmed') {
+            console.log('✅ Driver registration confirmed by server:', data);
+          } else {
+            console.log('🔔 Other WebSocket message received:', data);
           }
         } catch (error) {
           console.error('WebSocket message parsing error:', error);

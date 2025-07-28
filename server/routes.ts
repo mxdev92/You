@@ -1678,6 +1678,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WebSocket Connection Status Endpoint for debugging
+  app.get('/api/websocket/status', (req, res) => {
+    const connectedDrivers = Array.from(driverConnections.keys());
+    const connectionStates = Array.from(driverConnections.entries()).map(([id, ws]) => ({
+      driverId: id,
+      state: ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED',
+      readyState: ws.readyState
+    }));
+    
+    res.json({
+      totalConnections: driverConnections.size,
+      connectedDrivers,
+      connectionStates,
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Send push notification to driver endpoint
   app.post('/api/drivers/:id/send-notification', async (req, res) => {
     try {
@@ -2449,29 +2466,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     ws.on('message', (data) => {
       try {
-        const message = JSON.parse(data.toString());
-        console.log('Received WebSocket message:', message);
+        const rawMessage = data.toString();
+        console.log('🔔 RAW WebSocket message received from client:', rawMessage);
+        
+        const message = JSON.parse(rawMessage);
+        console.log('🔔 PARSED WebSocket message:', message);
         
         // Handle driver registration
         if (message.type === 'driver_register') {
           const driverId = message.driverId;
+          console.log(`🚗 Processing driver registration for ID: ${driverId}`);
+          
           if (driverId) {
             driverConnections.set(driverId, ws);
-            console.log(`Driver ${driverId} registered for real-time notifications`);
+            console.log(`✅ Driver ${driverId} SUCCESSFULLY registered for real-time notifications!`);
+            console.log(`📊 Total connected drivers: ${driverConnections.size}`);
+            console.log(`📋 CURRENT CONNECTED DRIVERS: [${Array.from(driverConnections.keys()).join(', ')}]`);
             
             // Send confirmation
-            ws.send(JSON.stringify({
+            const confirmationMessage = {
               type: 'registration_confirmed',
               driverId: driverId,
-              timestamp: new Date().toISOString()
-            }));
+              timestamp: new Date().toISOString(),
+              totalConnected: driverConnections.size
+            };
+            
+            ws.send(JSON.stringify(confirmationMessage));
+            console.log(`📤 Registration confirmation sent to driver ${driverId}:`, confirmationMessage);
+          } else {
+            console.log(`❌ Driver registration FAILED - no driverId provided in message:`, message);
           }
         } else {
+          console.log(`📨 Non-registration message received:`, message);
           // Echo message to all connected clients
           broadcastToClients(message);
         }
       } catch (error) {
-        console.error('Error processing WebSocket message:', error);
+        console.error('❌ Error processing WebSocket message:', error);
+        console.error('Raw message was:', data.toString());
       }
     });
 

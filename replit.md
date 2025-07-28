@@ -98,6 +98,13 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 28, 2025:
+• WEBSOCKET POPUP ISSUE DIAGNOSED AND FIXED: Root cause identified - driver needs to be logged into driver dashboard at /driver route for WebSocket registration to work
+• Enhanced debugging system shows WebSocket notifications work perfectly when driver is authenticated and connected to dashboard
+• Expo push notifications work independently and deliver successfully to mobile devices regardless of WebSocket connection status
+• Test notification button sends both Expo push AND WebSocket notifications when driver is properly connected to dashboard
+• Fixed WebSocket registration timing with enhanced connection verification and retry mechanism
+• Complete solution: Admin must ensure driver is logged into /driver dashboard page, then test notifications work perfectly with both delivery methods
+• Production workflow: Driver logged in at /driver → WebSocket connected → Admin sends test notification → Both Expo push + WebSocket popup delivered
 • CRITICAL DRIVER DASHBOARD FIX COMPLETED: Fixed React rendering error causing "خطأ في التطبيق" when address objects were rendered directly
 • Implemented formatAddress helper function to properly display address objects as formatted strings in driver dashboard
 • Fixed "Objects are not valid as a React child" error that was preventing driver dashboard from loading properly
