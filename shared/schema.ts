@@ -9,7 +9,6 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   fullName: text("full_name"),
   phone: text("phone").unique().notNull(),
-  firebaseUid: text("firebase_uid").unique(),
   walletBalance: decimal("wallet_balance", { precision: 10, scale: 2 }).default("0.00").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -23,23 +22,6 @@ export const userAddresses = pgTable("user_addresses", {
   neighborhood: text("neighborhood").notNull(),
   notes: text("notes").default(""),
   isDefault: boolean("is_default").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Driver accounts for delivery management
-export const drivers = pgTable("drivers", {
-  id: serial("id").primaryKey(),
-  fullName: text("full_name").notNull(),
-  phone: text("phone").unique().notNull(),
-  email: text("email").unique().notNull(),
-  passwordHash: text("password_hash").notNull(),
-  firebaseUid: text("firebase_uid").unique(),
-  licenseNumber: text("license_number"),
-  vehicleType: text("vehicle_type"), // 'car', 'motorcycle', 'bicycle'
-  vehicleModel: text("vehicle_model"),
-  plateNumber: text("plate_number"),
-  isActive: boolean("is_active").default(true).notNull(),
-  notificationToken: text("notification_token"), // Expo push notification token
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -94,12 +76,6 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method").default("cash").notNull(),
   items: jsonb("items").notNull(),
   totalAmount: integer("total_amount").notNull(),
-  driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
-  assignedAt: timestamp("assigned_at"),
-  pickedUpAt: timestamp("picked_up_at"),
-  deliveredAt: timestamp("delivered_at"),
-  driverNotes: text("driver_notes"),
-  deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).default("2500.00"),
 
   status: text("status").notNull().default("pending"),
   orderDate: timestamp("order_date", { withTimezone: true }).defaultNow().notNull(),
@@ -142,11 +118,6 @@ export const insertWalletTransactionSchema = createInsertSchema(walletTransactio
   createdAt: true,
 });
 
-export const insertDriverSchema = createInsertSchema(drivers).omit({
-  id: true,
-  createdAt: true,
-});
-
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
@@ -154,7 +125,6 @@ export type Order = typeof orders.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type UserAddress = typeof userAddresses.$inferSelect;
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
-export type Driver = typeof drivers.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
@@ -162,4 +132,3 @@ export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertUserAddress = z.infer<typeof insertUserAddressSchema>;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
-export type InsertDriver = z.infer<typeof insertDriverSchema>;

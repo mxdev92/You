@@ -3,7 +3,7 @@ import Header from "@/components/header";
 import LeftSidebar from "@/components/left-sidebar";
 import RightSidebar from "@/components/right-sidebar";
 import ProductsGrid from "@/components/products-grid";
-import { useAuth } from "@/hooks/use-auth";
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useCartFlow } from "@/store/cart-flow";
 
 export default function Home() {
@@ -11,16 +11,16 @@ export default function Home() {
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [leftSidebarView, setLeftSidebarView] = useState<'menu' | 'addresses' | 'settings' | 'profile' | 'orders' | 'login-prompt'>('menu');
   
-  const { user } = useAuth();
+  const { user } = usePostgresAuth();
   const { loadCart } = useCartFlow();
 
   // Load cart only once when user logs in
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.id) {
       loadCart();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]); // Only depend on user ID, not entire user object
+  }, [user?.id]); // Only depend on user ID, not entire user object
 
   const handleNavigateToAddresses = () => {
     setIsRightSidebarOpen(false);

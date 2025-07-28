@@ -34,47 +34,6 @@ html[lang="ar"] * {
   text-rendering: optimizeLegibility;
 }
 
-/* Mobile touch optimizations */
-* {
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-/* Allow text selection for text content */
-p, span, div[class*="text"], h1, h2, h3, h4, h5, h6 {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-}
-
-/* Mobile button touch targets */
-button, [role="button"], input[type="button"], input[type="submit"] {
-  min-height: 44px;
-  min-width: 44px;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-}
-
-/* Enhanced scrolling for mobile */
-.scroll-smooth {
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-/* Mobile input optimizations */
-input, textarea, select {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-  font-size: 16px; /* Prevents zoom on iOS */
-}
-
 /* Compact dropdown styling for government select */
 .cairo-font select {
   font-family: 'Cairo', sans-serif !important;

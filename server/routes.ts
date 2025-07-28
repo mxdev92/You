@@ -2,30 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-
-// Extend session types for driver authentication
-declare module "express-session" {
-  interface SessionData {
-    userId?: number;
-    userEmail?: string;
-    loginTime?: string;
-    lastChecked?: string;
-    driverId?: number;
-    driverEmail?: string;
-    driverLoginTime?: string;
-  }
-}
-import { insertCartItemSchema, insertProductSchema, insertOrderSchema, insertDriverSchema, drivers } from "@shared/schema";
+import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
-import { inArray, eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { wasenderService } from './wasender-api-service';
 import { zaincashService } from './zaincash-service';
-import { ExpoNotificationService } from './expo-notification-service';
-import firebaseAuthRoutes from './firebase-auth-routes';
-import { firebaseAuthMiddleware, optionalFirebaseAuth, AuthenticatedRequest } from './firebase-auth-middleware';
 
 // Initialize WasenderAPI service only
 console.log('🎯 WasenderAPI service initialized - Unified messaging system active');
@@ -86,86 +70,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Version endpoint for cache busting
   app.get("/api/version", (req, res) => {
     res.json({ version: "2.1.0", timestamp: Date.now() });
-  });
-
-  // Mount Firebase authentication routes
-  app.use('/api/firebase-auth', firebaseAuthRoutes);
-
-  // Test Firebase setup endpoint
-  app.get('/api/firebase-test', (req, res) => {
-    res.json({ 
-      message: 'Firebase backend setup complete',
-      status: 'ready',
-      timestamp: Date.now()
-    });
-  });
-
-  // Development endpoint to clear user data for fresh account creation
-  app.post('/api/dev/reset-users', async (req, res) => {
-    try {
-      if (process.env.NODE_ENV === 'production') {
-        return res.status(403).json({ message: 'Not available in production' });
-      }
-
-      // Clear all users, their addresses, cart items, and orders
-      await db.delete(cartItems);
-      await db.delete(userAddresses);  
-      await db.delete(orders);
-      await db.delete(users);
-      
-      console.log('🧹 Development reset: All user data cleared for fresh account creation');
-      
-      res.json({ 
-        message: 'All user data cleared successfully',
-        timestamp: Date.now()
-      });
-    } catch (error: any) {
-      console.error('Reset users error:', error);
-      res.status(500).json({ message: 'Failed to reset user data' });
-    }
-  });
-
-  // Sync PostgreSQL user to Firebase
-  app.post('/api/dev/sync-to-firebase/:userId', async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      if (user.firebaseUid) {
-        return res.json({ message: 'User already synced to Firebase', firebaseUid: user.firebaseUid });
-      }
-
-      // Import user to Firebase (requires Firebase Admin SDK)
-      const { adminAuth } = await import('./firebase-config');
-      if (!adminAuth) {
-        return res.status(500).json({ message: 'Firebase Admin not initialized' });
-      }
-
-      // Create Firebase user
-      const firebaseUser = await adminAuth.createUser({
-        email: user.email,
-        displayName: user.fullName || undefined,
-        emailVerified: true
-      });
-
-      // Update PostgreSQL user with Firebase UID
-      await db.update(users).set({ firebaseUid: firebaseUser.uid }).where(eq(users.id, userId));
-      
-      console.log(`🔄 User ${user.email} synced to Firebase with UID: ${firebaseUser.uid}`);
-      
-      res.json({ 
-        message: 'User synced to Firebase successfully',
-        firebaseUid: firebaseUser.uid,
-        email: user.email
-      });
-    } catch (error: any) {
-      console.error('Firebase sync error:', error);
-      res.status(500).json({ message: 'Failed to sync user to Firebase' });
-    }
   });
 
   // Placeholder image endpoint
@@ -499,48 +403,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
 
-      // REAL-TIME DRIVER NOTIFICATIONS - Notify all connected drivers via WebSocket AND Expo Push
-      try {
-        // WebSocket notifications DISABLED - This was broadcasting to ALL connected drivers
-        // WebSocket notifications should only be sent to specific drivers via admin panel
-        console.log(`🚗 Order ${order.id} WebSocket notifications will be sent manually via admin panel to targeted drivers`);
-
-        // EXPO PUSH NOTIFICATIONS DISABLED - This was causing ALL drivers to receive notifications
-        // Notifications should only be sent to specific drivers via admin panel
-        console.log(`📱 Order ${order.id} created - notifications will be sent manually via admin panel to targeted drivers`);
-
-        // Store order as "missed" for offline drivers
-        const orderNotification = {
-          type: 'new_order',
-          orderId: order.id,
-          customerName: order.customerName,
-          customerAddress: order.address,
-          totalAmount: order.totalAmount,
-          timestamp: new Date().toISOString()
-        };
-
-        // Get all active drivers from database
-        const allDrivers = await db.select().from(drivers).where(eq(drivers.isActive, true));
-        
-        for (const driver of allDrivers) {
-          const driverId = driver.id;
-          
-          // Check if driver is currently connected
-          if (!driverConnections.has(driverId)) {
-            // Driver is offline - add to missed orders
-            const driverIdString = driverId.toString();
-            if (!missedOrders.has(driverIdString)) {
-              missedOrders.set(driverIdString, []);
-            }
-            missedOrders.get(driverIdString)?.push(orderNotification);
-            console.log(`📊 [OFFLINE-SYNC] Order ${order.id} added to missed orders for offline driver ${driverId}`);
-          }
-        }
-
-      } catch (driverNotificationError) {
-        console.error('Error in driver notification, but order created successfully:', driverNotificationError);
-      }
-
       // WASENDERAPI PDF DELIVERY - Unified messaging system
       console.log(`🚀 Starting WasenderAPI PDF delivery for Order ${order.id}`);
       
@@ -553,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Send to customer via WasenderAPI
           const customerResult = await wasenderService.sendPDFDocument(
-            order.customerPhone, 
+            order.phone, 
             pdfBuffer, 
             fileName, 
             `🧾 فاتورة الطلب رقم ${order.id}\n\nشكراً لك على اختيار باكيتي للتوصيل السريع 💚`
@@ -564,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             '07511856947', 
             pdfBuffer, 
             `admin-${fileName}`, 
-            `📋 *طلب جديد رقم ${order.id}*\n\n👤 العميل: ${order.customerName}\n📱 الهاتف: ${order.customerPhone}\n💰 المبلغ الإجمالي: ${order.totalAmount} IQD`
+            `📋 *طلب جديد رقم ${order.id}*\n\n👤 العميل: ${order.customerName}\n📱 الهاتف: ${order.phone}\n💰 المبلغ الإجمالي: ${order.totalAmount} IQD`
           );
 
           console.log(`✅ WasenderAPI PDF delivery completed for Order ${order.id} - Customer: ${customerResult.success}, Admin: ${adminResult.success}`);
@@ -646,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Phone number validation endpoint - Firebase Authentication Only
+  // Phone number validation endpoint
   app.post('/api/auth/validate-phone', async (req, res) => {
     try {
       const { phone } = req.body;
@@ -655,8 +517,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Phone number is required' });
       }
 
-      // With Firebase authentication, phone validation is not needed
-      // Firebase handles duplicate detection automatically
+      const existingUser = await storage.getUserByPhone(phone);
+      
+      if (existingUser) {
+        return res.status(409).json({ 
+          message: 'هذا الرقم مستخدم بالفعل. كل رقم واتساب يحتاج حساب واحد فقط.',
+          isUsed: true 
+        });
+      }
+      
       res.json({ 
         message: 'Phone number is available',
         isUsed: false 
@@ -667,8 +536,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Firebase Authentication Routes (replaces PostgreSQL auth)
-  app.use('/api/auth', firebaseAuthRoutes);
+  // Authentication routes
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const { email, password, fullName, phone } = req.body;
+      
+      if (!email || !password || !phone) {
+        return res.status(400).json({ message: 'Email, password, and phone are required' });
+      }
+
+      // Check if phone is already used
+      const existingPhone = await storage.getUserByPhone(phone);
+      if (existingPhone) {
+        return res.status(409).json({ message: 'Phone number already exists' });
+      }
+
+      const user = await storage.createUser({ 
+        email, 
+        passwordHash: password, 
+        fullName: fullName || null,
+        phone: phone
+      });
+      
+      // Store user session with ultra-stable persistence - regenerate for clean session
+      await new Promise<void>((resolve, reject) => {
+        (req as any).session.regenerate((err: any) => {
+          if (err) {
+            console.error('❌ Session regenerate failed:', err);
+            reject(err);
+          } else {
+            // Assign session data after regeneration
+            (req as any).session.userId = user.id;
+            (req as any).session.userEmail = user.email;
+            (req as any).session.loginTime = new Date().toISOString();
+            
+            // Set session to never expire automatically - ultra-stable login
+            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
+            (req as any).session.cookie.secure = false; // Allow HTTP for development
+            (req as any).session.cookie.httpOnly = true; // Security
+            
+            // Force session save with bulletproof persistence
+            (req as any).session.save((saveErr: any) => {
+              if (saveErr) {
+                console.error('❌ Session save failed:', saveErr);
+                reject(saveErr);
+              } else {
+                console.log('✅ Ultra-stable session regenerated and saved for new user:', user.email);
+                resolve();
+              }
+            });
+          }
+        });
+      });
+      
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          fullName: user.fullName,
+          phone: user.phone,
+          createdAt: user.createdAt.toISOString() 
+        } 
+      });
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      if (error.message?.includes('duplicate') || error.code === '23505') {
+        if (error.message?.includes('phone')) {
+          return res.status(409).json({ message: 'Phone number already exists' });
+        }
+        return res.status(409).json({ message: 'Email already exists' });
+      }
+      res.status(500).json({ message: 'Failed to create user' });
+    }
+  });
+
+  app.post('/api/auth/signin', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || user.passwordHash !== password) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Store user session with ultra-stable persistence - regenerate for clean session
+      await new Promise<void>((resolve, reject) => {
+        (req as any).session.regenerate((err: any) => {
+          if (err) {
+            console.error('❌ Session regenerate failed:', err);
+            reject(err);
+          } else {
+            // Assign session data after regeneration
+            (req as any).session.userId = user.id;
+            (req as any).session.userEmail = user.email;
+            (req as any).session.loginTime = new Date().toISOString();
+            
+            // Set session to never expire automatically - ultra-stable login
+            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
+            (req as any).session.cookie.secure = false; // Allow HTTP for development
+            (req as any).session.cookie.httpOnly = true; // Security
+            
+            // Force session save with bulletproof persistence
+            (req as any).session.save((saveErr: any) => {
+              if (saveErr) {
+                console.error('❌ Session save failed:', saveErr);
+                reject(saveErr);
+              } else {
+                console.log('✅ Ultra-stable session regenerated and saved for user:', user.email);
+                resolve();
+              }
+            });
+          }
+        });
+      });
+
+      res.json({ 
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          fullName: user.fullName,
+          phone: user.phone,
+          createdAt: user.createdAt.toISOString() 
+        } 
+      });
+    } catch (error) {
+      console.error('Signin error:', error);
+      res.status(500).json({ message: 'Failed to sign in' });
+    }
+  });
 
   app.post('/api/auth/signout', async (req, res) => {
     try {
@@ -1515,407 +1514,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver Management API Routes
-  app.get('/api/drivers', async (req, res) => {
-    try {
-      const driversList = await db.select().from(drivers).orderBy(drivers.createdAt);
-      res.json(driversList || []);
-    } catch (error) {
-      console.error('Get drivers error:', error);
-      res.status(500).json([]);  // Return empty array instead of error object
-    }
-  });
-
-  app.post('/api/drivers', async (req, res) => {
-    try {
-      const result = insertDriverSchema.safeParse(req.body);
-      if (!result.success) {
-        return res.status(400).json({ message: 'Invalid driver data', errors: result.error.errors });
-      }
-
-      const newDriver = await db.insert(drivers).values(result.data).returning();
-      res.json(newDriver[0]);
-    } catch (error: any) {
-      console.error('Create driver error:', error);
-      if (error.code === '23505') { // PostgreSQL unique constraint error
-        res.status(400).json({ message: 'رقم الهاتف أو البريد الإلكتروني مستخدم بالفعل' });
-      } else {
-        res.status(500).json({ message: 'Failed to create driver' });
-      }
-    }
-  });
-
-  app.put('/api/drivers/:id', async (req, res) => {
-    try {
-      const driverId = parseInt(req.params.id);
-      const { isActive, ...updateData } = req.body;
-
-      const updatedDriver = await db
-        .update(drivers)
-        .set({ isActive, ...updateData })
-        .where(eq(drivers.id, driverId))
-        .returning();
-
-      if (updatedDriver.length === 0) {
-        return res.status(404).json({ message: 'Driver not found' });
-      }
-
-      res.json(updatedDriver[0]);
-    } catch (error) {
-      console.error('Update driver error:', error);
-      res.status(500).json({ message: 'Failed to update driver' });
-    }
-  });
-
-  app.delete('/api/drivers/:id', async (req, res) => {
-    try {
-      const driverId = parseInt(req.params.id);
-
-      const deletedDriver = await db
-        .delete(drivers)
-        .where(eq(drivers.id, driverId))
-        .returning();
-
-      if (deletedDriver.length === 0) {
-        return res.status(404).json({ message: 'Driver not found' });
-      }
-
-      res.json({ success: true, message: 'Driver deleted successfully' });
-    } catch (error) {
-      console.error('Delete driver error:', error);
-      res.status(500).json({ message: 'Failed to delete driver' });
-    }
-  });
-
-  // Update driver notification token
-  app.patch('/api/drivers/:id/notification-token', async (req, res) => {
-    try {
-      const driverId = parseInt(req.params.id);
-      const { notificationToken } = req.body;
-
-      if (!notificationToken || typeof notificationToken !== 'string') {
-        return res.status(400).json({ message: 'Notification token is required' });
-      }
-
-      // Validate Expo push token format (basic validation)
-      if (!notificationToken.startsWith('ExponentPushToken[') && !notificationToken.startsWith('expo:')) {
-        return res.status(400).json({ message: 'Invalid Expo push token format' });
-      }
-
-      const updatedDriver = await db
-        .update(drivers)
-        .set({ 
-          notificationToken: notificationToken.trim(),
-        })
-        .where(eq(drivers.id, driverId))
-        .returning();
-
-      if (updatedDriver.length === 0) {
-        return res.status(404).json({ message: 'Driver not found' });
-      }
-
-      res.json({ 
-        success: true, 
-        message: 'Notification token updated successfully',
-        driver: updatedDriver[0]
-      });
-    } catch (error) {
-      console.error('Update notification token error:', error);
-      res.status(500).json({ message: 'Failed to update notification token' });
-    }
-  });
-
-  // WebSocket Connection Status Endpoint for debugging
-  app.get('/api/websocket/status', (req, res) => {
-    const connectedDrivers = Array.from(driverConnections.keys());
-    const connectionStates = Array.from(driverConnections.entries()).map(([id, connection]) => ({
-      driverId: id,
-      state: connection.ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED',
-      readyState: connection.ws.readyState,
-      lastSeen: new Date(connection.lastSeen).toISOString(),
-      backgrounded: connection.backgrounded,
-      platform: connection.platform
-    }));
-    
-    res.json({
-      totalConnections: driverConnections.size,
-      connectedDrivers,
-      connectionStates,
-      backgroundPersistent: true,
-      timestamp: new Date().toISOString()
-    });
-  });
-
-  // Send push notification to driver endpoint
-  app.post('/api/drivers/:id/send-notification', async (req, res) => {
-    try {
-      const driverId = parseInt(req.params.id);
-      const { orderName, orderAddress, orderId } = req.body;
-
-      console.log(`🎯 TARGETED NOTIFICATION REQUEST: Driver ID ${driverId}, Order: ${orderName}`);
-
-      if (!orderName || !orderAddress) {
-        console.log(`❌ Missing order data for driver ${driverId}`);
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Order name and address are required' 
-        });
-      }
-
-      // Get ONLY this specific driver details
-      const [driver] = await db
-        .select()
-        .from(drivers)
-        .where(eq(drivers.id, driverId));
-
-      if (!driver) {
-        console.log(`❌ Driver ${driverId} not found in database`);
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Driver not found' 
-        });
-      }
-
-      console.log(`🔍 Driver ${driverId} details:`, {
-        id: driver.id,
-        name: driver.fullName,
-        hasToken: !!driver.notificationToken,
-        tokenPreview: driver.notificationToken ? `${driver.notificationToken.substring(0, 20)}...` : 'NO TOKEN'
-      });
-
-      if (!driver.notificationToken) {
-        console.log(`❌ Driver ${driverId} has NO notification token - aborting`);
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Driver does not have a notification token registered' 
-        });
-      }
-
-      // Send push notification to ONLY this driver's token
-      console.log(`📱 Sending notification to ONLY driver ${driverId} with token: ${driver.notificationToken.substring(0, 20)}...`);
-      const result = await ExpoNotificationService.sendOrderNotification(
-        driver.notificationToken,
-        orderName,
-        orderAddress,
-        orderId
-      );
-      console.log(`📱 Notification result for driver ${driverId}:`, result);
-
-      // TARGETED WEBSOCKET NOTIFICATION - Send popup only to THIS specific driver
-      try {
-        // Check if this specific driver is connected to WebSocket
-        if (driverConnections.has(driverId)) {
-          const connection = driverConnections.get(driverId);
-          
-          if (connection && connection.ws.readyState === WebSocket.OPEN) {
-            const testNotificationData = {
-              type: 'new_order',
-              orderId: orderId || 9999,
-              customerName: 'طلب تجريبي من الإدارة',
-              customerAddress: orderAddress,
-              totalAmount: 25000,
-              timestamp: new Date().toISOString()
-            };
-            
-            connection.ws.send(JSON.stringify(testNotificationData));
-            console.log(`🎯 TARGETED WebSocket notification sent to driver ${driverId} ONLY:`, testNotificationData);
-          } else {
-            console.log(`📱 Driver ${driverId} not connected to WebSocket (will receive Expo push only)`);
-          }
-        } else {
-          console.log(`📱 Driver ${driverId} not connected to WebSocket (will receive Expo push only)`);
-        }
-      } catch (wsError: any) {
-        console.log(`⚠️ Targeted WebSocket notification error:`, wsError.message || wsError);
-      }
-
-      if (result.success) {
-        res.json({ 
-          success: true, 
-          message: `Push notification sent successfully to ${driver.fullName}`,
-          driver: {
-            id: driver.id,
-            fullName: driver.fullName,
-            phone: driver.phone
-          },
-          notification: {
-            orderName,
-            orderAddress,
-            sentAt: new Date().toISOString()
-          }
-        });
-      } else {
-        res.status(500).json({ 
-          success: false, 
-          message: `Failed to send notification: ${result.message}` 
-        });
-      }
-    } catch (error) {
-      console.error('Error sending push notification:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Failed to send push notification' 
-      });
-    }
-  });
-
-  // Driver Authentication Routes
-  app.post('/api/driver/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-
-      if (!email || !password) {
-        return res.status(400).json({ message: 'البريد الإلكتروني وكلمة المرور مطلوبان' });
-      }
-
-      // Find driver by email
-      const [driver] = await db.select().from(drivers).where(eq(drivers.email, email));
-
-      if (!driver) {
-        return res.status(401).json({ message: 'بيانات تسجيل الدخول خاطئة' });
-      }
-
-      // For now, we'll use simple password comparison (in production, use bcrypt)
-      console.log('Driver login attempt:', { 
-        email, 
-        providedPassword: password, 
-        storedPassword: driver.passwordHash,
-        match: driver.passwordHash === password 
-      });
-      
-      if (driver.passwordHash !== password) {
-        console.log('Password mismatch for driver:', email);
-        return res.status(401).json({ message: 'بيانات تسجيل الدخول خاطئة' });
-      }
-
-      if (!driver.isActive) {
-        return res.status(401).json({ message: 'حسابك غير مفعل، تواصل مع الإدارة' });
-      }
-
-      // ULTRA-STABLE Driver Session Configuration (matching customer login)
-      await new Promise<void>((resolve, reject) => {
-        req.session.regenerate((regenerateErr: any) => {
-          if (regenerateErr) {
-            console.error('❌ Driver session regeneration failed:', regenerateErr);
-            reject(regenerateErr);
-          } else {
-            // Set driver session data
-            req.session.driverId = driver.id;
-            req.session.driverEmail = driver.email;
-            req.session.driverLoginTime = new Date().toISOString();
-            
-            console.log('🚗 Driver session data set:', {
-              driverId: driver.id,
-              driverEmail: driver.email,
-              sessionId: req.sessionID
-            });
-            
-            // Set session to never expire automatically - ultra-stable login
-            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
-            (req as any).session.cookie.secure = false; // Allow HTTP for development
-            (req as any).session.cookie.httpOnly = true; // Security
-            
-            // Force session save with bulletproof persistence
-            (req as any).session.save((saveErr: any) => {
-              if (saveErr) {
-                console.error('❌ Driver session save failed:', saveErr);
-                reject(saveErr);
-              } else {
-                console.log('✅ Ultra-stable driver session regenerated and saved for driver:', driver.email);
-                resolve();
-              }
-            });
-          }
-        });
-      });
-
-      res.json({
-        success: true,
-        driver: {
-          id: driver.id,
-          email: driver.email,
-          fullName: driver.fullName,
-          phone: driver.phone
-        }
-      });
-
-    } catch (error) {
-      console.error('Driver login error:', error);
-      res.status(500).json({ message: 'حدث خطأ في تسجيل الدخول' });
-    }
-  });
-
-  app.get('/api/driver/session', async (req, res) => {
-    try {
-      if (!req.session.driverId) {
-        return res.status(401).json({ message: 'غير مسجل دخول' });
-      }
-
-      // Get driver details
-      const [driver] = await db.select().from(drivers).where(eq(drivers.id, req.session.driverId));
-
-      if (!driver) {
-        req.session.destroy(() => {});
-        return res.status(401).json({ message: 'السائق غير موجود' });
-      }
-
-      res.json({
-        driver: {
-          id: driver.id,
-          email: driver.email,
-          fullName: driver.fullName,
-          phone: driver.phone
-        }
-      });
-
-    } catch (error) {
-      console.error('Driver session check error:', error);
-      res.status(500).json({ message: 'فشل في التحقق من جلسة السائق' });
-    }
-  });
-
-  // Driver logout route - ultra-stable session cleanup
-  app.post('/api/driver/logout', async (req, res) => {
-    try {
-      if (req.session.driverId) {
-        console.log('🚗 Driver logout initiated for driver:', req.session.driverEmail);
-        req.session.destroy((err) => {
-          if (err) {
-            console.error('❌ Driver session destruction error:', err);
-            return res.status(500).json({ message: 'فشل في تسجيل الخروج' });
-          }
-          console.log('✅ Driver session destroyed successfully');
-          res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
-        });
-      } else {
-        res.json({ success: true, message: 'لم تكن مسجل دخول' });
-      }
-    } catch (error) {
-      console.error('Driver logout error:', error);
-      res.status(500).json({ message: 'حدث خطأ في تسجيل الخروج' });
-    }
-  });
-
-  // Get orders for driver dashboard
-  app.get('/api/driver/orders', async (req, res) => {
-    try {
-      if (!req.session.driverId) {
-        return res.status(401).json({ message: 'غير مسجل دخول' });
-      }
-
-      // Get recent orders (last 20)  
-      const recentOrders = await db.select().from(ordersTable)
-        .orderBy(ordersTable.orderDate)
-        .limit(20);
-
-      res.json(recentOrders || []);
-
-    } catch (error) {
-      console.error('Get driver orders error:', error);
-      res.status(500).json([]);
-    }
-  });
-
   // VerifyWay test endpoint removed - now using WasenderAPI exclusively
 
   // WhatsApp API routes
@@ -2271,177 +1869,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Driver authentication check endpoint
-  app.get('/api/driver/auth-check', async (req, res) => {
-    try {
-      if (!req.session.driverId) {
-        return res.json({ success: false, driver: null });
-      }
-
-      const [driver] = await db.select().from(drivers).where(eq(drivers.id, req.session.driverId));
-
-      if (!driver) {
-        req.session.destroy(() => {});
-        return res.json({ success: false, driver: null });
-      }
-
-      res.json({
-        success: true,
-        driver: {
-          id: driver.id,
-          email: driver.email,
-          fullName: driver.fullName,
-          phone: driver.phone,
-          isActive: driver.isActive
-        }
-      });
-
-    } catch (error) {
-      console.error('Driver auth check error:', error);
-      res.json({ success: false, driver: null });
-    }
-  });
-
-  // Driver stats endpoint
-  app.get('/api/driver/stats', async (req, res) => {
-    try {
-      if (!req.session.driverId) {
-        return res.status(401).json({ message: 'غير مسجل دخول' });
-      }
-
-      // Calculate today's stats
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      // Get recent orders for stats calculation
-      const allOrders = await db.select().from(ordersTable);
-      
-      const todayOrders = allOrders.filter(order => {
-        const orderDate = new Date(order.orderDate);
-        return orderDate >= today;
-      }).length;
-
-      const completedOrders = allOrders.filter(order => 
-        order.status === 'delivered'
-      ).length;
-
-      const pendingOrders = allOrders.filter(order => 
-        ['pending', 'confirmed', 'preparing', 'out-for-delivery'].includes(order.status)
-      ).length;
-
-      // Calculate total earnings (simplified - in real app would be driver-specific)
-      const totalEarnings = allOrders
-        .filter(order => order.status === 'delivered')
-        .reduce((sum, order) => sum + (order.totalAmount * 0.1), 0); // Assuming 10% commission
-
-      res.json({
-        todayOrders,
-        completedOrders,
-        pendingOrders,
-        totalEarnings: Math.round(totalEarnings)
-      });
-
-    } catch (error) {
-      console.error('Get driver stats error:', error);
-      res.status(500).json({
-        todayOrders: 0,
-        completedOrders: 0,
-        pendingOrders: 0,
-        totalEarnings: 0
-      });
-    }
-  });
-
-  // Order accept endpoint
-  app.patch('/api/orders/:id/accept', async (req, res) => {
-    try {
-      if (!req.session.driverId) {
-        return res.status(401).json({ message: 'غير مسجل دخول' });
-      }
-
-      const orderId = parseInt(req.params.id);
-      const { driverId } = req.body;
-
-      const updatedOrder = await db
-        .update(ordersTable)
-        .set({ 
-          status: 'confirmed',
-          driverId: driverId,
-          assignedAt: new Date()
-        })
-        .where(eq(ordersTable.id, orderId))
-        .returning();
-
-      if (updatedOrder.length === 0) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-
-      // SEND INVOICE TO ACCEPTING DRIVER ONLY
-      setTimeout(async () => {
-        try {
-          // Get driver details to send WhatsApp invoice
-          const [driver] = await db.select().from(driversTable).where(eq(driversTable.id, driverId));
-          
-          if (driver && driver.phone) {
-            // Generate PDF invoice for driver
-            const { generateInvoicePDF } = await import('./invoice-generator');
-            const pdfBuffer = await generateInvoicePDF(updatedOrder[0]);
-            const fileName = `driver-order-${updatedOrder[0].id}.pdf`;
-
-            // Send invoice to accepting driver via WasenderAPI
-            const driverResult = await wasenderService.sendPDFDocument(
-              driver.phone,
-              pdfBuffer,
-              fileName,
-              `🚗 *تم قبول الطلب رقم ${updatedOrder[0].id}*\n\n📋 فاتورة التوصيل\n👤 العميل: ${updatedOrder[0].customerName}\n📱 الهاتف: ${updatedOrder[0].customerPhone}\n💰 المبلغ: ${updatedOrder[0].totalAmount} IQD\n\n✅ تم تخصيص الطلب لك بنجاح`
-            );
-
-            console.log(`🚗✅ Driver invoice delivered for Order ${updatedOrder[0].id} to driver ${driver.fullName} (${driver.phone}): ${driverResult.success}`);
-          }
-        } catch (error: any) {
-          console.log(`⚠️ Driver invoice delivery error for Order ${updatedOrder[0].id}:`, error.message || error);
-        }
-      }, 1000); // 1 second delay
-
-      res.json({ success: true, order: updatedOrder[0] });
-
-    } catch (error) {
-      console.error('Accept order error:', error);
-      res.status(500).json({ message: 'Failed to accept order' });
-    }
-  });
-
-  // Order reject endpoint
-  app.patch('/api/orders/:id/reject', async (req, res) => {
-    try {
-      if (!req.session.driverId) {
-        return res.status(401).json({ message: 'غير مسجل دخول' });
-      }
-
-      const orderId = parseInt(req.params.id);
-
-      const updatedOrder = await db
-        .update(ordersTable)
-        .set({ 
-          status: 'pending', // Reset to pending for other drivers
-          driverId: null,
-          assignedAt: null
-        })
-        .where(eq(ordersTable.id, orderId))
-        .returning();
-
-      if (updatedOrder.length === 0) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-
-      res.json({ success: true, order: updatedOrder[0] });
-
-    } catch (error) {
-      console.error('Reject order error:', error);
-      res.status(500).json({ message: 'Failed to reject order' });
-    }
-  });
-
   // API 404 handler - MUST be after all other API routes
   app.use('/api/*', (req, res) => {
     console.log(`API 404 - Route not found: ${req.method} ${req.path}`);
@@ -2455,203 +1882,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;
 
-  // BACKGROUND-PERSISTENT Driver WebSocket connections registry
-  const driverConnections = new Map<number, { ws: WebSocket, lastSeen: number, backgrounded: boolean, platform: string }>();
-
-  // Missed orders tracking for offline synchronization
-  const missedOrders = new Map<string, any[]>(); // driverId -> array of missed orders
-
   wss.on('connection', (ws) => {
-    console.log('🔌 [BACKGROUND-PERSISTENT] WebSocket client connected for real-time updates');
+    console.log('WebSocket client connected for real-time updates');
     
     ws.on('message', (data) => {
       try {
-        const rawMessage = data.toString();
-        console.log('🔔 RAW WebSocket message received from client:', rawMessage);
+        const message = JSON.parse(data.toString());
+        console.log('Received WebSocket message:', message);
         
-        const message = JSON.parse(rawMessage);
-        console.log('🔔 PARSED WebSocket message:', message);
-        
-        // Handle driver registration for background-persistent connections
-        if (message.type === 'driver_register') {
-          const driverId = parseInt(message.driverId);
-          console.log(`🚗 [BACKGROUND-PERSISTENT] Driver ${driverId} (${message.driverName}) registering for notifications`);
-          console.log(`🔧 Driver platform: ${message.platform || 'unknown'}`);
-          
-          if (driverId) {
-            // Store driver connection with enhanced metadata for background persistence
-            driverConnections.set(driverId, {
-              ws: ws,
-              lastSeen: Date.now(),
-              backgrounded: message.backgrounded || false,
-              platform: message.platform || 'unknown'
-            });
-            console.log(`✅ [BACKGROUND-PERSISTENT] Driver ${driverId} SUCCESSFULLY registered for real-time notifications!`);
-            console.log(`📊 Total connected drivers: ${driverConnections.size}`);
-            console.log(`📋 CURRENT CONNECTED DRIVERS: [${Array.from(driverConnections.keys()).join(', ')}]`);
-            
-            // Check for missed orders since last sync timestamp
-            if (message.lastSyncTimestamp) {
-              const driverIdString = driverId.toString();
-              if (missedOrders.has(driverIdString)) {
-                const driverMissedOrders = missedOrders.get(driverIdString) || [];
-                if (driverMissedOrders.length > 0) {
-                  console.log(`📊 [OFFLINE-SYNC] Sending ${driverMissedOrders.length} missed orders to driver ${driverId}`);
-                  
-                  ws.send(JSON.stringify({
-                    type: 'missed_orders',
-                    orders: driverMissedOrders,
-                    timestamp: Date.now()
-                  }));
-                  
-                  // Clear missed orders after sending
-                  missedOrders.delete(driverIdString);
-                }
-              }
-            }
-            
-            // Send confirmation back to driver
-            const confirmationMessage = {
-              type: 'registration_confirmed',
-              driverId: driverId,
-              message: 'Driver registered successfully for background-persistent notifications',
-              connectedDrivers: driverConnections.size,
-              backgroundPersistent: true,
-              timestamp: new Date().toISOString()
-            };
-            
-            ws.send(JSON.stringify(confirmationMessage));
-            console.log(`✅ [BACKGROUND-PERSISTENT] Registration confirmation sent to driver ${driverId}`);
-          } else {
-            console.log(`❌ Driver registration FAILED - no driverId provided in message:`, message);
-          }
-        }
-        
-        // Handle missed orders request
-        else if (message.type === 'request_missed_orders') {
-          const driverId = parseInt(message.driverId);
-          const since = message.since || 0;
-          
-          console.log(`📞 [OFFLINE-SYNC] Driver ${driverId} requesting missed orders since ${new Date(since).toISOString()}`);
-          
-          const driverIdString = driverId.toString();
-          const driverMissedOrders = missedOrders.get(driverIdString) || [];
-          
-          if (driverMissedOrders.length > 0) {
-            console.log(`📊 [OFFLINE-SYNC] Sending ${driverMissedOrders.length} missed orders to driver ${driverId}`);
-            
-            ws.send(JSON.stringify({
-              type: 'missed_orders',
-              orders: driverMissedOrders,
-              timestamp: Date.now()
-            }));
-            
-            // Clear missed orders after sending
-            missedOrders.delete(driverIdString);
-          } else {
-            console.log(`📊 [OFFLINE-SYNC] No missed orders for driver ${driverId}`);
-            
-            ws.send(JSON.stringify({
-              type: 'missed_orders',
-              orders: [],
-              timestamp: Date.now()
-            }));
-          }
-        }
-        
-        // Handle heartbeat messages to maintain background persistence
-        else if (message.type === 'ping' || message.type === 'background_ping') {
-          const driverId = parseInt(message.driverId);
-          const connection = driverConnections.get(driverId);
-          
-          if (connection) {
-            connection.lastSeen = Date.now();
-            connection.backgrounded = message.backgrounded || false;
-            
-            console.log(`💗 [BACKGROUND-PERSISTENT] Heartbeat from driver ${driverId} (backgrounded: ${connection.backgrounded})`);
-            
-            // Send pong response to maintain connection
-            ws.send(JSON.stringify({
-              type: 'pong',
-              driverId: driverId,
-              backgrounded: connection.backgrounded,
-              timestamp: Date.now()
-            }));
-          }
-        }
-        
-        else {
-          console.log(`📨 Non-registration message received:`, message);
-          // Echo message to all connected clients
-          broadcastToClients(message);
-        }
+        // Echo message to all connected clients
+        broadcastToClients(message);
       } catch (error) {
-        console.error('❌ Error processing WebSocket message:', error);
-        console.error('Raw message was:', data.toString());
+        console.error('Error processing WebSocket message:', error);
       }
     });
 
     ws.on('close', () => {
-      console.log('🔴 [BACKGROUND-PERSISTENT] WebSocket client disconnected - attempting to maintain registry');
-      
-      // DON'T immediately remove disconnected drivers - keep them for reconnection
-      for (const [driverId, connection] of driverConnections.entries()) {
-        if (connection.ws === ws) {
-          console.log(`🚗 [BACKGROUND-PERSISTENT] Driver ${driverId} connection lost but keeping in registry for reconnection`);
-          // Mark as potentially disconnected but don't remove
-          connection.lastSeen = Date.now() - 60000; // Mark as 1 minute ago
-          break;
-        }
-      }
-    });
-    
-    ws.on('error', (error) => {
-      console.error('❌ [BACKGROUND-PERSISTENT] WebSocket error:', error);
-      // Don't remove on error - let the connection recover
+      console.log('WebSocket client disconnected');
     });
   });
-
-  // Function to notify drivers of new orders
-  function notifyDriversOfNewOrder(orderData: any) {
-    const notification = {
-      type: 'new_order',
-      orderId: orderData.id,
-      customerName: orderData.customerName,
-      customerAddress: orderData.address?.fullAddress || orderData.address || 'لا يوجد عنوان',
-      totalAmount: orderData.totalAmount,
-      timestamp: new Date().toISOString()
-    };
-
-    console.log(`🚗 Notifying drivers of new order. Connected drivers: ${driverConnections.size}`);
-    console.log(`📋 Notification data:`, notification);
-
-    // Send to all connected drivers
-    for (const [driverId, connection] of driverConnections.entries()) {
-      console.log(`🔍 Checking driver ${driverId} connection. WebSocket state: ${connection.ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED'}`);
-      
-      if (connection.ws.readyState === WebSocket.OPEN) {
-        try {
-          connection.ws.send(JSON.stringify(notification));
-          console.log(`✅ Order notification sent successfully to driver ${driverId}`);
-        } catch (error) {
-          console.error(`❌ Failed to send notification to driver ${driverId}:`, error);
-          // Remove disconnected driver
-          driverConnections.delete(driverId);
-        }
-      } else {
-        console.log(`🗑️ Removing disconnected driver ${driverId} from registry`);
-        // Remove disconnected driver
-        driverConnections.delete(driverId);
-      }
-    }
-    
-    if (driverConnections.size === 0) {
-      console.log(`⚠️ No connected drivers found for notification delivery`);
-    }
-  }
-
-  // Make the notification function globally available
-  (global as any).notifyDriversOfNewOrder = notifyDriversOfNewOrder;
 
   return httpServer;
 }

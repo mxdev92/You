@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { onAuthStateChange, signInUser, signUpUser, signOutUser } from '@/lib/firebase';
+import { migrateUserDataOnAuth, clearUserDataOnLogout } from '@/lib/firebase-user-data';
+import { 
+  reliableLogin, 
+  reliableRegister, 
+  reliableLogout, 
+  onAuthStateChange 
+} from '@/lib/auth-utils';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -8,9 +14,27 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChange((user) => {
-      console.log('🔥 Firebase Auth State Changed:', user?.email || 'No user');
+    const unsubscribe = onAuthStateChange(async (user) => {
       setUser(user);
+      
+      if (user) {
+        // User authenticated - migrate/setup their data
+        try {
+          await migrateUserDataOnAuth();
+          console.log('User data migration completed for:', user.email);
+        } catch (error) {
+          console.error('Error during user data migration:', error);
+        }
+      } else {
+        // User logged out - clear local caches
+        try {
+          await clearUserDataOnLogout();
+          console.log('User data cleanup completed');
+        } catch (error) {
+          console.error('Error during user data cleanup:', error);
+        }
+      }
+      
       setLoading(false);
     });
 
@@ -22,14 +46,13 @@ export function useAuth() {
       setError(null);
       setLoading(true);
       
-      const result = await signInUser(email, password);
-      console.log('🔥 Firebase Login successful:', result.email);
-      return result;
+      const result = await reliableLogin(email, password);
+      console.log('Login successful:', result.user.email);
+      // Don't set loading to false here - let onAuthStateChange handle it
     } catch (err: any) {
-      console.error('🔥 Firebase Login error:', err);
-      setError(err.message || 'Login failed');
+      console.error('Login error:', err);
+      setError(err.message);
       setLoading(false);
-      throw err;
     }
   };
 
@@ -38,26 +61,31 @@ export function useAuth() {
       setError(null);
       setLoading(true);
       
-      const result = await signUpUser(email, password);
-      console.log('🔥 Firebase Registration successful:', result.email);
-      return result;
+      const result = await reliableRegister(email, password);
+      console.log('Registration successful:', result.user.email);
+      // Don't set loading to false here - let onAuthStateChange handle it
     } catch (err: any) {
-      console.error('🔥 Firebase Registration error:', err);
-      setError(err.message || 'Registration failed');
+      console.error('Registration error:', err);
+      setError(err.message);
       setLoading(false);
-      throw err;
     }
   };
 
   const signOut = async () => {
     try {
       setError(null);
-      await signOutUser();
-      console.log('🔥 Firebase Sign out successful');
+      
+      // Clear user state immediately
+      setUser(null);
+      
+      // Call the reliable logout function (this will reload the page)
+      await reliableLogout();
+      
     } catch (err: any) {
-      setError(err.message || 'Sign out failed');
-      console.error('🔥 Firebase Sign out error:', err);
-      throw err;
+      setError(err.message);
+      console.error('Error during sign out:', err);
+      // Force reload even if there's an error
+      window.location.reload();
     }
   };
 

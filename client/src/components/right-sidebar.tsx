@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
 import { createUserOrder } from "@/lib/firebase-user-data";
 import { useAuth } from "@/hooks/use-auth";
-// Removed unused import
+import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/utils";
 import type { CartItem, Product } from "@shared/schema";
@@ -141,19 +141,18 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   // Use CartFlow store for cart data
   const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem, clearCart: clearCartFlow } = useCartFlow();
   
-  // Firebase authentication and address integration
-  const { user: firebaseUser } = useAuth();
+  // PostgreSQL authentication and address integration
+  const { user: postgresUser } = usePostgresAuth();
   const { addresses, loadAddresses } = usePostgresAddressStore();
 
   // Auto-load addresses only once when user is authenticated
   useEffect(() => {
-    if (firebaseUser?.uid) {
-      console.log('Right sidebar: Auto-loading addresses for user:', firebaseUser.uid);
-      // TODO: Convert uid to PostgreSQL user ID for address loading
-      // For now, we'll need to handle this in the backend
+    if (postgresUser?.id) {
+      console.log('Right sidebar: Auto-loading addresses for user:', postgresUser.id);
+      loadAddresses(postgresUser.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firebaseUser?.uid]); // Only depend on user ID, not entire user object
+  }, [postgresUser?.id]); // Only depend on user ID, not entire user object
 
   // Use CartFlow store methods directly
   const handleUpdateQuantity = async (id: number, quantity: number) => {
@@ -225,7 +224,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   // Get wallet balance
   const { data: walletData } = useQuery({
     queryKey: ['/api/wallet/balance'],
-    enabled: !!firebaseUser,
+    enabled: !!postgresUser,
     retry: 1
   });
 
@@ -270,7 +269,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     console.log('primaryAddress:', primaryAddress);
     
     // Check if user is authenticated
-    if (!firebaseUser) {
+    if (!postgresUser) {
       showNotification('يرجى تسجيل الدخول أولاً لإتمام الطلب');
       setIsPlacingOrder(false);
       return;
@@ -308,12 +307,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       console.log('Starting order submission...');
       
       // Use phone from user profile (required for authenticated users)
-      const customerPhone = firebaseUser.phoneNumber || 'غير محدد';
-      const customerName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'عميل';
+      const customerPhone = postgresUser.phone;
+      const customerName = postgresUser.fullName || postgresUser.email.split('@')[0];
       
       const orderData = {
         customerName: customerName,
-        customerEmail: firebaseUser.email,
+        customerEmail: postgresUser.email,
         customerPhone: customerPhone,
         address: {
           governorate: primaryAddress.governorate,
@@ -595,7 +594,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <div className="flex items-start gap-2">
                 <span className="text-xs font-medium text-gray-500 min-w-[40px]">الاسم:</span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'غير محدد'}
+                  {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'غير محدد'}
                 </span>
               </div>
               
@@ -603,7 +602,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <div className="flex items-start gap-2">
                 <span className="text-xs font-medium text-gray-500 min-w-[40px]">الرقم:</span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {firebaseUser?.phoneNumber || 'غير محدد'}
+                  {postgresUser?.phone || 'غير محدد'}
                 </span>
               </div>
               
@@ -685,7 +684,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           {hasAddress && (
             <div className="space-y-2">
               <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'عميل'}
+                {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'عميل'}
               </p>
               <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 {primaryAddress?.governorate} - {primaryAddress?.district}
