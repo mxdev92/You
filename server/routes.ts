@@ -24,6 +24,8 @@ import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator
 import { wasenderService } from './wasender-api-service';
 import { zaincashService } from './zaincash-service';
 import { ExpoNotificationService } from './expo-notification-service';
+import firebaseAuthRoutes from './firebase-auth-routes';
+import { firebaseAuthMiddleware, optionalFirebaseAuth, AuthenticatedRequest } from './firebase-auth-middleware';
 
 // Initialize WasenderAPI service only
 console.log('🎯 WasenderAPI service initialized - Unified messaging system active');
@@ -84,6 +86,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Version endpoint for cache busting
   app.get("/api/version", (req, res) => {
     res.json({ version: "2.1.0", timestamp: Date.now() });
+  });
+
+  // Mount Firebase authentication routes
+  app.use('/api/firebase-auth', firebaseAuthRoutes);
+
+  // Test Firebase setup endpoint
+  app.get('/api/firebase-test', (req, res) => {
+    res.json({ 
+      message: 'Firebase backend setup complete',
+      status: 'ready',
+      timestamp: Date.now()
+    });
   });
 
   // Placeholder image endpoint

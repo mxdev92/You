@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   fullName: text("full_name"),
   phone: text("phone").unique().notNull(),
+  firebaseUid: text("firebase_uid").unique(),
   walletBalance: decimal("wallet_balance", { precision: 10, scale: 2 }).default("0.00").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -32,6 +33,7 @@ export const drivers = pgTable("drivers", {
   phone: text("phone").unique().notNull(),
   email: text("email").unique().notNull(),
   passwordHash: text("password_hash").notNull(),
+  firebaseUid: text("firebase_uid").unique(),
   licenseNumber: text("license_number"),
   vehicleType: text("vehicle_type"), // 'car', 'motorcycle', 'bicycle'
   vehicleModel: text("vehicle_model"),

@@ -35,9 +35,15 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
+  getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   deleteUser(id: number): Promise<void>;
+  
+  // Drivers
+  getDriverByEmail(email: string): Promise<any>;
+  getDriverByFirebaseUid(firebaseUid: string): Promise<any>;
+  createAddress(address: InsertUserAddress): Promise<UserAddress>;
 
   // User Addresses
   getUserAddresses(userId: number): Promise<UserAddress[]>;
@@ -293,6 +299,39 @@ export class MemStorage implements IStorage {
 
   async getUserByPhone(phone: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.phone === phone);
+  }
+
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.firebaseUid === firebaseUid);
+  }
+
+  async getDriverByEmail(email: string): Promise<any> {
+    // MemStorage stub - return mock driver for development
+    if (email === 'driver@pakety.com') {
+      return {
+        id: 1,
+        email: 'driver@pakety.com',
+        fullName: 'Mock Driver',
+        phone: '07511856947',
+        firebaseUid: null
+      };
+    }
+    return null;
+  }
+
+  async getDriverByFirebaseUid(firebaseUid: string): Promise<any> {
+    // MemStorage stub - return mock driver for development
+    return {
+      id: 1,
+      email: 'driver@pakety.com',
+      fullName: 'Mock Driver',
+      phone: '07511856947',
+      firebaseUid
+    };
+  }
+
+  async createAddress(address: InsertUserAddress): Promise<UserAddress> {
+    return this.createUserAddress(address);
   }
 
   async getAllUsers(): Promise<User[]> {
@@ -648,6 +687,25 @@ export class DatabaseStorage implements IStorage {
   async getUserByPhone(phone: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.phone, phone));
     return user || undefined;
+  }
+
+  async getUserByFirebaseUid(firebaseUid: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid));
+    return user || undefined;
+  }
+
+  async getDriverByEmail(email: string): Promise<any> {
+    const [driver] = await db.select().from(sql`drivers`).where(sql`email = ${email}`);
+    return driver || undefined;
+  }
+
+  async getDriverByFirebaseUid(firebaseUid: string): Promise<any> {
+    const [driver] = await db.select().from(sql`drivers`).where(sql`firebase_uid = ${firebaseUid}`);
+    return driver || undefined;
+  }
+
+  async createAddress(address: InsertUserAddress): Promise<UserAddress> {
+    return this.createUserAddress(address);
   }
 
   async getAllUsers(): Promise<User[]> {
