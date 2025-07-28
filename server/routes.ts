@@ -2,6 +2,19 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+
+// Extend session types for driver authentication
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+    userEmail?: string;
+    loginTime?: string;
+    lastChecked?: string;
+    driverId?: number;
+    driverEmail?: string;
+    driverLoginTime?: string;
+  }
+}
 import { insertCartItemSchema, insertProductSchema, insertOrderSchema, insertDriverSchema, drivers } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -1583,6 +1596,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Delete driver error:', error);
       res.status(500).json({ message: 'Failed to delete driver' });
+    }
+  });
+
+  // Driver Authentication Routes
+  app.post('/api/driver/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ message: 'البريد الإلكتروني وكلمة المرور مطلوبان' });
+      }
+
+      // Find driver by email
+      const [driver] = await db.select().from(drivers).where(eq(drivers.email, email));
+
+      if (!driver) {
+        return res.status(401).json({ message: 'بيانات تسجيل الدخول خاطئة' });
+      }
+
+      // For now, we'll use simple password comparison (in production, use bcrypt)
+      if (driver.passwordHash !== password) {
+        return res.status(401).json({ message: 'بيانات تسجيل الدخول خاطئة' });
+      }
+
+      if (!driver.isActive) {
+        return res.status(401).json({ message: 'حسابك غير مفعل، تواصل مع الإدارة' });
+      }
+
+      // Save driver session
+      req.session.driverId = driver.id;
+      req.session.driverEmail = driver.email;
+      req.session.driverLoginTime = new Date().toISOString();
+
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('Driver session save error:', err);
+          return res.status(500).json({ message: 'فشل في حفظ جلسة تسجيل الدخول' });
+        }
+
+        res.json({
+          success: true,
+          driver: {
+            id: driver.id,
+            email: driver.email,
+            fullName: driver.fullName,
+            phone: driver.phone
+          }
+        });
+      });
+
+    } catch (error) {
+      console.error('Driver login error:', error);
+      res.status(500).json({ message: 'حدث خطأ في تسجيل الدخول' });
+    }
+  });
+
+  app.get('/api/driver/session', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'غير مسجل دخول' });
+      }
+
+      // Get driver details
+      const [driver] = await db.select().from(drivers).where(eq(drivers.id, req.session.driverId));
+
+      if (!driver) {
+        req.session.destroy(() => {});
+        return res.status(401).json({ message: 'السائق غير موجود' });
+      }
+
+      res.json({
+        driver: {
+          id: driver.id,
+          email: driver.email,
+          fullName: driver.fullName,
+          phone: driver.phone
+        }
+      });
+
+    } catch (error) {
+      console.error('Driver session check error:', error);
+      res.status(500).json({ message: 'فشل في التحقق من جلسة السائق' });
+    }
+  });
+
+  app.post('/api/driver/logout', async (req, res) => {
+    try {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Driver logout error:', err);
+          return res.status(500).json({ message: 'فشل في تسجيل الخروج' });
+        }
+        res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
+      });
+    } catch (error) {
+      console.error('Driver logout error:', error);
+      res.status(500).json({ message: 'فشل في تسجيل الخروج' });
+    }
+  });
+
+  // Get orders for driver dashboard
+  app.get('/api/driver/orders', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'غير مسجل دخول' });
+      }
+
+      // Get recent orders (last 20)  
+      const recentOrders = await db.select().from(ordersTable)
+        .orderBy(ordersTable.orderDate)
+        .limit(20);
+
+      res.json(recentOrders || []);
+
+    } catch (error) {
+      console.error('Get driver orders error:', error);
+      res.status(500).json([]);
     }
   });
 

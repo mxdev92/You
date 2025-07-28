@@ -14,6 +14,7 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import WalletPage from "@/pages/wallet";
 import WalletSuccess from "@/pages/wallet-success";
 import WalletFailed from "@/pages/wallet-failed";
+import DriverPage from "@/pages/driver";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import React from "react";
@@ -139,6 +140,9 @@ function Router() {
       <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
       <Route path="/wallet/success" component={WalletSuccess} />
       <Route path="/wallet/failed" component={WalletFailed} />
+      
+      {/* Driver page */}
+      <Route path="/driver" component={DriverPage} />
       
       {/* Auth page */}
       <Route path="/auth" component={AuthPage} />
