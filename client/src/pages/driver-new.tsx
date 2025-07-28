@@ -254,6 +254,25 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
   const wsRef = useRef<WebSocket | null>(null);
   const { toast } = useToast();
 
+  // Helper function to format address objects
+  const formatAddress = (address: any): string => {
+    if (!address) return 'لا يوجد عنوان';
+    
+    if (typeof address === 'string') return address;
+    
+    if (typeof address === 'object') {
+      const parts = [
+        address.governorate,
+        address.district, 
+        address.neighborhood
+      ].filter(Boolean);
+      
+      return parts.length > 0 ? parts.join(' - ') : 'لا يوجد عنوان';
+    }
+    
+    return 'لا يوجد عنوان';
+  };
+
   // Real-time WebSocket connection for order notifications
   useEffect(() => {
     const connectWebSocket = () => {
@@ -656,7 +675,9 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
                       </div>
                       <div className="flex items-center space-x-2 space-x-reverse">
                         <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600 flex-shrink-0" />
-                        <span className="text-gray-700 truncate">{order.address || 'لا يوجد عنوان'}</span>
+                        <span className="text-gray-700 truncate">
+                          {formatAddress(order.address)}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2 space-x-reverse">
                         <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
