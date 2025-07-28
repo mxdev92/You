@@ -1616,7 +1616,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // For now, we'll use simple password comparison (in production, use bcrypt)
+      console.log('Driver login attempt:', { 
+        email, 
+        providedPassword: password, 
+        storedPassword: driver.passwordHash,
+        match: driver.passwordHash === password 
+      });
+      
       if (driver.passwordHash !== password) {
+        console.log('Password mismatch for driver:', email);
         return res.status(401).json({ message: 'بيانات تسجيل الدخول خاطئة' });
       }
 
