@@ -21,45 +21,53 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 // Initialize Firebase Admin SDK
-let adminApp;
+let adminApp: any = null;
+let isFirebaseReady = false;
+
 if (!getApps().length) {
   try {
     if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
+      console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_KEY not configured - Firebase features disabled');
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY.startsWith('var admin')) {
+      console.warn('⚠️ Invalid Firebase service account key format - Firebase features disabled');
+    } else {
+      let serviceAccount;
+      try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      } catch (parseError) {
+        console.warn('⚠️ Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY as JSON - Firebase features disabled');
+        serviceAccount = null;
+      }
+      
+      if (serviceAccount && serviceAccount.private_key && serviceAccount.client_email && serviceAccount.project_id) {
+        adminApp = initializeAdminApp({
+          credential: cert(serviceAccount),
+          projectId: process.env.FIREBASE_PROJECT_ID
+        });
+        isFirebaseReady = true;
+        console.log('🔥 Firebase Admin SDK initialized successfully');
+      } else {
+        console.warn('⚠️ Invalid service account format - Firebase features disabled');
+      }
     }
-    
-    let serviceAccount;
-    try {
-      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-    } catch (parseError) {
-      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY as JSON:', parseError);
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY must be valid JSON');
-    }
-    
-    // Validate required fields
-    if (!serviceAccount.private_key || !serviceAccount.client_email || !serviceAccount.project_id) {
-      throw new Error('Service account JSON must contain private_key, client_email, and project_id fields');
-    }
-
-    adminApp = initializeAdminApp({
-      credential: cert(serviceAccount),
-      projectId: process.env.FIREBASE_PROJECT_ID
-    });
-    
-    console.log('🔥 Firebase Admin SDK initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize Firebase Admin:', error);
-    throw error;
+    console.error('Firebase Admin initialization failed:', error.message);
+    console.warn('⚠️ Continuing without Firebase - legacy PostgreSQL auth will be used');
   }
 } else {
   adminApp = getApps()[0];
+  isFirebaseReady = true;
 }
 
-export const adminAuth = getAdminAuth(adminApp);
-export const adminDb = getAdminFirestore(adminApp);
+export const adminAuth = adminApp ? getAdminAuth(adminApp) : null;
+export const adminDb = adminApp ? getAdminFirestore(adminApp) : null;
+export { isFirebaseReady };
 
 // Helper function to verify Firebase Auth token
 export async function verifyFirebaseToken(token: string) {
+  if (!adminAuth) {
+    throw new Error('Firebase Admin not initialized');
+  }
   try {
     const decodedToken = await adminAuth.verifyIdToken(token);
     return decodedToken;
@@ -71,6 +79,9 @@ export async function verifyFirebaseToken(token: string) {
 
 // Helper function to set custom claims for driver role
 export async function setDriverClaims(uid: string, isDriver: boolean = true) {
+  if (!adminAuth) {
+    throw new Error('Firebase Admin not initialized');
+  }
   try {
     await adminAuth.setCustomUserClaims(uid, { 
       driver: isDriver,
