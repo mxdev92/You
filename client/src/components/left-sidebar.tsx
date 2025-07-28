@@ -3,7 +3,7 @@ import { User, Wallet, ShoppingBag, Settings, LogOut, MapPin, ChevronDown, Arrow
 import { Button } from "@/components/ui/button";
 import { KiwiLogo } from "@/components/ui/kiwi-logo";
 import { LanguageSelector } from "@/components/language-selector";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
 import { useLanguage } from "@/hooks/use-language";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
@@ -14,9 +14,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Order } from "@shared/schema";
 
 function OrdersHistoryContent() {
-  const { user } = usePostgresAuth();
+  const { user } = useAuth();
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['user-orders', user?.id],
+    queryKey: ['user-orders', user?.uid],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
       const response = await fetch('/api/orders');
@@ -310,7 +310,7 @@ function ShippingForm({ isOpen, onClose, addressData, setAddressData, onSubmit, 
 
 
 export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentView }: LeftSidebarProps) {
-  const { user, logout } = usePostgresAuth();
+  const { user, signOut } = useAuth();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -345,12 +345,13 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
 
   // Auto-load addresses only once when user is authenticated
   useEffect(() => {
-    if (user?.id) {
-      console.log('Left sidebar: Auto-loading addresses for user:', user.id);
-      loadAddresses(user.id);
+    if (user?.uid) {
+      console.log('Left sidebar: Auto-loading addresses for user:', user.uid);
+      // TODO: Convert uid to PostgreSQL user ID for address loading
+      // For now, we'll need to handle this in the backend
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Only depend on user ID, not entire user object
+  }, [user?.uid]); // Only depend on user ID, not entire user object
   
   const handleMenuItemClick = (targetView: string, action?: () => void) => {
     if (!user) {
@@ -380,7 +381,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
   ];
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     onClose();
   };
 
@@ -401,7 +402,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
         neighborhood: addressData.neighborhood,
         notes: addressData.notes,
         isDefault: addressData.is_default || savedAddresses.length === 0,
-        userId: user?.id || 0
+        userId: user?.uid || ''
       });
       
       // Reset form and close
@@ -556,7 +557,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                       <User className="h-8 w-8 text-white" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      {user?.fullName || user?.email?.split('@')[0] || 'مستخدم'}
+                      {user?.displayName || user?.email?.split('@')[0] || 'مستخدم'}
                     </h3>
                     <p className="text-sm text-gray-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                       عضو نشط
@@ -577,7 +578,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               الاسم الكامل
                             </p>
                             <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {user?.fullName || user?.email?.split('@')[0] || 'غير محدد'}
+                              {user?.displayName || user?.email?.split('@')[0] || 'غير محدد'}
                             </p>
                           </div>
                         </div>
@@ -619,7 +620,7 @@ export default function LeftSidebar({ isOpen, onClose, currentView, setCurrentVi
                               رقم الهاتف
                             </p>
                             <p className="text-sm font-medium text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                              {user?.phone || 'غير محدد'}
+                              {user?.phoneNumber || 'غير محدد'}
                             </p>
                           </div>
                         </div>

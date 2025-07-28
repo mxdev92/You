@@ -16,7 +16,7 @@ import WalletSuccess from "@/pages/wallet-success";
 import WalletFailed from "@/pages/wallet-failed";
 import DriverPage from "@/pages/driver-new";
 import NotFound from "@/pages/not-found";
-import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { useAuth } from "@/hooks/use-auth";
 import React from "react";
 
 // Global Error Boundary Component
@@ -100,7 +100,7 @@ function ProtectedAdminRoute() {
 
 // Protected Route Component for regular users
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading } = usePostgresAuth();
+  const { user, loading } = useAuth();
   
   if (loading) {
     return (
