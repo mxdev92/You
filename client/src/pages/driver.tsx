@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Phone, Mail, Lock, LogOut, Package, Clock, MapPin } from 'lucide-react';
+import { User, Phone, Mail, Lock, LogOut, Package, Clock, MapPin, Send, Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/price-utils';
 
@@ -139,6 +139,9 @@ const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {
 const DriverDashboard = ({ driver }: { driver: Driver }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [orderName, setOrderName] = useState('');
+  const [orderAddress, setOrderAddress] = useState('');
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -211,6 +214,59 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
     );
   };
 
+  const handleSendNotification = async () => {
+    if (!orderName.trim() || !orderAddress.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال اسم الطلب والعنوان",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingNotification(true);
+
+    try {
+      const response = await fetch(`/api/drivers/${driver.id}/send-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderName: orderName.trim(),
+          orderAddress: orderAddress.trim(),
+          orderId: null, // Optional order ID
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast({
+          title: "تم الإرسال بنجاح",
+          description: `تم إرسال الإشعار إلى ${data.driver.fullName}`,
+        });
+        setOrderName('');
+        setOrderAddress('');
+      } else {
+        toast({
+          title: "خطأ في الإرسال",
+          description: data.message || "فشل في إرسال الإشعار",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Send notification error:', error);
+      toast({
+        title: "خطأ في الشبكة",
+        description: "تحقق من اتصالك بالإنترنت",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingNotification(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -248,6 +304,71 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
               </Button>
             </div>
           </CardHeader>
+        </Card>
+
+        {/* Send Push Notification Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-blue-600" />
+              إرسال إشعار للسائق
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="orderName">اسم الطلب</Label>
+                  <Input
+                    id="orderName"
+                    value={orderName}
+                    onChange={(e) => setOrderName(e.target.value)}
+                    placeholder="مثال: طلب من محل الخضار"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="orderAddress">عنوان التوصيل</Label>
+                  <Input
+                    id="orderAddress"
+                    value={orderAddress}
+                    onChange={(e) => setOrderAddress(e.target.value)}
+                    placeholder="مثال: شارع الجمهورية - حي الكرادة"
+                    className="text-right"
+                    dir="rtl"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSendNotification}
+                  disabled={isSendingNotification || !orderName.trim() || !orderAddress.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isSendingNotification ? (
+                    <>
+                      <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      جاري الإرسال...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      إرسال الإشعار
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>ملاحظة:</strong> سيتم إرسال إشعار فوري إلى تطبيق الموبايل الخاص بالسائق يحتوي على تفاصيل الطلب والعنوان. 
+                  يمكن للسائق قبول أو رفض الطلب من خلال الإشعار.
+                </p>
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Orders List */}

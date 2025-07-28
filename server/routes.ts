@@ -23,6 +23,7 @@ import { inArray, eq } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { wasenderService } from './wasender-api-service';
 import { zaincashService } from './zaincash-service';
+import { ExpoNotificationService } from './expo-notification-service';
 
 // Initialize WasenderAPI service only
 console.log('🎯 WasenderAPI service initialized - Unified messaging system active');
@@ -1634,6 +1635,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Update notification token error:', error);
       res.status(500).json({ message: 'Failed to update notification token' });
+    }
+  });
+
+  // Send push notification to driver endpoint
+  app.post('/api/drivers/:id/send-notification', async (req, res) => {
+    try {
+      const driverId = parseInt(req.params.id);
+      const { orderName, orderAddress, orderId } = req.body;
+
+      if (!orderName || !orderAddress) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Order name and address are required' 
+        });
+      }
+
+      // Get driver details
+      const [driver] = await db
+        .select()
+        .from(drivers)
+        .where(eq(drivers.id, driverId));
+
+      if (!driver) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Driver not found' 
+        });
+      }
+
+      if (!driver.notificationToken) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Driver does not have a notification token registered' 
+        });
+      }
+
+      // Send push notification
+      const result = await ExpoNotificationService.sendOrderNotification(
+        driver.notificationToken,
+        orderName,
+        orderAddress,
+        orderId
+      );
+
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          message: `Push notification sent successfully to ${driver.fullName}`,
+          driver: {
+            id: driver.id,
+            fullName: driver.fullName,
+            phone: driver.phone
+          },
+          notification: {
+            orderName,
+            orderAddress,
+            sentAt: new Date().toISOString()
+          }
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: `Failed to send notification: ${result.message}` 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending push notification:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send push notification' 
+      });
     }
   });
 
