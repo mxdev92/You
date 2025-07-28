@@ -98,6 +98,12 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 28, 2025:
+• CRITICAL NOTIFICATION TARGETING FIXED: Completely resolved notification broadcasting bug - no more notifications sent to ALL drivers
+• Disabled sendPushNotificationToAllDrivers in order creation route that was causing every driver to receive notifications
+• Disabled global WebSocket broadcasting (notifyDriversOfNewOrder) that was sending popups to all connected drivers
+• Notifications now ONLY sent to specific targeted drivers via admin panel Send Test Notification buttons
+• Fixed notification workflow: Admin selects specific driver → sends targeted Expo push + WebSocket popup to ONLY that driver
+• Production-ready targeted notification system prevents spam and ensures proper driver assignment workflow
 • ULTRA-STABLE WEBVIEW DRIVER AUTHENTICATION COMPLETED: Fixed critical 1-second disconnection issue with bulletproof WebView compatibility
 • Implemented same ultra-stable session configuration as customer login (1-year persistence, session.regenerate(), bulletproof session.save())
 • Enhanced WebSocket connection with mobile/WebView optimizations: heartbeat every 30s, exponential backoff reconnection, connection timeout handling

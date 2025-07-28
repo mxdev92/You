@@ -419,39 +419,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // REAL-TIME DRIVER NOTIFICATIONS - Notify all connected drivers via WebSocket AND Expo Push
       try {
-        // WebSocket notifications for connected drivers
-        if ((global as any).notifyDriversOfNewOrder) {
-          (global as any).notifyDriversOfNewOrder({
-            id: order.id,
-            customerName: order.customerName,
-            customerPhone: order.customerPhone,
-            address: order.address,
-            totalAmount: order.totalAmount,
-            items: order.items
-          });
-          console.log(`🚗 WebSocket driver notification sent for Order ${order.id}`);
-        }
+        // WebSocket notifications DISABLED - This was broadcasting to ALL connected drivers
+        // WebSocket notifications should only be sent to specific drivers via admin panel
+        console.log(`🚗 Order ${order.id} WebSocket notifications will be sent manually via admin panel to targeted drivers`);
 
-        // EXPO PUSH NOTIFICATIONS - Send to all drivers with notification tokens
-        setTimeout(async () => {
-          try {
-            const { sendPushNotificationToAllDrivers } = await import('./expo-notification-service');
-            const notificationResult = await sendPushNotificationToAllDrivers({
-              title: `طلب جديد رقم ${order.id}`,
-              body: `${order.customerName} - ${order.totalAmount} IQD`,
-              data: {
-                orderId: order.id,
-                action: 'new_order',
-                customerName: order.customerName,
-                address: order.address,
-                totalAmount: order.totalAmount
-              }
-            });
-            console.log(`📱 Expo push notifications sent for Order ${order.id}:`, notificationResult);
-          } catch (expoError: any) {
-            console.log(`⚠️ Expo notification error for Order ${order.id}:`, expoError.message || expoError);
-          }
-        }, 200); // Very fast 200ms delay
+        // EXPO PUSH NOTIFICATIONS DISABLED - This was causing ALL drivers to receive notifications
+        // Notifications should only be sent to specific drivers via admin panel
+        console.log(`📱 Order ${order.id} created - notifications will be sent manually via admin panel to targeted drivers`);
 
       } catch (driverNotificationError) {
         console.error('Error in driver notification, but order created successfully:', driverNotificationError);
