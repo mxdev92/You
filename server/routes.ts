@@ -1518,10 +1518,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/drivers', async (req, res) => {
     try {
       const driversList = await db.select().from(drivers).orderBy(drivers.createdAt);
-      res.json(driversList);
+      res.json(driversList || []);
     } catch (error) {
       console.error('Get drivers error:', error);
-      res.status(500).json({ message: 'Failed to get drivers' });
+      res.status(500).json([]);  // Return empty array instead of error object
     }
   });
 
