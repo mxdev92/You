@@ -2,11 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
+import { insertCartItemSchema, insertProductSchema, insertOrderSchema, insertDriverSchema, drivers } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
-import { inArray } from "drizzle-orm";
+import { inArray, eq } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { wasenderService } from './wasender-api-service';
 import { zaincashService } from './zaincash-service';
@@ -1511,6 +1511,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false,
         error: error.message
       });
+    }
+  });
+
+  // Driver Management API Routes
+  app.get('/api/drivers', async (req, res) => {
+    try {
+      const driversList = await db.select().from(drivers).orderBy(drivers.createdAt);
+      res.json(driversList);
+    } catch (error) {
+      console.error('Get drivers error:', error);
+      res.status(500).json({ message: 'Failed to get drivers' });
+    }
+  });
+
+  app.post('/api/drivers', async (req, res) => {
+    try {
+      const result = insertDriverSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: 'Invalid driver data', errors: result.error.errors });
+      }
+
+      const newDriver = await db.insert(drivers).values(result.data).returning();
+      res.json(newDriver[0]);
+    } catch (error: any) {
+      console.error('Create driver error:', error);
+      if (error.code === '23505') { // PostgreSQL unique constraint error
+        res.status(400).json({ message: 'رقم الهاتف أو البريد الإلكتروني مستخدم بالفعل' });
+      } else {
+        res.status(500).json({ message: 'Failed to create driver' });
+      }
+    }
+  });
+
+  app.put('/api/drivers/:id', async (req, res) => {
+    try {
+      const driverId = parseInt(req.params.id);
+      const { isActive, ...updateData } = req.body;
+
+      const updatedDriver = await db
+        .update(drivers)
+        .set({ isActive, ...updateData })
+        .where(eq(drivers.id, driverId))
+        .returning();
+
+      if (updatedDriver.length === 0) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      res.json(updatedDriver[0]);
+    } catch (error) {
+      console.error('Update driver error:', error);
+      res.status(500).json({ message: 'Failed to update driver' });
+    }
+  });
+
+  app.delete('/api/drivers/:id', async (req, res) => {
+    try {
+      const driverId = parseInt(req.params.id);
+
+      const deletedDriver = await db
+        .delete(drivers)
+        .where(eq(drivers.id, driverId))
+        .returning();
+
+      if (deletedDriver.length === 0) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      res.json({ success: true, message: 'Driver deleted successfully' });
+    } catch (error) {
+      console.error('Delete driver error:', error);
+      res.status(500).json({ message: 'Failed to delete driver' });
     }
   });
 
