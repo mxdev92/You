@@ -1736,31 +1736,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderId
       );
 
-      // REAL-TIME WEBSOCKET NOTIFICATION - Send popup to connected drivers like real orders
+      // TARGETED WEBSOCKET NOTIFICATION - Send popup only to THIS specific driver
       try {
-        console.log(`🔍 DEBUG: Checking global notifyDriversOfNewOrder function availability:`, typeof (global as any).notifyDriversOfNewOrder);
-        
-        if ((global as any).notifyDriversOfNewOrder) {
-          const testNotificationData = {
-            id: orderId || 9999, // Use provided orderId or test ID
-            customerName: 'طلب تجريبي من الإدارة',
-            customerPhone: '07700000000',
-            address: orderAddress, // Use the provided address directly
-            totalAmount: 25000, // Test amount
-            items: [
-              { name: orderName, quantity: 1, price: 22500 },
-              { name: 'رسوم التوصيل', quantity: 1, price: 2500 }
-            ]
-          };
+        // Check if this specific driver is connected to WebSocket
+        if (driverConnections.has(driverId)) {
+          const ws = driverConnections.get(driverId);
           
-          console.log(`🚗 SENDING Test WebSocket notification with data:`, testNotificationData);
-          (global as any).notifyDriversOfNewOrder(testNotificationData);
-          console.log(`✅ Test WebSocket notification sent to all connected drivers for test order: ${orderName}`);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            const testNotificationData = {
+              type: 'new_order',
+              orderId: orderId || 9999,
+              customerName: 'طلب تجريبي من الإدارة',
+              customerAddress: orderAddress,
+              totalAmount: 25000,
+              timestamp: new Date().toISOString()
+            };
+            
+            ws.send(JSON.stringify(testNotificationData));
+            console.log(`🎯 TARGETED WebSocket notification sent to driver ${driverId} ONLY:`, testNotificationData);
+          } else {
+            console.log(`📱 Driver ${driverId} not connected to WebSocket (will receive Expo push only)`);
+          }
         } else {
-          console.log(`❌ Global notifyDriversOfNewOrder function not available for test notification`);
+          console.log(`📱 Driver ${driverId} not connected to WebSocket (will receive Expo push only)`);
         }
       } catch (wsError: any) {
-        console.log(`⚠️ WebSocket notification error for test notification:`, wsError.message || wsError);
+        console.log(`⚠️ Targeted WebSocket notification error:`, wsError.message || wsError);
       }
 
       if (result.success) {

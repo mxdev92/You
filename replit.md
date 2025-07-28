@@ -98,6 +98,13 @@ PAKETY is a modern grocery shopping web application built with a full-stack arch
 
 ```
 July 28, 2025:
+• TARGETED NOTIFICATION SYSTEM COMPLETED: Fixed Send Test Notification buttons to work with individual driver cards instead of sending to all drivers
+• Each notification button now sends ONLY to the specific driver shown on that card using driver ID, token, and email
+• Enhanced server endpoint to use targeted WebSocket notifications instead of global broadcast for test notifications
+• Expo push notifications correctly target individual drivers based on their specific notification tokens
+• WebSocket popups now target only the connected driver specified in the button click, not all connected drivers
+• Production workflow: Admin clicks test button → Targets specific driver → Sends Expo push to that driver's token + WebSocket popup to that driver only
+• Complete solution ensures every Send Test Notification button works independently with their respective driver information
 • WEBSOCKET POPUP ISSUE DIAGNOSED AND FIXED: Root cause identified - driver needs to be logged into driver dashboard at /driver route for WebSocket registration to work
 • Enhanced debugging system shows WebSocket notifications work perfectly when driver is authenticated and connected to dashboard
 • Expo push notifications work independently and deliver successfully to mobile devices regardless of WebSocket connection status
