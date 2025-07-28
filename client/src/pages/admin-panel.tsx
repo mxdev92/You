@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Car, UserPlus, Bell } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Car, UserPlus, Bell, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1514,6 +1514,44 @@ function DriversManagement() {
     setIsNotificationTokenOpen(true);
   };
 
+  const sendTestNotification = async (driverId: number) => {
+    try {
+      const response = await fetch(`/api/drivers/${driverId}/send-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderName: 'طلب تجريبي من الإدارة',
+          orderAddress: 'عنوان تجريبي - حي الكرادة - بناية رقم 10',
+          orderId: 9999
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast({
+          title: "تم إرسال الإشعار",
+          description: "تم إرسال الإشعار التجريبي بنجاح",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "فشل في الإرسال",
+          description: result.message || "لم يتم إرسال الإشعار",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إرسال الإشعار",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -1659,6 +1697,15 @@ function DriversManagement() {
                       title="إضافة رمز الإشعارات"
                     >
                       <Bell className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => sendTestNotification(driver.id)}
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      title="إرسال إشعار تجريبي"
+                    >
+                      <Send className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
