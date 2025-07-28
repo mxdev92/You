@@ -125,6 +125,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sync PostgreSQL user to Firebase
+  app.post('/api/dev/sync-to-firebase/:userId', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (user.firebaseUid) {
+        return res.json({ message: 'User already synced to Firebase', firebaseUid: user.firebaseUid });
+      }
+
+      // Import user to Firebase (requires Firebase Admin SDK)
+      const { adminAuth } = await import('./firebase-config');
+      if (!adminAuth) {
+        return res.status(500).json({ message: 'Firebase Admin not initialized' });
+      }
+
+      // Create Firebase user
+      const firebaseUser = await adminAuth.createUser({
+        email: user.email,
+        displayName: user.fullName || undefined,
+        emailVerified: true
+      });
+
+      // Update PostgreSQL user with Firebase UID
+      await db.update(users).set({ firebaseUid: firebaseUser.uid }).where(eq(users.id, userId));
+      
+      console.log(`🔄 User ${user.email} synced to Firebase with UID: ${firebaseUser.uid}`);
+      
+      res.json({ 
+        message: 'User synced to Firebase successfully',
+        firebaseUid: firebaseUser.uid,
+        email: user.email
+      });
+    } catch (error: any) {
+      console.error('Firebase sync error:', error);
+      res.status(500).json({ message: 'Failed to sync user to Firebase' });
+    }
+  });
+
   // Placeholder image endpoint
   app.get("/api/placeholder/:width/:height", (req, res) => {
     const { width, height } = req.params;
