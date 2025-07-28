@@ -1675,40 +1675,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const driverId = parseInt(req.params.id);
       const { orderName, orderAddress, orderId } = req.body;
 
+      console.log(`🎯 TARGETED NOTIFICATION REQUEST: Driver ID ${driverId}, Order: ${orderName}`);
+
       if (!orderName || !orderAddress) {
+        console.log(`❌ Missing order data for driver ${driverId}`);
         return res.status(400).json({ 
           success: false, 
           message: 'Order name and address are required' 
         });
       }
 
-      // Get driver details
+      // Get ONLY this specific driver details
       const [driver] = await db
         .select()
         .from(drivers)
         .where(eq(drivers.id, driverId));
 
       if (!driver) {
+        console.log(`❌ Driver ${driverId} not found in database`);
         return res.status(404).json({ 
           success: false, 
           message: 'Driver not found' 
         });
       }
 
+      console.log(`🔍 Driver ${driverId} details:`, {
+        id: driver.id,
+        name: driver.fullName,
+        hasToken: !!driver.notificationToken,
+        tokenPreview: driver.notificationToken ? `${driver.notificationToken.substring(0, 20)}...` : 'NO TOKEN'
+      });
+
       if (!driver.notificationToken) {
+        console.log(`❌ Driver ${driverId} has NO notification token - aborting`);
         return res.status(400).json({ 
           success: false, 
           message: 'Driver does not have a notification token registered' 
         });
       }
 
-      // Send push notification
+      // Send push notification to ONLY this driver's token
+      console.log(`📱 Sending notification to ONLY driver ${driverId} with token: ${driver.notificationToken.substring(0, 20)}...`);
       const result = await ExpoNotificationService.sendOrderNotification(
         driver.notificationToken,
         orderName,
         orderAddress,
         orderId
       );
+      console.log(`📱 Notification result for driver ${driverId}:`, result);
 
       // TARGETED WEBSOCKET NOTIFICATION - Send popup only to THIS specific driver
       try {

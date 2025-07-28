@@ -1517,9 +1517,11 @@ function DriversManagement() {
   const [isSendingTestNotification, setIsSendingTestNotification] = useState<number | null>(null);
 
   const sendTestNotification = async (driverId: number) => {
+    console.log(`🎯 ADMIN PANEL - Sending test notification to DRIVER ID: ${driverId} ONLY`);
     setIsSendingTestNotification(driverId);
     
     try {
+      console.log(`📱 ADMIN PANEL - Making API call to /api/drivers/${driverId}/send-notification`);
       const response = await fetch(`/api/drivers/${driverId}/send-notification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1529,6 +1531,8 @@ function DriversManagement() {
           orderId: 9999
         })
       });
+      
+      console.log(`📊 ADMIN PANEL - API response status: ${response.status}`);
 
       const result = await response.json();
 

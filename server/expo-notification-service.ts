@@ -14,8 +14,12 @@ export class ExpoNotificationService {
 
   static async sendNotification(payload: NotificationPayload): Promise<{ success: boolean; message: string; data?: any }> {
     try {
+      console.log(`🔥 EXPO NOTIFICATION SERVICE - Sending to token: ${payload.to.substring(0, 20)}...`);
+      console.log(`🔥 EXPO NOTIFICATION - Title: ${payload.title}, Body: ${payload.body}`);
+      
       // Validate Expo push token format
       if (!this.isValidExpoToken(payload.to)) {
+        console.log(`❌ EXPO NOTIFICATION - Invalid token format: ${payload.to}`);
         return {
           success: false,
           message: 'Invalid Expo push token format'
@@ -32,6 +36,11 @@ export class ExpoNotificationService {
         channelId: 'default',
         priority: 'high'
       };
+
+      console.log(`🚀 EXPO NOTIFICATION - Sending to Expo API:`, {
+        to: notification.to.substring(0, 20) + '...',
+        title: notification.title
+      });
 
       const response = await fetch(this.EXPO_PUSH_URL, {
         method: 'POST',
