@@ -273,37 +273,69 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
     return 'لا يوجد عنوان';
   };
 
-  // Real-time WebSocket connection for order notifications
+  // ULTRA-STABLE WebSocket connection optimized for WebView compatibility
   useEffect(() => {
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 50; // Increased for WebView stability
+    let heartbeatInterval: NodeJS.Timeout;
+    
     const connectWebSocket = () => {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host}/ws`;
       
-      console.log(`🔌 Attempting WebSocket connection to: ${wsUrl}`);
-      console.log(`🚗 Driver Info:`, { id: driver.id, name: driver.fullName });
+      console.log(`🔌 [WebView] Attempting WebSocket connection to: ${wsUrl}`);
+      console.log(`🚗 [WebView] Driver Info:`, { id: driver.id, name: driver.fullName });
+      console.log(`🔄 [WebView] Reconnect attempt: ${reconnectAttempts + 1}/${maxReconnectAttempts}`);
       
+      // Enhanced WebSocket with mobile/WebView optimizations
       wsRef.current = new WebSocket(wsUrl);
       
+      // Set connection timeout for WebView environments
+      const connectionTimeout = setTimeout(() => {
+        if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
+          console.log('⏰ [WebView] Connection timeout - forcing close and retry');
+          wsRef.current.close();
+        }
+      }, 10000); // 10-second timeout for WebView
+      
       wsRef.current.onopen = () => {
-        console.log('🟢 WebSocket connection ESTABLISHED for driver notifications');
+        clearTimeout(connectionTimeout);
+        console.log('✅ [WebView] WebSocket connected successfully!');
         setConnectionStatus('connected');
+        reconnectAttempts = 0; // Reset on successful connection
         
-        // Immediate registration since connection is confirmed open
+        // Start heartbeat for WebView connection stability
+        heartbeatInterval = setInterval(() => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'ping', driverId: driver.id }));
+            console.log('💗 [WebView] Heartbeat sent');
+          }
+        }, 30000); // Send heartbeat every 30 seconds
+        
+        // Register driver for notifications immediately when connection opens
         const registrationMessage = {
           type: 'driver_register',
-          driverId: driver.id
+          driverId: driver.id,
+          driverName: driver.fullName,
+          platform: 'webview', // Identify as WebView client
+          timestamp: Date.now()
         };
-        console.log(`🚗 SENDING Driver registration message:`, registrationMessage);
+        console.log(`🚗 [WebView] SENDING Driver registration message:`, registrationMessage);
         wsRef.current.send(JSON.stringify(registrationMessage));
-        console.log(`✅ Driver ${driver.id} registration message sent successfully`);
+        console.log(`✅ [WebView] Driver ${driver.id} registration message sent successfully`);
         
-        // Retry registration if no confirmation received within 3 seconds
-        setTimeout(() => {
+        // Enhanced registration retry for WebView stability
+        const retryRegistration = () => {
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            console.log(`🔄 Retrying driver registration for driver ${driver.id}`);
+            console.log(`🔄 [WebView] Retrying driver registration for driver ${driver.id}`);
             wsRef.current.send(JSON.stringify(registrationMessage));
           }
-        }, 3000);
+        };
+        
+        // Multiple retry attempts for WebView reliability
+        setTimeout(retryRegistration, 2000);
+        setTimeout(retryRegistration, 5000);
+        setTimeout(retryRegistration, 10000);
       };
       
       wsRef.current.onmessage = (event) => {
@@ -350,39 +382,102 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
         }
       };
       
-      wsRef.current.onclose = () => {
-        console.log('🔴 WebSocket disconnected, attempting to reconnect...');
+      wsRef.current.onclose = (event) => {
+        clearInterval(heartbeatInterval);
+        console.log(`🔴 [WebView] WebSocket disconnected (code: ${event.code}, reason: ${event.reason})`);
         setConnectionStatus('disconnected');
         
-        // Reconnect after 2 seconds (faster reconnection)
-        setTimeout(() => {
-          console.log('🔄 Attempting WebSocket reconnection...');
-          setConnectionStatus('connecting');
-          connectWebSocket();
-        }, 2000);
+        // Enhanced reconnection logic for WebView stability
+        if (reconnectAttempts < maxReconnectAttempts) {
+          reconnectAttempts++;
+          const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff up to 30s
+          
+          console.log(`🔄 [WebView] Attempting reconnection ${reconnectAttempts}/${maxReconnectAttempts} in ${backoffDelay}ms`);
+          setTimeout(() => {
+            if (reconnectAttempts <= maxReconnectAttempts) {
+              setConnectionStatus('connecting');
+              connectWebSocket();
+            }
+          }, backoffDelay);
+        } else {
+          console.log('❌ [WebView] Max reconnection attempts reached. Connection permanently failed.');
+          setConnectionStatus('disconnected');
+        }
       };
       
       wsRef.current.onerror = (error) => {
-        console.error('❌ WebSocket connection error:', error);
+        clearInterval(heartbeatInterval);
+        console.error('❌ [WebView] WebSocket connection error:', error);
         setConnectionStatus('disconnected');
         
-        // Force reconnection on error
-        setTimeout(() => {
-          console.log('🔄 Reconnecting after WebSocket error...');
-          setConnectionStatus('connecting');
-          connectWebSocket();
-        }, 1000);
+        // Immediate reconnection attempt on error for WebView environments
+        if (reconnectAttempts < maxReconnectAttempts) {
+          setTimeout(() => {
+            console.log('🔄 [WebView] Reconnecting immediately after error...');
+            setConnectionStatus('connecting');
+            connectWebSocket();
+          }, 500); // Quick retry on error
+        }
       };
     };
 
     connectWebSocket();
 
+    // Enhanced cleanup for WebView environments
     return () => {
+      console.log('🧹 [WebView] Cleaning up WebSocket connection...');
+      clearInterval(heartbeatInterval);
+      reconnectAttempts = maxReconnectAttempts; // Prevent reconnection on cleanup
+      
       if (wsRef.current) {
-        wsRef.current.close();
+        wsRef.current.close(1000, 'Component unmounting');
       }
     };
   }, [driver.id]);
+
+  // Page visibility listener for WebView stability
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('📱 [WebView] App became visible - checking connection...');
+        if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
+          console.log('🔄 [WebView] Reconnecting after app became visible...');
+          setConnectionStatus('connecting');
+          // Reset attempts when app becomes visible again
+          reconnectAttempts = 0;
+          connectWebSocket();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // App state listeners for mobile/WebView environments
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('🌐 [WebView] Network came online - reconnecting...');
+      if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
+        reconnectAttempts = 0; // Reset on network recovery
+        setConnectionStatus('connecting');
+        connectWebSocket();
+      }
+    };
+
+    const handleOffline = () => {
+      console.log('📴 [WebView] Network went offline');
+      setConnectionStatus('disconnected');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     loadOrders();
