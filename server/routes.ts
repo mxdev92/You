@@ -417,8 +417,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
 
-      // REAL-TIME DRIVER NOTIFICATIONS - Notify all connected drivers
+      // REAL-TIME DRIVER NOTIFICATIONS - Notify all connected drivers via WebSocket AND Expo Push
       try {
+        // WebSocket notifications for connected drivers
         if ((global as any).notifyDriversOfNewOrder) {
           (global as any).notifyDriversOfNewOrder({
             id: order.id,
@@ -428,8 +429,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalAmount: order.totalAmount,
             items: order.items
           });
-          console.log(`🚗 Driver notification sent for Order ${order.id}`);
+          console.log(`🚗 WebSocket driver notification sent for Order ${order.id}`);
         }
+
+        // EXPO PUSH NOTIFICATIONS - Send to all drivers with notification tokens
+        setTimeout(async () => {
+          try {
+            const { sendPushNotificationToAllDrivers } = await import('./expo-notification-service');
+            const notificationResult = await sendPushNotificationToAllDrivers({
+              title: `طلب جديد رقم ${order.id}`,
+              body: `${order.customerName} - ${order.totalAmount} IQD`,
+              data: {
+                orderId: order.id,
+                action: 'new_order',
+                customerName: order.customerName,
+                address: order.address,
+                totalAmount: order.totalAmount
+              }
+            });
+            console.log(`📱 Expo push notifications sent for Order ${order.id}:`, notificationResult);
+          } catch (expoError: any) {
+            console.log(`⚠️ Expo notification error for Order ${order.id}:`, expoError.message || expoError);
+          }
+        }, 200); // Very fast 200ms delay
+
       } catch (driverNotificationError) {
         console.error('Error in driver notification, but order created successfully:', driverNotificationError);
       }
@@ -446,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Send to customer via WasenderAPI
           const customerResult = await wasenderService.sendPDFDocument(
-            order.phone, 
+            order.customerPhone, 
             pdfBuffer, 
             fileName, 
             `🧾 فاتورة الطلب رقم ${order.id}\n\nشكراً لك على اختيار باكيتي للتوصيل السريع 💚`
@@ -457,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             '07511856947', 
             pdfBuffer, 
             `admin-${fileName}`, 
-            `📋 *طلب جديد رقم ${order.id}*\n\n👤 العميل: ${order.customerName}\n📱 الهاتف: ${order.phone}\n💰 المبلغ الإجمالي: ${order.totalAmount} IQD`
+            `📋 *طلب جديد رقم ${order.id}*\n\n👤 العميل: ${order.customerName}\n📱 الهاتف: ${order.customerPhone}\n💰 المبلغ الإجمالي: ${order.totalAmount} IQD`
           );
 
           console.log(`✅ WasenderAPI PDF delivery completed for Order ${order.id} - Customer: ${customerResult.success}, Admin: ${adminResult.success}`);
@@ -2302,7 +2325,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .update(ordersTable)
         .set({ 
           status: 'confirmed',
-          driverId: driverId
+          driverId: driverId,
+          assignedAt: new Date()
         })
         .where(eq(ordersTable.id, orderId))
         .returning();
@@ -2310,6 +2334,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updatedOrder.length === 0) {
         return res.status(404).json({ message: 'Order not found' });
       }
+
+      // SEND INVOICE TO ACCEPTING DRIVER ONLY
+      setTimeout(async () => {
+        try {
+          // Get driver details to send WhatsApp invoice
+          const [driver] = await db.select().from(driversTable).where(eq(driversTable.id, driverId));
+          
+          if (driver && driver.phone) {
+            // Generate PDF invoice for driver
+            const { generateInvoicePDF } = await import('./invoice-generator');
+            const pdfBuffer = await generateInvoicePDF(updatedOrder[0]);
+            const fileName = `driver-order-${updatedOrder[0].id}.pdf`;
+
+            // Send invoice to accepting driver via WasenderAPI
+            const driverResult = await wasenderService.sendPDFDocument(
+              driver.phone,
+              pdfBuffer,
+              fileName,
+              `🚗 *تم قبول الطلب رقم ${updatedOrder[0].id}*\n\n📋 فاتورة التوصيل\n👤 العميل: ${updatedOrder[0].customerName}\n📱 الهاتف: ${updatedOrder[0].customerPhone}\n💰 المبلغ: ${updatedOrder[0].totalAmount} IQD\n\n✅ تم تخصيص الطلب لك بنجاح`
+            );
+
+            console.log(`🚗✅ Driver invoice delivered for Order ${updatedOrder[0].id} to driver ${driver.fullName} (${driver.phone}): ${driverResult.success}`);
+          }
+        } catch (error: any) {
+          console.log(`⚠️ Driver invoice delivery error for Order ${updatedOrder[0].id}:`, error.message || error);
+        }
+      }, 1000); // 1 second delay
 
       res.json({ success: true, order: updatedOrder[0] });
 
@@ -2332,7 +2383,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .update(ordersTable)
         .set({ 
           status: 'pending', // Reset to pending for other drivers
-          driverId: null
+          driverId: null,
+          assignedAt: null
         })
         .where(eq(ordersTable.id, orderId))
         .returning();

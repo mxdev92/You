@@ -92,6 +92,12 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method").default("cash").notNull(),
   items: jsonb("items").notNull(),
   totalAmount: integer("total_amount").notNull(),
+  driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
+  assignedAt: timestamp("assigned_at"),
+  pickedUpAt: timestamp("picked_up_at"),
+  deliveredAt: timestamp("delivered_at"),
+  driverNotes: text("driver_notes"),
+  deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).default("2500.00"),
 
   status: text("status").notNull().default("pending"),
   orderDate: timestamp("order_date", { withTimezone: true }).defaultNow().notNull(),
