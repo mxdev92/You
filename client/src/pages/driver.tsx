@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { User, Phone, Mail, Lock, LogOut, Package, Clock, MapPin, Send, Bell } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { User, Phone, Mail, Lock, LogOut, Package, Clock, MapPin, Send, Bell, CheckCircle, XCircle, DollarSign, Truck, AlertCircle, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/price-utils';
 
@@ -13,6 +15,8 @@ interface Driver {
   email: string;
   fullName: string;
   phone: string;
+  isActive?: boolean;
+  notificationToken?: string;
 }
 
 interface Order {
@@ -24,6 +28,14 @@ interface Order {
   totalAmount: number;
   createdAt: string;
   items: any[];
+}
+
+interface NewOrderNotification {
+  orderId: number;
+  customerName: string;
+  customerAddress: string;
+  totalAmount: number;
+  timestamp: string;
 }
 
 const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {

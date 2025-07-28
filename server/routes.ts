@@ -417,6 +417,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
       }
 
+      // REAL-TIME DRIVER NOTIFICATIONS - Notify all connected drivers
+      try {
+        if ((global as any).notifyDriversOfNewOrder) {
+          (global as any).notifyDriversOfNewOrder({
+            id: order.id,
+            customerName: order.customerName,
+            customerPhone: order.customerPhone,
+            address: order.address,
+            totalAmount: order.totalAmount,
+            items: order.items
+          });
+          console.log(`🚗 Driver notification sent for Order ${order.id}`);
+        }
+      } catch (driverNotificationError) {
+        console.error('Error in driver notification, but order created successfully:', driverNotificationError);
+      }
+
       // WASENDERAPI PDF DELIVERY - Unified messaging system
       console.log(`🚀 Starting WasenderAPI PDF delivery for Order ${order.id}`);
       
@@ -2190,6 +2207,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Driver authentication check endpoint
+  app.get('/api/driver/auth-check', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.json({ success: false, driver: null });
+      }
+
+      const [driver] = await db.select().from(drivers).where(eq(drivers.id, req.session.driverId));
+
+      if (!driver) {
+        req.session.destroy(() => {});
+        return res.json({ success: false, driver: null });
+      }
+
+      res.json({
+        success: true,
+        driver: {
+          id: driver.id,
+          email: driver.email,
+          fullName: driver.fullName,
+          phone: driver.phone,
+          isActive: driver.isActive
+        }
+      });
+
+    } catch (error) {
+      console.error('Driver auth check error:', error);
+      res.json({ success: false, driver: null });
+    }
+  });
+
+  // Driver stats endpoint
+  app.get('/api/driver/stats', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'غير مسجل دخول' });
+      }
+
+      // Calculate today's stats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Get recent orders for stats calculation
+      const allOrders = await db.select().from(ordersTable);
+      
+      const todayOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate >= today;
+      }).length;
+
+      const completedOrders = allOrders.filter(order => 
+        order.status === 'delivered'
+      ).length;
+
+      const pendingOrders = allOrders.filter(order => 
+        ['pending', 'confirmed', 'preparing', 'out-for-delivery'].includes(order.status)
+      ).length;
+
+      // Calculate total earnings (simplified - in real app would be driver-specific)
+      const totalEarnings = allOrders
+        .filter(order => order.status === 'delivered')
+        .reduce((sum, order) => sum + (order.totalAmount * 0.1), 0); // Assuming 10% commission
+
+      res.json({
+        todayOrders,
+        completedOrders,
+        pendingOrders,
+        totalEarnings: Math.round(totalEarnings)
+      });
+
+    } catch (error) {
+      console.error('Get driver stats error:', error);
+      res.status(500).json({
+        todayOrders: 0,
+        completedOrders: 0,
+        pendingOrders: 0,
+        totalEarnings: 0
+      });
+    }
+  });
+
+  // Order accept endpoint
+  app.patch('/api/orders/:id/accept', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'غير مسجل دخول' });
+      }
+
+      const orderId = parseInt(req.params.id);
+      const { driverId } = req.body;
+
+      const updatedOrder = await db
+        .update(ordersTable)
+        .set({ 
+          status: 'confirmed',
+          driverId: driverId
+        })
+        .where(eq(ordersTable.id, orderId))
+        .returning();
+
+      if (updatedOrder.length === 0) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      res.json({ success: true, order: updatedOrder[0] });
+
+    } catch (error) {
+      console.error('Accept order error:', error);
+      res.status(500).json({ message: 'Failed to accept order' });
+    }
+  });
+
+  // Order reject endpoint
+  app.patch('/api/orders/:id/reject', async (req, res) => {
+    try {
+      if (!req.session.driverId) {
+        return res.status(401).json({ message: 'غير مسجل دخول' });
+      }
+
+      const orderId = parseInt(req.params.id);
+
+      const updatedOrder = await db
+        .update(ordersTable)
+        .set({ 
+          status: 'pending', // Reset to pending for other drivers
+          driverId: null
+        })
+        .where(eq(ordersTable.id, orderId))
+        .returning();
+
+      if (updatedOrder.length === 0) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+
+      res.json({ success: true, order: updatedOrder[0] });
+
+    } catch (error) {
+      console.error('Reject order error:', error);
+      res.status(500).json({ message: 'Failed to reject order' });
+    }
+  });
+
   // API 404 handler - MUST be after all other API routes
   app.use('/api/*', (req, res) => {
     console.log(`API 404 - Route not found: ${req.method} ${req.path}`);
@@ -2203,6 +2362,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;
 
+  // Driver WebSocket connections registry
+  const driverConnections = new Map<number, WebSocket>();
+
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected for real-time updates');
     
@@ -2211,8 +2373,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const message = JSON.parse(data.toString());
         console.log('Received WebSocket message:', message);
         
-        // Echo message to all connected clients
-        broadcastToClients(message);
+        // Handle driver registration
+        if (message.type === 'driver_register') {
+          const driverId = message.driverId;
+          if (driverId) {
+            driverConnections.set(driverId, ws);
+            console.log(`Driver ${driverId} registered for real-time notifications`);
+            
+            // Send confirmation
+            ws.send(JSON.stringify({
+              type: 'registration_confirmed',
+              driverId: driverId,
+              timestamp: new Date().toISOString()
+            }));
+          }
+        } else {
+          // Echo message to all connected clients
+          broadcastToClients(message);
+        }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
       }
@@ -2220,8 +2398,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     ws.on('close', () => {
       console.log('WebSocket client disconnected');
+      
+      // Remove driver from registry if it was registered
+      for (const [driverId, connection] of driverConnections.entries()) {
+        if (connection === ws) {
+          driverConnections.delete(driverId);
+          console.log(`Driver ${driverId} disconnected from real-time notifications`);
+          break;
+        }
+      }
     });
   });
+
+  // Function to notify drivers of new orders
+  function notifyDriversOfNewOrder(orderData: any) {
+    const notification = {
+      type: 'new_order',
+      orderId: orderData.id,
+      customerName: orderData.customerName,
+      customerAddress: orderData.address?.fullAddress || orderData.address || 'لا يوجد عنوان',
+      totalAmount: orderData.totalAmount,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('Notifying drivers of new order:', notification);
+
+    // Send to all connected drivers
+    for (const [driverId, ws] of driverConnections.entries()) {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify(notification));
+          console.log(`Order notification sent to driver ${driverId}`);
+        } catch (error) {
+          console.error(`Failed to send notification to driver ${driverId}:`, error);
+          // Remove disconnected driver
+          driverConnections.delete(driverId);
+        }
+      } else {
+        // Remove disconnected driver
+        driverConnections.delete(driverId);
+      }
+    }
+  }
+
+  // Make the notification function globally available
+  (global as any).notifyDriversOfNewOrder = notifyDriversOfNewOrder;
 
   return httpServer;
 }
