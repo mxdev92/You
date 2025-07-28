@@ -26,16 +26,19 @@ let isFirebaseReady = false;
 
 if (!getApps().length) {
   try {
-    if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_KEY not configured - Firebase features disabled');
-    } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY.startsWith('var admin')) {
+    // Try FIREBASE_SERVICE_ACCOUNT_KEY2 first, then fallback to original
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY2 || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    
+    if (!serviceAccountKey) {
+      console.warn('⚠️ No Firebase service account key configured - Firebase features disabled');
+    } else if (serviceAccountKey.startsWith('var admin')) {
       console.warn('⚠️ Invalid Firebase service account key format - Firebase features disabled');
     } else {
       let serviceAccount;
       try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        serviceAccount = JSON.parse(serviceAccountKey);
       } catch (parseError) {
-        console.warn('⚠️ Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY as JSON - Firebase features disabled');
+        console.warn('⚠️ Failed to parse Firebase service account key as JSON - Firebase features disabled');
         serviceAccount = null;
       }
       
