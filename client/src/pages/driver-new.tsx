@@ -251,6 +251,8 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
     pendingOrders: 0,
     totalEarnings: 0
   });
+  const [offlineQueue, setOfflineQueue] = useState<NewOrderNotification[]>([]);
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(Date.now());
   const wsRef = useRef<WebSocket | null>(null);
   const { toast } = useToast();
 
@@ -343,11 +345,24 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
           driverName: driver.fullName,
           platform: 'background-persistent', // Identify as background-persistent client
           backgrounded: isBackgrounded,
+          lastSyncTimestamp: lastSyncTimestamp, // Include last sync time for missed orders
           timestamp: Date.now()
         };
         console.log(`🚗 [BACKGROUND-PERSISTENT] SENDING Driver registration message:`, registrationMessage);
         wsRef.current.send(JSON.stringify(registrationMessage));
         console.log(`✅ [BACKGROUND-PERSISTENT] Driver ${driver.id} registration message sent successfully`);
+        
+        // Request missed orders since last sync
+        setTimeout(() => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              type: 'request_missed_orders',
+              driverId: driver.id,
+              since: lastSyncTimestamp
+            }));
+            console.log(`📞 Requesting missed orders since ${new Date(lastSyncTimestamp).toISOString()}`);
+          }
+        }, 1000);
         
         // Enhanced registration retry for background persistence
         const retryRegistration = () => {
@@ -390,6 +405,9 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
             setIsOrderPopupOpen(true);
             console.log('🎯 Popup state set to TRUE - should appear now!');
             
+            // Update last sync timestamp
+            setLastSyncTimestamp(Date.now());
+            
             // Play notification sound (optional)
             try {
               const audio = new Audio('/notification-sound.mp3');
@@ -397,6 +415,33 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
             } catch (e) {
               // Ignore sound errors
             }
+          } else if (data.type === 'missed_orders') {
+            console.log('📊 [OFFLINE-SYNC] Missed orders received:', data.orders);
+            
+            // Process each missed order
+            if (data.orders && data.orders.length > 0) {
+              data.orders.forEach((order: any) => {
+                console.log('📄 [OFFLINE-SYNC] Processing missed order:', order);
+                
+                setOfflineQueue(prev => [...prev, {
+                  orderId: order.orderId,
+                  customerName: order.customerName,
+                  customerAddress: order.customerAddress,
+                  totalAmount: order.totalAmount,
+                  timestamp: order.timestamp
+                }]);
+              });
+              
+              // Show notification for missed orders
+              toast({
+                title: `${data.orders.length} طلبات فائتة`,
+                description: "تم استلام الطلبات التي فاتتك أثناء انقطاع الاتصال",
+                className: "bg-blue-100 border-blue-500 text-blue-800 font-cairo",
+              });
+            }
+            
+            // Update last sync timestamp
+            setLastSyncTimestamp(Date.now());
           } else if (data.type === 'registration_confirmed') {
             console.log('✅ Driver registration confirmed by server:', data);
             console.log(`🎯 Driver ${driver.id} is now REGISTERED for notifications!`);
@@ -476,9 +521,18 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
     };
 
     const handleOnline = () => {
-      console.log('🌐 [BACKGROUND-PERSISTENT] Network came online - ensuring connection...');
+      console.log('🌐 [BACKGROUND-PERSISTENT] Network came online - syncing missed orders...');
       if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
         setConnectionStatus('connecting');
+      }
+      // Sync missed orders when coming back online
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'request_missed_orders',
+          driverId: driver.id,
+          since: lastSyncTimestamp
+        }));
+        console.log(`📞 [OFFLINE-SYNC] Requesting missed orders since ${new Date(lastSyncTimestamp).toISOString()}`);
       }
     };
 
@@ -814,6 +868,37 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Offline Queue Notification */}
+        {offlineQueue.length > 0 && (
+          <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 shadow-lg mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📊</span>
+                  <div>
+                    <div className="font-semibold text-orange-700">طلبات فائتة</div>
+                    <div className="text-sm text-orange-600">{offlineQueue.length} طلبات في انتظار المراجعة</div>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    // Show first offline order
+                    if (offlineQueue.length > 0) {
+                      setNewOrderNotification(offlineQueue[0]);
+                      setIsOrderPopupOpen(true);
+                      setOfflineQueue(prev => prev.slice(1));
+                    }
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                  size="sm"
+                >
+                  مراجعة
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Orders List - Mobile Optimized */}
         <Card className="shadow-lg border-0">

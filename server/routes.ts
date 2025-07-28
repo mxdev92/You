@@ -427,6 +427,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Notifications should only be sent to specific drivers via admin panel
         console.log(`📱 Order ${order.id} created - notifications will be sent manually via admin panel to targeted drivers`);
 
+        // Store order as "missed" for offline drivers
+        const orderNotification = {
+          type: 'new_order',
+          orderId: order.id,
+          customerName: order.customerName,
+          customerAddress: order.address,
+          totalAmount: order.totalAmount,
+          timestamp: new Date().toISOString()
+        };
+
+        // Get all active drivers from database
+        const allDrivers = await db.select().from(drivers).where(eq(drivers.isActive, true));
+        
+        for (const driver of allDrivers) {
+          const driverId = driver.id;
+          
+          // Check if driver is currently connected
+          if (!driverConnections.has(driverId)) {
+            // Driver is offline - add to missed orders
+            const driverIdString = driverId.toString();
+            if (!missedOrders.has(driverIdString)) {
+              missedOrders.set(driverIdString, []);
+            }
+            missedOrders.get(driverIdString)?.push(orderNotification);
+            console.log(`📊 [OFFLINE-SYNC] Order ${order.id} added to missed orders for offline driver ${driverId}`);
+          }
+        }
+
       } catch (driverNotificationError) {
         console.error('Error in driver notification, but order created successfully:', driverNotificationError);
       }
@@ -2485,6 +2513,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // BACKGROUND-PERSISTENT Driver WebSocket connections registry
   const driverConnections = new Map<number, { ws: WebSocket, lastSeen: number, backgrounded: boolean, platform: string }>();
 
+  // Missed orders tracking for offline synchronization
+  const missedOrders = new Map<string, any[]>(); // driverId -> array of missed orders
+
   wss.on('connection', (ws) => {
     console.log('🔌 [BACKGROUND-PERSISTENT] WebSocket client connected for real-time updates');
     
@@ -2514,6 +2545,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`📊 Total connected drivers: ${driverConnections.size}`);
             console.log(`📋 CURRENT CONNECTED DRIVERS: [${Array.from(driverConnections.keys()).join(', ')}]`);
             
+            // Check for missed orders since last sync timestamp
+            if (message.lastSyncTimestamp) {
+              const driverIdString = driverId.toString();
+              if (missedOrders.has(driverIdString)) {
+                const driverMissedOrders = missedOrders.get(driverIdString) || [];
+                if (driverMissedOrders.length > 0) {
+                  console.log(`📊 [OFFLINE-SYNC] Sending ${driverMissedOrders.length} missed orders to driver ${driverId}`);
+                  
+                  ws.send(JSON.stringify({
+                    type: 'missed_orders',
+                    orders: driverMissedOrders,
+                    timestamp: Date.now()
+                  }));
+                  
+                  // Clear missed orders after sending
+                  missedOrders.delete(driverIdString);
+                }
+              }
+            }
+            
             // Send confirmation back to driver
             const confirmationMessage = {
               type: 'registration_confirmed',
@@ -2528,6 +2579,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`✅ [BACKGROUND-PERSISTENT] Registration confirmation sent to driver ${driverId}`);
           } else {
             console.log(`❌ Driver registration FAILED - no driverId provided in message:`, message);
+          }
+        }
+        
+        // Handle missed orders request
+        else if (message.type === 'request_missed_orders') {
+          const driverId = parseInt(message.driverId);
+          const since = message.since || 0;
+          
+          console.log(`📞 [OFFLINE-SYNC] Driver ${driverId} requesting missed orders since ${new Date(since).toISOString()}`);
+          
+          const driverIdString = driverId.toString();
+          const driverMissedOrders = missedOrders.get(driverIdString) || [];
+          
+          if (driverMissedOrders.length > 0) {
+            console.log(`📊 [OFFLINE-SYNC] Sending ${driverMissedOrders.length} missed orders to driver ${driverId}`);
+            
+            ws.send(JSON.stringify({
+              type: 'missed_orders',
+              orders: driverMissedOrders,
+              timestamp: Date.now()
+            }));
+            
+            // Clear missed orders after sending
+            missedOrders.delete(driverIdString);
+          } else {
+            console.log(`📊 [OFFLINE-SYNC] No missed orders for driver ${driverId}`);
+            
+            ws.send(JSON.stringify({
+              type: 'missed_orders',
+              orders: [],
+              timestamp: Date.now()
+            }));
           }
         }
         
