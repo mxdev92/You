@@ -56,67 +56,67 @@ const OrderNotificationPopup = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md animate-in slide-in-from-top-4" dir="rtl">
+      <DialogContent className="w-[95vw] max-w-sm mx-auto animate-in slide-in-from-top-4 rounded-lg" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl font-bold text-green-600 flex items-center justify-center gap-2">
-            <Bell className="h-6 w-6 animate-pulse" />
+          <DialogTitle className="text-center text-lg sm:text-xl font-bold text-green-600 flex items-center justify-center gap-2">
+            <Bell className="h-5 w-5 sm:h-6 sm:w-6 animate-pulse" />
             طلب جديد
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-3">
           {/* Customer Name */}
-          <div className="space-y-2">
-            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+          <div className="space-y-1">
+            <Label className="text-gray-700 font-semibold flex items-center gap-2 text-sm">
               <User className="h-4 w-4 text-blue-600" />
               اسم صاحب الطلبية
             </Label>
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <p className="font-medium text-blue-900">{notification.customerName}</p>
+            <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-200">
+              <p className="font-medium text-blue-900 text-sm">{notification.customerName}</p>
             </div>
           </div>
 
           {/* Customer Address */}
-          <div className="space-y-2">
-            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+          <div className="space-y-1">
+            <Label className="text-gray-700 font-semibold flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-orange-600" />
               عنوان صاحب الطلبية
             </Label>
-            <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-              <p className="font-medium text-orange-900">{notification.customerAddress}</p>
+            <div className="bg-orange-50 p-2.5 rounded-lg border border-orange-200">
+              <p className="font-medium text-orange-900 text-sm leading-relaxed">{notification.customerAddress}</p>
             </div>
           </div>
 
           {/* Total Price */}
-          <div className="space-y-2">
-            <Label className="text-gray-700 font-semibold flex items-center gap-2">
+          <div className="space-y-1">
+            <Label className="text-gray-700 font-semibold flex items-center gap-2 text-sm">
               <DollarSign className="h-4 w-4 text-green-600" />
               السعر الكلي
             </Label>
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <p className="font-bold text-green-700 text-xl text-center">
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <p className="font-bold text-green-700 text-lg text-center">
                 {formatPrice(notification.totalAmount)} دينار عراقي
               </p>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 pt-3">
             <Button
               onClick={onAccept}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-4 text-lg shadow-lg hover:shadow-xl transition-all"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 text-base shadow-lg hover:shadow-xl transition-all touch-manipulation"
               size="lg"
             >
-              <CheckCircle className="h-5 w-5 ml-2" />
+              <CheckCircle className="h-4 w-4 ml-2" />
               قبول
             </Button>
             <Button
               onClick={onReject}
               variant="destructive"
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-4 text-lg shadow-lg hover:shadow-xl transition-all"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 text-base shadow-lg hover:shadow-xl transition-all touch-manipulation"
               size="lg"
             >
-              <XCircle className="h-5 w-5 ml-2" />
+              <XCircle className="h-4 w-4 ml-2" />
               رفض
             </Button>
           </div>
@@ -174,23 +174,23 @@ const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0">
-        <CardHeader className="text-center bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-t-lg">
-          <CardTitle className="text-2xl font-bold">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-3">
+      <Card className="w-full max-w-sm shadow-xl border-0">
+        <CardHeader className="text-center bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-t-lg p-4">
+          <CardTitle className="text-xl sm:text-2xl font-bold">
             تسجيل دخول السائق
           </CardTitle>
-          <p className="text-green-100">
+          <p className="text-green-100 text-sm">
             PAKETY - نظام إدارة التوصيل
           </p>
-          <p className="text-sm text-green-200 mt-2">
+          <p className="text-xs text-green-200 mt-2">
             للاختبار: driver@pakety.com / driver123
           </p>
         </CardHeader>
-        <CardContent className="p-6">
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2 text-gray-700 font-medium">
+        <CardContent className="p-4">
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="flex items-center gap-2 text-gray-700 font-medium text-sm">
                 <Mail className="w-4 h-4" />
                 البريد الإلكتروني
               </Label>
@@ -201,13 +201,15 @@ const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="driver@pakety.com"
                 required
-                className="text-left h-12 border-2 focus:border-green-500"
+                className="text-left h-11 border-2 focus:border-green-500 text-base"
                 dir="ltr"
+                autoComplete="email"
+                inputMode="email"
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="password" className="flex items-center gap-2 text-gray-700 font-medium">
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="flex items-center gap-2 text-gray-700 font-medium text-sm">
                 <Lock className="w-4 h-4" />
                 كلمة المرور
               </Label>
@@ -218,13 +220,14 @@ const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="text-left h-12 border-2 focus:border-green-500"
+                className="text-left h-11 border-2 focus:border-green-500 text-base"
+                autoComplete="current-password"
               />
             </div>
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 h-12 text-lg font-semibold shadow-lg" 
+              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 h-11 text-base font-semibold shadow-lg touch-manipulation mt-6" 
               disabled={isLoading}
             >
               {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
@@ -525,147 +528,148 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <div className="bg-white shadow-lg border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <Avatar className="h-12 w-12 bg-gradient-to-br from-green-500 to-blue-500">
-                <AvatarFallback className="text-white font-bold text-lg">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-3 gap-3">
+            <div className="flex items-center space-x-3 space-x-reverse">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-green-500 to-blue-500">
+                <AvatarFallback className="text-white font-bold text-sm sm:text-lg">
                   {driver.fullName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">{driver.fullName}</h1>
-                <p className="text-sm text-gray-600">{driver.phone}</p>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">{driver.fullName}</h1>
+                <p className="text-xs sm:text-sm text-gray-600">{driver.phone}</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4 space-x-reverse">
+            <div className="flex items-center space-x-3 space-x-reverse w-full sm:w-auto justify-between sm:justify-end">
               <div className="flex items-center space-x-2 space-x-reverse">
                 {getConnectionIcon()}
-                <span className={`text-sm font-medium ${connectionStatusInfo.color}`}>
+                <span className={`text-xs sm:text-sm font-medium ${connectionStatusInfo.color}`}>
                   {connectionStatusInfo.text}
                 </span>
               </div>
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm"
               >
-                <LogOut className="h-4 w-4 ml-2" />
-                تسجيل الخروج
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                خروج
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Stats Cards - Mobile Optimized */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm font-medium">طلبات اليوم</p>
-                  <p className="text-3xl font-bold">{stats.todayOrders}</p>
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="text-center sm:text-right">
+                  <p className="text-blue-100 text-xs sm:text-sm font-medium">طلبات اليوم</p>
+                  <p className="text-xl sm:text-3xl font-bold">{stats.todayOrders}</p>
                 </div>
-                <Package className="h-8 w-8 text-blue-200" />
+                <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-200" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm font-medium">مكتملة</p>
-                  <p className="text-3xl font-bold">{stats.completedOrders}</p>
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="text-center sm:text-right">
+                  <p className="text-green-100 text-xs sm:text-sm font-medium">مكتملة</p>
+                  <p className="text-xl sm:text-3xl font-bold">{stats.completedOrders}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-200" />
+                <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-200" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm font-medium">في الانتظار</p>
-                  <p className="text-3xl font-bold">{stats.pendingOrders}</p>
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="text-center sm:text-right">
+                  <p className="text-orange-100 text-xs sm:text-sm font-medium">في الانتظار</p>
+                  <p className="text-xl sm:text-3xl font-bold">{stats.pendingOrders}</p>
                 </div>
-                <Clock className="h-8 w-8 text-orange-200" />
+                <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-orange-200" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm font-medium">الأرباح</p>
-                  <p className="text-2xl font-bold">{formatPrice(stats.totalEarnings)}</p>
+            <CardContent className="p-3 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-0">
+                <div className="text-center sm:text-right">
+                  <p className="text-purple-100 text-xs sm:text-sm font-medium">الأرباح</p>
+                  <p className="text-lg sm:text-2xl font-bold">{formatPrice(stats.totalEarnings)}</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-purple-200" />
+                <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-purple-200" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Orders List */}
+        {/* Orders List - Mobile Optimized */}
         <Card className="shadow-lg border-0">
-          <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-t-lg">
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
+          <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-t-lg p-3 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Truck className="h-4 w-4 sm:h-5 sm:w-5" />
               الطلبات الحالية
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg font-medium">لا توجد طلبات حالياً</p>
-                <p className="text-gray-400">ستظهر الطلبات الجديدة هنا تلقائياً</p>
+              <div className="text-center py-8 sm:py-12">
+                <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+                <p className="text-gray-500 text-base sm:text-lg font-medium">لا توجد طلبات حالياً</p>
+                <p className="text-gray-400 text-sm sm:text-base">ستظهر الطلبات الجديدة هنا تلقائياً</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
                 {orders.map((order, index) => (
-                  <div key={order.id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                  <div key={order.id} className="p-3 sm:p-6 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base">
                           {index + 1}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">طلب رقم #{order.id}</h3>
-                          <p className="text-sm text-gray-600">{order.customerName}</p>
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">طلب رقم #{order.id}</h3>
+                          <p className="text-xs sm:text-sm text-gray-600">{order.customerName}</p>
                         </div>
                       </div>
                       {getStatusBadge(order.status)}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 gap-2 sm:gap-4 text-xs sm:text-sm">
                       <div className="flex items-center space-x-2 space-x-reverse">
-                        <Phone className="h-4 w-4 text-blue-600" />
-                        <span className="text-gray-700">{order.phone}</span>
+                        <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0" />
+                        <span className="text-gray-700 truncate">{order.phone}</span>
                       </div>
                       <div className="flex items-center space-x-2 space-x-reverse">
-                        <MapPin className="h-4 w-4 text-orange-600" />
-                        <span className="text-gray-700">{order.address || 'لا يوجد عنوان'}</span>
+                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600 flex-shrink-0" />
+                        <span className="text-gray-700 truncate">{order.address || 'لا يوجد عنوان'}</span>
                       </div>
                       <div className="flex items-center space-x-2 space-x-reverse">
-                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
                         <span className="font-medium text-green-700">{formatPrice(order.totalAmount)} د.ع</span>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex items-center space-x-2 space-x-reverse text-sm text-gray-500">
-                        <Clock className="h-4 w-4" />
+                    <div className="mt-3 sm:mt-4 flex items-center justify-between">
+                      <div className="flex items-center space-x-2 space-x-reverse text-xs sm:text-sm text-gray-500">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span>{new Date(order.createdAt).toLocaleDateString('ar-IQ')}</span>
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-xs sm:text-sm text-gray-500">
                         {order.items?.length || 0} عنصر
                       </div>
                     </div>
