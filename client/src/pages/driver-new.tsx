@@ -294,9 +294,19 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
       
       wsRef.current.onmessage = (event) => {
         try {
+          console.log('🔔 RAW WebSocket message received:', event.data);
           const data = JSON.parse(event.data);
+          console.log('🔔 PARSED WebSocket message:', data);
           
           if (data.type === 'new_order') {
+            console.log('✅ NEW ORDER notification received - showing popup!');
+            console.log('📋 Order data:', {
+              orderId: data.orderId,
+              customerName: data.customerName,
+              customerAddress: data.customerAddress,
+              totalAmount: data.totalAmount
+            });
+            
             // Show order notification popup
             setNewOrderNotification({
               orderId: data.orderId,
@@ -306,6 +316,7 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
               timestamp: new Date().toISOString()
             });
             setIsOrderPopupOpen(true);
+            console.log('🎯 Popup state set to TRUE - should appear now!');
             
             // Play notification sound (optional)
             try {

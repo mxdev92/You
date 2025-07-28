@@ -1721,12 +1721,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // REAL-TIME WEBSOCKET NOTIFICATION - Send popup to connected drivers like real orders
       try {
+        console.log(`🔍 DEBUG: Checking global notifyDriversOfNewOrder function availability:`, typeof (global as any).notifyDriversOfNewOrder);
+        
         if ((global as any).notifyDriversOfNewOrder) {
           const testNotificationData = {
             id: orderId || 9999, // Use provided orderId or test ID
             customerName: 'طلب تجريبي من الإدارة',
             customerPhone: '07700000000',
-            address: orderAddress,
+            address: orderAddress, // Use the provided address directly
             totalAmount: 25000, // Test amount
             items: [
               { name: orderName, quantity: 1, price: 22500 },
@@ -1734,8 +1736,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ]
           };
           
+          console.log(`🚗 SENDING Test WebSocket notification with data:`, testNotificationData);
           (global as any).notifyDriversOfNewOrder(testNotificationData);
-          console.log(`🚗 Test WebSocket notification sent to all connected drivers for test order: ${orderName}`);
+          console.log(`✅ Test WebSocket notification sent to all connected drivers for test order: ${orderName}`);
+        } else {
+          console.log(`❌ Global notifyDriversOfNewOrder function not available for test notification`);
         }
       } catch (wsError: any) {
         console.log(`⚠️ WebSocket notification error for test notification:`, wsError.message || wsError);
@@ -2495,23 +2500,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString()
     };
 
-    console.log('Notifying drivers of new order:', notification);
+    console.log(`🚗 Notifying drivers of new order. Connected drivers: ${driverConnections.size}`);
+    console.log(`📋 Notification data:`, notification);
 
     // Send to all connected drivers
     for (const [driverId, ws] of driverConnections.entries()) {
+      console.log(`🔍 Checking driver ${driverId} connection. WebSocket state: ${ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED'}`);
+      
       if (ws.readyState === WebSocket.OPEN) {
         try {
           ws.send(JSON.stringify(notification));
-          console.log(`Order notification sent to driver ${driverId}`);
+          console.log(`✅ Order notification sent successfully to driver ${driverId}`);
         } catch (error) {
-          console.error(`Failed to send notification to driver ${driverId}:`, error);
+          console.error(`❌ Failed to send notification to driver ${driverId}:`, error);
           // Remove disconnected driver
           driverConnections.delete(driverId);
         }
       } else {
+        console.log(`🗑️ Removing disconnected driver ${driverId} from registry`);
         // Remove disconnected driver
         driverConnections.delete(driverId);
       }
+    }
+    
+    if (driverConnections.size === 0) {
+      console.log(`⚠️ No connected drivers found for notification delivery`);
     }
   }
 
