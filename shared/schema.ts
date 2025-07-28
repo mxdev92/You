@@ -66,26 +66,6 @@ export const walletTransactions = pgTable("wallet_transactions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Driver authentication and profiles
-export const drivers = pgTable("drivers", {
-  id: serial("id").primaryKey(),
-  email: text("email").unique().notNull(),
-  passwordHash: text("password_hash").notNull(),
-  fullName: text("full_name").notNull(),
-  phone: text("phone").unique().notNull(),
-  vehicleType: text("vehicle_type").notNull(), // 'motorcycle', 'car', 'bicycle'
-  vehiclePlate: text("vehicle_plate").notNull(),
-  isActive: boolean("is_active").default(true).notNull(),
-  isOnline: boolean("is_online").default(false).notNull(),
-  currentLocation: jsonb("current_location"), // {lat, lng}
-  fcmToken: text("fcm_token"), // For push notifications
-  expoNotificationToken: text("expo_notification_token"), // For Expo push notifications
-  tokenRegisteredAt: timestamp("token_registered_at"), // When token was added
-  totalDeliveries: integer("total_deliveries").default(0).notNull(),
-  rating: decimal("rating", { precision: 3, scale: 2 }).default("5.00").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
@@ -97,25 +77,10 @@ export const orders = pgTable("orders", {
   items: jsonb("items").notNull(),
   totalAmount: integer("total_amount").notNull(),
 
-  status: text("status").notNull().default("pending"), // 'pending', 'confirmed', 'assigned', 'picked_up', 'delivering', 'delivered', 'cancelled'
-  driverId: integer("driver_id").references(() => drivers.id),
-  assignedAt: timestamp("assigned_at"),
-  pickedUpAt: timestamp("picked_up_at"),
-  deliveredAt: timestamp("delivered_at"),
+  status: text("status").notNull().default("pending"),
   orderDate: timestamp("order_date", { withTimezone: true }).defaultNow().notNull(),
   deliveryTime: text("delivery_time"),
   notes: text("notes"),
-  driverNotes: text("driver_notes"),
-  deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).default("2500.00").notNull(),
-});
-
-// Driver location tracking
-export const driverLocations = pgTable("driver_locations", {
-  id: serial("id").primaryKey(),
-  driverId: integer("driver_id").references(() => drivers.id, { onDelete: "cascade" }).notNull(),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }).notNull(),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }).notNull(),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
@@ -153,18 +118,6 @@ export const insertWalletTransactionSchema = createInsertSchema(walletTransactio
   createdAt: true,
 });
 
-export const insertDriverSchema = createInsertSchema(drivers).omit({
-  id: true,
-  createdAt: true,
-  totalDeliveries: true,
-  rating: true,
-});
-
-export const insertDriverLocationSchema = createInsertSchema(driverLocations).omit({
-  id: true,
-  timestamp: true,
-});
-
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
@@ -172,8 +125,6 @@ export type Order = typeof orders.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type UserAddress = typeof userAddresses.$inferSelect;
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
-export type Driver = typeof drivers.$inferSelect;
-export type DriverLocation = typeof driverLocations.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
@@ -181,5 +132,3 @@ export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertUserAddress = z.infer<typeof insertUserAddressSchema>;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
-export type InsertDriver = z.infer<typeof insertDriverSchema>;
-export type InsertDriverLocation = z.infer<typeof insertDriverLocationSchema>;

@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import path from "path";
-import { registerRoutes } from "./routes-fixed";
+import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 // WhatsApp service is now handled in routes.ts with Baileys
 
