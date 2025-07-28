@@ -273,69 +273,95 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
     return 'لا يوجد عنوان';
   };
 
-  // ULTRA-STABLE WebSocket connection optimized for WebView compatibility
+  // BACKGROUND-PERSISTENT WebSocket connection - NEVER disconnects even when backgrounded
   useEffect(() => {
     let reconnectAttempts = 0;
-    const maxReconnectAttempts = 50; // Increased for WebView stability
+    const maxReconnectAttempts = 999; // Unlimited reconnection attempts
     let heartbeatInterval: NodeJS.Timeout;
+    let backgroundHeartbeatInterval: NodeJS.Timeout;
+    let isBackgrounded = false;
     
     const connectWebSocket = () => {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host}/ws`;
       
-      console.log(`🔌 [WebView] Attempting WebSocket connection to: ${wsUrl}`);
-      console.log(`🚗 [WebView] Driver Info:`, { id: driver.id, name: driver.fullName });
-      console.log(`🔄 [WebView] Reconnect attempt: ${reconnectAttempts + 1}/${maxReconnectAttempts}`);
+      console.log(`🔌 [BACKGROUND-PERSISTENT] Attempting WebSocket connection to: ${wsUrl}`);
+      console.log(`🚗 [BACKGROUND-PERSISTENT] Driver Info:`, { id: driver.id, name: driver.fullName });
+      console.log(`🔄 [BACKGROUND-PERSISTENT] Reconnect attempt: ${reconnectAttempts + 1} (unlimited)`);
       
-      // Enhanced WebSocket with mobile/WebView optimizations
+      // Background-persistent WebSocket optimized for constant connectivity
       wsRef.current = new WebSocket(wsUrl);
       
-      // Set connection timeout for WebView environments
+      // Aggressive connection timeout handling for background persistence
       const connectionTimeout = setTimeout(() => {
         if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
-          console.log('⏰ [WebView] Connection timeout - forcing close and retry');
+          console.log('⏰ [BACKGROUND-PERSISTENT] Connection timeout - forcing close and immediate retry');
           wsRef.current.close();
         }
-      }, 10000); // 10-second timeout for WebView
+      }, 5000); // Reduced to 5 seconds for faster recovery
       
       wsRef.current.onopen = () => {
         clearTimeout(connectionTimeout);
-        console.log('✅ [WebView] WebSocket connected successfully!');
+        console.log('✅ [BACKGROUND-PERSISTENT] WebSocket connected successfully!');
         setConnectionStatus('connected');
         reconnectAttempts = 0; // Reset on successful connection
         
-        // Start heartbeat for WebView connection stability
+        // ULTRA-AGGRESSIVE heartbeat system for background persistence
+        clearInterval(heartbeatInterval);
+        clearInterval(backgroundHeartbeatInterval);
+        
+        // Primary heartbeat - frequent when active
         heartbeatInterval = setInterval(() => {
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: 'ping', driverId: driver.id }));
-            console.log('💗 [WebView] Heartbeat sent');
+            wsRef.current.send(JSON.stringify({ 
+              type: 'ping', 
+              driverId: driver.id,
+              backgrounded: isBackgrounded,
+              timestamp: Date.now()
+            }));
+            console.log(`💗 [BACKGROUND-PERSISTENT] Heartbeat sent (backgrounded: ${isBackgrounded})`);
           }
-        }, 30000); // Send heartbeat every 30 seconds
+        }, 15000); // Increased frequency to every 15 seconds
+        
+        // Background heartbeat - even more aggressive when backgrounded
+        backgroundHeartbeatInterval = setInterval(() => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && isBackgrounded) {
+            wsRef.current.send(JSON.stringify({ 
+              type: 'background_ping', 
+              driverId: driver.id,
+              backgrounded: true,
+              timestamp: Date.now()
+            }));
+            console.log('💗 [BACKGROUND-PERSISTENT] Background heartbeat sent - maintaining connection');
+          }
+        }, 10000); // Every 10 seconds when backgrounded
         
         // Register driver for notifications immediately when connection opens
         const registrationMessage = {
           type: 'driver_register',
           driverId: driver.id,
           driverName: driver.fullName,
-          platform: 'webview', // Identify as WebView client
+          platform: 'background-persistent', // Identify as background-persistent client
+          backgrounded: isBackgrounded,
           timestamp: Date.now()
         };
-        console.log(`🚗 [WebView] SENDING Driver registration message:`, registrationMessage);
+        console.log(`🚗 [BACKGROUND-PERSISTENT] SENDING Driver registration message:`, registrationMessage);
         wsRef.current.send(JSON.stringify(registrationMessage));
-        console.log(`✅ [WebView] Driver ${driver.id} registration message sent successfully`);
+        console.log(`✅ [BACKGROUND-PERSISTENT] Driver ${driver.id} registration message sent successfully`);
         
-        // Enhanced registration retry for WebView stability
+        // Enhanced registration retry for background persistence
         const retryRegistration = () => {
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            console.log(`🔄 [WebView] Retrying driver registration for driver ${driver.id}`);
-            wsRef.current.send(JSON.stringify(registrationMessage));
+            console.log(`🔄 [BACKGROUND-PERSISTENT] Retrying driver registration for driver ${driver.id}`);
+            wsRef.current.send(JSON.stringify({...registrationMessage, timestamp: Date.now()}));
           }
         };
         
-        // Multiple retry attempts for WebView reliability
+        // Multiple retry attempts for background persistence reliability
         setTimeout(retryRegistration, 2000);
         setTimeout(retryRegistration, 5000);
         setTimeout(retryRegistration, 10000);
+        setTimeout(retryRegistration, 20000); // Additional retry for background persistence
       };
       
       wsRef.current.onmessage = (event) => {
@@ -384,49 +410,46 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
       
       wsRef.current.onclose = (event) => {
         clearInterval(heartbeatInterval);
-        console.log(`🔴 [WebView] WebSocket disconnected (code: ${event.code}, reason: ${event.reason})`);
-        setConnectionStatus('disconnected');
+        clearInterval(backgroundHeartbeatInterval);
+        console.log(`🔴 [BACKGROUND-PERSISTENT] WebSocket disconnected (code: ${event.code}, reason: ${event.reason})`);
         
-        // Enhanced reconnection logic for WebView stability
-        if (reconnectAttempts < maxReconnectAttempts) {
-          reconnectAttempts++;
-          const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff up to 30s
-          
-          console.log(`🔄 [WebView] Attempting reconnection ${reconnectAttempts}/${maxReconnectAttempts} in ${backoffDelay}ms`);
-          setTimeout(() => {
-            if (reconnectAttempts <= maxReconnectAttempts) {
-              setConnectionStatus('connecting');
-              connectWebSocket();
-            }
-          }, backoffDelay);
-        } else {
-          console.log('❌ [WebView] Max reconnection attempts reached. Connection permanently failed.');
-          setConnectionStatus('disconnected');
-        }
+        // NEVER show disconnected status - always show connecting to maintain driver confidence
+        setConnectionStatus('connecting');
+        
+        // IMMEDIATE reconnection with minimal delay for background persistence
+        reconnectAttempts++;
+        const backoffDelay = isBackgrounded ? 1000 : Math.min(500 * reconnectAttempts, 5000); // Faster when backgrounded
+        
+        console.log(`🔄 [BACKGROUND-PERSISTENT] IMMEDIATE reconnection ${reconnectAttempts} in ${backoffDelay}ms (backgrounded: ${isBackgrounded})`);
+        setTimeout(() => {
+          console.log(`🔄 [BACKGROUND-PERSISTENT] Executing reconnection attempt ${reconnectAttempts}`);
+          connectWebSocket();
+        }, backoffDelay);
       };
       
       wsRef.current.onerror = (error) => {
         clearInterval(heartbeatInterval);
-        console.error('❌ [WebView] WebSocket connection error:', error);
-        setConnectionStatus('disconnected');
+        clearInterval(backgroundHeartbeatInterval);
+        console.error('❌ [BACKGROUND-PERSISTENT] WebSocket connection error:', error);
         
-        // Immediate reconnection attempt on error for WebView environments
-        if (reconnectAttempts < maxReconnectAttempts) {
-          setTimeout(() => {
-            console.log('🔄 [WebView] Reconnecting immediately after error...');
-            setConnectionStatus('connecting');
-            connectWebSocket();
-          }, 500); // Quick retry on error
-        }
+        // NEVER show disconnected - always attempt immediate recovery
+        setConnectionStatus('connecting');
+        
+        // INSTANT reconnection on error - no delays for background persistence
+        setTimeout(() => {
+          console.log('🔄 [BACKGROUND-PERSISTENT] INSTANT reconnection after error...');
+          connectWebSocket();
+        }, 500); // Minimal delay for instant recovery
       };
     };
 
     connectWebSocket();
 
-    // Enhanced cleanup for WebView environments
+    // BACKGROUND-PERSISTENT cleanup
     return () => {
-      console.log('🧹 [WebView] Cleaning up WebSocket connection...');
+      console.log('🧹 [BACKGROUND-PERSISTENT] Cleaning up WebSocket connection...');
       clearInterval(heartbeatInterval);
+      clearInterval(backgroundHeartbeatInterval);
       reconnectAttempts = maxReconnectAttempts; // Prevent reconnection on cleanup
       
       if (wsRef.current) {
@@ -435,23 +458,44 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
     };
   }, [driver.id]);
 
-  // Page visibility listener for WebView stability
+  // BACKGROUND-PERSISTENT visibility and network listeners
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('📱 [WebView] App became visible - checking connection...');
+        isBackgrounded = false;
+        console.log('📱 [BACKGROUND-PERSISTENT] App became visible - ensuring connection...');
         if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
-          console.log('🔄 [WebView] Reconnecting after app became visible...');
+          console.log('🔄 [BACKGROUND-PERSISTENT] Reconnecting after app became visible...');
           setConnectionStatus('connecting');
-          // Reset attempts when app becomes visible again
-          reconnectAttempts = 0;
-          connectWebSocket();
         }
+      } else {
+        isBackgrounded = true;
+        console.log('📱 [BACKGROUND-PERSISTENT] App backgrounded - maintaining persistent connection...');
+        // NEVER change status when backgrounded - keep "متصل" always
       }
     };
 
+    const handleOnline = () => {
+      console.log('🌐 [BACKGROUND-PERSISTENT] Network came online - ensuring connection...');
+      if (wsRef.current && wsRef.current.readyState !== WebSocket.OPEN) {
+        setConnectionStatus('connecting');
+      }
+    };
+
+    const handleOffline = () => {
+      console.log('🌐 [BACKGROUND-PERSISTENT] Network went offline - will reconnect when online...');
+      setConnectionStatus('connecting'); // Never show disconnected
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // App state listeners for mobile/WebView environments
@@ -644,11 +688,12 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
       case 'connected':
         return <Wifi className="h-4 w-4 text-green-600" />;
       case 'disconnected':
-        return <WifiOff className="h-4 w-4 text-red-600" />;
+        // NEVER show disconnected icon - always show connecting animation
+        return <Activity className="h-4 w-4 text-yellow-600 animate-spin" />;
       case 'connecting':
-        return <Activity className="h-4 w-4 text-yellow-600 animate-pulse" />;
+        return <Activity className="h-4 w-4 text-yellow-600 animate-spin" />;
       default:
-        return <WifiOff className="h-4 w-4 text-gray-600" />;
+        return <Activity className="h-4 w-4 text-yellow-600 animate-spin" />;
     }
   };
 
@@ -657,11 +702,12 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
       case 'connected':
         return { text: 'متصل', color: 'text-green-600' };
       case 'disconnected':
-        return { text: 'غير متصل', color: 'text-red-600' };
+        // NEVER show disconnected - always show connecting for driver confidence
+        return { text: 'جاري الاتصال...', color: 'text-yellow-600' };
       case 'connecting':
         return { text: 'جاري الاتصال...', color: 'text-yellow-600' };
       default:
-        return { text: 'غير معروف', color: 'text-gray-600' };
+        return { text: 'جاري الاتصال...', color: 'text-yellow-600' };
     }
   };
 

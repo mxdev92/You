@@ -1655,16 +1655,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WebSocket Connection Status Endpoint for debugging
   app.get('/api/websocket/status', (req, res) => {
     const connectedDrivers = Array.from(driverConnections.keys());
-    const connectionStates = Array.from(driverConnections.entries()).map(([id, ws]) => ({
+    const connectionStates = Array.from(driverConnections.entries()).map(([id, connection]) => ({
       driverId: id,
-      state: ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED',
-      readyState: ws.readyState
+      state: connection.ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED',
+      readyState: connection.ws.readyState,
+      lastSeen: new Date(connection.lastSeen).toISOString(),
+      backgrounded: connection.backgrounded,
+      platform: connection.platform
     }));
     
     res.json({
       totalConnections: driverConnections.size,
       connectedDrivers,
       connectionStates,
+      backgroundPersistent: true,
       timestamp: new Date().toISOString()
     });
   });
@@ -1728,9 +1732,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Check if this specific driver is connected to WebSocket
         if (driverConnections.has(driverId)) {
-          const ws = driverConnections.get(driverId);
+          const connection = driverConnections.get(driverId);
           
-          if (ws && ws.readyState === WebSocket.OPEN) {
+          if (connection && connection.ws.readyState === WebSocket.OPEN) {
             const testNotificationData = {
               type: 'new_order',
               orderId: orderId || 9999,
@@ -1740,7 +1744,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               timestamp: new Date().toISOString()
             };
             
-            ws.send(JSON.stringify(testNotificationData));
+            connection.ws.send(JSON.stringify(testNotificationData));
             console.log(`🎯 TARGETED WebSocket notification sent to driver ${driverId} ONLY:`, testNotificationData);
           } else {
             console.log(`📱 Driver ${driverId} not connected to WebSocket (will receive Expo push only)`);
@@ -2478,11 +2482,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Make broadcast function globally available
   (global as any).broadcastToStoreClients = broadcastToClients;
 
-  // Driver WebSocket connections registry
-  const driverConnections = new Map<number, WebSocket>();
+  // BACKGROUND-PERSISTENT Driver WebSocket connections registry
+  const driverConnections = new Map<number, { ws: WebSocket, lastSeen: number, backgrounded: boolean, platform: string }>();
 
   wss.on('connection', (ws) => {
-    console.log('WebSocket client connected for real-time updates');
+    console.log('🔌 [BACKGROUND-PERSISTENT] WebSocket client connected for real-time updates');
     
     ws.on('message', (data) => {
       try {
@@ -2492,31 +2496,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const message = JSON.parse(rawMessage);
         console.log('🔔 PARSED WebSocket message:', message);
         
-        // Handle driver registration
+        // Handle driver registration for background-persistent connections
         if (message.type === 'driver_register') {
-          const driverId = message.driverId;
-          console.log(`🚗 Processing driver registration for ID: ${driverId}`);
+          const driverId = parseInt(message.driverId);
+          console.log(`🚗 [BACKGROUND-PERSISTENT] Driver ${driverId} (${message.driverName}) registering for notifications`);
+          console.log(`🔧 Driver platform: ${message.platform || 'unknown'}`);
           
           if (driverId) {
-            driverConnections.set(driverId, ws);
-            console.log(`✅ Driver ${driverId} SUCCESSFULLY registered for real-time notifications!`);
+            // Store driver connection with enhanced metadata for background persistence
+            driverConnections.set(driverId, {
+              ws: ws,
+              lastSeen: Date.now(),
+              backgrounded: message.backgrounded || false,
+              platform: message.platform || 'unknown'
+            });
+            console.log(`✅ [BACKGROUND-PERSISTENT] Driver ${driverId} SUCCESSFULLY registered for real-time notifications!`);
             console.log(`📊 Total connected drivers: ${driverConnections.size}`);
             console.log(`📋 CURRENT CONNECTED DRIVERS: [${Array.from(driverConnections.keys()).join(', ')}]`);
             
-            // Send confirmation
+            // Send confirmation back to driver
             const confirmationMessage = {
               type: 'registration_confirmed',
               driverId: driverId,
-              timestamp: new Date().toISOString(),
-              totalConnected: driverConnections.size
+              message: 'Driver registered successfully for background-persistent notifications',
+              connectedDrivers: driverConnections.size,
+              backgroundPersistent: true,
+              timestamp: new Date().toISOString()
             };
             
             ws.send(JSON.stringify(confirmationMessage));
-            console.log(`📤 Registration confirmation sent to driver ${driverId}:`, confirmationMessage);
+            console.log(`✅ [BACKGROUND-PERSISTENT] Registration confirmation sent to driver ${driverId}`);
           } else {
             console.log(`❌ Driver registration FAILED - no driverId provided in message:`, message);
           }
-        } else {
+        }
+        
+        // Handle heartbeat messages to maintain background persistence
+        else if (message.type === 'ping' || message.type === 'background_ping') {
+          const driverId = parseInt(message.driverId);
+          const connection = driverConnections.get(driverId);
+          
+          if (connection) {
+            connection.lastSeen = Date.now();
+            connection.backgrounded = message.backgrounded || false;
+            
+            console.log(`💗 [BACKGROUND-PERSISTENT] Heartbeat from driver ${driverId} (backgrounded: ${connection.backgrounded})`);
+            
+            // Send pong response to maintain connection
+            ws.send(JSON.stringify({
+              type: 'pong',
+              driverId: driverId,
+              backgrounded: connection.backgrounded,
+              timestamp: Date.now()
+            }));
+          }
+        }
+        
+        else {
           console.log(`📨 Non-registration message received:`, message);
           // Echo message to all connected clients
           broadcastToClients(message);
@@ -2528,16 +2564,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     ws.on('close', () => {
-      console.log('WebSocket client disconnected');
+      console.log('🔴 [BACKGROUND-PERSISTENT] WebSocket client disconnected - attempting to maintain registry');
       
-      // Remove driver from registry if it was registered
+      // DON'T immediately remove disconnected drivers - keep them for reconnection
       for (const [driverId, connection] of driverConnections.entries()) {
-        if (connection === ws) {
-          driverConnections.delete(driverId);
-          console.log(`Driver ${driverId} disconnected from real-time notifications`);
+        if (connection.ws === ws) {
+          console.log(`🚗 [BACKGROUND-PERSISTENT] Driver ${driverId} connection lost but keeping in registry for reconnection`);
+          // Mark as potentially disconnected but don't remove
+          connection.lastSeen = Date.now() - 60000; // Mark as 1 minute ago
           break;
         }
       }
+    });
+    
+    ws.on('error', (error) => {
+      console.error('❌ [BACKGROUND-PERSISTENT] WebSocket error:', error);
+      // Don't remove on error - let the connection recover
     });
   });
 
@@ -2556,12 +2598,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`📋 Notification data:`, notification);
 
     // Send to all connected drivers
-    for (const [driverId, ws] of driverConnections.entries()) {
-      console.log(`🔍 Checking driver ${driverId} connection. WebSocket state: ${ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED'}`);
+    for (const [driverId, connection] of driverConnections.entries()) {
+      console.log(`🔍 Checking driver ${driverId} connection. WebSocket state: ${connection.ws.readyState === WebSocket.OPEN ? 'OPEN' : 'CLOSED'}`);
       
-      if (ws.readyState === WebSocket.OPEN) {
+      if (connection.ws.readyState === WebSocket.OPEN) {
         try {
-          ws.send(JSON.stringify(notification));
+          connection.ws.send(JSON.stringify(notification));
           console.log(`✅ Order notification sent successfully to driver ${driverId}`);
         } catch (error) {
           console.error(`❌ Failed to send notification to driver ${driverId}:`, error);
