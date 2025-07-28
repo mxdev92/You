@@ -279,34 +279,31 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host}/ws`;
       
+      console.log(`🔌 Attempting WebSocket connection to: ${wsUrl}`);
+      console.log(`🚗 Driver Info:`, { id: driver.id, name: driver.fullName });
+      
       wsRef.current = new WebSocket(wsUrl);
       
       wsRef.current.onopen = () => {
-        console.log('WebSocket connected for driver notifications');
+        console.log('🟢 WebSocket connection ESTABLISHED for driver notifications');
         setConnectionStatus('connected');
         
-        // Wait a bit for connection to fully establish before registering
+        // Immediate registration since connection is confirmed open
+        const registrationMessage = {
+          type: 'driver_register',
+          driverId: driver.id
+        };
+        console.log(`🚗 SENDING Driver registration message:`, registrationMessage);
+        wsRef.current.send(JSON.stringify(registrationMessage));
+        console.log(`✅ Driver ${driver.id} registration message sent successfully`);
+        
+        // Retry registration if no confirmation received within 3 seconds
         setTimeout(() => {
           if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            const registrationMessage = {
-              type: 'driver_register',
-              driverId: driver.id
-            };
-            console.log(`🚗 SENDING Driver registration message:`, registrationMessage);
+            console.log(`🔄 Retrying driver registration for driver ${driver.id}`);
             wsRef.current.send(JSON.stringify(registrationMessage));
-            console.log(`✅ Driver ${driver.id} registration message sent successfully`);
-            
-            // Retry registration if no confirmation received within 2 seconds
-            setTimeout(() => {
-              if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                console.log(`🔄 Retrying driver registration for driver ${driver.id}`);
-                wsRef.current.send(JSON.stringify(registrationMessage));
-              }
-            }, 2000);
-          } else {
-            console.log(`❌ WebSocket not ready for registration. State:`, wsRef.current?.readyState);
           }
-        }, 100);
+        }, 3000);
       };
       
       wsRef.current.onmessage = (event) => {
@@ -344,6 +341,7 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
             }
           } else if (data.type === 'registration_confirmed') {
             console.log('✅ Driver registration confirmed by server:', data);
+            console.log(`🎯 Driver ${driver.id} is now REGISTERED for notifications!`);
           } else {
             console.log('🔔 Other WebSocket message received:', data);
           }
@@ -353,19 +351,27 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
       };
       
       wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected, attempting to reconnect...');
+        console.log('🔴 WebSocket disconnected, attempting to reconnect...');
         setConnectionStatus('disconnected');
         
-        // Reconnect after 3 seconds
+        // Reconnect after 2 seconds (faster reconnection)
         setTimeout(() => {
+          console.log('🔄 Attempting WebSocket reconnection...');
           setConnectionStatus('connecting');
           connectWebSocket();
-        }, 3000);
+        }, 2000);
       };
       
       wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error('❌ WebSocket connection error:', error);
         setConnectionStatus('disconnected');
+        
+        // Force reconnection on error
+        setTimeout(() => {
+          console.log('🔄 Reconnecting after WebSocket error...');
+          setConnectionStatus('connecting');
+          connectWebSocket();
+        }, 1000);
       };
     };
 
