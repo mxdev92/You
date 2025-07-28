@@ -37,6 +37,7 @@ export const drivers = pgTable("drivers", {
   vehicleModel: text("vehicle_model"),
   plateNumber: text("plate_number"),
   isActive: boolean("is_active").default(true).notNull(),
+  notificationToken: text("notification_token"), // Expo push notification token
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

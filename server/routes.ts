@@ -1599,6 +1599,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update driver notification token
+  app.patch('/api/drivers/:id/notification-token', async (req, res) => {
+    try {
+      const driverId = parseInt(req.params.id);
+      const { notificationToken } = req.body;
+
+      if (!notificationToken || typeof notificationToken !== 'string') {
+        return res.status(400).json({ message: 'Notification token is required' });
+      }
+
+      // Validate Expo push token format (basic validation)
+      if (!notificationToken.startsWith('ExponentPushToken[') && !notificationToken.startsWith('expo:')) {
+        return res.status(400).json({ message: 'Invalid Expo push token format' });
+      }
+
+      const updatedDriver = await db
+        .update(drivers)
+        .set({ 
+          notificationToken: notificationToken.trim(),
+        })
+        .where(eq(drivers.id, driverId))
+        .returning();
+
+      if (updatedDriver.length === 0) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      res.json({ 
+        success: true, 
+        message: 'Notification token updated successfully',
+        driver: updatedDriver[0]
+      });
+    } catch (error) {
+      console.error('Update notification token error:', error);
+      res.status(500).json({ message: 'Failed to update notification token' });
+    }
+  });
+
   // Driver Authentication Routes
   app.post('/api/driver/login', async (req, res) => {
     try {

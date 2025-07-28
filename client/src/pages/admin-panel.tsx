@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Car, UserPlus } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Car, UserPlus, Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1370,6 +1370,9 @@ function DriversManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDriverOpen, setIsAddDriverOpen] = useState(false);
+  const [isNotificationTokenOpen, setIsNotificationTokenOpen] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState<number | null>(null);
+  const [notificationToken, setNotificationToken] = useState('');
   const [addDriverForm, setAddDriverForm] = useState({
     fullName: '',
     phone: '',
@@ -1434,6 +1437,34 @@ function DriversManagement() {
     }
   });
 
+  const updateNotificationTokenMutation = useMutation({
+    mutationFn: ({ driverId, token }: { driverId: number; token: string }) =>
+      fetch(`/api/drivers/${driverId}/notification-token`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationToken: token })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/drivers'] });
+      setIsNotificationTokenOpen(false);
+      setNotificationToken('');
+      setSelectedDriverId(null);
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث رمز الإشعارات بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث رمز الإشعارات",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
   const toggleDriverStatus = useMutation({
     mutationFn: ({ driverId, isActive }: { driverId: number; isActive: boolean }) =>
       fetch(`/api/drivers/${driverId}`, {
@@ -1457,6 +1488,30 @@ function DriversManagement() {
       return;
     }
     addDriverMutation.mutate(addDriverForm);
+  };
+
+  const handleAddNotificationToken = () => {
+    if (!notificationToken.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال رمز الإشعارات",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+    if (selectedDriverId) {
+      updateNotificationTokenMutation.mutate({
+        driverId: selectedDriverId,
+        token: notificationToken.trim()
+      });
+    }
+  };
+
+  const openNotificationTokenModal = (driverId: number) => {
+    setSelectedDriverId(driverId);
+    setNotificationToken('');
+    setIsNotificationTokenOpen(true);
   };
 
   if (isLoading) {
@@ -1595,7 +1650,16 @@ function DriversManagement() {
                 </div>
                 
                 <div className="flex flex-col items-end gap-2">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openNotificationTokenModal(driver.id)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      title="إضافة رمز الإشعارات"
+                    >
+                      <Bell className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1635,6 +1699,48 @@ function DriversManagement() {
           ))
         )}
       </div>
+
+      {/* Add Notification Token Dialog */}
+      <Dialog open={isNotificationTokenOpen} onOpenChange={setIsNotificationTokenOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-blue-600" />
+              إضافة رمز الإشعارات
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="notificationToken">رمز Expo Push Notification</Label>
+              <Input
+                id="notificationToken"
+                value={notificationToken}
+                onChange={(e) => setNotificationToken(e.target.value)}
+                placeholder="ExponentPushToken[xxxxxx...]"
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                يجب أن يبدأ الرمز بـ ExponentPushToken[ أو expo:
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsNotificationTokenOpen(false)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleAddNotificationToken}
+                disabled={updateNotificationTokenMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {updateNotificationTokenMutation.isPending ? 'جاري الحفظ...' : 'حفظ'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Driver Dialog */}
       <Dialog open={isAddDriverOpen} onOpenChange={setIsAddDriverOpen}>
