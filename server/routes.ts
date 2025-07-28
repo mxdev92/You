@@ -1827,27 +1827,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'حسابك غير مفعل، تواصل مع الإدارة' });
       }
 
-      // Save driver session
-      req.session.driverId = driver.id;
-      req.session.driverEmail = driver.email;
-      req.session.driverLoginTime = new Date().toISOString();
-
-      // Force session save
-      req.session.save((err) => {
-        if (err) {
-          console.error('Driver session save error:', err);
-          return res.status(500).json({ message: 'فشل في حفظ جلسة تسجيل الدخول' });
-        }
-
-        res.json({
-          success: true,
-          driver: {
-            id: driver.id,
-            email: driver.email,
-            fullName: driver.fullName,
-            phone: driver.phone
+      // ULTRA-STABLE Driver Session Configuration (matching customer login)
+      await new Promise<void>((resolve, reject) => {
+        req.session.regenerate((regenerateErr: any) => {
+          if (regenerateErr) {
+            console.error('❌ Driver session regeneration failed:', regenerateErr);
+            reject(regenerateErr);
+          } else {
+            // Set driver session data
+            req.session.driverId = driver.id;
+            req.session.driverEmail = driver.email;
+            req.session.driverLoginTime = new Date().toISOString();
+            
+            console.log('🚗 Driver session data set:', {
+              driverId: driver.id,
+              driverEmail: driver.email,
+              sessionId: req.sessionID
+            });
+            
+            // Set session to never expire automatically - ultra-stable login
+            (req as any).session.cookie.maxAge = 365 * 24 * 60 * 60 * 1000; // 1 year
+            (req as any).session.cookie.secure = false; // Allow HTTP for development
+            (req as any).session.cookie.httpOnly = true; // Security
+            
+            // Force session save with bulletproof persistence
+            (req as any).session.save((saveErr: any) => {
+              if (saveErr) {
+                console.error('❌ Driver session save failed:', saveErr);
+                reject(saveErr);
+              } else {
+                console.log('✅ Ultra-stable driver session regenerated and saved for driver:', driver.email);
+                resolve();
+              }
+            });
           }
         });
+      });
+
+      res.json({
+        success: true,
+        driver: {
+          id: driver.id,
+          email: driver.email,
+          fullName: driver.fullName,
+          phone: driver.phone
+        }
       });
 
     } catch (error) {
@@ -1885,18 +1909,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Driver logout route - ultra-stable session cleanup
   app.post('/api/driver/logout', async (req, res) => {
     try {
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('Driver logout error:', err);
-          return res.status(500).json({ message: 'فشل في تسجيل الخروج' });
-        }
-        res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
-      });
+      if (req.session.driverId) {
+        console.log('🚗 Driver logout initiated for driver:', req.session.driverEmail);
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('❌ Driver session destruction error:', err);
+            return res.status(500).json({ message: 'فشل في تسجيل الخروج' });
+          }
+          console.log('✅ Driver session destroyed successfully');
+          res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
+        });
+      } else {
+        res.json({ success: true, message: 'لم تكن مسجل دخول' });
+      }
     } catch (error) {
       console.error('Driver logout error:', error);
-      res.status(500).json({ message: 'فشل في تسجيل الخروج' });
+      res.status(500).json({ message: 'حدث خطأ في تسجيل الخروج' });
     }
   });
 
