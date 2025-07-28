@@ -83,6 +83,9 @@ const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {
           <p className="text-gray-600 dark:text-gray-400">
             PAKETY - نظام إدارة التوصيل
           </p>
+          <p className="text-sm text-gray-500 mt-2">
+            للاختبار: driver@pakety.com / driver123
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -98,7 +101,7 @@ const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="driver@pakety.com"
                 required
-                className="text-right"
+                className="text-left"
                 dir="ltr"
               />
             </div>
@@ -115,7 +118,7 @@ const DriverLogin = ({ onLogin }: { onLogin: (driver: Driver) => void }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="text-right"
+                className="text-left"
               />
             </div>
 
@@ -301,10 +304,19 @@ const DriverDashboard = ({ driver }: { driver: Driver }) => {
                       </div>
                     </div>
 
-                    {order.address && (
+                    {order.address && typeof order.address === 'string' && (
                       <div className="flex items-start gap-2 text-gray-600 mt-2">
                         <MapPin className="w-4 h-4 mt-0.5" />
                         <span className="text-sm">{order.address}</span>
+                      </div>
+                    )}
+                    
+                    {order.address && typeof order.address === 'object' && (
+                      <div className="flex items-start gap-2 text-gray-600 mt-2">
+                        <MapPin className="w-4 h-4 mt-0.5" />
+                        <span className="text-sm">
+                          {order.address?.governorate || ''} - {order.address?.district || ''} - {order.address?.neighborhood || ''}
+                        </span>
                       </div>
                     )}
 
@@ -341,8 +353,23 @@ export default function DriverPage() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   useEffect(() => {
-    checkDriverSession();
+    // Clear any existing driver session to start fresh
+    clearDriverSession().then(() => {
+      setDriver(null);
+      setIsCheckingSession(false);
+    });
   }, []);
+
+  const clearDriverSession = async () => {
+    try {
+      await fetch('/api/driver/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error clearing driver session:', error);
+    }
+  };
 
   const checkDriverSession = async () => {
     try {
@@ -353,9 +380,13 @@ export default function DriverPage() {
       if (response.ok) {
         const data = await response.json();
         setDriver(data.driver);
+      } else {
+        // Not logged in, this is expected
+        setDriver(null);
       }
     } catch (error) {
       console.error('Session check error:', error);
+      setDriver(null);
     } finally {
       setIsCheckingSession(false);
     }
