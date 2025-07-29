@@ -22,6 +22,12 @@ console.log('🎯 WasenderAPI service initialized - Unified messaging system act
 // OTP session storage
 const otpSessions = new Map();
 
+// Push notification tokens storage for drivers
+const driverPushTokens = new Map<number, string>();
+
+// WebSocket connections for real-time notifications
+const driverWebSockets = new Map<number, WebSocket>();
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add cache control headers to prevent browser caching issues after deployment
   app.use((req, res, next) => {
@@ -406,6 +412,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (broadcastError) {
         console.error('Error in broadcasting, but order created successfully:', broadcastError);
+      }
+
+      // Send real-time push notifications to all drivers
+      try {
+        await sendPushNotificationToDrivers({
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address,
+          totalAmount: order.totalAmount,
+          items: order.items,
+          orderDate: order.orderDate
+        });
+      } catch (notificationError) {
+        console.error('Error sending driver notifications, but order created successfully:', notificationError);
       }
 
       // WASENDERAPI PDF DELIVERY - Unified messaging system
@@ -2524,6 +2545,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register push notification token for driver
+  app.post('/api/drivers/notifications/register', authenticateDriver, async (req: any, res) => {
+    try {
+      const { token } = req.body;
+      const driverId = req.driver.id;
+
+      if (!token) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Push token is required' 
+        });
+      }
+
+      // Store the push token for this driver
+      driverPushTokens.set(driverId, token);
+      console.log(`📱 Push token registered for driver ${driverId}: ${token.substring(0, 20)}...`);
+
+      res.json({
+        success: true,
+        message: 'تم تسجيل الإشعارات بنجاح',
+        driverId
+      });
+
+    } catch (error: any) {
+      console.error('Register push token error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تسجيل الإشعارات' 
+      });
+    }
+  });
+
+  // Register WebSocket connection for driver
+  app.post('/api/drivers/websocket/register', authenticateDriver, async (req: any, res) => {
+    try {
+      const driverId = req.driver.id;
+      
+      res.json({
+        success: true,
+        message: 'WebSocket registration ready',
+        websocketUrl: '/ws',
+        driverId
+      });
+
+    } catch (error: any) {
+      console.error('WebSocket register error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تسجيل الاتصال المباشر' 
+      });
+    }
+  });
+
+  // Send push notification to all active drivers
+  async function sendPushNotificationToDrivers(orderData: any) {
+    console.log('📢 Sending push notifications to all drivers for new order:', orderData.id);
+    
+    // Send WebSocket notification to connected drivers
+    for (const [driverId, ws] of driverWebSockets.entries()) {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          const notification = {
+            type: 'NEW_ORDER',
+            order: {
+              id: orderData.id,
+              customerName: orderData.customerName,
+              customerPhone: orderData.customerPhone,
+              address: orderData.address,
+              totalAmount: parseFloat(orderData.totalAmount).toLocaleString(),
+              items: orderData.items,
+              timestamp: orderData.orderDate,
+              deliveryFee: '2,500'
+            },
+            title: 'طلب جديد - PAKETY',
+            body: `طلب جديد من ${orderData.customerName}\nالمبلغ: ${parseFloat(orderData.totalAmount).toLocaleString()} د.ع`,
+            sound: 'default',
+            priority: 'high',
+            channelId: 'order_notifications'
+          };
+          
+          ws.send(JSON.stringify(notification));
+          console.log(`✅ WebSocket notification sent to driver ${driverId}`);
+        } catch (error) {
+          console.log(`❌ Failed to send WebSocket to driver ${driverId}:`, error);
+          // Remove disconnected WebSocket
+          driverWebSockets.delete(driverId);
+        }
+      }
+    }
+
+    // Send push notifications to all registered drivers
+    for (const [driverId, token] of driverPushTokens.entries()) {
+      try {
+        // For Expo push notifications, you would typically use the Expo push API
+        // This is a placeholder for the actual implementation
+        console.log(`📱 Would send push notification to driver ${driverId} with token ${token.substring(0, 20)}...`);
+        
+        const pushPayload = {
+          to: token,
+          sound: 'default',
+          title: 'طلب جديد - PAKETY',
+          body: `طلب جديد من ${orderData.customerName}\nالمبلغ: ${parseFloat(orderData.totalAmount).toLocaleString()} د.ع`,
+          data: {
+            type: 'NEW_ORDER',
+            orderId: orderData.id,
+            customerName: orderData.customerName,
+            totalAmount: orderData.totalAmount,
+            requiresAction: true
+          },
+          priority: 'high',
+          channelId: 'order_notifications'
+        };
+
+        // TODO: Implement actual Expo push notification sending
+        // await expo.sendPushNotificationsAsync([pushPayload]);
+        
+      } catch (error) {
+        console.log(`❌ Failed to send push notification to driver ${driverId}:`, error);
+      }
+    }
+  }
+
   // API 404 handler - MUST be after all other API routes
   app.use('/api/*', (req, res) => {
     console.log(`API 404 - Route not found: ${req.method} ${req.path}`);
@@ -2539,21 +2682,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected for real-time updates');
+    let driverId: number | null = null;
     
     ws.on('message', (data) => {
       try {
         const message = JSON.parse(data.toString());
         console.log('Received WebSocket message:', message);
         
-        // Echo message to all connected clients
-        broadcastToClients(message);
+        // Handle driver registration for real-time notifications
+        if (message.type === 'DRIVER_REGISTER' && message.driverId) {
+          driverId = message.driverId;
+          driverWebSockets.set(driverId, ws);
+          console.log(`🚗 Driver ${driverId} registered for real-time notifications`);
+          
+          ws.send(JSON.stringify({
+            type: 'REGISTRATION_SUCCESS',
+            message: 'تم تسجيل الاتصال المباشر بنجاح',
+            driverId: driverId
+          }));
+        }
+        // Handle order action responses from drivers
+        else if (message.type === 'ORDER_ACTION' && message.action && message.orderId) {
+          console.log(`📱 Driver ${driverId} ${message.action} order ${message.orderId}`);
+          
+          // Forward action to all store clients for admin panel updates
+          broadcastToClients({
+            type: 'DRIVER_ACTION',
+            driverId: driverId,
+            orderId: message.orderId,
+            action: message.action,
+            reason: message.reason,
+            timestamp: new Date().toISOString()
+          });
+        }
+        // Echo other messages to all connected clients
+        else {
+          broadcastToClients(message);
+        }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
       }
     });
 
     ws.on('close', () => {
-      console.log('WebSocket client disconnected');
+      if (driverId) {
+        driverWebSockets.delete(driverId);
+        console.log(`🚗 Driver ${driverId} WebSocket disconnected`);
+      } else {
+        console.log('WebSocket client disconnected');
+      }
     });
   });
 

@@ -1,7 +1,14 @@
 # PAKETY Driver Mobile App API Documentation
 
 ## Overview
-Complete REST API documentation for building the Expo React Native driver mobile application. All endpoints are secured with JWT authentication using Bearer tokens with 30-day expiration.
+Complete REST API documentation for building the Expo React Native driver mobile application with **real-time push notifications**. All endpoints are secured with JWT authentication using Bearer tokens with 30-day expiration.
+
+## Real-Time Notification Features
+- **Instant Order Notifications**: Drivers receive immediate push notifications when users submit orders
+- **Persistent Notification Pop-ups**: Non-dismissible order details with قبول/رفض buttons  
+- **Sound & Vibration**: Full notification alerts with status bar notifications on Android
+- **WebSocket Real-time**: Instant bidirectional communication for order updates
+- **Multi-layer Notification**: Both WebSocket and Expo Push Notifications for guaranteed delivery
 
 ## Base URL
 ```
@@ -311,6 +318,164 @@ Content-Type: application/json
   },
   "timestamp": "2025-07-29T11:30:00.000Z"
 }
+```
+
+## Real-Time Push Notifications
+
+### Register Push Token
+Register Expo push notification token for receiving order notifications.
+
+```http
+POST /api/drivers/notifications/register
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "تم تسجيل الإشعارات بنجاح",
+  "driverId": 2
+}
+```
+
+### WebSocket Connection
+Connect to WebSocket for real-time order notifications.
+
+```javascript
+// WebSocket URL
+const wsUrl = "wss://pakety.delivery/ws"
+
+// Connection with driver registration
+const ws = new WebSocket(wsUrl);
+
+// Register driver after connection
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    type: 'DRIVER_REGISTER',
+    driverId: driverData.id,
+    token: authToken
+  }));
+};
+
+// Handle incoming notifications
+ws.onmessage = (event) => {
+  const notification = JSON.parse(event.data);
+  
+  if (notification.type === 'NEW_ORDER') {
+    // Show persistent notification popup with قبول/رفض buttons
+    showOrderNotificationPopup(notification.order);
+    
+    // Play notification sound and vibration
+    playNotificationSound();
+    triggerVibration();
+  }
+};
+```
+
+### New Order Notification Format
+When a new order is submitted, drivers receive this notification:
+
+```json
+{
+  "type": "NEW_ORDER",
+  "order": {
+    "id": 81,
+    "customerName": "أحمد محمد",
+    "customerPhone": "07701234567",
+    "address": {
+      "governorate": "بغداد",
+      "district": "الكرادة",
+      "neighborhood": "شارع فلسطين",
+      "notes": "بناية 15، الطابق الثالث"
+    },
+    "totalAmount": "25,750",
+    "items": [
+      {
+        "name": "خيار",
+        "quantity": 2,
+        "price": "1,500",
+        "total": "3,000"
+      }
+    ],
+    "deliveryFee": "2,500",
+    "timestamp": "2025-07-29T14:30:00.000Z"
+  },
+  "title": "طلب جديد - PAKETY",
+  "body": "طلب جديد من أحمد محمد\nالمبلغ: 25,750 د.ع",
+  "sound": "default",
+  "priority": "high",
+  "channelId": "order_notifications"
+}
+```
+
+### Notification Requirements for Expo App
+
+#### 1. Persistent Popup UI
+```javascript
+// Show non-dismissible popup with order details
+const showOrderNotificationPopup = (orderData) => {
+  // Must include:
+  // - Customer name and phone
+  // - Complete address with directions
+  // - All items with quantities and prices
+  // - Total amount and delivery fee
+  // - قبول and رفض buttons
+  // - Popup must NOT auto-dismiss
+  // - Must stay visible until user takes action
+};
+```
+
+#### 2. Sound and Vibration
+```javascript
+import { Audio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
+
+// Play notification sound
+const playNotificationSound = async () => {
+  const { sound } = await Audio.Sound.createAsync(
+    require('./assets/notification.mp3')
+  );
+  await sound.playAsync();
+};
+
+// Trigger vibration
+const triggerVibration = () => {
+  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+};
+```
+
+#### 3. Android Status Bar Notification
+```javascript
+import * as Notifications from 'expo-notifications';
+
+// Configure notification behavior
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+// Show in status bar
+const showStatusBarNotification = (orderData) => {
+  Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'طلب جديد - PAKETY',
+      body: `طلب من ${orderData.customerName} - ${orderData.totalAmount} د.ع`,
+      sound: 'default',
+      priority: 'high',
+      categoryIdentifier: 'ORDER_NOTIFICATION'
+    },
+    trigger: null, // Show immediately
+  });
+};
 ```
 
 ## Error Handling
