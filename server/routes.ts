@@ -10,6 +10,11 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { wasenderService } from './wasender-api-service';
 import { zaincashService } from './zaincash-service';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+
+// JWT Secret for driver authentication
+const JWT_SECRET = process.env.JWT_SECRET || 'pakety-driver-secret-key-2025';
 
 // Initialize WasenderAPI service only
 console.log('🎯 WasenderAPI service initialized - Unified messaging system active');
@@ -1869,7 +1874,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Drivers API Routes
+  // Driver Authentication API Routes
+  app.post('/api/drivers/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'البريد الإلكتروني وكلمة المرور مطلوبان' 
+        });
+      }
+
+      // Find driver by email
+      const driver = await storage.getDriverByEmail(email);
+      if (!driver) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'البريد الإلكتروني غير مسجل' 
+        });
+      }
+
+      // Check if driver is active
+      if (!driver.isActive) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'حساب السائق غير نشط. يرجى التواصل مع الإدارة' 
+        });
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, driver.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'كلمة المرور غير صحيحة' 
+        });
+      }
+
+      // Generate JWT token (30 days expiration)
+      const token = jwt.sign(
+        { 
+          driverId: driver.id, 
+          email: driver.email,
+          type: 'driver'
+        },
+        JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+
+      // Return successful login
+      res.json({
+        success: true,
+        token,
+        driver: {
+          id: driver.id,
+          fullName: driver.fullName,
+          email: driver.email,
+          phone: driver.phone,
+          isActive: driver.isActive,
+          createdAt: driver.createdAt
+        }
+      });
+
+    } catch (error: any) {
+      console.error('Driver login error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في الخادم. يرجى المحاولة مرة أخرى' 
+      });
+    }
+  });
+
+  // Driver token verification middleware
+  const authenticateDriver = async (req: any, res: any, next: any) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'رمز المصادقة مطلوب' 
+        });
+      }
+
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      if (decoded.type !== 'driver') {
+        return res.status(401).json({ 
+          success: false,
+          message: 'رمز مصادقة غير صالح' 
+        });
+      }
+
+      // Get driver details
+      const driver = await storage.getDriver(decoded.driverId);
+      if (!driver || !driver.isActive) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'حساب السائق غير نشط' 
+        });
+      }
+
+      req.driver = driver;
+      next();
+    } catch (error) {
+      res.status(401).json({ 
+        success: false,
+        message: 'رمز مصادقة غير صالح' 
+      });
+    }
+  };
+
+  // Driver profile endpoint (protected)
+  app.get('/api/drivers/profile', authenticateDriver, async (req: any, res) => {
+    res.json({
+      success: true,
+      driver: {
+        id: req.driver.id,
+        fullName: req.driver.fullName,
+        email: req.driver.email,
+        phone: req.driver.phone,
+        isActive: req.driver.isActive,
+        createdAt: req.driver.createdAt
+      }
+    });
+  });
+
+  // Drivers API Routes (Admin)
   app.get('/api/drivers', async (req, res) => {
     try {
       const drivers = await storage.getDrivers();
