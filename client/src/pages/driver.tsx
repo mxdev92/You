@@ -92,26 +92,11 @@ export default function DriverPage() {
         }
       }
       
-      // Test vibration capability on Android with multiple patterns
+      // Professional vibration capability check
       if ('vibrate' in navigator) {
-        console.log('✅ Vibration API available on Android');
-        // Test multiple vibration patterns to ensure Android compatibility
-        setTimeout(() => {
-          const success1 = navigator.vibrate(200);
-          console.log('Test vibration 1:', success1);
-        }, 500);
-        
-        setTimeout(() => {
-          const success2 = navigator.vibrate([300, 100, 300]);
-          console.log('Test vibration 2:', success2);
-        }, 1500);
-        
-        setTimeout(() => {
-          const success3 = navigator.vibrate(500);
-          console.log('Test vibration 3:', success3);
-        }, 3000);
-      } else {
-        console.log('❌ Vibration API not supported');
+        console.log('✅ Vibration API available');
+        // Test with professional subtle pattern
+        navigator.vibrate([100, 50, 100]);
       }
     };
     
