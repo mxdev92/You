@@ -63,44 +63,82 @@ export default function DriverPage() {
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  // Initialize notification audio
+  // Initialize notification audio and permissions
   useEffect(() => {
-    // Create notification sound safely with error handling
+    // Request notification permission immediately
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log('Notification permission:', permission);
+      });
+    }
+
+    // Create notification sound with mobile compatibility
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) {
         console.log('AudioContext not supported');
+        // Fallback to HTML5 audio for mobile
+        const audio = new Audio();
+        audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUaAz2CzfPbhysEL4zR8t15TQgZa7vm46BGEAhOqeDwtWAaAzbz8t9qHQI1f8PwaB8AMTmOwdP0z2gUAUZ2x7qFCxYPPG6j3vBz3H4/AQMVJZ7QzD6Jmgs=';
+        (audioRef as any).current = { 
+          play: () => {
+            try {
+              audio.currentTime = 0;
+              audio.play().catch(e => console.log('Audio play failed:', e));
+            } catch (e) {
+              console.log('Audio fallback failed:', e);
+            }
+          }
+        };
         return;
       }
       
-      const audioContext = new AudioContext();
+      // AudioContext-based sound for desktop/supported browsers
+      let audioContext: AudioContext | null = null;
       
       const createNotificationSound = () => {
         try {
-          // Create a composite sound with multiple tones for urgency
+          // Initialize AudioContext on first play (required for mobile)
+          if (!audioContext) {
+            audioContext = new AudioContext();
+          }
+          
+          // Resume context if suspended (mobile requirement)
+          if (audioContext.state === 'suspended') {
+            audioContext.resume();
+          }
+          
+          // Create multiple tones for urgent notification
           const oscillator1 = audioContext.createOscillator();
           const oscillator2 = audioContext.createOscillator();
+          const oscillator3 = audioContext.createOscillator();
           const gainNode = audioContext.createGain();
           
           oscillator1.connect(gainNode);
           oscillator2.connect(gainNode);
+          oscillator3.connect(gainNode);
           gainNode.connect(audioContext.destination);
           
-          // High and low frequency tones for attention
+          // Three-tone alarm pattern for maximum attention
           oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
-          oscillator2.frequency.setValueAtTime(1200, audioContext.currentTime);
+          oscillator2.frequency.setValueAtTime(1000, audioContext.currentTime);
+          oscillator3.frequency.setValueAtTime(1200, audioContext.currentTime);
           
-          // Volume envelope for dramatic effect
+          // Dramatic volume envelope with multiple peaks
           gainNode.gain.setValueAtTime(0, audioContext.currentTime);
           gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.1);
-          gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.5);
-          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 1.0);
-          gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 2.0);
+          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.3);
+          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.5);
+          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.7);
+          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.9);
+          gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);
           
           oscillator1.start(audioContext.currentTime);
           oscillator2.start(audioContext.currentTime);
-          oscillator1.stop(audioContext.currentTime + 2.0);
-          oscillator2.stop(audioContext.currentTime + 2.0);
+          oscillator3.start(audioContext.currentTime);
+          oscillator1.stop(audioContext.currentTime + 1.5);
+          oscillator2.stop(audioContext.currentTime + 1.5);
+          oscillator3.stop(audioContext.currentTime + 1.5);
         } catch (soundError) {
           console.error('Error creating notification sound:', soundError);
         }
@@ -110,7 +148,7 @@ export default function DriverPage() {
       (audioRef as any).current = { play: createNotificationSound };
     } catch (audioError) {
       console.error('AudioContext initialization error:', audioError);
-      // Fallback: no audio notification
+      // Final fallback
       (audioRef as any).current = { play: () => console.log('Audio notification (silent fallback)') };
     }
   }, []);
@@ -298,43 +336,122 @@ export default function DriverPage() {
   };
 
   const showOrderNotification = (order: Order) => {
-    // Set pending order
+    console.log('🔔 New order notification received:', order);
+    
+    // Set pending order immediately
     setPendingOrder(order);
 
-    // Play long notification sound
-    if (audioRef.current && (audioRef as any).current.play) {
-      try {
-        (audioRef as any).current.play();
-      } catch (error) {
-        console.error('Audio play error:', error);
+    // Enhanced sound notification with multiple attempts
+    const playNotificationSound = () => {
+      if (audioRef.current && (audioRef as any).current.play) {
+        try {
+          console.log('🔊 Playing notification sound...');
+          (audioRef as any).current.play();
+          
+          // Play multiple times for stronger alert
+          setTimeout(() => (audioRef as any).current.play(), 1000);
+          setTimeout(() => (audioRef as any).current.play(), 2000);
+        } catch (error) {
+          console.error('Audio play error:', error);
+        }
       }
-    }
+    };
+    
+    playNotificationSound();
 
-    // Trigger vibration (if supported)
-    if ('vibrate' in navigator) {
-      navigator.vibrate([500, 100, 500, 100, 1000]); // Long vibration pattern
-    }
+    // Enhanced vibration with stronger pattern
+    const triggerVibration = () => {
+      if ('vibrate' in navigator) {
+        console.log('📳 Triggering vibration...');
+        // Multiple vibration patterns for stronger alert
+        navigator.vibrate([1000, 200, 1000, 200, 1000]); // Strong initial pattern
+        
+        // Repeat vibration every 3 seconds for 15 seconds
+        let vibrationCount = 0;
+        const vibrationInterval = setInterval(() => {
+          if (vibrationCount < 5 && pendingOrder?.id === order.id) {
+            navigator.vibrate([500, 100, 500]);
+            vibrationCount++;
+          } else {
+            clearInterval(vibrationInterval);
+          }
+        }, 3000);
+        
+        // Store interval to clear on order action
+        (window as any).activeVibrationInterval = vibrationInterval;
+      } else {
+        console.log('Vibration not supported');
+      }
+    };
+    
+    triggerVibration();
 
-    // Browser notification (if permission granted)
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const notification = new Notification('طلب جديد - PAKETY', {
-        body: `طلب من ${order.customerName} - ${order.totalAmount.toLocaleString()} د.ع`,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: `order-${order.id}`,
-        requireInteraction: true
-      });
+    // Enhanced browser notification with better mobile support
+    const showBrowserNotification = () => {
+      if ('Notification' in window) {
+        console.log('🔔 Notification permission:', Notification.permission);
+        
+        if (Notification.permission === 'granted') {
+          try {
+            const notification = new Notification('🔔 طلب جديد - PAKETY', {
+              body: `طلب من ${order.customerName}\n💰 ${typeof order.totalAmount === 'string' ? order.totalAmount : order.totalAmount.toLocaleString()} د.ع\n📍 ${order.address?.governorate || 'غير محدد'}`,
+              icon: '/favicon.ico',
+              badge: '/favicon.ico',
+              tag: `order-${order.id}`,
+              requireInteraction: true,
+              silent: false, // Ensure notification sound plays
+              ...(('vibrate' in navigator) && { vibrate: [1000, 200, 1000] })
+            });
 
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-    }
+            notification.onclick = () => {
+              console.log('Browser notification clicked');
+              window.focus();
+              notification.close();
+            };
+            
+            // Auto-close notification after 30 seconds
+            setTimeout(() => {
+              notification.close();
+            }, 30000);
+            
+            console.log('✅ Browser notification created');
+          } catch (notificationError) {
+            console.error('Browser notification error:', notificationError);
+          }
+        } else if (Notification.permission === 'default') {
+          // Request permission and retry
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              showBrowserNotification();
+            }
+          });
+        }
+      }
+    };
+    
+    showBrowserNotification();
+
+    // Show alert for maximum visibility (especially on mobile)
+    setTimeout(() => {
+      if (pendingOrder?.id === order.id) {
+        const shouldAlert = confirm(`🔔 طلب جديد!\n\nالعميل: ${order.customerName}\nالمبلغ: ${typeof order.totalAmount === 'string' ? order.totalAmount : order.totalAmount.toLocaleString()} د.ع\n\nاضغط موافق للمتابعة`);
+        if (shouldAlert) {
+          // Focus back to the page
+          window.focus();
+        }
+      }
+    }, 2000);
 
     // Auto-dismiss after 60 seconds if no action
     notificationTimeoutRef.current = setTimeout(() => {
       if (pendingOrder?.id === order.id) {
         setPendingOrder(null);
+        
+        // Clear any active vibration
+        if ((window as any).activeVibrationInterval) {
+          clearInterval((window as any).activeVibrationInterval);
+        }
+        
         toast({
           title: "انتهت مهلة الطلب",
           description: "تم تجاهل الطلب تلقائياً",
@@ -367,8 +484,14 @@ export default function DriverPage() {
       if (data.success) {
         setPendingOrder(null);
         
+        // Clear all notification timers and intervals
         if (notificationTimeoutRef.current) {
           clearTimeout(notificationTimeoutRef.current);
+        }
+        
+        // Clear active vibration
+        if ((window as any).activeVibrationInterval) {
+          clearInterval((window as any).activeVibrationInterval);
         }
 
         if (action === 'accept') {
@@ -419,11 +542,39 @@ export default function DriverPage() {
     });
   };
 
-  // Request notification permission on component mount
+  // Enhanced initialization with user interaction handlers
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    // Add click handler to enable audio on mobile (user interaction required)
+    const enableAudioOnInteraction = () => {
+      if (audioRef.current && (audioRef as any).current.play) {
+        try {
+          // Test audio by playing a very short, silent sound
+          const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+          if (AudioContext) {
+            const testContext = new AudioContext();
+            if (testContext.state === 'suspended') {
+              testContext.resume();
+            }
+            testContext.close();
+          }
+          console.log('✅ Audio enabled after user interaction');
+        } catch (e) {
+          console.log('Audio enablement test failed:', e);
+        }
+      }
+      
+      // Remove the event listener after first interaction
+      document.removeEventListener('click', enableAudioOnInteraction);
+      document.removeEventListener('touchstart', enableAudioOnInteraction);
+    };
+    
+    document.addEventListener('click', enableAudioOnInteraction);
+    document.addEventListener('touchstart', enableAudioOnInteraction);
+    
+    return () => {
+      document.removeEventListener('click', enableAudioOnInteraction);
+      document.removeEventListener('touchstart', enableAudioOnInteraction);
+    };
   }, []);
 
   if (loading) {
@@ -519,6 +670,41 @@ export default function DriverPage() {
                 <p className="text-sm font-medium text-gray-900">{driver?.fullName}</p>
                 <p className="text-xs text-gray-500">{driver?.phone}</p>
               </div>
+
+              {/* Test Notification Button */}
+              <Button
+                size="sm"
+                onClick={() => {
+                  // Test notification with dummy order
+                  const testOrder: Order = {
+                    id: 999,
+                    customerId: 1,
+                    customerName: "اختبار العميل",
+                    customerPhone: "07512345678",
+                    customerAddress: "بغداد - الكرادة",
+                    address: {
+                      governorate: "بغداد",  
+                      district: "الكرادة",
+                      neighborhood: "الكرادة الداخلية",
+                      notes: "بناية اختبار"
+                    },
+                    items: [
+                      { id: 1, name: "خيار", quantity: 2, price: 1000, total: "2,000" }
+                    ],
+                    subtotal: 2000,
+                    deliveryFee: 2500,
+                    totalAmount: "4,500",
+                    status: "pending",
+                    createdAt: new Date().toISOString(),
+                    notes: "اختبار الإشعارات"
+                  };
+                  showOrderNotification(testOrder);
+                }}
+                className="font-cairo bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Bell size={16} className="ml-1" />
+                اختبار
+              </Button>
 
               {/* Logout Button */}
               <Button
