@@ -21,15 +21,22 @@ interface Order {
   customerName: string;
   customerPhone: string;
   customerAddress: string;
+  address?: {
+    governorate: string;
+    district: string;
+    neighborhood: string;
+    notes?: string;
+  };
   items: Array<{
     id: number;
     name: string;
     quantity: number;
     price: number;
+    total: string;
   }>;
   subtotal: number;
   deliveryFee: number;
-  totalAmount: number;
+  totalAmount: string | number;
   status: string;
   createdAt: string;
   notes?: string;
@@ -58,38 +65,54 @@ export default function DriverPage() {
 
   // Initialize notification audio
   useEffect(() => {
-    // Create a longer, more attention-grabbing notification sound
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    const createNotificationSound = () => {
-      // Create a composite sound with multiple tones for urgency
-      const oscillator1 = audioContext.createOscillator();
-      const oscillator2 = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+    // Create notification sound safely with error handling
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) {
+        console.log('AudioContext not supported');
+        return;
+      }
       
-      oscillator1.connect(gainNode);
-      oscillator2.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      const audioContext = new AudioContext();
       
-      // High and low frequency tones for attention
-      oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
-      oscillator2.frequency.setValueAtTime(1200, audioContext.currentTime);
+      const createNotificationSound = () => {
+        try {
+          // Create a composite sound with multiple tones for urgency
+          const oscillator1 = audioContext.createOscillator();
+          const oscillator2 = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator1.connect(gainNode);
+          oscillator2.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          // High and low frequency tones for attention
+          oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
+          oscillator2.frequency.setValueAtTime(1200, audioContext.currentTime);
+          
+          // Volume envelope for dramatic effect
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.1);
+          gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.5);
+          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 1.0);
+          gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 2.0);
+          
+          oscillator1.start(audioContext.currentTime);
+          oscillator2.start(audioContext.currentTime);
+          oscillator1.stop(audioContext.currentTime + 2.0);
+          oscillator2.stop(audioContext.currentTime + 2.0);
+        } catch (soundError) {
+          console.error('Error creating notification sound:', soundError);
+        }
+      };
       
-      // Volume envelope for dramatic effect
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.1);
-      gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.5);
-      gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 1.0);
-      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 2.0);
-      
-      oscillator1.start(audioContext.currentTime);
-      oscillator2.start(audioContext.currentTime);
-      oscillator1.stop(audioContext.currentTime + 2.0);
-      oscillator2.stop(audioContext.currentTime + 2.0);
-    };
-    
-    // Store the sound creation function
-    (audioRef as any).current = { play: createNotificationSound };
+      // Store the sound creation function
+      (audioRef as any).current = { play: createNotificationSound };
+    } catch (audioError) {
+      console.error('AudioContext initialization error:', audioError);
+      // Fallback: no audio notification
+      (audioRef as any).current = { play: () => console.log('Audio notification (silent fallback)') };
+    }
   }, []);
 
   // Check authentication on load
@@ -526,7 +549,9 @@ export default function DriverPage() {
               <div className="space-y-4 font-cairo">
                 <div className="text-center mb-4">
                   <div className="text-2xl font-bold text-green-600">
-                    💰 {parseFloat(pendingOrder.totalAmount.replace(/,/g, '')).toLocaleString()} د.ع
+                    💰 {typeof pendingOrder.totalAmount === 'string' 
+                         ? parseFloat(pendingOrder.totalAmount.replace(/,/g, '')).toLocaleString() 
+                         : pendingOrder.totalAmount.toLocaleString()} د.ع
                   </div>
                 </div>
 
