@@ -92,11 +92,24 @@ export default function DriverPage() {
         }
       }
       
-      // Test vibration capability on Android
+      // Test vibration capability on Android with multiple patterns
       if ('vibrate' in navigator) {
         console.log('✅ Vibration API available on Android');
-        // Short test vibration to ensure it works
-        navigator.vibrate([200]);
+        // Test multiple vibration patterns to ensure Android compatibility
+        setTimeout(() => {
+          const success1 = navigator.vibrate(200);
+          console.log('Test vibration 1:', success1);
+        }, 500);
+        
+        setTimeout(() => {
+          const success2 = navigator.vibrate([300, 100, 300]);
+          console.log('Test vibration 2:', success2);
+        }, 1500);
+        
+        setTimeout(() => {
+          const success3 = navigator.vibrate(500);
+          console.log('Test vibration 3:', success3);
+        }, 3000);
       } else {
         console.log('❌ Vibration API not supported');
       }
@@ -393,43 +406,97 @@ export default function DriverPage() {
     
     playNotificationSound();
 
-    // Enhanced vibration with Android-specific patterns
+    // Ultra-aggressive Android vibration with multiple fallbacks
     const triggerVibration = () => {
+      console.log('🔥 Starting AGGRESSIVE Android vibration sequence...');
+      
       if ('vibrate' in navigator) {
-        console.log('📳 Triggering Android vibration...');
-        
-        // Immediate strong vibration for attention
-        const vibrationSuccess = navigator.vibrate([1000, 200, 1000, 200, 1000, 200, 1000]);
-        console.log('Initial vibration triggered:', vibrationSuccess);
-        
-        // Continuous vibration alerts every 2 seconds for 20 seconds
-        let vibrationCount = 0;
-        const vibrationInterval = setInterval(() => {
-          if (vibrationCount < 10 && pendingOrder?.id === order.id) {
-            const success = navigator.vibrate([800, 100, 800]);
-            console.log(`Vibration ${vibrationCount + 1} triggered:`, success);
-            vibrationCount++;
-          } else {
-            clearInterval(vibrationInterval);
-            console.log('Vibration sequence completed');
-          }
-        }, 2000);
-        
-        // Store interval to clear on order action
-        (window as any).activeVibrationInterval = vibrationInterval;
-      } else {
-        console.log('❌ Vibration API not supported on this device');
-        
-        // Fallback: Try to trigger device attention through other means
+        // Method 1: Direct vibration call
         try {
-          // Flash the screen by changing document style
-          document.body.style.backgroundColor = '#ff0000';
-          setTimeout(() => {
-            document.body.style.backgroundColor = '';
-          }, 100);
+          const directVibration = navigator.vibrate(1000);
+          console.log('Direct vibration result:', directVibration);
         } catch (e) {
-          console.log('Screen flash fallback failed');
+          console.error('Direct vibration failed:', e);
         }
+        
+        // Method 2: Pattern vibration with delays
+        setTimeout(() => {
+          try {
+            const patternVibration = navigator.vibrate([500, 200, 500, 200, 500]);
+            console.log('Pattern vibration result:', patternVibration);
+          } catch (e) {
+            console.error('Pattern vibration failed:', e);
+          }
+        }, 100);
+        
+        // Method 3: Continuous strong pulses
+        let pulseCount = 0;
+        const vibrationPulse = setInterval(() => {
+          if (pulseCount < 15 && (!pendingOrder || pendingOrder?.id === order.id)) {
+            try {
+              // Try multiple vibration approaches
+              const result1 = navigator.vibrate(400);
+              console.log(`Pulse ${pulseCount + 1} vibration:`, result1);
+              
+              // Alternative vibration method
+              setTimeout(() => {
+                const result2 = navigator.vibrate([200, 50, 200]);
+                console.log(`Pulse ${pulseCount + 1} alt vibration:`, result2);
+              }, 100);
+              
+              pulseCount++;
+            } catch (e) {
+              console.error(`Pulse ${pulseCount + 1} vibration error:`, e);
+              pulseCount++;
+            }
+          } else {
+            clearInterval(vibrationPulse);
+            console.log('Vibration pulse sequence completed');
+          }
+        }, 1500);
+        
+        // Store interval for cleanup
+        (window as any).activeVibrationInterval = vibrationPulse;
+        
+        // Method 4: Aggressive long vibration sequence
+        setTimeout(() => {
+          try {
+            const longVibration = navigator.vibrate([1000, 300, 1000, 300, 1000]);
+            console.log('Long vibration sequence:', longVibration);
+          } catch (e) {
+            console.error('Long vibration failed:', e);
+          }
+        }, 500);
+        
+      } else {
+        console.log('❌ Vibration API completely unavailable');
+        
+        // Enhanced visual feedback fallback
+        const flashSequence = () => {
+          const colors = ['#ff0000', '#00ff00', '#ff0000', '#00ff00'];
+          colors.forEach((color, index) => {
+            setTimeout(() => {
+              document.body.style.backgroundColor = color;
+              setTimeout(() => {
+                document.body.style.backgroundColor = '';
+              }, 100);
+            }, index * 200);
+          });
+        };
+        
+        flashSequence();
+        
+        // Try to wake device through rapid DOM manipulation
+        let domCount = 0;
+        const domInterval = setInterval(() => {
+          if (domCount < 10) {
+            document.title = domCount % 2 === 0 ? '🔴 طلب جديد!' : '🟢 PAKETY';
+            domCount++;
+          } else {
+            clearInterval(domInterval);
+            document.title = 'سائق PAKETY';
+          }
+        }, 200);
       }
     };
     
@@ -540,9 +607,15 @@ export default function DriverPage() {
         if (shouldAlert) {
           window.focus();
           
-          // Additional vibration on user interaction
+          // Immediate strong vibration on user interaction
           if ('vibrate' in navigator) {
-            navigator.vibrate([200, 100, 200]);
+            try {
+              navigator.vibrate(800);
+              setTimeout(() => navigator.vibrate([200, 100, 200, 100, 200]), 200);
+              console.log('User interaction vibration triggered');
+            } catch (e) {
+              console.error('User interaction vibration failed:', e);
+            }
           }
         }
       }
@@ -776,6 +849,50 @@ export default function DriverPage() {
                 <p className="text-sm font-medium text-gray-900">{driver?.fullName}</p>
                 <p className="text-xs text-gray-500">{driver?.phone}</p>
               </div>
+
+              {/* Vibration Test Button */}
+              <Button
+                size="sm"
+                onClick={() => {
+                  console.log('🔥 Manual vibration test started...');
+                  if ('vibrate' in navigator) {
+                    // Test sequence 1: Simple vibration
+                    navigator.vibrate(500);
+                    console.log('Test 1: Simple 500ms vibration');
+                    
+                    // Test sequence 2: Pattern after delay
+                    setTimeout(() => {
+                      const result = navigator.vibrate([200, 100, 200, 100, 200]);
+                      console.log('Test 2: Pattern vibration result:', result);
+                    }, 1000);
+                    
+                    // Test sequence 3: Long continuous
+                    setTimeout(() => {
+                      const result = navigator.vibrate(1000);
+                      console.log('Test 3: Long vibration result:', result);
+                    }, 2500);
+                    
+                    // Test sequence 4: Multiple rapid pulses
+                    let testCount = 0;
+                    const testInterval = setInterval(() => {
+                      if (testCount < 5) {
+                        const result = navigator.vibrate(150);
+                        console.log(`Test 4.${testCount + 1}: Rapid pulse result:`, result);
+                        testCount++;
+                      } else {
+                        clearInterval(testInterval);
+                        console.log('✅ Vibration test sequence completed');
+                      }
+                    }, 300);
+                  } else {
+                    console.log('❌ Vibration API not available for testing');
+                    alert('Vibration API غير متوفر على هذا الجهاز');
+                  }
+                }}
+                className="font-cairo bg-red-600 hover:bg-red-700 text-white"
+              >
+                📳 اهتزاز
+              </Button>
 
               {/* Test Notification Button */}
               <Button
