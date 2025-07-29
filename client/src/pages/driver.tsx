@@ -381,11 +381,64 @@ export default function DriverPage() {
     // Set pending order immediately
     setPendingOrder(order);
 
-    // Beautiful sound notification
+    // Check if running in React Native WebView
+    const isReactNativeWebView = () => {
+      return (window as any).ReactNativeWebView !== undefined || 
+             (window as any).webkit?.messageHandlers?.ReactNativeWebView !== undefined ||
+             navigator.userAgent.includes('ReactNative');
+    };
+
+    // Send notification data to React Native app
+    if (isReactNativeWebView()) {
+      const notificationData = {
+        type: 'NEW_ORDER_NOTIFICATION',
+        payload: {
+          orderId: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          totalAmount: order.totalAmount,
+          address: order.address?.governorate || order.customerAddress,
+          items: order.items,
+          timestamp: Date.now()
+        }
+      };
+
+      // Send via multiple React Native communication methods
+      try {
+        // Method 1: Direct ReactNativeWebView postMessage
+        if ((window as any).ReactNativeWebView) {
+          (window as any).ReactNativeWebView.postMessage(JSON.stringify(notificationData));
+          console.log('📱 Sent notification to React Native via ReactNativeWebView');
+        }
+        
+        // Method 2: iOS WebKit message handler
+        if ((window as any).webkit?.messageHandlers?.ReactNativeWebView) {
+          (window as any).webkit.messageHandlers.ReactNativeWebView.postMessage(notificationData);
+          console.log('📱 Sent notification to React Native via WebKit');
+        }
+        
+        // Method 3: Custom window function for Android
+        if ((window as any).ReactNativeWebViewBridge) {
+          (window as any).ReactNativeWebViewBridge.postMessage(JSON.stringify(notificationData));
+          console.log('📱 Sent notification to React Native via custom bridge');
+        }
+
+        console.log('📱 Notification data sent to React Native:', notificationData);
+        
+        // Don't play web audio/vibration in React Native - let native app handle it
+        return;
+        
+      } catch (error) {
+        console.error('❌ Failed to send notification to React Native:', error);
+        // Fallback to web notifications if React Native communication fails
+      }
+    }
+
+    // Web browser fallback: Beautiful sound notification
     const playElegantSound = () => {
       if (audioRef.current && (audioRef as any).current.play) {
         try {
-          console.log('🎵 Playing elegant notification...');
+          console.log('🎵 Playing elegant web notification...');
           (audioRef as any).current.play();
         } catch (error) {
           console.error('Audio play error:', error);
@@ -453,7 +506,10 @@ export default function DriverPage() {
       }
     };
     
-    triggerElegantVibration();
+    // Only trigger web vibration if not in React Native WebView
+    if (!isReactNativeWebView()) {
+      triggerElegantVibration();
+    }
 
     // Enhanced Android system notification with maximum compatibility
     const showBrowserNotification = () => {
@@ -517,7 +573,11 @@ export default function DriverPage() {
             Notification.requestPermission().then(permission => {
               console.log('Fallback permission result:', permission);
               if (permission === 'granted') {
-                setTimeout(() => showBrowserNotification(), 500);
+                setTimeout(() => {
+                  if (!isReactNativeWebView()) {
+                    showBrowserNotification();
+                  }
+                }, 500);
               }
             });
           }
@@ -526,7 +586,9 @@ export default function DriverPage() {
           Notification.requestPermission().then(permission => {
             console.log('📱 Android permission granted:', permission);
             if (permission === 'granted') {
-              showBrowserNotification();
+              if (!isReactNativeWebView()) {
+                showBrowserNotification();
+              }
             } else {
               console.log('❌ Android notification permission denied');
             }
@@ -539,7 +601,10 @@ export default function DriverPage() {
       }
     };
     
-    showBrowserNotification();
+    // Only show browser notifications if not in React Native WebView
+    if (!isReactNativeWebView()) {
+      showBrowserNotification();
+    }
 
     // Android-specific wake up and alert mechanisms
     setTimeout(() => {
@@ -803,39 +868,71 @@ export default function DriverPage() {
                 <p className="text-xs text-gray-500">{driver?.phone}</p>
               </div>
 
-              {/* Beautiful Vibration Test Button */}
+              {/* React Native Compatible Test Button */}
               <Button
                 size="sm"
                 onClick={() => {
-                  console.log('🎵 Beautiful vibration test started...');
-                  if ('vibrate' in navigator) {
-                    // Test the elegant harmonic pattern
-                    const result1 = navigator.vibrate([300, 100, 200, 100, 200]);
-                    console.log('🎵 Harmonic pattern 1:', result1);
+                  console.log('🎵 Testing notification system...');
+                  
+                  // Check if running in React Native WebView
+                  const isRN = (window as any).ReactNativeWebView !== undefined || 
+                              (window as any).webkit?.messageHandlers?.ReactNativeWebView !== undefined ||
+                              navigator.userAgent.includes('ReactNative');
+                  
+                  if (isRN) {
+                    // Send test notification to React Native
+                    const testNotificationData = {
+                      type: 'TEST_NOTIFICATION',
+                      payload: {
+                        orderId: 999,
+                        customerName: "اختبار العميل",
+                        customerPhone: "07512345678",
+                        totalAmount: "4,500",
+                        address: "بغداد - الكرادة",
+                        items: [{ id: 1, name: "خيار", quantity: 2, price: 1000, total: "2,000" }],
+                        timestamp: Date.now()
+                      }
+                    };
                     
-                    setTimeout(() => {
-                      const result2 = navigator.vibrate([150, 50, 150]);
-                      console.log('🎵 Harmonic pattern 2:', result2);
-                    }, 400);
+                    try {
+                      if ((window as any).ReactNativeWebView) {
+                        (window as any).ReactNativeWebView.postMessage(JSON.stringify(testNotificationData));
+                        console.log('📱 Test notification sent to React Native');
+                      }
+                      
+                      if ((window as any).webkit?.messageHandlers?.ReactNativeWebView) {
+                        (window as any).webkit.messageHandlers.ReactNativeWebView.postMessage(testNotificationData);
+                        console.log('📱 Test notification sent via WebKit');
+                      }
+                      
+                      if ((window as any).ReactNativeWebViewBridge) {
+                        (window as any).ReactNativeWebViewBridge.postMessage(JSON.stringify(testNotificationData));
+                        console.log('📱 Test notification sent via custom bridge');
+                      }
+                    } catch (e) {
+                      console.error('❌ Failed to send test notification to React Native:', e);
+                    }
+                  } else {
+                    // Web browser test
+                    if ('vibrate' in navigator) {
+                      const result1 = navigator.vibrate([300, 100, 200, 100, 200]);
+                      console.log('🎵 Web harmonic pattern 1:', result1);
+                      
+                      setTimeout(() => {
+                        const result2 = navigator.vibrate([150, 50, 150]);
+                        console.log('🎵 Web harmonic pattern 2:', result2);
+                      }, 400);
+                    }
                     
-                    // Play the beautiful sound along with vibration
+                    // Play web sound
                     if (audioRef.current && (audioRef as any).current.play) {
                       try {
                         (audioRef as any).current.play();
-                        console.log('🎵 Sound and vibration harmony test');
+                        console.log('🎵 Web sound and vibration test');
                       } catch (e) {
-                        console.error('Sound test error:', e);
+                        console.error('Web sound test error:', e);
                       }
                     }
-                  } else {
-                    console.log('📳 Vibration not available, testing visual elegance');
-                    // Elegant visual feedback
-                    document.body.style.transition = 'background-color 0.3s ease';
-                    document.body.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-                    setTimeout(() => {
-                      document.body.style.backgroundColor = '';
-                      setTimeout(() => document.body.style.transition = '', 300);
-                    }, 600);
                   }
                 }}
                 className="font-cairo bg-green-600 hover:bg-green-700 text-white"
