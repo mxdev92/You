@@ -103,86 +103,94 @@ export default function DriverPage() {
     requestNotificationPermission();
   }, []);
 
-  // Create notification sound with mobile compatibility  
+  // Beautiful, harmonious notification sound system
   useEffect(() => {
-    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) {
-        console.log('AudioContext not supported');
-        // Fallback to HTML5 audio for mobile
-        const audio = new Audio();
-        audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUaAz2CzfPbhysEL4zR8t15TQgZa7vm46BGEAhOqeDwtWAaAzbz8t9qHQI1f8PwaB8AMTmOwdP0z2gUAUZ2x7qFCxYPPG6j3vBz3H4/AQMVJZ7QzD6Jmgs=';
-        (audioRef as any).current = { 
-          play: () => {
-            try {
-              audio.currentTime = 0;
-              audio.play().catch(e => console.log('Audio play failed:', e));
-            } catch (e) {
-              console.log('Audio fallback failed:', e);
+    const createElegantAudio = () => {
+      try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        
+        if (!AudioContext) {
+          // Elegant HTML5 fallback with beautiful tone
+          const audio = new Audio();
+          audio.src = 'data:audio/wav;base64,UklGRl9yAABXQVZFZmt0IBgAAAABAAEAECcAACBOAAACABAAAABzbmQgCAAAAAEAAAB0ZXh0GgAAAAAAAABMYXZmNTcuODMuMTAwZmFrZQAAAAAAPAAAAAABACoAAABkYXRhFAAAAAlAQUlOdGVyZmFjZQABAAAAAQAA';
+          (audioRef as any).current = { 
+            play: () => {
+              try {
+                audio.currentTime = 0;
+                audio.volume = 0.4; // Gentle volume
+                audio.play().catch(() => {}); // Silent catch for elegance
+              } catch (e) {
+                // Silent elegant fallback
+              }
             }
+          };
+          return;
+        }
+
+        let audioContext: AudioContext | null = null;
+        
+        // Create beautiful, harmonious notification sound
+        const createElegantSound = () => {
+          try {
+            if (!audioContext) {
+              audioContext = new AudioContext();
+            }
+            
+            if (audioContext.state === 'suspended') {
+              audioContext.resume();
+            }
+            
+            // Beautiful chord progression: C Major (C-E-G)
+            const createTone = (frequency: number, startTime: number, duration: number, volume: number) => {
+              const oscillator = audioContext!.createOscillator();
+              const gainNode = audioContext!.createGain();
+              
+              oscillator.connect(gainNode);
+              gainNode.connect(audioContext!.destination);
+              
+              oscillator.frequency.setValueAtTime(frequency, startTime);
+              oscillator.type = 'sine'; // Pure, beautiful sine wave
+              
+              // Smooth, elegant envelope
+              gainNode.gain.setValueAtTime(0, startTime);
+              gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.1);
+              gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+              
+              oscillator.start(startTime);
+              oscillator.stop(startTime + duration);
+            };
+            
+            const currentTime = audioContext.currentTime;
+            
+            // First chord: C Major (523.25Hz, 659.25Hz, 783.99Hz)
+            createTone(523.25, currentTime, 1.2, 0.15); // C5
+            createTone(659.25, currentTime, 1.2, 0.12); // E5
+            createTone(783.99, currentTime, 1.2, 0.10); // G5
+            
+            // Second chord (softer): F Major (349.23Hz, 440Hz, 523.25Hz)
+            setTimeout(() => {
+              const time2 = audioContext!.currentTime;
+              createTone(349.23, time2, 0.8, 0.08); // F4
+              createTone(440, time2, 0.8, 0.06); // A4
+              createTone(523.25, time2, 0.8, 0.05); // C5
+            }, 400);
+            
+            console.log('🎵 Beautiful notification sound played');
+            
+          } catch (error) {
+            console.error('Elegant sound creation error:', error);
           }
         };
-        return;
+        
+        (audioRef as any).current = { play: createElegantSound };
+        
+      } catch (error) {
+        console.error('Audio system initialization error:', error);
+        (audioRef as any).current = { play: () => {} };
       }
-      
-      // AudioContext-based sound for desktop/supported browsers
-      let audioContext: AudioContext | null = null;
-      
-      const createNotificationSound = () => {
-        try {
-          // Initialize AudioContext on first play (required for mobile)
-          if (!audioContext) {
-            audioContext = new AudioContext();
-          }
-          
-          // Resume context if suspended (mobile requirement)
-          if (audioContext.state === 'suspended') {
-            audioContext.resume();
-          }
-          
-          // Create multiple tones for urgent notification
-          const oscillator1 = audioContext.createOscillator();
-          const oscillator2 = audioContext.createOscillator();
-          const oscillator3 = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-          
-          oscillator1.connect(gainNode);
-          oscillator2.connect(gainNode);
-          oscillator3.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-          
-          // Three-tone alarm pattern for maximum attention
-          oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
-          oscillator2.frequency.setValueAtTime(1000, audioContext.currentTime);
-          oscillator3.frequency.setValueAtTime(1200, audioContext.currentTime);
-          
-          // Dramatic volume envelope with multiple peaks
-          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.1);
-          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.3);
-          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.5);
-          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.7);
-          gainNode.gain.linearRampToValueAtTime(0.8, audioContext.currentTime + 0.9);
-          gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.5);
-          
-          oscillator1.start(audioContext.currentTime);
-          oscillator2.start(audioContext.currentTime);
-          oscillator3.start(audioContext.currentTime);
-          oscillator1.stop(audioContext.currentTime + 1.5);
-          oscillator2.stop(audioContext.currentTime + 1.5);
-          oscillator3.stop(audioContext.currentTime + 1.5);
-        } catch (soundError) {
-          console.error('Error creating notification sound:', soundError);
-        }
-      };
-      
-      // Store the sound creation function
-      (audioRef as any).current = { play: createNotificationSound };
-    } catch (audioError) {
-      console.error('AudioContext initialization error:', audioError);
-      // Final fallback
-      (audioRef as any).current = { play: () => console.log('Audio notification (silent fallback)') };
-    }
+    };
+    
+    createElegantAudio();
   }, []);
 
   // Check authentication on load
@@ -373,119 +381,79 @@ export default function DriverPage() {
     // Set pending order immediately
     setPendingOrder(order);
 
-    // Enhanced sound notification with multiple attempts
-    const playNotificationSound = () => {
+    // Beautiful sound notification
+    const playElegantSound = () => {
       if (audioRef.current && (audioRef as any).current.play) {
         try {
-          console.log('🔊 Playing notification sound...');
+          console.log('🎵 Playing elegant notification...');
           (audioRef as any).current.play();
-          
-          // Play multiple times for stronger alert
-          setTimeout(() => (audioRef as any).current.play(), 1000);
-          setTimeout(() => (audioRef as any).current.play(), 2000);
         } catch (error) {
           console.error('Audio play error:', error);
         }
       }
     };
     
-    playNotificationSound();
+    playElegantSound();
 
-    // Ultra-aggressive Android vibration with multiple fallbacks
-    const triggerVibration = () => {
-      console.log('🔥 Starting AGGRESSIVE Android vibration sequence...');
-      
+    // Elegant, harmonious vibration matching the beautiful sound
+    const triggerElegantVibration = () => {
       if ('vibrate' in navigator) {
-        // Method 1: Direct vibration call
         try {
-          const directVibration = navigator.vibrate(1000);
-          console.log('Direct vibration result:', directVibration);
-        } catch (e) {
-          console.error('Direct vibration failed:', e);
-        }
-        
-        // Method 2: Pattern vibration with delays
-        setTimeout(() => {
-          try {
-            const patternVibration = navigator.vibrate([500, 200, 500, 200, 500]);
-            console.log('Pattern vibration result:', patternVibration);
-          } catch (e) {
-            console.error('Pattern vibration failed:', e);
-          }
-        }, 100);
-        
-        // Method 3: Continuous strong pulses
-        let pulseCount = 0;
-        const vibrationPulse = setInterval(() => {
-          if (pulseCount < 15 && (!pendingOrder || pendingOrder?.id === order.id)) {
-            try {
-              // Try multiple vibration approaches
-              const result1 = navigator.vibrate(400);
-              console.log(`Pulse ${pulseCount + 1} vibration:`, result1);
-              
-              // Alternative vibration method
-              setTimeout(() => {
-                const result2 = navigator.vibrate([200, 50, 200]);
-                console.log(`Pulse ${pulseCount + 1} alt vibration:`, result2);
-              }, 100);
-              
-              pulseCount++;
-            } catch (e) {
-              console.error(`Pulse ${pulseCount + 1} vibration error:`, e);
-              pulseCount++;
+          console.log('📳 Elegant vibration sequence starting...');
+          
+          // Pattern that matches the beautiful C Major chord progression
+          // Synchronized with the audio timing for harmony
+          
+          // First vibration: Matches C Major chord (strong but elegant)
+          const firstVibration = navigator.vibrate([300, 100, 200, 100, 200]);
+          console.log('🎵 First harmonic vibration:', firstVibration);
+          
+          // Second vibration: Matches F Major chord (softer, after 400ms delay)
+          setTimeout(() => {
+            const secondVibration = navigator.vibrate([150, 50, 150]);
+            console.log('🎵 Second harmonic vibration:', secondVibration);
+          }, 400);
+          
+          // Gentle reminder vibration after 3 seconds (if order still pending)
+          setTimeout(() => {
+            if (pendingOrder?.id === order.id) {
+              const reminderVibration = navigator.vibrate([100, 100, 100]);
+              console.log('🔔 Gentle reminder vibration:', reminderVibration);
             }
-          } else {
-            clearInterval(vibrationPulse);
-            console.log('Vibration pulse sequence completed');
-          }
-        }, 1500);
-        
-        // Store interval for cleanup
-        (window as any).activeVibrationInterval = vibrationPulse;
-        
-        // Method 4: Aggressive long vibration sequence
-        setTimeout(() => {
-          try {
-            const longVibration = navigator.vibrate([1000, 300, 1000, 300, 1000]);
-            console.log('Long vibration sequence:', longVibration);
-          } catch (e) {
-            console.error('Long vibration failed:', e);
-          }
-        }, 500);
-        
+          }, 3000);
+          
+          // Final soft reminder after 10 seconds
+          setTimeout(() => {
+            if (pendingOrder?.id === order.id) {
+              const finalVibration = navigator.vibrate([200]);
+              console.log('💫 Final gentle vibration:', finalVibration);
+            }
+          }, 10000);
+          
+        } catch (e) {
+          console.error('Elegant vibration error:', e);
+        }
       } else {
-        console.log('❌ Vibration API completely unavailable');
+        console.log('📳 Vibration not available - using visual elegance');
         
-        // Enhanced visual feedback fallback
-        const flashSequence = () => {
-          const colors = ['#ff0000', '#00ff00', '#ff0000', '#00ff00'];
-          colors.forEach((color, index) => {
+        // Elegant visual feedback instead of harsh flashing
+        const elegantGlow = () => {
+          document.body.style.transition = 'background-color 0.3s ease';
+          document.body.style.backgroundColor = 'rgba(34, 197, 94, 0.1)'; // Soft green glow
+          
+          setTimeout(() => {
+            document.body.style.backgroundColor = '';
             setTimeout(() => {
-              document.body.style.backgroundColor = color;
-              setTimeout(() => {
-                document.body.style.backgroundColor = '';
-              }, 100);
-            }, index * 200);
-          });
+              document.body.style.transition = '';
+            }, 300);
+          }, 600);
         };
         
-        flashSequence();
-        
-        // Try to wake device through rapid DOM manipulation
-        let domCount = 0;
-        const domInterval = setInterval(() => {
-          if (domCount < 10) {
-            document.title = domCount % 2 === 0 ? '🔴 طلب جديد!' : '🟢 PAKETY';
-            domCount++;
-          } else {
-            clearInterval(domInterval);
-            document.title = 'سائق PAKETY';
-          }
-        }, 200);
+        elegantGlow();
       }
     };
     
-    triggerVibration();
+    triggerElegantVibration();
 
     // Enhanced Android system notification with maximum compatibility
     const showBrowserNotification = () => {
@@ -835,48 +803,44 @@ export default function DriverPage() {
                 <p className="text-xs text-gray-500">{driver?.phone}</p>
               </div>
 
-              {/* Vibration Test Button */}
+              {/* Beautiful Vibration Test Button */}
               <Button
                 size="sm"
                 onClick={() => {
-                  console.log('🔥 Manual vibration test started...');
+                  console.log('🎵 Beautiful vibration test started...');
                   if ('vibrate' in navigator) {
-                    // Test sequence 1: Simple vibration
-                    navigator.vibrate(500);
-                    console.log('Test 1: Simple 500ms vibration');
+                    // Test the elegant harmonic pattern
+                    const result1 = navigator.vibrate([300, 100, 200, 100, 200]);
+                    console.log('🎵 Harmonic pattern 1:', result1);
                     
-                    // Test sequence 2: Pattern after delay
                     setTimeout(() => {
-                      const result = navigator.vibrate([200, 100, 200, 100, 200]);
-                      console.log('Test 2: Pattern vibration result:', result);
-                    }, 1000);
+                      const result2 = navigator.vibrate([150, 50, 150]);
+                      console.log('🎵 Harmonic pattern 2:', result2);
+                    }, 400);
                     
-                    // Test sequence 3: Long continuous
-                    setTimeout(() => {
-                      const result = navigator.vibrate(1000);
-                      console.log('Test 3: Long vibration result:', result);
-                    }, 2500);
-                    
-                    // Test sequence 4: Multiple rapid pulses
-                    let testCount = 0;
-                    const testInterval = setInterval(() => {
-                      if (testCount < 5) {
-                        const result = navigator.vibrate(150);
-                        console.log(`Test 4.${testCount + 1}: Rapid pulse result:`, result);
-                        testCount++;
-                      } else {
-                        clearInterval(testInterval);
-                        console.log('✅ Vibration test sequence completed');
+                    // Play the beautiful sound along with vibration
+                    if (audioRef.current && (audioRef as any).current.play) {
+                      try {
+                        (audioRef as any).current.play();
+                        console.log('🎵 Sound and vibration harmony test');
+                      } catch (e) {
+                        console.error('Sound test error:', e);
                       }
-                    }, 300);
+                    }
                   } else {
-                    console.log('❌ Vibration API not available for testing');
-                    alert('Vibration API غير متوفر على هذا الجهاز');
+                    console.log('📳 Vibration not available, testing visual elegance');
+                    // Elegant visual feedback
+                    document.body.style.transition = 'background-color 0.3s ease';
+                    document.body.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                    setTimeout(() => {
+                      document.body.style.backgroundColor = '';
+                      setTimeout(() => document.body.style.transition = '', 300);
+                    }, 600);
                   }
                 }}
-                className="font-cairo bg-red-600 hover:bg-red-700 text-white"
+                className="font-cairo bg-green-600 hover:bg-green-700 text-white"
               >
-                📳 اهتزاز
+                🎵 تجربة
               </Button>
 
               {/* Test Notification Button */}
