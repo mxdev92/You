@@ -2022,6 +2022,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Driver statistics endpoint (protected)
+  app.get('/api/drivers/stats', authenticateDriver, async (req: any, res) => {
+    try {
+      const driverId = req.driver.id;
+      const orders = await storage.getOrders();
+      
+      // Filter orders for this driver
+      const driverOrders = orders.filter(order => order.driverId === driverId);
+      
+      // Calculate today's stats
+      const today = new Date().toDateString();
+      const todayOrders = driverOrders.filter(order => 
+        new Date(order.orderDate).toDateString() === today
+      );
+      const completedToday = todayOrders.filter(order => order.status === 'delivered');
+      
+      // Calculate earnings (assuming 10% commission per delivery)
+      const todayEarnings = completedToday.reduce((sum, order) => {
+        return sum + (parseFloat(order.totalAmount) * 0.1);
+      }, 0);
+      
+      const stats = {
+        todayDeliveries: completedToday.length,
+        todayEarnings: Math.round(todayEarnings),
+        totalDeliveries: driverOrders.filter(order => order.status === 'delivered').length,
+        averageRating: 4.8 // Placeholder - implement actual rating system later
+      };
+
+      res.json({
+        success: true,
+        stats
+      });
+
+    } catch (error: any) {
+      console.error('Get driver stats error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تحميل الإحصائيات' 
+      });
+    }
+  });
+
   // Drivers API Routes (Admin)
   app.get('/api/drivers', async (req, res) => {
     try {
@@ -2682,6 +2724,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected for real-time updates');
+    
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'DRIVER_REGISTER') {
+          // Register driver WebSocket connection
+          const driverId = data.driverId;
+          const token = data.token;
+          
+          if (driverId && token) {
+            // Verify JWT token
+            try {
+              jwt.verify(token, JWT_SECRET);
+              driverWebSockets.set(driverId, ws);
+              console.log(`✅ Driver ${driverId} registered for real-time notifications`);
+              
+              ws.send(JSON.stringify({
+                type: 'REGISTRATION_SUCCESS',
+                message: 'Driver registered successfully',
+                driverId: driverId
+              }));
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: 'REGISTRATION_ERROR',
+                message: 'Invalid authentication token'
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket message parse error:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      // Remove driver from WebSocket connections
+      for (const [driverId, socket] of driverWebSockets.entries()) {
+        if (socket === ws) {
+          driverWebSockets.delete(driverId);
+          console.log(`Driver ${driverId} disconnected from WebSocket`);
+          break;
+        }
+      }
+    });
     let driverId: number | null = null;
     
     ws.on('message', (data) => {

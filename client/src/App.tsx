@@ -14,6 +14,7 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import WalletPage from "@/pages/wallet";
 import WalletSuccess from "@/pages/wallet-success";
 import WalletFailed from "@/pages/wallet-failed";
+import DriverPage from "@/pages/driver";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import React from "react";
@@ -128,6 +129,9 @@ function Router() {
       <Route path="/whatsapp-admin" component={BaileysWhatsAppAdmin} />
       <Route path="/whatsapp-admin-old" component={WhatsAppAdmin} />
       <Route path="/wasender-admin" component={WasenderAdminPage} />
+      
+      {/* Driver page - independent authentication */}
+      <Route path="/driver" component={DriverPage} />
       
       {/* Home page - allows anonymous browsing */}
       <Route path="/" component={Home} />
