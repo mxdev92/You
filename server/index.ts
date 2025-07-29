@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import path from "path";
 import { registerRoutes } from "./routes";
+import expoApiRoutes from "./expo-api-routes.js";
 import { setupVite, serveStatic, log } from "./vite";
 // WhatsApp service is now handled in routes.ts with Baileys
 
@@ -91,6 +92,9 @@ app.use((req, res, next) => {
 (async () => {
   // WhatsApp service is initialized in routes.ts using Baileys
 
+  // Register Expo mobile API routes BEFORE main routes to avoid conflicts
+  app.use(expoApiRoutes);
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
