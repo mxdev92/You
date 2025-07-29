@@ -83,6 +83,17 @@ export const orders = pgTable("orders", {
   notes: text("notes"),
 });
 
+export const drivers = pgTable("drivers", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
 });
@@ -118,6 +129,12 @@ export const insertWalletTransactionSchema = createInsertSchema(walletTransactio
   createdAt: true,
 });
 
+export const insertDriverSchema = createInsertSchema(drivers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
@@ -125,6 +142,7 @@ export type Order = typeof orders.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type UserAddress = typeof userAddresses.$inferSelect;
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
+export type Driver = typeof drivers.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
@@ -132,3 +150,4 @@ export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertUserAddress = z.infer<typeof insertUserAddressSchema>;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
+export type InsertDriver = z.infer<typeof insertDriverSchema>;

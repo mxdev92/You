@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertProductSchema, insertOrderSchema } from "@shared/schema";
+import { insertCartItemSchema, insertProductSchema, insertOrderSchema, insertDriverSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
@@ -1866,6 +1866,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Admin test notification error:', error);
       res.status(500).json({ message: 'Failed to send admin test notification' });
+    }
+  });
+
+  // Drivers API Routes
+  app.get('/api/drivers', async (req, res) => {
+    try {
+      const drivers = await storage.getDrivers();
+      res.json(drivers);
+    } catch (error: any) {
+      console.error('Get drivers error:', error);
+      res.status(500).json({ message: 'Failed to fetch drivers' });
+    }
+  });
+
+  app.get('/api/drivers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid driver ID' });
+      }
+      
+      const driver = await storage.getDriver(id);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+      
+      res.json(driver);
+    } catch (error: any) {
+      console.error('Get driver error:', error);
+      res.status(500).json({ message: 'Failed to fetch driver' });
+    }
+  });
+
+  app.post('/api/drivers', async (req, res) => {
+    try {
+      const validation = insertDriverSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: 'Invalid driver data',
+          errors: validation.error.errors 
+        });
+      }
+
+      // Check if email already exists
+      const existingDriver = await storage.getDriverByEmail(validation.data.email);
+      if (existingDriver) {
+        return res.status(409).json({ message: 'Driver with this email already exists' });
+      }
+
+      const newDriver = await storage.createDriver(validation.data);
+      res.status(201).json(newDriver);
+    } catch (error: any) {
+      console.error('Create driver error:', error);
+      res.status(500).json({ message: 'Failed to create driver' });
+    }
+  });
+
+  app.patch('/api/drivers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid driver ID' });
+      }
+
+      const driver = await storage.getDriver(id);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      const updatedDriver = await storage.updateDriver(id, req.body);
+      res.json(updatedDriver);
+    } catch (error: any) {
+      console.error('Update driver error:', error);
+      res.status(500).json({ message: 'Failed to update driver' });
+    }
+  });
+
+  app.delete('/api/drivers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid driver ID' });
+      }
+
+      const driver = await storage.getDriver(id);
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+
+      await storage.deleteDriver(id);
+      res.json({ message: 'Driver deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete driver error:', error);
+      res.status(500).json({ message: 'Failed to delete driver' });
     }
   });
 

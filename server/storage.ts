@@ -1,4 +1,4 @@
-import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction } from "@shared/schema";
+import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -49,6 +49,14 @@ export interface IStorage {
   createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction>;
   getUserWalletTransactions(userId: number): Promise<WalletTransaction[]>;
   updateWalletTransactionStatus(transactionId: number, status: string): Promise<WalletTransaction>;
+
+  // Drivers
+  getDrivers(): Promise<Driver[]>;
+  getDriver(id: number): Promise<Driver | undefined>;
+  getDriverByEmail(email: string): Promise<Driver | undefined>;
+  createDriver(driver: InsertDriver): Promise<Driver>;
+  updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver>;
+  deleteDriver(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -720,6 +728,41 @@ export class DatabaseStorage implements IStorage {
       .where(eq(walletTransactions.id, transactionId))
       .returning();
     return updatedTransaction;
+  }
+
+  // Drivers Implementation
+  async getDrivers(): Promise<Driver[]> {
+    return await db.select().from(drivers).orderBy(sql`${drivers.createdAt} DESC`);
+  }
+
+  async getDriver(id: number): Promise<Driver | undefined> {
+    const [driver] = await db.select().from(drivers).where(eq(drivers.id, id));
+    return driver || undefined;
+  }
+
+  async getDriverByEmail(email: string): Promise<Driver | undefined> {
+    const [driver] = await db.select().from(drivers).where(eq(drivers.email, email));
+    return driver || undefined;
+  }
+
+  async createDriver(driver: InsertDriver): Promise<Driver> {
+    const [newDriver] = await db.insert(drivers).values(driver).returning();
+    return newDriver;
+  }
+
+  async updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver> {
+    const [updated] = await db.update(drivers)
+      .set({ ...driver, updatedAt: sql`NOW()` })
+      .where(eq(drivers.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error(`Driver with id ${id} not found`);
+    }
+    return updated;
+  }
+
+  async deleteDriver(id: number): Promise<void> {
+    await db.delete(drivers).where(eq(drivers.id, id));
   }
 }
 

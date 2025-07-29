@@ -1365,6 +1365,253 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
   );
 }
 
+// Drivers Management Component  
+function DriversManagement() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [showAddDriver, setShowAddDriver] = useState(false);
+  
+  const { data: drivers = [], isLoading, error } = useQuery({
+    queryKey: ['/api/drivers'],
+    queryFn: () => fetch('/api/drivers').then(res => res.json()),
+    refetchInterval: 3000 // Real-time updates every 3 seconds
+  });
+
+  const addDriverMutation = useMutation({
+    mutationFn: (driverData: any) => 
+      fetch('/api/drivers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(driverData)
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/drivers'] });
+      setShowAddDriver(false);
+      toast({
+        title: "تم إضافة السائق",
+        description: "تم إضافة السائق بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في الإضافة",
+        description: "فشل في إضافة السائق. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
+  const deleteDriverMutation = useMutation({
+    mutationFn: (driverId: number) => fetch(`/api/drivers/${driverId}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/drivers'] });
+      toast({
+        title: "تم حذف السائق",
+        description: "تم حذف السائق بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ في الحذف",
+        description: "فشل في حذف السائق. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
+  const handleAddDriver = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const driverData = {
+      fullName: formData.get('fullName') as string,
+      phone: formData.get('phone') as string,
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
+      isActive: true
+    };
+    addDriverMutation.mutate(driverData);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="bg-white rounded-lg p-6 animate-pulse">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 text-lg">فشل في تحميل بيانات السواق</div>
+        <div className="text-gray-500 mt-2">يرجى إعادة تحميل الصفحة</div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">إدارة السواق</h1>
+          <p className="text-gray-600">إدارة حسابات السواق والتوصيل</p>
+        </div>
+        <Button 
+          onClick={() => setShowAddDriver(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          إضافة سائق جديد
+        </Button>
+      </div>
+
+      {drivers.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
+          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">لا يوجد سواق مسجلين</h3>
+          <p className="text-gray-500 mb-4">ابدأ بإضافة أول سائق للنظام</p>
+          <Button 
+            onClick={() => setShowAddDriver(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            إضافة سائق جديد
+          </Button>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {drivers.map((driver: any) => (
+            <Card key={driver.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 p-2 rounded-full">
+                      <Users className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{driver.fullName}</h3>
+                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                        <Mail className="h-4 w-4 mr-1" />
+                        {driver.email}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                        <Phone className="h-4 w-4 mr-1" />
+                        {driver.phone}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        {new Date(driver.createdAt).toLocaleDateString('ar-IQ')}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end space-y-2">
+                    <Badge variant={driver.isActive ? "default" : "secondary"}>
+                      {driver.isActive ? "نشط" : "غير نشط"}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteDriverMutation.mutate(driver.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Add Driver Dialog */}
+      <Dialog open={showAddDriver} onOpenChange={setShowAddDriver}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>إضافة سائق جديد</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddDriver} className="space-y-4">
+            <div>
+              <Label htmlFor="fullName">الاسم الكامل</Label>
+              <Input 
+                id="fullName" 
+                name="fullName" 
+                required 
+                className="mt-1"
+                placeholder="أدخل الاسم الكامل"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">رقم الهاتف</Label>
+              <Input 
+                id="phone" 
+                name="phone" 
+                required 
+                className="mt-1"
+                placeholder="07XXXXXXXXX"
+                pattern="^07[0-9]{9}$"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Input 
+                id="email" 
+                name="email" 
+                type="email" 
+                required 
+                className="mt-1"
+                placeholder="driver@example.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">كلمة المرور</Label>
+              <Input 
+                id="password" 
+                name="password" 
+                type="password" 
+                required 
+                className="mt-1"
+                placeholder="أدخل كلمة مرور قوية"
+                minLength={6}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                type="submit" 
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                disabled={addDriverMutation.isPending}
+              >
+                {addDriverMutation.isPending ? 'جاري الإضافة...' : 'إضافة السائق'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowAddDriver(false)}
+                className="flex-1"
+              >
+                إلغاء
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // Users Management Component
 function UsersManagement() {
   const queryClient = useQueryClient();
@@ -1570,7 +1817,7 @@ function UsersManagement() {
 
 // Main Admin Panel Component
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users' | 'drivers'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const queryClient = useQueryClient();
@@ -1836,6 +2083,16 @@ export default function AdminPanel() {
                 >
                   مستخدمين
                 </button>
+                <button
+                  onClick={() => setActiveTab('drivers')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    activeTab === 'drivers'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  السواق
+                </button>
               </div>
               <button
                 onClick={handleLogout}
@@ -1854,6 +2111,10 @@ export default function AdminPanel() {
       {activeTab === 'users' ? (
         <div className="max-w-7xl mx-auto p-6">
           <UsersManagement />
+        </div>
+      ) : activeTab === 'drivers' ? (
+        <div className="max-w-7xl mx-auto p-6">
+          <DriversManagement />
         </div>
       ) : activeTab === 'orders' ? (
         <div className="max-w-7xl mx-auto p-6">
