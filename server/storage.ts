@@ -28,6 +28,7 @@ export interface IStorage {
   getOrders(): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, order: Partial<Order>): Promise<Order>;
   updateOrderStatus(id: number, status: string): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
 
@@ -628,6 +629,23 @@ export class DatabaseStorage implements IStorage {
   async createOrder(order: InsertOrder): Promise<Order> {
     const [newOrder] = await db.insert(orders).values(order).returning();
     return newOrder;
+  }
+
+  async updateOrder(id: number, order: Partial<Order>): Promise<Order> {
+    // Handle timestamp fields properly
+    const updateData: any = { ...order };
+    if (updateData.acceptedAt && typeof updateData.acceptedAt === 'string') {
+      updateData.acceptedAt = new Date(updateData.acceptedAt);
+    }
+    if (updateData.lastUpdate && typeof updateData.lastUpdate === 'string') {
+      updateData.lastUpdate = new Date(updateData.lastUpdate);
+    }
+    
+    const [updated] = await db.update(orders)
+      .set(updateData)
+      .where(eq(orders.id, id))
+      .returning();
+    return updated;
   }
 
   async updateOrderStatus(id: number, status: string): Promise<Order> {

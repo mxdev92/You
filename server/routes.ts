@@ -2095,6 +2095,435 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============================================
+  // DRIVER MOBILE APP ORDER MANAGEMENT API
+  // =============================================
+
+  // Get available orders for drivers (orders ready for delivery)
+  app.get('/api/drivers/orders/available', authenticateDriver, async (req: any, res) => {
+    try {
+      const orders = await storage.getOrders();
+      
+      // Filter orders that are confirmed and ready for pickup/delivery
+      const availableOrders = orders
+        .filter(order => order.status === 'confirmed' || order.status === 'preparing')
+        .map(order => ({
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address,
+          items: order.items,
+          totalAmount: parseFloat(order.totalAmount).toLocaleString(),
+          orderDate: order.orderDate,
+          status: order.status,
+          estimatedDelivery: '30-45 دقيقة',
+          distance: '2.5 كم' // You can implement actual distance calculation
+        }));
+
+      res.json({
+        success: true,
+        orders: availableOrders,
+        count: availableOrders.length
+      });
+
+    } catch (error: any) {
+      console.error('Get available orders error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تحميل الطلبات المتاحة' 
+      });
+    }
+  });
+
+  // Get driver's assigned orders
+  app.get('/api/drivers/orders/assigned', authenticateDriver, async (req: any, res) => {
+    try {
+      const driverId = req.driver.id;
+      const orders = await storage.getOrders();
+      
+      // Filter orders assigned to this driver
+      const assignedOrders = orders
+        .filter(order => order.driverId === driverId)
+        .map(order => ({
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address,
+          items: order.items,
+          totalAmount: parseFloat(order.totalAmount).toLocaleString(),
+          orderDate: order.orderDate,
+          status: order.status,
+          acceptedAt: order.acceptedAt,
+          estimatedDelivery: '30-45 دقيقة'
+        }));
+
+      res.json({
+        success: true,
+        orders: assignedOrders,
+        count: assignedOrders.length
+      });
+
+    } catch (error: any) {
+      console.error('Get assigned orders error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تحميل الطلبات المكلف بها' 
+      });
+    }
+  });
+
+  // Accept an order (driver accepts delivery)
+  app.post('/api/drivers/orders/:orderId/accept', authenticateDriver, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const driverId = req.driver.id;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'رقم الطلب غير صالح' 
+        });
+      }
+
+      // Get the order
+      const orders = await storage.getOrders();
+      const order = orders.find(o => o.id === orderId);
+      
+      if (!order) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'الطلب غير موجود' 
+        });
+      }
+
+      // Check if order is available for acceptance
+      if (order.status !== 'confirmed' && order.status !== 'preparing') {
+        return res.status(400).json({ 
+          success: false,
+          message: 'هذا الطلب غير متاح للقبول' 
+        });
+      }
+
+      // Check if order is already assigned to another driver
+      if (order.driverId && order.driverId !== driverId) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'تم تكليف هذا الطلب لسائق آخر' 
+        });
+      }
+
+      // Accept the order - only update the fields we need
+      await storage.updateOrder(orderId, {
+        driverId,
+        status: 'out-for-delivery',
+        acceptedAt: new Date().toISOString()
+      });
+
+      // Send notification to admin about order acceptance
+      try {
+        const acceptMessage = `🚚 تم قبول الطلب رقم ${orderId}
+السائق: ${req.driver.fullName}
+العميل: ${order.customerName}
+الوقت: ${new Date().toLocaleString('ar-SA')}`;
+        
+        await wasenderService.sendMessage('07511856947', acceptMessage);
+      } catch (error) {
+        console.log('WhatsApp notification failed:', error);
+      }
+
+      // Get the updated order
+      const updatedOrder = await storage.getOrder(orderId);
+      
+      res.json({
+        success: true,
+        message: 'تم قبول الطلب بنجاح',
+        order: {
+          id: updatedOrder.id,
+          customerName: updatedOrder.customerName,
+          customerPhone: updatedOrder.customerPhone,
+          address: updatedOrder.address,
+          status: updatedOrder.status,
+          acceptedAt: updatedOrder.acceptedAt
+        }
+      });
+
+    } catch (error: any) {
+      console.error('Accept order error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في قبول الطلب' 
+      });
+    }
+  });
+
+  // Decline an order (driver declines delivery)
+  app.post('/api/drivers/orders/:orderId/decline', authenticateDriver, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const { reason } = req.body;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'رقم الطلب غير صالح' 
+        });
+      }
+
+      // Get the order
+      const orders = await storage.getOrders();
+      const order = orders.find(o => o.id === orderId);
+      
+      if (!order) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'الطلب غير موجود' 
+        });
+      }
+
+      // Send notification to admin about order decline
+      try {
+        const declineMessage = `❌ تم رفض الطلب رقم ${orderId}
+السائق: ${req.driver.fullName}
+السبب: ${reason || 'غير محدد'}
+العميل: ${order.customerName}
+الوقت: ${new Date().toLocaleString('ar-SA')}
+
+يحتاج الطلب إلى سائق آخر.`;
+        
+        await wasenderService.sendMessage('07511856947', declineMessage);
+      } catch (error) {
+        console.log('WhatsApp notification failed:', error);
+      }
+
+      res.json({
+        success: true,
+        message: 'تم رفض الطلب',
+        orderId
+      });
+
+    } catch (error: any) {
+      console.error('Decline order error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في رفض الطلب' 
+      });
+    }
+  });
+
+  // Update order status (picked up, on the way, delivered)
+  app.post('/api/drivers/orders/:orderId/status', authenticateDriver, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const { status, location } = req.body;
+      const driverId = req.driver.id;
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'رقم الطلب غير صالح' 
+        });
+      }
+
+      // Validate status
+      const validStatuses = ['picked-up', 'on-the-way', 'delivered'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'حالة الطلب غير صالحة' 
+        });
+      }
+
+      // Get the order
+      const orders = await storage.getOrders();
+      const order = orders.find(o => o.id === orderId);
+      
+      if (!order) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'الطلب غير موجود' 
+        });
+      }
+
+      // Check if driver is assigned to this order
+      if (order.driverId !== driverId) {
+        return res.status(403).json({ 
+          success: false,
+          message: 'غير مصرح لك بتحديث هذا الطلب' 
+        });
+      }
+
+      // Update order status
+      const updatedOrder = {
+        ...order,
+        status: status === 'picked-up' ? 'out-for-delivery' : 
+                status === 'on-the-way' ? 'out-for-delivery' : 
+                'delivered',
+        lastUpdate: new Date().toISOString(),
+        driverLocation: location || null
+      };
+
+      await storage.updateOrder(orderId, updatedOrder);
+
+      // Send status update to customer
+      if (order.customerPhone) {
+        const statusMessages = {
+          'picked-up': `📦 تم استلام طلبكم رقم ${orderId} من المتجر
+السائق في الطريق إليكم`,
+          'on-the-way': `🚚 السائق في الطريق إليكم
+طلبكم رقم ${orderId} سيصل خلال دقائق`,
+          'delivered': `✅ تم تسليم طلبكم رقم ${orderId} بنجاح
+شكراً لاختياركم باكيتي`
+        };
+
+        try {
+          await wasenderService.sendMessage(order.customerPhone, statusMessages[status as keyof typeof statusMessages]);
+        } catch (error) {
+          console.log('Customer notification failed:', error);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: 'تم تحديث حالة الطلب بنجاح',
+        order: {
+          id: updatedOrder.id,
+          status: updatedOrder.status,
+          lastUpdate: updatedOrder.lastUpdate
+        }
+      });
+
+    } catch (error: any) {
+      console.error('Update order status error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تحديث حالة الطلب' 
+      });
+    }
+  });
+
+  // Get order details for driver
+  app.get('/api/drivers/orders/:orderId', authenticateDriver, async (req: any, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      
+      if (isNaN(orderId)) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'رقم الطلب غير صالح' 
+        });
+      }
+
+      const orders = await storage.getOrders();
+      const order = orders.find(o => o.id === orderId);
+      
+      if (!order) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'الطلب غير موجود' 
+        });
+      }
+
+      // Return detailed order information
+      res.json({
+        success: true,
+        order: {
+          id: order.id,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          address: order.address,
+          items: order.items.map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: parseFloat(item.price).toLocaleString(),
+            total: (item.quantity * parseFloat(item.price)).toLocaleString()
+          })),
+          subtotal: (parseFloat(order.totalAmount) - 2500).toLocaleString(),
+          deliveryFee: '2,500',
+          totalAmount: parseFloat(order.totalAmount).toLocaleString(),
+          orderDate: order.orderDate,
+          status: order.status,
+          driverId: order.driverId,
+          acceptedAt: order.acceptedAt,
+          estimatedDelivery: '30-45 دقيقة',
+          specialInstructions: order.specialInstructions || 'لا توجد تعليمات خاصة'
+        }
+      });
+
+    } catch (error: any) {
+      console.error('Get order details error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تحميل تفاصيل الطلب' 
+      });
+    }
+  });
+
+  // Driver statistics and earnings
+  app.get('/api/drivers/stats', authenticateDriver, async (req: any, res) => {
+    try {
+      const driverId = req.driver.id;
+      const orders = await storage.getOrders();
+      
+      // Filter orders delivered by this driver
+      const driverOrders = orders.filter(order => order.driverId === driverId);
+      const deliveredOrders = driverOrders.filter(order => order.status === 'delivered');
+      
+      // Calculate stats
+      const totalDeliveries = deliveredOrders.length;
+      const totalEarnings = deliveredOrders.reduce((sum, order) => sum + 2500, 0); // 2500 per delivery
+      const todayOrders = deliveredOrders.filter(order => {
+        const today = new Date().toDateString();
+        const orderDate = new Date(order.orderDate).toDateString();
+        return today === orderDate;
+      });
+
+      res.json({
+        success: true,
+        stats: {
+          totalDeliveries,
+          totalEarnings: totalEarnings.toLocaleString(),
+          todayDeliveries: todayOrders.length,
+          todayEarnings: (todayOrders.length * 2500).toLocaleString(),
+          currentOrders: driverOrders.filter(order => 
+            order.status === 'out-for-delivery' || order.status === 'picked-up'
+          ).length,
+          rating: '4.8' // You can implement actual rating system
+        }
+      });
+
+    } catch (error: any) {
+      console.error('Get driver stats error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تحميل الإحصائيات' 
+      });
+    }
+  });
+
+  // Update driver location
+  app.post('/api/drivers/location', authenticateDriver, async (req: any, res) => {
+    try {
+      const { latitude, longitude } = req.body;
+      const driverId = req.driver.id;
+
+      // Store driver location (you can implement this in storage)
+      // For now, just return success
+      res.json({
+        success: true,
+        message: 'تم تحديث الموقع بنجاح',
+        location: { latitude, longitude },
+        timestamp: new Date().toISOString()
+      });
+
+    } catch (error: any) {
+      console.error('Update driver location error:', error);
+      res.status(500).json({ 
+        success: false,
+        message: 'خطأ في تحديث الموقع' 
+      });
+    }
+  });
+
   // API 404 handler - MUST be after all other API routes
   app.use('/api/*', (req, res) => {
     console.log(`API 404 - Route not found: ${req.method} ${req.path}`);
