@@ -65,14 +65,48 @@ export default function DriverPage() {
 
   // Initialize notification audio and permissions
   useEffect(() => {
-    // Request notification permission immediately
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        console.log('Notification permission:', permission);
-      });
-    }
+    // Aggressive notification permission request for Android
+    const requestNotificationPermission = async () => {
+      if ('Notification' in window) {
+        console.log('Initial notification permission:', Notification.permission);
+        
+        if (Notification.permission === 'default') {
+          try {
+            const permission = await Notification.requestPermission();
+            console.log('Notification permission granted:', permission);
+            
+            if (permission === 'granted') {
+              // Test notification to ensure it works
+              const testNotification = new Notification('PAKETY Driver Ready', {
+                body: 'نظام الإشعارات جاهز للعمل',
+                icon: '/favicon.ico',
+                silent: false,
+                requireInteraction: false
+              });
+              
+              setTimeout(() => testNotification.close(), 2000);
+            }
+          } catch (error) {
+            console.error('Notification permission error:', error);
+          }
+        }
+      }
+      
+      // Test vibration capability on Android
+      if ('vibrate' in navigator) {
+        console.log('✅ Vibration API available on Android');
+        // Short test vibration to ensure it works
+        navigator.vibrate([200]);
+      } else {
+        console.log('❌ Vibration API not supported');
+      }
+    };
+    
+    requestNotificationPermission();
+  }, []);
 
-    // Create notification sound with mobile compatibility
+  // Create notification sound with mobile compatibility  
+  useEffect(() => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) {
@@ -359,88 +393,160 @@ export default function DriverPage() {
     
     playNotificationSound();
 
-    // Enhanced vibration with stronger pattern
+    // Enhanced vibration with Android-specific patterns
     const triggerVibration = () => {
       if ('vibrate' in navigator) {
-        console.log('📳 Triggering vibration...');
-        // Multiple vibration patterns for stronger alert
-        navigator.vibrate([1000, 200, 1000, 200, 1000]); // Strong initial pattern
+        console.log('📳 Triggering Android vibration...');
         
-        // Repeat vibration every 3 seconds for 15 seconds
+        // Immediate strong vibration for attention
+        const vibrationSuccess = navigator.vibrate([1000, 200, 1000, 200, 1000, 200, 1000]);
+        console.log('Initial vibration triggered:', vibrationSuccess);
+        
+        // Continuous vibration alerts every 2 seconds for 20 seconds
         let vibrationCount = 0;
         const vibrationInterval = setInterval(() => {
-          if (vibrationCount < 5 && pendingOrder?.id === order.id) {
-            navigator.vibrate([500, 100, 500]);
+          if (vibrationCount < 10 && pendingOrder?.id === order.id) {
+            const success = navigator.vibrate([800, 100, 800]);
+            console.log(`Vibration ${vibrationCount + 1} triggered:`, success);
             vibrationCount++;
           } else {
             clearInterval(vibrationInterval);
+            console.log('Vibration sequence completed');
           }
-        }, 3000);
+        }, 2000);
         
         // Store interval to clear on order action
         (window as any).activeVibrationInterval = vibrationInterval;
       } else {
-        console.log('Vibration not supported');
+        console.log('❌ Vibration API not supported on this device');
+        
+        // Fallback: Try to trigger device attention through other means
+        try {
+          // Flash the screen by changing document style
+          document.body.style.backgroundColor = '#ff0000';
+          setTimeout(() => {
+            document.body.style.backgroundColor = '';
+          }, 100);
+        } catch (e) {
+          console.log('Screen flash fallback failed');
+        }
       }
     };
     
     triggerVibration();
 
-    // Enhanced browser notification with better mobile support
+    // Enhanced Android system notification with maximum compatibility
     const showBrowserNotification = () => {
       if ('Notification' in window) {
-        console.log('🔔 Notification permission:', Notification.permission);
+        console.log('🔔 Current notification permission:', Notification.permission);
         
         if (Notification.permission === 'granted') {
           try {
-            const notification = new Notification('🔔 طلب جديد - PAKETY', {
-              body: `طلب من ${order.customerName}\n💰 ${typeof order.totalAmount === 'string' ? order.totalAmount : order.totalAmount.toLocaleString()} د.ع\n📍 ${order.address?.governorate || 'غير محدد'}`,
+            // Create main Android system notification
+            const mainNotification = new Notification('🚚 PAKETY - طلب جديد!', {
+              body: `العميل: ${order.customerName}\nالمبلغ: ${typeof order.totalAmount === 'string' ? order.totalAmount : order.totalAmount.toLocaleString()} د.ع\nالعنوان: ${order.address?.governorate || order.customerAddress}`,
               icon: '/favicon.ico',
               badge: '/favicon.ico',
-              tag: `order-${order.id}`,
+              tag: `pakety-order-${order.id}`,
               requireInteraction: true,
-              silent: false, // Ensure notification sound plays
-              ...(('vibrate' in navigator) && { vibrate: [1000, 200, 1000] })
+              silent: false,
+              dir: 'rtl', // Right-to-left for Arabic
+              lang: 'ar'
             });
 
-            notification.onclick = () => {
-              console.log('Browser notification clicked');
+            // Additional urgent Android notification
+            setTimeout(() => {
+              const urgentNotification = new Notification('⚡ طلب عاجل - يتطلب الرد', {
+                body: `طلب #${order.id} في انتظار الرد\nالعميل: ${order.customerName}`,
+                icon: '/favicon.ico',
+                tag: `pakety-urgent-${order.id}`,
+                requireInteraction: true,
+                silent: false,
+                dir: 'rtl',
+                lang: 'ar'
+              });
+              
+              urgentNotification.onclick = () => {
+                window.focus();
+                urgentNotification.close();
+                mainNotification.close();
+              };
+              
+              // Auto-close after 45 seconds
+              setTimeout(() => urgentNotification.close(), 45000);
+            }, 2000);
+
+            mainNotification.onclick = () => {
+              console.log('✅ Android notification clicked - focusing window');
               window.focus();
-              notification.close();
+              mainNotification.close();
             };
             
-            // Auto-close notification after 30 seconds
+            // Keep notification visible for longer on Android
             setTimeout(() => {
-              notification.close();
-            }, 30000);
+              if (pendingOrder?.id === order.id) {
+                mainNotification.close();
+              }
+            }, 60000);
             
-            console.log('✅ Browser notification created');
+            console.log('✅ Android system notifications created successfully');
           } catch (notificationError) {
-            console.error('Browser notification error:', notificationError);
+            console.error('❌ Android notification creation failed:', notificationError);
+            
+            // Aggressive fallback notification request
+            Notification.requestPermission().then(permission => {
+              console.log('Fallback permission result:', permission);
+              if (permission === 'granted') {
+                setTimeout(() => showBrowserNotification(), 500);
+              }
+            });
           }
         } else if (Notification.permission === 'default') {
-          // Request permission and retry
+          console.log('🔄 Requesting Android notification permission...');
           Notification.requestPermission().then(permission => {
+            console.log('📱 Android permission granted:', permission);
             if (permission === 'granted') {
               showBrowserNotification();
+            } else {
+              console.log('❌ Android notification permission denied');
             }
           });
+        } else {
+          console.log('❌ Android notifications blocked by user');
         }
+      } else {
+        console.log('❌ Notification API not available on this Android device');
       }
     };
     
     showBrowserNotification();
 
-    // Show alert for maximum visibility (especially on mobile)
+    // Android-specific wake up and alert mechanisms
     setTimeout(() => {
       if (pendingOrder?.id === order.id) {
-        const shouldAlert = confirm(`🔔 طلب جديد!\n\nالعميل: ${order.customerName}\nالمبلغ: ${typeof order.totalAmount === 'string' ? order.totalAmount : order.totalAmount.toLocaleString()} د.ع\n\nاضغط موافق للمتابعة`);
+        // Multiple wake-up attempts for Android
+        window.focus();
+        
+        // Screen wake attempt
+        if ('wakeLock' in navigator) {
+          (navigator as any).wakeLock.request('screen').catch((e: any) => 
+            console.log('Screen wake lock failed:', e)
+          );
+        }
+        
+        // Final alert for maximum Android visibility
+        const shouldAlert = confirm(`🚨 طلب عاجل - PAKETY\n\n👤 العميل: ${order.customerName}\n💰 المبلغ: ${typeof order.totalAmount === 'string' ? order.totalAmount : order.totalAmount.toLocaleString()} د.ع\n📍 ${order.address?.governorate || order.customerAddress}\n\n⚡ يرجى الرد بسرعة!\n\nاضغط موافق للمتابعة`);
+        
         if (shouldAlert) {
-          // Focus back to the page
           window.focus();
+          
+          // Additional vibration on user interaction
+          if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
+          }
         }
       }
-    }, 2000);
+    }, 3000);
 
     // Auto-dismiss after 60 seconds if no action
     notificationTimeoutRef.current = setTimeout(() => {
