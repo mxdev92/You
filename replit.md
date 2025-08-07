@@ -1,7 +1,12 @@
 # PAKETY - Grocery Shopping Application
 
 ## Overview
-PAKETY is a modern grocery shopping web application designed for a mobile-first experience. It enables users to browse categories, view products, manage a shopping cart with real-time updates, and utilize secure user authentication. The project aims to provide a clean, efficient, and user-friendly platform for online grocery shopping, with a focus on seamless integration between web and native mobile experiences, particularly for driver notifications and payment processing.
+PAKETY is a comprehensive grocery delivery platform with dual mobile applications. The system consists of:
+1. **Customer App** - Complete shopping experience with cart, orders, wallet, and real-time tracking
+2. **Driver App** - Order management, acceptance, status updates, and delivery tracking
+3. **Web Admin** - Full management dashboard for orders, drivers, products, and real-time monitoring
+
+The platform provides seamless integration between native mobile apps (React Native/Expo) and web interfaces, with WhatsApp notifications, push notifications, and real-time WebSocket updates.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -32,12 +37,31 @@ Preferred communication style: Simple, everyday language.
 - **Component Organization**: Feature-based.
 
 ### Core Features
-- **Product Management**: Categories, products with pricing and images, shopping cart with real-time updates.
-- **User Management**: Authentication (login, signup), user profiles, address management.
-- **Order Management**: Order creation, status updates, invoice generation (PDF).
-- **Payment System**: Wallet top-up via external payment gateways (Zaincash integration).
-- **Notifications**: Real-time push notifications for drivers (Expo), WhatsApp notifications for users (OTP, invoices, order updates) and admin.
-- **Admin Panel**: Comprehensive dashboard for order management, user management, product/category management, real-time synchronization.
+
+#### **Customer App Features**
+- **Authentication**: Registration, login, session management with secure storage
+- **Product Catalog**: Browse categories, search products, detailed product views
+- **Shopping Cart**: Add/remove items, quantity management, real-time price calculation
+- **Address Management**: Multiple addresses, default selection, delivery location
+- **Wallet System**: Balance management, Zaincash payment integration, transaction history
+- **Order Management**: Place orders, track status, view order history, cancellation
+- **OTP Verification**: WhatsApp-based phone verification with fallback system
+
+#### **Driver App Features**
+- **Driver Authentication**: JWT-based login system with secure token storage
+- **Order Queue**: View available orders, detailed order information, customer contact
+- **Order Management**: Accept/reject orders, status updates (on_way, delivered)
+- **Real-time Location**: GPS tracking, location sharing with customers
+- **Push Notifications**: Expo push notifications for new orders and updates
+- **Delivery Workflow**: Complete delivery process with customer confirmation
+
+#### **Admin & System Features**
+- **Order Management**: Real-time order monitoring, driver assignment, status tracking
+- **Driver Management**: Driver registration, status monitoring, performance tracking  
+- **Product Management**: Add/edit products, category management, inventory control
+- **WhatsApp Integration**: Automated notifications for OTP, invoices, order updates
+- **Payment Processing**: Zaincash integration, wallet management, transaction monitoring
+- **Real-time Updates**: WebSocket connections for instant notifications and data sync
 
 ### System Design Choices
 - **Data Flow**: Optimistic UI updates for cart/interactions, server synchronization via React Query, background refetching.
