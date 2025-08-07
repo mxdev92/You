@@ -4,6 +4,8 @@ import { API_BASE_URL, STORAGE_KEYS } from '../constants/config';
 // Login API call
 export const loginDriver = async (email, password) => {
   try {
+    console.log('🚀 Login attempt:', { email, baseUrl: API_BASE_URL });
+    
     const response = await fetch(`${API_BASE_URL}/drivers/auth/login`, {
       method: 'POST',
       headers: {
@@ -15,12 +17,17 @@ export const loginDriver = async (email, password) => {
       }),
     });
 
+    console.log('📡 Response status:', response.status);
+    
     const data = await response.json();
+    console.log('📦 Response data:', data);
 
     if (data.success) {
       // Store token securely
       await SecureStore.setItemAsync(STORAGE_KEYS.DRIVER_TOKEN, data.token);
       await SecureStore.setItemAsync(STORAGE_KEYS.DRIVER_DATA, JSON.stringify(data.driver));
+      
+      console.log('✅ Login successful, token stored');
       
       return {
         success: true,
@@ -28,13 +35,14 @@ export const loginDriver = async (email, password) => {
         token: data.token,
       };
     } else {
+      console.log('❌ Login failed:', data.message);
       return {
         success: false,
         message: data.message || 'خطأ في تسجيل الدخول',
       };
     }
   } catch (error) {
-    console.error('Login API error:', error);
+    console.error('💥 Login API error:', error);
     return {
       success: false,
       message: 'خطأ في الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.',

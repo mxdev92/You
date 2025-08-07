@@ -27,14 +27,21 @@ npm start
 ```
 
 ### **2. Test Driver Login**
-**✅ WORKING TEST CREDENTIALS:**
+**✅ WORKING TEST CREDENTIALS (AUTO-FILLED):**
 - **Email**: `test@pakety.com`
 - **Password**: `password`
 
+**Login Steps:**
 1. Open your Expo app
-2. Enter the test credentials above
+2. Credentials are already pre-filled for testing
 3. Tap "تسجيل الدخول" (Login)
-4. You should get success message and access the dashboard
+4. Check Expo console logs for debugging info
+5. You should get success message and access the dashboard
+
+**If login fails, check:**
+- Expo console for error messages
+- Network connection
+- API response logs
 
 ### **3. Test OTP from Login Screen**
 1. On the login screen, you'll see a green "اختبار OTP" button

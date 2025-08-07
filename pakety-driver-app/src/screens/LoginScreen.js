@@ -29,6 +29,9 @@ export default function LoginScreen({ onLogin, navigation }) {
 
   useEffect(() => {
     loadSavedCredentials();
+    // Pre-fill test credentials for testing
+    setEmail('test@pakety.com');
+    setPassword('password');
   }, []);
 
   const loadSavedCredentials = async () => {
