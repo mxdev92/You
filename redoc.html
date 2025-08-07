@@ -91,6 +91,428 @@
                 }
             ],
             "paths": {
+                "/api/auth/signup": {
+                    "post": {
+                        "tags": ["Authentication"],
+                        "summary": "User registration",
+                        "description": "Register a new user account with session-based authentication",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "email": {
+                                                "type": "string",
+                                                "format": "email",
+                                                "example": "mxmoddmd@gmail.com"
+                                            },
+                                            "password": {
+                                                "type": "string",
+                                                "minLength": 6,
+                                                "example": "password123"
+                                            },
+                                            "fullName": {
+                                                "type": "string",
+                                                "example": "محمد أحمد"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "pattern": "^07[0-9]{9}$",
+                                                "example": "07512345678"
+                                            }
+                                        },
+                                        "required": ["email", "password", "phone"]
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "User registered successfully",
+                                "headers": {
+                                    "Set-Cookie": {
+                                        "description": "Session cookie for authentication",
+                                        "schema": {
+                                            "type": "string",
+                                            "example": "connect.sid=s%3A...; Path=/; HttpOnly"
+                                        }
+                                    }
+                                },
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user": {
+                                                    "$ref": "#/components/schemas/User"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "400": {
+                                "description": "Invalid registration data"
+                            },
+                            "409": {
+                                "description": "Email or phone already exists"
+                            }
+                        }
+                    }
+                },
+                "/api/auth/signin": {
+                    "post": {
+                        "tags": ["Authentication"],
+                        "summary": "User login",
+                        "description": "Login with email and password, creates session-based authentication",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "email": {
+                                                "type": "string",
+                                                "format": "email",
+                                                "example": "mxmoddmd@gmail.com"
+                                            },
+                                            "password": {
+                                                "type": "string",
+                                                "example": "password123"
+                                            }
+                                        },
+                                        "required": ["email", "password"]
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "Login successful",
+                                "headers": {
+                                    "Set-Cookie": {
+                                        "description": "Session cookie for authentication",
+                                        "schema": {
+                                            "type": "string",
+                                            "example": "connect.sid=s%3A...; Path=/; HttpOnly"
+                                        }
+                                    }
+                                },
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user": {
+                                                    "$ref": "#/components/schemas/User"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "401": {
+                                "description": "Invalid credentials"
+                            }
+                        }
+                    }
+                },
+                "/api/auth/signout": {
+                    "post": {
+                        "tags": ["Authentication"],
+                        "summary": "User logout",
+                        "description": "Logout and destroy session",
+                        "security": [{"SessionAuth": []}],
+                        "responses": {
+                            "200": {
+                                "description": "Logout successful",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Signed out successfully"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/api/auth/session": {
+                    "get": {
+                        "tags": ["Authentication"],
+                        "summary": "Check session status",
+                        "description": "Verify current session and get user information",
+                        "security": [{"SessionAuth": []}],
+                        "responses": {
+                            "200": {
+                                "description": "Session valid",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user": {
+                                                    "$ref": "#/components/schemas/User"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "401": {
+                                "description": "Not authenticated or session expired"
+                            }
+                        }
+                    }
+                },
+                "/api/whatsapp/send-otp": {
+                    "post": {
+                        "tags": ["Authentication"],
+                        "summary": "Send WhatsApp OTP",
+                        "description": "Send OTP verification code via WhatsApp using WasenderAPI",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "phoneNumber": {
+                                                "type": "string",
+                                                "pattern": "^07[0-9]{9}$",
+                                                "example": "07512345678"
+                                            },
+                                            "fullName": {
+                                                "type": "string",
+                                                "example": "أحمد محمد"
+                                            }
+                                        },
+                                        "required": ["phoneNumber", "fullName"]
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "OTP sent successfully",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "تم إرسال رمز التحقق إلى تطبيق الواتساب"
+                                                },
+                                                "delivered": {
+                                                    "type": "string",
+                                                    "enum": ["wasender", "fallback"],
+                                                    "example": "wasender"
+                                                },
+                                                "otp": {
+                                                    "type": "string",
+                                                    "description": "Only returned in fallback mode for development",
+                                                    "example": "1234"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "500": {
+                                "description": "Failed to send OTP"
+                            }
+                        }
+                    }
+                },
+                "/api/whatsapp/verify-otp": {
+                    "post": {
+                        "tags": ["Authentication"],
+                        "summary": "Verify WhatsApp OTP",
+                        "description": "Verify the OTP code received via WhatsApp",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "phoneNumber": {
+                                                "type": "string",
+                                                "pattern": "^07[0-9]{9}$",
+                                                "example": "07512345678"
+                                            },
+                                            "otp": {
+                                                "type": "string",
+                                                "pattern": "^[0-9]{4}$",
+                                                "example": "1234"
+                                            }
+                                        },
+                                        "required": ["phoneNumber", "otp"]
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "OTP verified successfully",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "تم التحقق بنجاح"
+                                                },
+                                                "valid": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "400": {
+                                "description": "Invalid or expired OTP"
+                            }
+                        }
+                    }
+                },
+                "/api/auth/addresses": {
+                    "post": {
+                        "tags": ["Users"],
+                        "summary": "Create user address",
+                        "description": "Add a new address for the authenticated user",
+                        "security": [{"SessionAuth": []}],
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/CreateUserAddress"
+                                    }
+                                }
+                            }
+                        },
+                        "responses": {
+                            "200": {
+                                "description": "Address created successfully",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "$ref": "#/components/schemas/UserAddress"
+                                        }
+                                    }
+                                }
+                            },
+                            "401": {
+                                "description": "Authentication required"
+                            }
+                        }
+                    }
+                },
+                "/api/auth/addresses/{userId}": {
+                    "get": {
+                        "tags": ["Users"],
+                        "summary": "Get user addresses",
+                        "description": "Retrieve all addresses for a specific user (must be authenticated as that user)",
+                        "security": [{"SessionAuth": []}],
+                        "parameters": [
+                            {
+                                "name": "userId",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "integer"
+                                },
+                                "description": "User ID"
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "User addresses",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/UserAddress"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "403": {
+                                "description": "Access denied - can only access own addresses"
+                            }
+                        }
+                    }
+                },
+                "/api/users": {
+                    "get": {
+                        "tags": ["Users"],
+                        "summary": "Get all users (Admin)",
+                        "description": "Retrieve all registered users (admin endpoint)",
+                        "security": [{"BearerAuth": []}],
+                        "responses": {
+                            "200": {
+                                "description": "List of all users",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/User"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/api/users/{id}": {
+                    "delete": {
+                        "tags": ["Users"],
+                        "summary": "Delete user (Admin)",
+                        "description": "Delete a user account (admin endpoint)",
+                        "security": [{"BearerAuth": []}],
+                        "parameters": [
+                            {
+                                "name": "id",
+                                "in": "path",
+                                "required": true,
+                                "schema": {
+                                    "type": "integer"
+                                },
+                                "description": "User ID to delete"
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "User deleted successfully"
+                            },
+                            "400": {
+                                "description": "Invalid user ID"
+                            }
+                        }
+                    }
+                },
                 "/api/version": {
                     "get": {
                         "tags": ["System"],
@@ -1415,6 +1837,42 @@
                                 "type": "boolean"
                             }
                         }
+                    },
+                    "CreateUserAddress": {
+                        "type": "object",
+                        "properties": {
+                            "governorate": {
+                                "type": "string",
+                                "example": "بغداد"
+                            },
+                            "district": {
+                                "type": "string",
+                                "example": "الكرادة"
+                            },
+                            "street": {
+                                "type": "string",
+                                "example": "شارع الأطباء"
+                            },
+                            "buildingNumber": {
+                                "type": "string",
+                                "example": "15"
+                            },
+                            "floorNumber": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "3"
+                            },
+                            "nearestLandmark": {
+                                "type": "string",
+                                "nullable": true,
+                                "example": "بجانب مستشفى الكرادة"
+                            },
+                            "isDefault": {
+                                "type": "boolean",
+                                "example": true
+                            }
+                        },
+                        "required": ["governorate", "district", "street", "buildingNumber"]
                     }
                 }
             }
