@@ -2011,28 +2011,6 @@
             </ul>
         </div>`;
 
-        // Add download functionality
-        function downloadApiSpec() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(apiSpec, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "pakety-api-spec.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        function downloadHtmlDoc() {
-            const htmlContent = document.documentElement.outerHTML;
-            const dataStr = "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent);
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "pakety-api-documentation.html");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
         // Initialize ReDoc with the specification
         Redoc.init(apiSpec, {
             scrollYOffset: 0,
@@ -2062,57 +2040,15 @@
             }
         }, document.getElementById('redoc-container'));
 
-        // Add WebSocket documentation and download buttons after ReDoc loads
+        // Add WebSocket documentation after ReDoc loads
         setTimeout(() => {
             const container = document.getElementById('redoc-container');
             if (container) {
-                // Add download buttons at the top
-                const downloadSection = document.createElement('div');
-                downloadSection.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 1000;
-                    background: rgba(255, 255, 255, 0.95);
-                    padding: 15px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    border: 1px solid #e0e0e0;
-                `;
-                downloadSection.innerHTML = `
-                    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">📥 Download Documentation</h4>
-                    <button onclick="downloadApiSpec()" style="
-                        background: #667eea;
-                        color: white;
-                        border: none;
-                        padding: 8px 12px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        margin-right: 8px;
-                        font-size: 12px;
-                    ">📄 API Spec (JSON)</button>
-                    <button onclick="downloadHtmlDoc()" style="
-                        background: #764ba2;
-                        color: white;
-                        border: none;
-                        padding: 8px 12px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 12px;
-                    ">🌐 Full HTML Doc</button>
-                `;
-                document.body.appendChild(downloadSection);
-
-                // Add WebSocket documentation
                 const websocketDiv = document.createElement('div');
                 websocketDiv.innerHTML = websocketDocumentation;
                 container.appendChild(websocketDiv);
             }
         }, 2000);
-
-        // Make download functions globally available
-        window.downloadApiSpec = downloadApiSpec;
-        window.downloadHtmlDoc = downloadHtmlDoc;
     </script>
 </body>
 </html>
