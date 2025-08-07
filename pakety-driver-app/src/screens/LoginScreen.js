@@ -20,7 +20,7 @@ import { APP_CONFIG, STORAGE_KEYS } from '../constants/config';
 
 const { width, height } = Dimensions.get('window');
 
-export default function LoginScreen({ onLogin }) {
+export default function LoginScreen({ onLogin, navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -194,6 +194,14 @@ export default function LoginScreen({ onLogin }) {
           <TouchableOpacity>
             <Text style={styles.contactText}>07511856947</Text>
           </TouchableOpacity>
+          
+          {/* OTP Test Button */}
+          <TouchableOpacity 
+            style={styles.otpTestButton}
+            onPress={() => navigation.navigate('OTP')}
+          >
+            <Text style={styles.otpTestText}>اختبار OTP</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -360,6 +368,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: APP_CONFIG.primaryColor,
     fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Arial' : 'sans-serif',
+  },
+  otpTestButton: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: APP_CONFIG.accentColor,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  otpTestText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
     fontFamily: Platform.OS === 'ios' ? 'Arial' : 'sans-serif',
   },
 });
