@@ -45,7 +45,7 @@ export const loginDriver = async (email, password) => {
 // Verify token validity
 export const verifyToken = async (token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/drivers/profile`, {
+    const response = await fetch(`${API_BASE_URL}/driver/session`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -79,7 +79,7 @@ export const getDriverProfile = async () => {
       throw new Error('No authentication token found');
     }
 
-    const response = await fetch(`${API_BASE_URL}/drivers/profile`, {
+    const response = await fetch(`${API_BASE_URL}/driver/session`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
