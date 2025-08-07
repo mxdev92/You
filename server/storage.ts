@@ -146,7 +146,8 @@ export class MemStorage implements IStorage {
   }
 
   async getCategories(): Promise<Category[]> {
-    return Array.from(this.categories.values());
+    const result = await db.select().from(categories).orderBy(categories.displayOrder, categories.name);
+    return result;
   }
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
@@ -177,11 +178,15 @@ export class MemStorage implements IStorage {
   }
 
   async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    const result = await db.select().from(products).orderBy(products.displayOrder, products.name);
+    return result;
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    return Array.from(this.products.values()).filter(product => product.categoryId === categoryId);
+    const result = await db.select().from(products)
+      .where(eq(products.categoryId, categoryId))
+      .orderBy(products.displayOrder, products.name);
+    return result;
   }
 
   async getProduct(id: number): Promise<Product | undefined> {

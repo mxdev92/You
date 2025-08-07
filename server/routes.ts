@@ -134,27 +134,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Products
+  // Products with proper category filtering
   app.get("/api/products", async (req, res) => {
     try {
       const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
       const search = req.query.search as string;
       
+      console.log('🛍️ Products API called with categoryId:', categoryId, 'search:', search);
+      
       let products = await storage.getProducts();
+      console.log('📦 Total products from storage:', products.length);
       
       if (categoryId) {
         products = products.filter(p => p.categoryId === categoryId);
+        console.log(`🏷️ Filtered to category ${categoryId}: ${products.length} products`);
       }
       
       if (search) {
         products = products.filter(p => 
           p.name.toLowerCase().includes(search.toLowerCase())
         );
+        console.log(`🔍 Search filtered: ${products.length} products`);
       }
+      
+      // Sort by display order and name
+      products.sort((a, b) => {
+        if (a.displayOrder !== b.displayOrder) {
+          return a.displayOrder - b.displayOrder;
+        }
+        return a.name.localeCompare(b.name);
+      });
       
       res.json(products);
     } catch (error) {
+      console.error('Products API error:', error);
       res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  // Get products by specific category (dedicated endpoint)
+  app.get("/api/categories/:categoryId/products", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.categoryId);
+      
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      console.log('🏷️ Getting products for category:', categoryId);
+      
+      const products = await storage.getProductsByCategory(categoryId);
+      console.log(`📦 Found ${products.length} products for category ${categoryId}`);
+      
+      res.json(products);
+    } catch (error) {
+      console.error('Category products API error:', error);
+      res.status(500).json({ message: "Failed to fetch category products" });
     }
   });
 
