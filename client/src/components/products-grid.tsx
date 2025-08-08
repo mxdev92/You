@@ -2,8 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import type { Product, Category } from "@shared/schema";
 import ProductCard from "./product-card";
-import { ProductGridSkeleton } from "./loading-fallback";
-import { CACHE_CONFIGS } from "../lib/instant-loading-optimizer";
 
 export default function ProductsGrid() {
   const { data: categories } = useQuery<Category[]>({
@@ -12,7 +10,7 @@ export default function ProductsGrid() {
 
   const selectedCategory = categories?.find(cat => cat.isSelected);
 
-  const { data: products, isLoading, isFetching } = useQuery<Product[]>({
+  const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", selectedCategory?.id],
     queryFn: async () => {
       const url = selectedCategory 
@@ -23,46 +21,45 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    ...CACHE_CONFIGS.products,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    placeholderData: (previousData) => previousData,
+    staleTime: 30000, // Cache products for 30 seconds for faster switching
+    refetchInterval: 5000, // Reduced refetch to 5 seconds for better performance
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches on focus
+    keepPreviousData: true, // Keep previous data while loading new category
   });
 
   return (
     <section className="px-4 py-6">
-      {/* Show skeleton only on true loading state */}
-      {isLoading && !products?.length ? (
-        <ProductGridSkeleton />
+
+      {isLoading ? (
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
+          {Array.from({ length: 9 }).map((_, index) => (
+            <div key={index} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="h-32 md:h-40 bg-gray-200 animate-pulse" />
+              <div className="p-3 space-y-2">
+                <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
+                <div className="h-8 bg-gray-200 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <motion.div 
           className="grid grid-cols-3 gap-3 md:gap-4"
           layout
-          transition={{ duration: 0.1 }}
+          transition={{ duration: 0.2 }}
         >
-          {/* Subtle loading indicator for background updates */}
-          {isFetching && products && (
-            <div className="col-span-3 text-center py-1">
-              <div className="inline-flex items-center text-xs text-gray-400">
-                <div className="w-2 h-2 border border-gray-300 border-t-transparent rounded-full animate-spin mr-2"></div>
-                تحديث...
-              </div>
-            </div>
-          )}
-          
-          {products?.map((product: Product, index: number) => (
+          {products?.map((product, index) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0.8 }}
-              animate={{ opacity: 1 }}
-              transition={{ 
-                delay: Math.min(index * 0.005, 0.1), // Minimal stagger
-                duration: 0.1, // Ultra-fast
-              }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.02, duration: 0.2 }}
+              layoutId={`product-${product.id}`}
             >
               <ProductCard product={product} />
             </motion.div>
-          )) || []}
+          ))}
         </motion.div>
       )}
 

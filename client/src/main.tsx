@@ -5,9 +5,6 @@ import App from "./App.tsx";
 import { initializeLanguage } from "./hooks/use-language.ts";
 import "./index.css";
 
-// Import instant loading optimizer
-import "./lib/instant-loading-optimizer";
-
 // Initialize language settings
 initializeLanguage();
 
