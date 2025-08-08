@@ -1,6 +1,7 @@
 import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
+import { DatabaseOptimizer } from "./database-optimizer";
 
 export interface IStorage {
   // Categories
@@ -490,8 +491,11 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private optimizer = DatabaseOptimizer.getInstance();
+  
   async getCategories(): Promise<Category[]> {
-    return await db.select().from(categories).orderBy(categories.displayOrder, categories.id);
+    console.log('🔥 Ultra DB Query: Categories');
+    return await this.optimizer.getOptimizedCategories();
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
@@ -518,7 +522,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProducts(): Promise<Product[]> {
-    const result = await db.select().from(products);
+    console.log('🔥 Ultra DB Query: All Products');
+    const result = await this.optimizer.getOptimizedProducts();
     return result.sort((a, b) => {
       const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
       const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
@@ -528,7 +533,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    const result = await db.select().from(products).where(eq(products.categoryId, categoryId));
+    console.log(`🔥 Ultra DB Query: Products for category ${categoryId}`);
+    const result = await this.optimizer.getOptimizedProductsByCategory(categoryId);
     return result.sort((a, b) => {
       const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
       const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
