@@ -4,6 +4,8 @@ import path from "path";
 import { registerRoutes } from "./routes";
 import expoApiRoutes from "./expo-api-routes.js";
 import { setupVite, serveStatic, log } from "./vite";
+import { ultraPreloader } from './ultra-preloader';
+import { UltraMiddleware } from './ultra-middleware';
 
 // 🚨 CRITICAL: Check environment variables for deployment
 if (!process.env.DATABASE_URL) {
@@ -48,6 +50,10 @@ app.use(session({
 
 // Serve attached assets (uploaded images)
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
+
+// 🚀 ULTRA PERFORMANCE MIDDLEWARE - Apply before routes
+app.use(UltraMiddleware.priorityRoutes);
+app.use(UltraMiddleware.batchOptimizer);
 
 // Aggressive cache control for production deployment updates
 app.use((req, res, next) => {
@@ -109,6 +115,10 @@ app.use((req, res, next) => {
     
     const server = await registerRoutes(app);
     console.log('✅ Routes registered successfully');
+
+    // 🚀 START AGGRESSIVE CACHE PRELOADING FOR INSTANT FIRST LOAD
+    console.log('🔥 Starting ultra preloader for instant performance...');
+    ultraPreloader.startContinuousWarmup();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
