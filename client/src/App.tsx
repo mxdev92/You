@@ -3,21 +3,24 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Home from "@/pages/home";
-import AuthPage from "@/pages/auth";
-import AdminPanel from "@/pages/admin-panel";
-import AdminLogin from "@/pages/admin-login";
-import WhatsAppAdmin from "@/pages/whatsapp-admin";
-import BaileysWhatsAppAdmin from "@/pages/baileys-whatsapp-admin";
-import { WasenderAdminPage } from "@/pages/wasender-admin";
-import PrivacyPolicy from "@/pages/privacy-policy";
-import WalletPage from "@/pages/wallet";
-import WalletSuccess from "@/pages/wallet-success";
-import WalletFailed from "@/pages/wallet-failed";
-import DriverPage from "@/pages/driver";
-import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
-import React from "react";
+import { FastLoadingSpinner } from "@/components/loading-fallback";
+import React, { Suspense, lazy } from "react";
+
+// Code splitting - lazy load heavy components for instant initial loading
+const Home = lazy(() => import("@/pages/home"));
+const AuthPage = lazy(() => import("@/pages/auth"));
+const AdminPanel = lazy(() => import("@/pages/admin-panel"));
+const AdminLogin = lazy(() => import("@/pages/admin-login"));
+const WhatsAppAdmin = lazy(() => import("@/pages/whatsapp-admin"));
+const BaileysWhatsAppAdmin = lazy(() => import("@/pages/baileys-whatsapp-admin"));
+const WasenderAdminPage = lazy(() => import("@/pages/wasender-admin").then(m => ({ default: m.WasenderAdminPage })));
+const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
+const WalletPage = lazy(() => import("@/pages/wallet"));
+const WalletSuccess = lazy(() => import("@/pages/wallet-success"));
+const WalletFailed = lazy(() => import("@/pages/wallet-failed"));
+const DriverPage = lazy(() => import("@/pages/driver"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Global Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -122,32 +125,34 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
 function Router() {
   return (
-    <Switch>
-      {/* Admin routes - separate authentication */}
-      <Route path="/admin" component={ProtectedAdminRoute} />
-      <Route path="/admin-login" component={AdminLogin} />
-      <Route path="/whatsapp-admin" component={BaileysWhatsAppAdmin} />
-      <Route path="/whatsapp-admin-old" component={WhatsAppAdmin} />
-      <Route path="/wasender-admin" component={WasenderAdminPage} />
-      
-      {/* Driver page - independent authentication */}
-      <Route path="/driver" component={DriverPage} />
-      
-      {/* Home page - allows anonymous browsing */}
-      <Route path="/" component={Home} />
-      
-      {/* Privacy Policy - public access */}
-      <Route path="/privacy-policy" component={PrivacyPolicy} />
-      
-      {/* Wallet pages */}
-      <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
-      <Route path="/wallet/success" component={WalletSuccess} />
-      <Route path="/wallet/failed" component={WalletFailed} />
-      
-      {/* Auth page */}
-      <Route path="/auth" component={AuthPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<FastLoadingSpinner />}>
+      <Switch>
+        {/* Admin routes - separate authentication */}
+        <Route path="/admin" component={ProtectedAdminRoute} />
+        <Route path="/admin-login" component={() => <Suspense fallback={<FastLoadingSpinner />}><AdminLogin /></Suspense>} />
+        <Route path="/whatsapp-admin" component={() => <Suspense fallback={<FastLoadingSpinner />}><BaileysWhatsAppAdmin /></Suspense>} />
+        <Route path="/whatsapp-admin-old" component={() => <Suspense fallback={<FastLoadingSpinner />}><WhatsAppAdmin /></Suspense>} />
+        <Route path="/wasender-admin" component={() => <Suspense fallback={<FastLoadingSpinner />}><WasenderAdminPage /></Suspense>} />
+        
+        {/* Driver page - independent authentication */}
+        <Route path="/driver" component={() => <Suspense fallback={<FastLoadingSpinner />}><DriverPage /></Suspense>} />
+        
+        {/* Home page - allows anonymous browsing */}
+        <Route path="/" component={() => <Suspense fallback={<FastLoadingSpinner />}><Home /></Suspense>} />
+        
+        {/* Privacy Policy - public access */}
+        <Route path="/privacy-policy" component={() => <Suspense fallback={<FastLoadingSpinner />}><PrivacyPolicy /></Suspense>} />
+        
+        {/* Wallet pages */}
+        <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
+        <Route path="/wallet/success" component={() => <Suspense fallback={<FastLoadingSpinner />}><WalletSuccess /></Suspense>} />
+        <Route path="/wallet/failed" component={() => <Suspense fallback={<FastLoadingSpinner />}><WalletFailed /></Suspense>} />
+        
+        {/* Auth page */}
+        <Route path="/auth" component={() => <Suspense fallback={<FastLoadingSpinner />}><AuthPage /></Suspense>} />
+        <Route component={() => <Suspense fallback={<FastLoadingSpinner />}><NotFound /></Suspense>} />
+      </Switch>
+    </Suspense>
   );
 }
 

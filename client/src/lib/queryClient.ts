@@ -94,11 +94,19 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 30000, // 30 seconds cache instead of infinity for security
-      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes - aggressive caching for instant loading
+      gcTime: 30 * 60 * 1000, // 30 minutes - keep data in memory longer
+      retry: 1, // Limited retries for speed
+      retryDelay: 200, // Fast retry
+      refetchOnMount: false, // Use cache first for instant loading
+      networkMode: 'always', // Always try to use cache first
     },
     mutations: {
       retry: false,
+      onSuccess: () => {
+        // Invalidate related queries after successful mutations
+        queryClient.invalidateQueries();
+      },
     },
   },
 });

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Header from "@/components/header";
 import LeftSidebar from "@/components/left-sidebar";
 import RightSidebar from "@/components/right-sidebar";
 import ProductsGrid from "@/components/products-grid";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { useCartFlow } from "@/store/cart-flow";
+import { ProductGridSkeleton } from "@/components/loading-fallback";
 
 export default function Home() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
@@ -53,7 +54,9 @@ export default function Home() {
       />
 
       <main className="pb-8">
-        <ProductsGrid />
+        <Suspense fallback={<div className="container mx-auto px-4 py-6"><ProductGridSkeleton /></div>}>
+          <ProductsGrid />
+        </Suspense>
       </main>
     </div>
   );
