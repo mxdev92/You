@@ -8,11 +8,18 @@ import { ultraPreloader } from './ultra-preloader';
 import { UltraMiddleware } from './ultra-middleware';
 
 // 🚨 CRITICAL: Check environment variables for deployment
-if (!process.env.DATABASE_URL) {
-  console.error('❌ DEPLOYMENT ERROR: DATABASE_URL is missing');
-  console.error('🔧 Set DATABASE_URL environment variable for deployment');
+const requiredEnvVars = ['DATABASE_URL'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ DEPLOYMENT ERROR: Missing required environment variables:');
+  missingEnvVars.forEach(varName => {
+    console.error(`🔧 Set ${varName} environment variable for deployment`);
+  });
+  
   // Don't exit in development, but warn
   if (process.env.NODE_ENV === 'production') {
+    console.error('💥 FATAL: Cannot start in production without required environment variables');
     process.exit(1);
   }
 }
@@ -142,6 +149,16 @@ app.use((req, res, next) => {
     });
   });
 
+  // Health check endpoint for deployment
+  app.get('/health', (_req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV
+    });
+  });
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
@@ -151,16 +168,13 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-    // ALWAYS serve the app on port 5000
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = process.env.PORT || 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      console.log(`🚀 PAKETY server running on port ${port}`);
+    // Cloud Run and production deployment support
+    // Use PORT environment variable (required for Cloud Run)
+    const port = parseInt(process.env.PORT || '5000', 10);
+    const host = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
+    
+    server.listen(port, host, () => {
+      console.log(`🚀 PAKETY server running on ${host}:${port}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
       console.log(`💡 Ultra Performance Mode: ACTIVE`);
       log(`serving on port ${port}`);
@@ -168,7 +182,9 @@ app.use((req, res, next) => {
 
   } catch (error) {
     console.error('💥 FATAL ERROR starting server:', error);
-    console.error('Stack:', error.stack);
+    if (error instanceof Error) {
+      console.error('Stack:', error.stack);
+    }
     process.exit(1);
   }
 })();
