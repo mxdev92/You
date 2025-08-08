@@ -86,7 +86,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     setShowShimmer(true);
 
     try {
-      await addToCart({ productId: product.id, quantity: 1 });
+      await addToCart({ productId: product.id.toString(), quantity: 1 });
       
       // Ultra-fast feedback - immediate UI response
       setTimeout(() => {
@@ -104,11 +104,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <motion.div
-        whileHover={{ y: product.available ? -2 : 0 }}
-        transition={{ duration: 0.08, ease: "easeOut" }}
-        className={`product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-150 overflow-hidden relative cursor-pointer ${
-          !product.available ? 'opacity-60' : ''
+      <div
+        className={`product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-150 overflow-hidden relative cursor-pointer ${
+          !product.available ? 'opacity-60' : 'hover:-translate-y-1'
         }`}
         onClick={() => setIsModalOpen(true)}
       >
@@ -122,13 +120,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         
         {/* Shimmer Effect Overlay */}
         {showShimmer && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.05 }}
-            className="absolute inset-0 shimmer-effect"
-          />
+          <div className="absolute inset-0 shimmer-effect animate-pulse bg-green-200 bg-opacity-30" />
         )}
       </div>
       
@@ -138,8 +130,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           {(() => {
             const translationKey = getProductTranslationKey(product.name);
             const translatedName = t(translationKey);
-            // If translation key doesn't exist and we get the fallback, show original name
-            if (translationKey === 'organicApples' && product.name !== 'Organic Apples') {
+            // If translation is not found, show original name
+            if (translatedName === translationKey) {
               return product.name;
             }
             return translatedName;
@@ -149,33 +141,30 @@ export default function ProductCard({ product }: ProductCardProps) {
           {formatPrice(product.price)}/{product.unit}
         </p>
         
-        <motion.div whileTap={{ scale: product.available ? 0.95 : 1 }}>
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-            disabled={isAdding || !product.available}
-            className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-100 touch-action-manipulation min-h-9 ${
-              !product.available
-                ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
-                : isAdding
-                ? "bg-green-500 hover:bg-green-500 text-white"
-                : "hover:opacity-90 text-black"
-            }`}
-            style={!product.available ? {} : isAdding ? {} : { backgroundColor: '#22c55e' }}
-          >
-            {!product.available ? (
-              t('outOfStock')
-            ) : isAdding ? (
-              <Check className="h-4 w-4 text-white" />
-            ) : (
-              <span className="text-white font-semibold">أضف الى السلة</span>
-            )}
-          </Button>
-        </motion.div>
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToCart();
+          }}
+          disabled={isAdding || !product.available}
+          className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all duration-100 min-h-9 active:scale-95 ${
+            !product.available
+              ? "bg-gray-400 hover:bg-gray-400 text-gray-600 cursor-not-allowed"
+              : isAdding
+              ? "bg-green-500 hover:bg-green-500 text-white"
+              : "hover:opacity-90 text-white bg-green-500"
+          }`}
+        >
+          {!product.available ? (
+            t('outOfStock')
+          ) : isAdding ? (
+            <Check className="h-4 w-4 text-white" />
+          ) : (
+            <span className="text-white font-semibold">أضف الى السلة</span>
+          )}
+        </Button>
       </div>
-      </motion.div>
+      </div>
 
       {/* Product Details Modal */}
       <ProductDetailsModal

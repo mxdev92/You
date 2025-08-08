@@ -23,7 +23,8 @@ export default function ProductsGrid() {
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    ...CACHE_CONFIGS.products,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     placeholderData: (previousData) => previousData,
@@ -31,15 +32,11 @@ export default function ProductsGrid() {
 
   return (
     <section className="px-4 py-6">
-      {/* Show skeleton only on true loading state */}
+      {/* Show skeleton only on initial load */}
       {isLoading && !products?.length ? (
         <ProductGridSkeleton />
       ) : (
-        <motion.div 
-          className="grid grid-cols-3 gap-3 md:gap-4"
-          layout
-          transition={{ duration: 0.1 }}
-        >
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
           {/* Subtle loading indicator for background updates */}
           {isFetching && products && (
             <div className="col-span-3 text-center py-1">
@@ -50,20 +47,13 @@ export default function ProductsGrid() {
             </div>
           )}
           
-          {products?.map((product: Product, index: number) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0.8 }}
-              animate={{ opacity: 1 }}
-              transition={{ 
-                delay: Math.min(index * 0.005, 0.1), // Minimal stagger
-                duration: 0.1, // Ultra-fast
-              }}
-            >
+          {/* Render products without complex animations that break layout */}
+          {products?.map((product: Product) => (
+            <div key={product.id} className="w-full">
               <ProductCard product={product} />
-            </motion.div>
+            </div>
           )) || []}
-        </motion.div>
+        </div>
       )}
 
       {!isLoading && products?.length === 0 && (
