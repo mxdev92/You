@@ -48,7 +48,7 @@ export function ProductDetailsModal({ product, isOpen, onClose }: ProductDetails
     try {
       await addToCart({
         productId: product.id,
-        quantity: selectedQuantity,
+        quantity: String(selectedQuantity),
       });
       
       // Track add to cart event with Meta Pixel

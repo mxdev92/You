@@ -59,7 +59,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
         // Update existing item quantity - ensure proper number arithmetic
         const updatedItems = [...currentItems];
         const currentQty = parseFloat(updatedItems[existingItemIndex].quantity);
-        const addQty = item.quantity || 1;
+        const addQty = parseFloat(item.quantity) || 1;
         updatedItems[existingItemIndex] = {
           ...updatedItems[existingItemIndex],
           quantity: String(currentQty + addQty)

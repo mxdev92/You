@@ -86,7 +86,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     setShowShimmer(true);
 
     try {
-      await addToCart({ productId: product.id, quantity: 1 });
+      await addToCart({ productId: product.id, quantity: "1" });
       
       // Ultra-fast feedback - immediate UI response
       setTimeout(() => {
@@ -139,7 +139,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             const translationKey = getProductTranslationKey(product.name);
             const translatedName = t(translationKey);
             // If translation key doesn't exist and we get the fallback, show original name
-            if (translationKey === 'organicApples' && product.name !== 'Organic Apples') {
+            if (translatedName === translationKey && product.name !== 'Organic Apples') {
               return product.name;
             }
             return translatedName;
