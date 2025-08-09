@@ -294,12 +294,14 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       return;
     }
 
-    // Check wallet balance (required for all payments)
-    const walletBalance = walletData?.balance || 0;
-    if (walletBalance < totalWithShipping) {
-      showNotification(`رصيد المحفظة غير كافي. الرصيد الحالي: ${formatPrice(walletBalance)} دينار والمطلوب: ${formatPrice(totalWithShipping)} دينار. يرجى شحن المحفظة أولاً`);
-      setIsPlacingOrder(false);
-      return;
+    // Check wallet balance only for wallet payments
+    if (paymentMethod === 'wallet') {
+      const walletBalance = walletData?.balance || 0;
+      if (walletBalance < totalWithShipping) {
+        showNotification(`رصيد المحفظة غير كافي. الرصيد الحالي: ${formatPrice(walletBalance)} دينار والمطلوب: ${formatPrice(totalWithShipping)} دينار. يرجى شحن المحفظة أولاً`);
+        setIsPlacingOrder(false);
+        return;
+      }
     }
     
     setIsPlacingOrder(true);
@@ -350,17 +352,21 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       const orderId = await createOrderMutation.mutateAsync(orderData);
       console.log('Order created successfully with ID:', orderId);
 
-      // Deduct amount from wallet (required for all payments)
-      try {
-        await apiRequest('POST', '/api/wallet/charge', { 
-          amount: -totalWithShipping, // Negative amount for payment
-          description: `دفع طلب #${orderId} - ${formatPrice(totalWithShipping)} دينار`
-        });
-        console.log('Wallet payment processed successfully');
-      } catch (walletError) {
-        console.error('Wallet payment failed:', walletError);
-        // Order is already created, so we just warn the user
-        showNotification('تم إنشاء الطلب ولكن فشل خصم المبلغ من المحفظة', 'error');
+      // Deduct amount from wallet only for wallet payments
+      if (paymentMethod === 'wallet') {
+        try {
+          await apiRequest('POST', '/api/wallet/charge', { 
+            amount: -totalWithShipping, // Negative amount for payment
+            description: `دفع طلب #${orderId} - ${formatPrice(totalWithShipping)} دينار`
+          });
+          console.log('Wallet payment processed successfully');
+        } catch (walletError) {
+          console.error('Wallet payment failed:', walletError);
+          // Order is already created, so we just warn the user
+          showNotification('تم إنشاء الطلب ولكن فشل خصم المبلغ من المحفظة', 'error');
+        }
+      } else {
+        console.log('Cash on delivery - no wallet deduction needed');
       }
       
       // Track successful purchase with Meta Pixel
@@ -730,42 +736,72 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           </div>
         </div>
 
-        {/* Payment Method Display - Wallet Only */}
+        {/* Payment Method Selection */}
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-            طريقة الدفع:
+            طرق الدفع:
           </h3>
           <div className="space-y-3">
-            {/* Wallet Payment - Always Selected */}
-            <div className="w-full p-4 text-sm rounded-xl bg-blue-500 text-white shadow-md border-blue-500" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            {/* Wallet Payment Option */}
+            <button
+              onClick={() => setPaymentMethod('wallet')}
+              className={`w-full p-4 text-sm rounded-xl transition-all border-2 ${
+                paymentMethod === 'wallet' 
+                  ? 'bg-blue-500 text-white shadow-md border-blue-500' 
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
+              }`}
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
               <div className="flex items-center justify-between">
-                <span>💳 الدفع من المحفظة (نقداً)</span>
+                <span>💳 الدفع من المحفظة</span>
                 <span className="text-xs">
                   (الرصيد: {formatPrice(walletData?.balance || 0)})
                 </span>
               </div>
-              {walletData && walletData.balance < totalWithShipping && (
+              {paymentMethod === 'wallet' && walletData && walletData.balance < totalWithShipping && (
                 <div className="mt-2 text-xs text-red-200 bg-red-600/20 rounded-lg p-2 flex items-center justify-between">
                   <span>رصيد غير كافي - يرجى شحن المحفظة أولاً</span>
                   <Link to="/wallet" className="text-yellow-300 underline text-xs hover:text-yellow-100">شحن الآن</Link>
                 </div>
               )}
-            </div>
+            </button>
+
+            {/* Cash on Delivery Option */}
+            <button
+              onClick={() => setPaymentMethod('cash')}
+              className={`w-full p-4 text-sm rounded-xl transition-all border-2 ${
+                paymentMethod === 'cash' 
+                  ? 'bg-green-500 text-white shadow-md border-green-500' 
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
+              }`}
+              style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+            >
+              <div className="flex items-center justify-between">
+                <span>💰 الدفع عند الاستلام</span>
+                <span className="text-xs opacity-75">نقداً للسائق</span>
+              </div>
+            </button>
           </div>
         </div>
 
         {/* Total Payment - Clean */}
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-            المبلغ الكلي المطلوب خصمه من المحفظة:
+            {paymentMethod === 'wallet' ? 'المبلغ الكلي المطلوب خصمه من المحفظة:' : 'المبلغ الكلي للطلب:'}
           </h3>
-          <div className="bg-blue-50 rounded-lg p-4 text-center">
-            <p className="text-2xl font-bold text-blue-600">
+          <div className={`${paymentMethod === 'wallet' ? 'bg-blue-50' : 'bg-green-50'} rounded-lg p-4 text-center`}>
+            <p className={`text-2xl font-bold ${paymentMethod === 'wallet' ? 'text-blue-600' : 'text-green-600'}`}>
               {formatPrice(totalWithShipping)} IQD
             </p>
-            <p className="text-xs text-gray-600 mt-1">
-              الرصيد المتبقي: {formatPrice(Math.max(0, (walletData?.balance || 0) - totalWithShipping))} IQD
-            </p>
+            {paymentMethod === 'wallet' ? (
+              <p className="text-xs text-gray-600 mt-1">
+                الرصيد المتبقي: {formatPrice(Math.max(0, (walletData?.balance || 0) - totalWithShipping))} IQD
+              </p>
+            ) : (
+              <p className="text-xs text-gray-600 mt-1">
+                سيتم الدفع نقداً للسائق عند التوصيل
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -775,11 +811,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         <Button 
           onClick={handlePlaceOrder}
           className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl h-14 text-base font-medium shadow-lg"
-          disabled={isPlacingOrder || !deliveryTime || (walletData && walletData.balance < totalWithShipping)}
+          disabled={isPlacingOrder || !deliveryTime || (paymentMethod === 'wallet' && walletData && walletData.balance < totalWithShipping)}
           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
         >
           {isPlacingOrder ? 'جاري تنفيذ الطلب...' : 
-           (walletData && walletData.balance < totalWithShipping) ? 'رصيد غير كافي' : 'تأكيد الطلب'}
+           (paymentMethod === 'wallet' && walletData && walletData.balance < totalWithShipping) ? 'رصيد غير كافي' : 'تأكيد الطلب'}
         </Button>
       </div>
     </div>
