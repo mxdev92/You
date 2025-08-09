@@ -785,11 +785,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Verify password using bcrypt
       console.log('🔑 Verifying password with bcrypt...');
+      console.log('Password from request:', password);
+      console.log('Hash from database:', user.passwordHash);
+      
       const isValidPassword = await bcrypt.compare(password, user.passwordHash);
       console.log('✅ Password verification result:', isValidPassword);
       
       if (!isValidPassword) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        // Try fallback for legacy plain text (for debugging)
+        if (user.passwordHash === password) {
+          console.log('⚠️ Legacy plain text password matched - should update hash');
+        } else {
+          console.log('❌ Password verification failed completely');
+          return res.status(401).json({ message: 'Invalid credentials' });
+        }
       }
 
       // Store user session with ultra-stable persistence - regenerate for clean session
