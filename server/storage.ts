@@ -1,7 +1,6 @@
 import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
-import { DatabaseOptimizer } from "./database-optimizer";
 
 export interface IStorage {
   // Categories
@@ -201,8 +200,7 @@ export class MemStorage implements IStorage {
       id,
       categoryId: insertProduct.categoryId ?? null,
       available: insertProduct.available ?? true,
-      displayOrder: insertProduct.displayOrder ?? 0,
-      description: insertProduct.description ?? null
+      displayOrder: insertProduct.displayOrder ?? 0
     };
     this.products.set(id, product);
     return product;
@@ -264,7 +262,7 @@ export class MemStorage implements IStorage {
 
     if (existingItem) {
       // Update quantity
-      const updatedItem = { ...existingItem, quantity: String(parseFloat(existingItem.quantity) + parseFloat(String(insertCartItem.quantity ?? 1))) };
+      const updatedItem = { ...existingItem, quantity: existingItem.quantity + (insertCartItem.quantity ?? 1) };
       this.cartItems.set(existingItem.id, updatedItem);
       return updatedItem;
     }
@@ -273,8 +271,7 @@ export class MemStorage implements IStorage {
     const cartItem: CartItem = {
       ...insertCartItem,
       id,
-      userId: insertCartItem.userId ?? null,
-      quantity: String(insertCartItem.quantity ?? 1),
+      quantity: insertCartItem.quantity ?? 1,
       addedAt: new Date().toISOString(),
     };
     this.cartItems.set(id, cartItem);
@@ -286,7 +283,7 @@ export class MemStorage implements IStorage {
     if (!item) {
       throw new Error("Cart item not found");
     }
-    const updatedItem = { ...item, quantity: String(quantity) };
+    const updatedItem = { ...item, quantity };
     this.cartItems.set(id, updatedItem);
     return updatedItem;
   }
@@ -323,8 +320,6 @@ export class MemStorage implements IStorage {
     const newUser: User = {
       id,
       ...user,
-      fullName: user.fullName ?? null,
-      walletBalance: user.walletBalance ?? "0",
       createdAt: new Date()
     };
     this.users.set(id, newUser);
@@ -340,8 +335,6 @@ export class MemStorage implements IStorage {
     const newAddress: UserAddress = {
       id,
       ...address,
-      notes: address.notes ?? null,
-      isDefault: address.isDefault ?? false,
       createdAt: new Date()
     };
     this.userAddresses.set(id, newAddress);
@@ -364,12 +357,6 @@ export class MemStorage implements IStorage {
     const order: Order = {
       id,
       ...insertOrder,
-      userId: insertOrder.userId ?? null,
-      driverId: insertOrder.driverId ?? null,
-      driverLocation: insertOrder.driverLocation ?? null,
-      acceptedAt: insertOrder.acceptedAt ?? null,
-      lastUpdate: insertOrder.lastUpdate ?? null,
-      paymentMethod: insertOrder.paymentMethod || "cash",
       status: insertOrder.status || "pending",
       orderDate: new Date(),
       deliveryTime: insertOrder.deliveryTime || null,
@@ -447,55 +434,11 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     };
   }
-
-  // Missing driver methods implementation
-  async getDrivers(): Promise<Driver[]> {
-    return [];
-  }
-
-  async getDriver(id: number): Promise<Driver | undefined> {
-    return undefined;
-  }
-
-  async getDriverByEmail(email: string): Promise<Driver | undefined> {
-    return undefined;
-  }
-
-  async createDriver(driver: InsertDriver): Promise<Driver> {
-    return {
-      id: Math.floor(Math.random() * 1000),
-      ...driver,
-      createdAt: new Date(),
-      isActive: driver.isActive ?? true,
-      updatedAt: new Date()
-    };
-  }
-
-  async updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver> {
-    throw new Error(`Driver with id ${id} not found`);
-  }
-
-  async deleteDriver(id: number): Promise<void> {
-    // MemStorage stub
-  }
-
-  async updateOrder(id: number, order: Partial<Order>): Promise<Order> {
-    const existingOrder = this.orders.get(id);
-    if (!existingOrder) {
-      throw new Error(`Order with id ${id} not found`);
-    }
-    const updatedOrder = { ...existingOrder, ...order };
-    this.orders.set(id, updatedOrder);
-    return updatedOrder;
-  }
 }
 
 export class DatabaseStorage implements IStorage {
-  private optimizer = DatabaseOptimizer.getInstance();
-  
   async getCategories(): Promise<Category[]> {
-    console.log('🔥 Ultra DB Query: Categories');
-    return await this.optimizer.getOptimizedCategories();
+    return await db.select().from(categories).orderBy(categories.displayOrder, categories.id);
   }
 
   async createCategory(category: InsertCategory): Promise<Category> {
@@ -522,8 +465,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProducts(): Promise<Product[]> {
-    console.log('🔥 Ultra DB Query: All Products');
-    const result = await this.optimizer.getOptimizedProducts();
+    const result = await db.select().from(products);
     return result.sort((a, b) => {
       const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
       const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
@@ -533,8 +475,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProductsByCategory(categoryId: number): Promise<Product[]> {
-    console.log(`🔥 Ultra DB Query: Products for category ${categoryId}`);
-    const result = await this.optimizer.getOptimizedProductsByCategory(categoryId);
+    const result = await db.select().from(products).where(eq(products.categoryId, categoryId));
     return result.sort((a, b) => {
       const orderA = a.displayOrder === 0 || a.displayOrder >= 999 ? 9999 : a.displayOrder;
       const orderB = b.displayOrder === 0 || b.displayOrder >= 999 ? 9999 : b.displayOrder;
@@ -561,8 +502,6 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-
-
   async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
     const [updated] = await db.update(products)
       .set({ displayOrder })
@@ -579,7 +518,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCartItems(userId?: number): Promise<(CartItem & { product: Product })[]> {
-    const baseQuery = db.select({
+    let query = db.select({
       id: cartItems.id,
       userId: cartItems.userId,
       productId: cartItems.productId,
@@ -590,15 +529,14 @@ export class DatabaseStorage implements IStorage {
     .from(cartItems)
     .innerJoin(products, eq(cartItems.productId, products.id));
     
-    let items;
     if (userId) {
-      items = await baseQuery.where(eq(cartItems.userId, userId));
+      query = query.where(eq(cartItems.userId, userId));
     } else {
       // For anonymous users, get cart items without userId
-      items = await baseQuery.where(sql`${cartItems.userId} IS NULL`);
+      query = query.where(sql`${cartItems.userId} IS NULL`);
     }
     
-
+    const items = await query;
     
     return items.map(item => ({
       id: item.id,
@@ -674,7 +612,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-
+  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
+    const [updated] = await db.update(products)
+      .set({ displayOrder })
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
+  }
 
   // Orders
   async getOrders(): Promise<Order[]> {

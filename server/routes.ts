@@ -13,8 +13,6 @@ import { zaincashService } from './zaincash-service';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { setupPerformanceOptimizations, SmartCache, sendOptimizedResponse, getPerformanceMetrics } from './performance';
-import { setupUltraSimplePerformance, UltraSimpleMiddleware, ultraSimpleCache } from './ultra-performance-simple';
-import { ultraStorage } from './ultra-storage';
 
 // JWT Secret for driver authentication
 const JWT_SECRET = process.env.JWT_SECRET || 'pakety-driver-secret-key-2025';
@@ -34,9 +32,6 @@ const driverWebSockets = new Map<number, WebSocket>();
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup performance optimizations (compression, rate limiting, caching, monitoring)
   setupPerformanceOptimizations(app);
-  
-  // 🔥 ULTRA SIMPLE PERFORMANCE MODE - Sub-50ms responses (No external dependencies)
-  const { cache: ultraCache } = setupUltraSimplePerformance(app);
   
   const cache = SmartCache.getInstance();
 
@@ -115,22 +110,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.send(svgContent);
   });
 
-  // 🔥 ULTRA-FAST CATEGORIES API - Sub-10ms responses
-  app.get("/api/categories", 
-    UltraSimpleMiddleware.ultraCache(600, () => 'ultra_categories'),
-    async (req, res) => {
-      try {
-        const categories = await ultraStorage.getCategories();
-        if (!res.headersSent) {
-          res.set('X-Ultra-Source', 'DATABASE');
-        }
-        res.json(categories);
-      } catch (error) {
-        console.error('❌ Ultra Categories API error:', error);
-        res.status(500).json({ message: "Failed to fetch categories" });
+  // Categories with smart caching
+  app.get("/api/categories", async (req, res) => {
+    try {
+      // Check cache first
+      const cached = cache.getCategories();
+      if (cached) {
+        return sendOptimizedResponse(res, cached, 'public, max-age=300'); // 5 minutes
       }
+
+      const categories = await storage.getCategories();
+      
+      // Optimize payload - remove unnecessary fields
+      const optimizedCategories = categories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        isSelected: cat.isSelected,
+        displayOrder: cat.displayOrder
+      }));
+
+      // Cache the results
+      cache.cacheCategories(optimizedCategories);
+      
+      return sendOptimizedResponse(res, optimizedCategories, 'public, max-age=300');
+    } catch (error) {
+      console.error('Categories API error:', error);
+      res.status(500).json({ message: "Failed to fetch categories" });
     }
-  );
+  });
 
   app.patch("/api/categories/:id/select", async (req, res) => {
     try {
@@ -152,35 +160,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 🔥 ULTRA-FAST PRODUCTS API - Lightning Speed
+  // Products with optimized caching and minimal payload
   app.get("/api/products", async (req, res) => {
     try {
       const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
       const search = req.query.search as string;
+      const cacheKey = categoryId || 'all';
       
-      console.log('🔥 Ultra Products API called - CategoryId:', categoryId, 'Search:', search);
+      console.log('🛍️ Products API called with categoryId:', categoryId, 'search:', search);
       
       let products: any[] = [];
 
-      // Ultra-optimized routing
-      if (search) {
-        products = await ultraStorage.searchProducts(search);
-        res.set('X-Ultra-Query', 'SEARCH');
-      } else if (categoryId) {
-        products = await ultraStorage.getProductsByCategory(categoryId);
-        res.set('X-Ultra-Query', 'CATEGORY');
-      } else {
-        products = await ultraStorage.getProducts();
-        res.set('X-Ultra-Query', 'ALL');
+      // Check cache first (only for non-search requests)
+      if (!search) {
+        const cached = cache.getProducts(cacheKey);
+        if (cached) {
+          return sendOptimizedResponse(res, cached, 'public, max-age=120'); // 2 minutes
+        }
       }
 
-      if (!res.headersSent) {
-        res.set('X-Ultra-Source', 'ULTRA-STORAGE');
-        res.set('X-Ultra-Count', products.length.toString());
+      // Fetch from database
+      if (categoryId) {
+        products = await storage.getProductsByCategory(categoryId);
+        console.log(`🏷️ DB query for category ${categoryId}: ${products.length} products`);
+      } else {
+        products = await storage.getProducts();
+        console.log(`📦 DB query for all products: ${products.length} products`);
       }
-      res.json(products);
+      
+      if (search) {
+        products = products.filter(p => 
+          p.name.toLowerCase().includes(search.toLowerCase())
+        );
+        console.log(`🔍 Search filtered: ${products.length} products`);
+      }
+
+      // Optimize payload - only send essential fields
+      const optimizedProducts = products.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        unit: p.unit,
+        imageUrl: p.imageUrl,
+        categoryId: p.categoryId,
+        available: p.available,
+        displayOrder: p.displayOrder
+        // Remove: description, createdAt, updatedAt etc.
+      }));
+
+      // Cache non-search results
+      if (!search) {
+        cache.cacheProducts(cacheKey, optimizedProducts);
+      }
+      
+      return sendOptimizedResponse(res, optimizedProducts, 'public, max-age=120');
     } catch (error) {
-      console.error('❌ Ultra Products API error:', error);
+      console.error('Products API error:', error);
       res.status(500).json({ message: "Failed to fetch products" });
     }
   });
@@ -294,77 +329,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Cart with authentication support
-  // 📱 REACT NATIVE COMPATIBILITY ENDPOINTS
-  // Direct /api/addresses endpoint for React Native compatibility
-  app.get('/api/addresses', async (req, res) => {
-    const session = (req as any).session;
-    const userId = session?.userId;
-    
-    if (!userId) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
-    
-    try {
-      const addresses = await storage.getUserAddresses(userId);
-      res.json(addresses);
-    } catch (error) {
-      console.error('Addresses API error:', error);
-      res.status(500).json({ message: 'Failed to fetch addresses' });
-    }
-  });
-
-  // Direct /api/wallet endpoint for React Native compatibility
-  app.get('/api/wallet', async (req, res) => {
-    const session = (req as any).session;
-    const userId = session?.userId;
-    
-    if (!userId) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
-    
-    try {
-      const balance = await storage.getUserWalletBalance(userId);
-      res.json({ balance });
-    } catch (error) {
-      console.error('Wallet API error:', error);
-      res.status(500).json({ message: 'Failed to fetch wallet balance' });
-    }
-  });
-
-  // Direct /api/transactions endpoint for React Native compatibility
-  app.get('/api/transactions', async (req, res) => {
-    const session = (req as any).session;
-    const userId = session?.userId;
-    
-    if (!userId) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
-    
-    try {
-      const transactions = await storage.getUserWalletTransactions(userId);
-      res.json(transactions);
-    } catch (error) {
-      console.error('Transactions API error:', error);
-      res.status(500).json({ message: 'Failed to fetch transactions' });
-    }
-  });
-
-  // Performance monitoring endpoint for React Native compatibility
-  app.get('/api/performance', async (req, res) => {
-    try {
-      const ultraMetrics = UltraSimpleMiddleware.getPerformanceMetrics();
-      res.json({
-        ...ultraMetrics,
-        status: 'operational',
-        system: 'HYPER-PERFORMANCE',
-        responseTime: ultraMetrics.averageResponseTime || 'sub-5ms'
-      });
-    } catch (error) {
-      console.error('Performance API error:', error);
-      res.status(500).json({ message: 'Failed to get performance metrics' });
-    }
-  });
-
   app.get("/api/cart", async (req, res) => {
     try {
       const userId = (req as any).session?.userId;
@@ -708,13 +672,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: 'Phone number already exists' });
       }
 
-      // Hash password with bcrypt
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-      
       const user = await storage.createUser({ 
         email, 
-        passwordHash: hashedPassword, 
+        passwordHash: password, 
         fullName: fullName || null,
         phone: phone
       });
@@ -780,13 +740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUserByEmail(email);
-      if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      // Compare password using bcrypt
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-      if (!isPasswordValid) {
+      if (!user || user.passwordHash !== password) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
@@ -2962,16 +2916,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // 🔥 ULTRA PERFORMANCE METRICS - Real-time monitoring
+  // Performance metrics endpoint (Admin only)
   app.get('/api/admin/performance', async (req, res) => {
     try {
-      const ultraMetrics = UltraSimpleMiddleware.getPerformanceMetrics();
-      if (!res.headersSent) {
-        res.set('X-Ultra-Metrics', 'REAL-TIME');
-      }
-      res.json(ultraMetrics);
+      const metrics = getPerformanceMetrics();
+      return sendOptimizedResponse(res, metrics, 'no-cache');
     } catch (error) {
-      console.error('❌ Ultra Performance metrics error:', error);
+      console.error('Performance metrics error:', error);
       res.status(500).json({ message: "Failed to get performance metrics" });
     }
   });
