@@ -708,9 +708,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: 'Phone number already exists' });
       }
 
+      // Hash password with bcrypt
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      
       const user = await storage.createUser({ 
         email, 
-        passwordHash: password, 
+        passwordHash: hashedPassword, 
         fullName: fullName || null,
         phone: phone
       });
@@ -776,7 +780,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUserByEmail(email);
-      if (!user || user.passwordHash !== password) {
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Compare password using bcrypt
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isPasswordValid) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
