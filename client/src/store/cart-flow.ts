@@ -32,7 +32,9 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   loadCart: async () => {
     set({ isLoading: true });
     try {
-      const response = await fetch("/api/cart");
+      const response = await fetch("/api/cart", {
+        credentials: "include" // This is critical for session cookies!
+      });
       if (response.ok) {
         const items = await response.json();
         set({ cartItems: items });
@@ -74,13 +76,16 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       const response = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include session cookies
         body: JSON.stringify(item),
       });
       
       if (response.ok) {
         // Immediately refresh cart to get updated data with product info
         try {
-          const updatedResponse = await fetch("/api/cart");
+          const updatedResponse = await fetch("/api/cart", {
+            credentials: "include" // Include session cookies
+          });
           if (updatedResponse.ok) {
             const items = await updatedResponse.json();
             set({ cartItems: items });
@@ -110,6 +115,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
 
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "DELETE",
+        credentials: "include", // Include session cookies
       });
       
       if (!response.ok) {
@@ -138,6 +144,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       const response = await fetch(`/api/cart/${itemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Include session cookies
         body: JSON.stringify({ quantity }),
       });
       
@@ -158,7 +165,10 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
   clearCart: async () => {
     try {
       set({ cartItems: [] });
-      const response = await fetch("/api/cart", { method: "DELETE" });
+      const response = await fetch("/api/cart", { 
+        method: "DELETE",
+        credentials: "include" // Include session cookies
+      });
       
       if (!response.ok) {
         get().loadCart();
