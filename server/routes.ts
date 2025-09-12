@@ -1701,6 +1701,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WasenderAPI session management endpoints
+  app.get('/api/whatsapp/session-status', async (req, res) => {
+    try {
+      const status = await wasenderService.getSessionStatus();
+      res.json({
+        success: true,
+        status: status.data?.status || 'unknown',
+        connected: status.success && (status.data?.status === 'connected' || status.data?.status === 'authenticated'),
+        message: status.message
+      });
+    } catch (error: any) {
+      console.error('Session status check failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post('/api/whatsapp/connect-session', async (req, res) => {
+    try {
+      const result = await wasenderService.initializeSession();
+      res.json({
+        success: result.success,
+        message: result.message,
+        qrCode: result.data?.qr || null,
+        status: result.data?.status || 'unknown'
+      });
+    } catch (error: any) {
+      console.error('Session connection failed:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.post('/api/whatsapp/send-otp', async (req, res) => {
     const { phoneNumber, fullName } = req.body;
     
@@ -1726,28 +1757,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store OTP session in memory for verification
       otpSessions.set(phoneNumber, otpSession);
       
-      // Send OTP via WasenderAPI
-      const result = await wasenderService.sendOTPMessage(phoneNumber, otp);
+      // Check WasenderAPI session status first
+      const sessionStatus = await wasenderService.getSessionStatus();
+      const isConnected = sessionStatus.success && (sessionStatus.data?.status === 'connected' || sessionStatus.data?.status === 'authenticated');
       
-      if (result.success) {
-        console.log(`✅ OTP sent successfully via WasenderAPI to ${phoneNumber}`);
-        res.json({
-          success: true,
-          message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
-          delivered: 'wasender'
-        });
-      } else {
-        console.log(`❌ WasenderAPI failed: ${result.message}`);
+      if (isConnected) {
+        // Try sending via WasenderAPI
+        const result = await wasenderService.sendOTPMessage(phoneNumber, otp);
         
-        // Final fallback - provide OTP directly for verification
-        console.log(`🔑 Fallback OTP for ${phoneNumber}: ${otp}`);
-        res.json({
-          success: true,
-          message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
-          delivered: 'fallback',
-          otp: otp
-        });
+        if (result.success) {
+          console.log(`✅ OTP sent successfully via WasenderAPI to ${phoneNumber}`);
+          res.json({
+            success: true,
+            message: 'تم إرسال رمز التحقق إلى تطبيق الواتساب',
+            delivered: 'wasender'
+          });
+          return;
+        } else {
+          console.log(`❌ WasenderAPI failed: ${result.message}`);
+        }
+      } else {
+        console.log(`⚠️ WasenderAPI session not connected: ${sessionStatus.data?.status || 'unknown'}`);
       }
+      
+      // SECURITY: Secure fallback system - NEVER return OTP in response
+      // Only log to server console for debugging - OTP must remain server-side only
+      console.log(`🔑 SECURITY: Fallback OTP for ${phoneNumber}: ${otp} (WasenderAPI unavailable)`);
+      console.log(`📱 IMPORTANT: For phone ${phoneNumber}, manually provide OTP: ${otp}`);
+      
+      res.json({
+        success: true,
+        message: 'تم إعداد رمز التحقق - يرجى التحقق من سجلات الخادم للحصول على الرمز',
+        delivered: 'fallback',
+        note: 'WasenderAPI غير متصل - تم تسجيل الرمز في سجلات الخادم للأمان'
+      });
       
     } catch (error: any) {
       console.error('❌ OTP service error:', error);

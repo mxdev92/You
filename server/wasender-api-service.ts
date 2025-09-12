@@ -20,11 +20,17 @@ export class WasenderAPIService {
   private sessionId: string;
 
   constructor() {
-    this.apiKey = 'e09cac2b770c84cd50a0a7df8d6179a64bcfe26e78655c64b9881298a9b429a5';
+    // SECURITY: Load API key from environment variables only
+    this.apiKey = process.env.WASENDER_API_KEY || '';
+    if (!this.apiKey) {
+      console.error('❌ SECURITY ERROR: WASENDER_API_KEY environment variable is required');
+      throw new Error('WASENDER_API_KEY environment variable is required for security');
+    }
+    
     this.baseUrl = 'https://www.wasenderapi.com'; // Correct base URL from documentation
     this.sessionId = 'pakety_main'; // Unique session for this app
     
-    console.log('🔑 WasenderAPI service initialized with correct endpoints');
+    console.log('🔑 WasenderAPI service initialized securely with environment variables');
   }
 
   /**
