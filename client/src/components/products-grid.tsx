@@ -11,11 +11,10 @@ export default function ProductsGrid() {
   const selectedCategory = categories?.find(cat => cat.isSelected);
 
   const { data: products, isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products", selectedCategory?.id],
+    queryKey: ["/api/products", selectedCategory?.id || 2],
     queryFn: async () => {
-      const url = selectedCategory 
-        ? `/api/products?categoryId=${selectedCategory.id}`
-        : "/api/products";
+      const categoryId = selectedCategory?.id || 2; // Default to vegetables (ID: 2)
+      const url = `/api/products?categoryId=${categoryId}`;
       
       const response = await fetch(url, { credentials: "include" });
       if (!response.ok) throw new Error("Failed to fetch products");
