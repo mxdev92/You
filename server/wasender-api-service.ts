@@ -21,10 +21,10 @@ export class WasenderAPIService {
 
   constructor() {
     // SECURITY: Load API key from environment variables only
-    this.apiKey = process.env.WASENDER_API_KEY || '';
+    this.apiKey = process.env.Wasender_api || '';
     if (!this.apiKey) {
-      console.error('❌ SECURITY ERROR: WASENDER_API_KEY environment variable is required');
-      throw new Error('WASENDER_API_KEY environment variable is required for security');
+      console.error('❌ SECURITY ERROR: Wasender_api environment variable is required');
+      throw new Error('Wasender_api environment variable is required for security');
     }
     
     this.baseUrl = 'https://www.wasenderapi.com'; // Correct base URL from documentation
