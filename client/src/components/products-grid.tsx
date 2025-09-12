@@ -24,7 +24,7 @@ export default function ProductsGrid() {
     staleTime: 30000, // Cache products for 30 seconds for faster switching
     refetchInterval: 5000, // Reduced refetch to 5 seconds for better performance
     refetchOnWindowFocus: false, // Prevent unnecessary refetches on focus
-    keepPreviousData: true, // Keep previous data while loading new category
+    placeholderData: (previousData) => previousData, // Keep previous data while loading new category
   });
 
   return (
