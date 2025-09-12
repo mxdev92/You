@@ -2927,5 +2927,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoint to delete all users (Admin only - requires confirmation)
+  app.delete('/api/admin/users/delete-all', async (req, res) => {
+    try {
+      const { confirm } = req.body;
+      
+      // Require explicit confirmation to prevent accidental deletion
+      if (confirm !== 'DELETE_ALL_USERS') {
+        return res.status(400).json({ 
+          message: "Confirmation required. Set confirm: 'DELETE_ALL_USERS' in request body" 
+        });
+      }
+
+      // Get all users first
+      const users = await storage.getAllUsers();
+      const userCount = users.length;
+      
+      if (userCount === 0) {
+        return res.json({ 
+          message: "No users found to delete", 
+          deletedCount: 0 
+        });
+      }
+
+      // Delete all users using the storage interface (which handles cascading deletions)
+      let deletedCount = 0;
+      const errors: string[] = [];
+
+      for (const user of users) {
+        try {
+          await storage.deleteUser(user.id);
+          deletedCount++;
+          console.log(`Deleted user: ${user.email} (ID: ${user.id})`);
+        } catch (error) {
+          const errorMsg = `Failed to delete user ${user.email} (ID: ${user.id}): ${error instanceof Error ? error.message : String(error)}`;
+          errors.push(errorMsg);
+          console.error(errorMsg);
+        }
+      }
+
+      console.log(`Admin action: Deleted ${deletedCount} out of ${userCount} users`);
+
+      res.json({
+        message: `Successfully deleted ${deletedCount} out of ${userCount} users`,
+        deletedCount,
+        totalUsers: userCount,
+        errors: errors.length > 0 ? errors : undefined
+      });
+
+    } catch (error) {
+      console.error('Delete all users error:', error);
+      res.status(500).json({ 
+        message: "Failed to delete users", 
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   return httpServer;
 }
