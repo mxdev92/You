@@ -23,8 +23,12 @@ export class VerifyWayService {
   public otpSessions = new Map<string, OTPSession>();
 
   constructor() {
-    this.apiKey = process.env.VERIFYWAY_API_KEY || '906$E2P3X5cqM5U7lOgYNjZYOzfdLXCMDgFljOW9';
-    console.log('🔑 VerifyWay service initialized with API key');
+    this.apiKey = process.env.VERIFYWAY_API_KEY || '';
+    if (!this.apiKey) {
+      console.error('❌ SECURITY ERROR: VERIFYWAY_API_KEY environment variable is required');
+      throw new Error('VERIFYWAY_API_KEY environment variable is required for security');
+    }
+    console.log('🔑 VerifyWay service initialized securely with environment variables');
   }
 
   async sendOTP(phoneNumber: string, fullName: string): Promise<{ success: boolean; otp?: string; reference?: string; message?: string }> {
@@ -81,9 +85,11 @@ export class VerifyWayService {
         
         console.log(`✅ VerifyWay OTP sent successfully to ${phoneNumber}: ${otpCode}`);
         
+        // SECURITY: Never return OTP in API response - OTP must remain server-side only
+        console.log(`🔑 SECURITY: OTP generated for ${phoneNumber}: ${otpCode} (VerifyWay service)`);
+        
         return {
           success: true,
-          otp: otpCode,
           reference: session.reference,
           message: 'OTP sent via WhatsApp'
         };
@@ -149,7 +155,8 @@ export class VerifyWayService {
   // Cleanup expired sessions
   cleanupExpiredSessions(): void {
     const now = Date.now();
-    for (const [phoneNumber, session] of this.otpSessions.entries()) {
+    const entries = Array.from(this.otpSessions.entries());
+    for (const [phoneNumber, session] of entries) {
       if (now > session.expiresAt) {
         this.otpSessions.delete(phoneNumber);
       }
