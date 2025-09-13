@@ -2420,12 +2420,12 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>رسوم التوصيل:</span>
-                  <span>{formatPrice(2500)} د.ع</span>
+                  <span>{formatPrice(3500)} د.ع</span>
                 </div>
                 <div className="border-t border-gray-300 pt-3">
                   <div className="flex justify-between font-bold text-lg">
                     <span>المجموع الكلي:</span>
-                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + 2500)} د.ع</span>
+                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + 3500)} د.ع</span>
                   </div>
                 </div>
               </div>
