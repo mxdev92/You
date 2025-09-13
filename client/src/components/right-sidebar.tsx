@@ -181,13 +181,13 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const getCartTotal = () => {
     if (!Array.isArray(cartItems)) return 0;
     return cartItems.reduce((sum: number, item: CartItem & { product: Product }) => {
-      return sum + (parseFloat(item.product.price) * parseFloat(item.quantity));
+      return sum + (parseFloat(item.product.price) * item.quantity);
     }, 0);
   };
 
   const getCartItemsCount = () => {
     if (!Array.isArray(cartItems)) return 0;
-    return cartItems.reduce((sum: number, item: CartItem) => sum + parseFloat(item.quantity), 0);
+    return cartItems.reduce((sum: number, item: CartItem) => sum + item.quantity, 0);
   };
 
   const updateQuantity = (id: number, quantity: number) => {
@@ -222,7 +222,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const deliveryNotesRef = useRef<HTMLTextAreaElement>(null);
 
   // Get wallet balance
-  const { data: walletData } = useQuery<{ balance: number }>({
+  const { data: walletData } = useQuery({
     queryKey: ['/api/wallet/balance'],
     enabled: !!postgresUser,
     retry: 1
@@ -249,7 +249,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     };
   }, [isOpen]);
 
-  const shippingFee = 3500; // Fixed delivery fee in IQD
+  const shippingFee = 2500; // Fixed delivery fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
 
   const iraqiGovernorates = [
@@ -577,7 +577,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <div className="text-right">
                 <p className="font-medium text-gray-800">{item.quantity}x</p>
                 <p className="text-fresh-green font-semibold text-sm">
-                  {(parseFloat(item.product.price) * parseFloat(item.quantity)).toFixed(0)} IQD
+                  {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
                 </p>
               </div>
             </motion.div>
@@ -857,7 +857,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
                   {/* Line 2: Price */}
                   <div className="mb-1">
                     <p className="text-fresh-green font-semibold text-xs">
-                      {item.product?.price ? (parseFloat(item.product.price) * parseFloat(item.quantity)).toFixed(0) : '0'} IQD
+                      {item.product?.price ? (parseFloat(item.product.price) * item.quantity).toFixed(0) : '0'} IQD
                     </p>
                   </div>
                   
