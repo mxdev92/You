@@ -166,6 +166,9 @@ router.post('/api/mobile/auth/register', async (req, res) => {
 // Refresh Token
 router.post('/api/mobile/auth/refresh', authenticateToken, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const user = await storage.getUser(req.user.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -313,10 +316,10 @@ router.get('/api/mobile/cart', authenticateToken, async (req, res) => {
         itemCount: validCartItems.reduce((sum, item) => sum + item.quantity, 0),
         totalAmount: totalAmount,
         totalAmountFormatted: formatPrice(totalAmount),
-        deliveryFee: 2500,
-        deliveryFeeFormatted: formatPrice(2500),
-        grandTotal: totalAmount + 2500,
-        grandTotalFormatted: formatPrice(totalAmount + 2500)
+        deliveryFee: 3500,
+        deliveryFeeFormatted: formatPrice(3500),
+        grandTotal: totalAmount + 3500,
+        grandTotalFormatted: formatPrice(totalAmount + 3500)
       }
     });
   } catch (error) {
@@ -340,11 +343,14 @@ router.post('/api/mobile/cart/add', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
     await storage.addToCart({
-      userId: req.user!.userId,
+      userId: req.user.userId,
       productId: productId,
-      quantity: quantity.toString(),
-      addedAt: new Date().toISOString()
+      quantity: quantity.toString()
     });
 
     res.json({
@@ -571,8 +577,8 @@ router.get('/api/mobile/orders', authenticateToken, async (req, res) => {
         status: order.status,
         totalAmount: order.totalAmount,
         totalAmountFormatted: formatPrice(order.totalAmount),
-        deliveryFee: 2500, // Fixed delivery fee
-        deliveryFeeFormatted: formatPrice(2500),
+        deliveryFee: 3500, // Fixed delivery fee
+        deliveryFeeFormatted: formatPrice(3500),
         createdAt: order.orderDate,
         items: Array.isArray(items) ? items : []
       };
@@ -611,8 +617,8 @@ router.get('/api/mobile/orders/:id', authenticateToken, async (req, res) => {
         status: order.status,
         totalAmount: order.totalAmount,
         totalAmountFormatted: formatPrice(order.totalAmount),
-        deliveryFee: 2500,
-        deliveryFeeFormatted: formatPrice(2500),
+        deliveryFee: 3500,
+        deliveryFeeFormatted: formatPrice(3500),
         customerName: order.customerName,
         customerPhone: order.customerPhone,
         customerAddress: address ? `${address.governorate} - ${address.district} - ${address.neighborhood}` : '',
@@ -673,7 +679,7 @@ router.post('/api/mobile/orders', authenticateToken, async (req, res) => {
       });
     }
 
-    const deliveryFee = 2500;
+    const deliveryFee = 3500;
     const grandTotal = totalAmount + deliveryFee;
 
     // Check wallet balance if paying with wallet

@@ -636,7 +636,8 @@ export default function AdminFast() {
                 )}
               </div>
             </div>
-        </div>
+          </>
+        ) : null}
 
         {/* Admin Sidebar */}
         <AdminSidebar 
