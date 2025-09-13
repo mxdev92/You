@@ -249,7 +249,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     };
   }, [isOpen]);
 
-  const shippingFee = 2500; // Fixed delivery fee in IQD
+  const shippingFee = 3500; // Fixed delivery fee in IQD
   const totalWithShipping = getCartTotal() + shippingFee;
 
   const iraqiGovernorates = [
@@ -370,7 +370,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       }
       
       // Track successful purchase with Meta Pixel
-      MetaPixel.trackPurchase(orderData.totalAmount + 2500, orderId.toString()); // Include delivery fee
+      MetaPixel.trackPurchase(orderData.totalAmount + 3500, orderId.toString()); // Include delivery fee
       
       // Clear cart using CartFlow store for immediate UI update
       await clearCartFlow();
