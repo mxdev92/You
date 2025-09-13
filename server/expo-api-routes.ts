@@ -313,10 +313,10 @@ router.get('/api/mobile/cart', authenticateToken, async (req, res) => {
         itemCount: validCartItems.reduce((sum, item) => sum + item.quantity, 0),
         totalAmount: totalAmount,
         totalAmountFormatted: formatPrice(totalAmount),
-        deliveryFee: 2500,
-        deliveryFeeFormatted: formatPrice(2500),
-        grandTotal: totalAmount + 2500,
-        grandTotalFormatted: formatPrice(totalAmount + 2500)
+        deliveryFee: 3500,
+        deliveryFeeFormatted: formatPrice(3500),
+        grandTotal: totalAmount + 3500,
+        grandTotalFormatted: formatPrice(totalAmount + 3500)
       }
     });
   } catch (error) {
@@ -571,8 +571,8 @@ router.get('/api/mobile/orders', authenticateToken, async (req, res) => {
         status: order.status,
         totalAmount: order.totalAmount,
         totalAmountFormatted: formatPrice(order.totalAmount),
-        deliveryFee: 2500, // Fixed delivery fee
-        deliveryFeeFormatted: formatPrice(2500),
+        deliveryFee: 3500, // Fixed delivery fee
+        deliveryFeeFormatted: formatPrice(3500),
         createdAt: order.orderDate,
         items: Array.isArray(items) ? items : []
       };
@@ -611,8 +611,8 @@ router.get('/api/mobile/orders/:id', authenticateToken, async (req, res) => {
         status: order.status,
         totalAmount: order.totalAmount,
         totalAmountFormatted: formatPrice(order.totalAmount),
-        deliveryFee: 2500,
-        deliveryFeeFormatted: formatPrice(2500),
+        deliveryFee: 3500,
+        deliveryFeeFormatted: formatPrice(3500),
         customerName: order.customerName,
         customerPhone: order.customerPhone,
         customerAddress: address ? `${address.governorate} - ${address.district} - ${address.neighborhood}` : '',
@@ -673,7 +673,7 @@ router.post('/api/mobile/orders', authenticateToken, async (req, res) => {
       });
     }
 
-    const deliveryFee = 2500;
+    const deliveryFee = 3500;
     const grandTotal = totalAmount + deliveryFee;
 
     // Check wallet balance if paying with wallet
@@ -816,8 +816,8 @@ router.get('/api/mobile/config', (req, res) => {
     config: {
       appName: 'PAKETY',
       appNameAr: 'باكيتي',
-      deliveryFee: 2500,
-      deliveryFeeFormatted: formatPrice(2500),
+      deliveryFee: 3500,
+      deliveryFeeFormatted: formatPrice(3500),
       minWalletCharge: 5000,
       minWalletChargeFormatted: formatPrice(5000),
       currency: 'IQD',

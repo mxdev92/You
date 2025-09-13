@@ -2638,8 +2638,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             price: parseFloat(item.price).toLocaleString(),
             total: (item.quantity * parseFloat(item.price)).toLocaleString()
           })),
-          subtotal: (parseFloat(order.totalAmount) - 2500).toLocaleString(),
-          deliveryFee: '2,500',
+          subtotal: (parseFloat(order.totalAmount) - 3500).toLocaleString(),
+          deliveryFee: '3,500',
           totalAmount: parseFloat(order.totalAmount).toLocaleString(),
           orderDate: order.orderDate,
           status: order.status,
@@ -2671,7 +2671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate stats
       const totalDeliveries = deliveredOrders.length;
-      const totalEarnings = deliveredOrders.reduce((sum, order) => sum + 2500, 0); // 2500 per delivery
+      const totalEarnings = deliveredOrders.reduce((sum, order) => sum + 3500, 0); // 3500 per delivery
       const todayOrders = deliveredOrders.filter(order => {
         const today = new Date().toDateString();
         const orderDate = new Date(order.orderDate).toDateString();
@@ -2684,7 +2684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalDeliveries,
           totalEarnings: totalEarnings.toLocaleString(),
           todayDeliveries: todayOrders.length,
-          todayEarnings: (todayOrders.length * 2500).toLocaleString(),
+          todayEarnings: (todayOrders.length * 3500).toLocaleString(),
           currentOrders: driverOrders.filter(order => 
             order.status === 'out-for-delivery' || order.status === 'picked-up'
           ).length,
