@@ -13,12 +13,22 @@ import { zaincashService } from './zaincash-service';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { setupPerformanceOptimizations, SmartCache, sendOptimizedResponse, getPerformanceMetrics } from './performance';
+import { BaileysWhatsAppService } from './baileys-whatsapp-service';
+import { DeliveryPDFService } from './delivery-pdf-service';
+import { PDFWorkflowService } from './pdf-workflow-service';
+import { UltraStablePDFDelivery } from './ultra-stable-pdf-delivery';
 
 // JWT Secret for driver authentication
 const JWT_SECRET = process.env.JWT_SECRET || 'pakety-driver-secret-key-2025';
 
-// Initialize WasenderAPI service only
+// Initialize all services
 console.log('🎯 WasenderAPI service initialized - Unified messaging system active');
+
+// Initialize WhatsApp and PDF services
+const whatsappService = new BaileysWhatsAppService();
+const deliveryPDFService = new DeliveryPDFService(whatsappService);
+const pdfWorkflowService = new PDFWorkflowService(whatsappService);
+const ultraStableDelivery = new UltraStablePDFDelivery(whatsappService as any); // Cast to match expected type
 
 // OTP session storage
 const otpSessions = new Map();
@@ -2638,7 +2648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             price: parseFloat(item.price).toLocaleString(),
             total: (item.quantity * parseFloat(item.price)).toLocaleString()
           })),
-          subtotal: (parseFloat(order.totalAmount) - 2500).toLocaleString(),
+          subtotal: (parseFloat(order.totalAmount) - 3500).toLocaleString(),
           deliveryFee: '2,500',
           totalAmount: parseFloat(order.totalAmount).toLocaleString(),
           orderDate: order.orderDate,
@@ -2671,7 +2681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate stats
       const totalDeliveries = deliveredOrders.length;
-      const totalEarnings = deliveredOrders.reduce((sum, order) => sum + 2500, 0); // 2500 per delivery
+      const totalEarnings = deliveredOrders.reduce((sum, order) => sum + 3500, 0); // 3500 per delivery
       const todayOrders = deliveredOrders.filter(order => {
         const today = new Date().toDateString();
         const orderDate = new Date(order.orderDate).toDateString();

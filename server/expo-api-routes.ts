@@ -822,8 +822,8 @@ router.get('/api/mobile/config', (req, res) => {
     config: {
       appName: 'PAKETY',
       appNameAr: 'باكيتي',
-      deliveryFee: 2500,
-      deliveryFeeFormatted: formatPrice(2500),
+      deliveryFee: 3500,
+      deliveryFeeFormatted: formatPrice(3500),
       minWalletCharge: 5000,
       minWalletChargeFormatted: formatPrice(5000),
       currency: 'IQD',
