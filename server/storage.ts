@@ -779,13 +779,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateProductDisplayOrder(id: number, displayOrder: number): Promise<Product> {
-    const [updated] = await db.update(products)
-      .set({ displayOrder })
-      .where(eq(products.id, id))
-      .returning();
-    return updated;
-  }
 
   // Orders
   async getOrders(): Promise<Order[]> {
