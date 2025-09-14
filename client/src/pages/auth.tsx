@@ -119,7 +119,7 @@ const AuthPage: React.FC = () => {
     password: ''
   });
 
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const [signupData, setSignupData] = useState<SignupData>({
     email: '',
@@ -604,7 +604,7 @@ const AuthPage: React.FC = () => {
                       className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 ml-2"
                     />
                     <span className="text-sm text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      حفظ البريد الإلكتروني
+                      تذكرني
                     </span>
                   </label>
                 </div>
