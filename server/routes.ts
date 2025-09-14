@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertCartItemSchema, insertProductSchema, insertOrderSchema, insertDriverSchema } from "@shared/schema";
+import { insertCartItemSchema, insertProductSchema, insertOrderSchema, insertDriverSchema, insertCouponSchema } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { orders as ordersTable } from "@shared/schema";
@@ -476,6 +476,216 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Clear cart error:', error);
       res.status(500).json({ message: "Failed to clear cart" });
+    }
+  });
+
+  // Coupon Management Routes
+
+  // Admin: Get all coupons
+  app.get("/api/coupons", async (req, res) => {
+    try {
+      const coupons = await storage.getCoupons();
+      res.json(coupons);
+    } catch (error) {
+      console.error('Get coupons error:', error);
+      res.status(500).json({ message: "Failed to get coupons" });
+    }
+  });
+
+  // Admin: Create new coupon
+  app.post("/api/coupons", async (req, res) => {
+    try {
+      const validatedData = insertCouponSchema.parse(req.body);
+      
+      // Validate business rules
+      if (validatedData.type === 'amount' && (!validatedData.amount || validatedData.amount <= 0)) {
+        return res.status(400).json({ message: "Amount must be greater than 0 for amount discount coupons" });
+      }
+      
+      if (validatedData.startAt && validatedData.endAt && new Date(validatedData.startAt) >= new Date(validatedData.endAt)) {
+        return res.status(400).json({ message: "Start date must be before end date" });
+      }
+
+      const coupon = await storage.createCoupon(validatedData);
+      res.status(201).json(coupon);
+    } catch (error) {
+      console.error('Create coupon error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid coupon data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create coupon" });
+    }
+  });
+
+  // Admin: Update coupon
+  app.patch("/api/coupons/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertCouponSchema.partial().parse(req.body);
+      
+      // Validate business rules
+      if (validatedData.type === 'amount' && validatedData.amount !== undefined && validatedData.amount <= 0) {
+        return res.status(400).json({ message: "Amount must be greater than 0 for amount discount coupons" });
+      }
+      
+      if (validatedData.startAt && validatedData.endAt && new Date(validatedData.startAt) >= new Date(validatedData.endAt)) {
+        return res.status(400).json({ message: "Start date must be before end date" });
+      }
+
+      const coupon = await storage.updateCoupon(id, validatedData);
+      res.json(coupon);
+    } catch (error) {
+      console.error('Update coupon error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid coupon data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update coupon" });
+    }
+  });
+
+  // Admin: Delete coupon
+  app.delete("/api/coupons/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteCoupon(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Delete coupon error:', error);
+      res.status(500).json({ message: "Failed to delete coupon" });
+    }
+  });
+
+  // Public: Validate coupon
+  app.get("/api/coupons/validate", async (req, res) => {
+    try {
+      const { code, subtotal } = req.query;
+      
+      if (!code || !subtotal) {
+        return res.status(400).json({ 
+          valid: false, 
+          reason: "Code and subtotal are required" 
+        });
+      }
+
+      const coupon = await storage.getCouponByCode(String(code));
+      
+      if (!coupon) {
+        return res.json({ 
+          valid: false, 
+          reason: "كوبون غير صحيح" 
+        });
+      }
+
+      if (!coupon.isActive) {
+        return res.json({ 
+          valid: false, 
+          reason: "هذا الكوبون غير فعال" 
+        });
+      }
+
+      const now = new Date();
+      if (coupon.startAt && new Date(coupon.startAt) > now) {
+        return res.json({ 
+          valid: false, 
+          reason: "هذا الكوبون غير متاح بعد" 
+        });
+      }
+
+      if (coupon.endAt && new Date(coupon.endAt) < now) {
+        return res.json({ 
+          valid: false, 
+          reason: "انتهت صلاحية هذا الكوبون" 
+        });
+      }
+
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+        return res.json({ 
+          valid: false, 
+          reason: "تم استخدام هذا الكوبون بالحد الأقصى" 
+        });
+      }
+
+      const subtotalNum = parseFloat(String(subtotal));
+      let discount = 0;
+      let freeDelivery = false;
+
+      if (coupon.type === 'amount') {
+        discount = Math.min(coupon.amount, subtotalNum);
+      } else if (coupon.type === 'free_delivery') {
+        freeDelivery = true;
+      }
+
+      res.json({
+        valid: true,
+        discount,
+        freeDelivery,
+        normalizedCode: coupon.code,
+        displayName: coupon.name
+      });
+    } catch (error) {
+      console.error('Validate coupon error:', error);
+      res.status(500).json({ 
+        valid: false, 
+        reason: "خطأ في التحقق من الكوبون" 
+      });
+    }
+  });
+
+  // Public: Apply coupon to cart
+  app.post("/api/cart/apply-coupon", async (req, res) => {
+    try {
+      const { code, subtotal, deliveryFee } = req.body;
+      
+      if (!code || subtotal === undefined || deliveryFee === undefined) {
+        return res.status(400).json({ message: "Code, subtotal, and deliveryFee are required" });
+      }
+
+      const coupon = await storage.getCouponByCode(code);
+      
+      if (!coupon || !coupon.isActive) {
+        return res.status(400).json({ message: "كوبون غير صحيح" });
+      }
+
+      // Validate coupon conditions (same as validate endpoint)
+      const now = new Date();
+      if (coupon.startAt && new Date(coupon.startAt) > now) {
+        return res.status(400).json({ message: "هذا الكوبون غير متاح بعد" });
+      }
+
+      if (coupon.endAt && new Date(coupon.endAt) < now) {
+        return res.status(400).json({ message: "انتهت صلاحية هذا الكوبون" });
+      }
+
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+        return res.status(400).json({ message: "تم استخدام هذا الكوبون بالحد الأقصى" });
+      }
+
+      const subtotalNum = parseFloat(String(subtotal));
+      const deliveryFeeNum = parseFloat(String(deliveryFee));
+      let discount = 0;
+      let finalDeliveryFee = deliveryFeeNum;
+
+      if (coupon.type === 'amount') {
+        discount = Math.min(coupon.amount, subtotalNum);
+      } else if (coupon.type === 'free_delivery') {
+        finalDeliveryFee = 0;
+      }
+
+      const total = Math.max(0, subtotalNum + finalDeliveryFee - discount);
+
+      res.json({
+        subtotal: subtotalNum,
+        deliveryFee: finalDeliveryFee,
+        coupon: {
+          label: coupon.name,
+          discount: discount,
+          freeDelivery: coupon.type === 'free_delivery'
+        },
+        total: total
+      });
+    } catch (error) {
+      console.error('Apply coupon error:', error);
+      res.status(500).json({ message: "خطأ في تطبيق الكوبون" });
     }
   });
 
