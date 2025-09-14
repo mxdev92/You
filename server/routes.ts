@@ -1193,6 +1193,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // WebAuthn/Passkey endpoints
+  app.post('/api/webauthn/register/begin', async (req, res) => {
+    try {
+      const { email, displayName, deviceInfo } = req.body;
+
+      if (!email || !displayName) {
+        return res.status(400).json({ 
+          error: 'Email and display name are required' 
+        });
+      }
+
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ 
+          error: 'User not found' 
+        });
+      }
+
+      res.json({ 
+        message: 'Passkey registration will be available soon',
+        success: false 
+      });
+    } catch (error) {
+      console.error('WebAuthn registration begin error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate registration options' 
+      });
+    }
+  });
+
+  app.post('/api/webauthn/authenticate/begin', async (req, res) => {
+    try {
+      const { email, conditional, deviceInfo } = req.body;
+
+      res.json({ 
+        message: 'Passkey authentication will be available soon',
+        success: false 
+      });
+    } catch (error) {
+      console.error('WebAuthn authentication begin error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate authentication options' 
+      });
+    }
+  });
+
   // Users management route
   app.get('/api/users', async (req, res) => {
     try {

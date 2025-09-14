@@ -25,6 +25,22 @@ export const userAddresses = pgTable("user_addresses", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Passkey credentials for WebAuthn
+export const passkeyCredentials = pgTable("passkey_credentials", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  credentialId: text("credential_id").unique().notNull(),
+  credentialPublicKey: text("credential_public_key").notNull(),
+  counter: integer("counter").default(0).notNull(),
+  deviceType: text("device_type"), // 'android', 'ios', 'desktop', etc.
+  aaguid: text("aaguid"),
+  credentialDeviceType: text("credential_device_type"), // 'singleDevice', 'multiDevice'
+  credentialBackedUp: boolean("credential_backed_up").default(false),
+  transports: text("transports").array(), // ['internal', 'usb', 'nfc', 'ble', 'hybrid']
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at").defaultNow().notNull(),
+});
+
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
