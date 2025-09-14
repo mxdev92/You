@@ -1461,7 +1461,7 @@ function SettingsManagement() {
 function AdminSidebar({ isOpen, onClose, setCurrentView }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  setCurrentView: (view: 'orders' | 'items' | 'settings') => void;
+  setCurrentView: (view: 'orders' | 'items' | 'users' | 'drivers' | 'settings') => void;
 }) {
   return (
     <>
@@ -1989,7 +1989,7 @@ function UsersManagement() {
 
 // Main Admin Panel Component
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users' | 'drivers'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users' | 'drivers' | 'settings'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const queryClient = useQueryClient();
@@ -2494,17 +2494,21 @@ export default function AdminPanel() {
             )}
           </div>
         </div>
-      ) : currentView === 'items' ? (
-        <ItemsManagement />
-      ) : (
-        <SettingsManagement />
-      )}
+      ) : activeTab === 'items' ? (
+        <div className="max-w-7xl mx-auto p-6">
+          <ItemsManagement />
+        </div>
+      ) : activeTab === 'settings' ? (
+        <div className="max-w-7xl mx-auto p-6">
+          <SettingsManagement />
+        </div>
+      ) : null}
 
       {/* Admin Sidebar */}
       <AdminSidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
-        setCurrentView={setCurrentView}
+        setCurrentView={setActiveTab}
       />
 
       {/* Arabic Invoice Popup */}

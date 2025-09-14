@@ -1,4 +1,4 @@
-import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver } from "@shared/schema";
+import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, settings, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type Settings, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertSettings } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -58,6 +58,11 @@ export interface IStorage {
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver>;
   deleteDriver(id: number): Promise<void>;
+
+  // Settings
+  getSettings(): Promise<Settings[]>;
+  getSetting(key: string): Promise<Settings | undefined>;
+  updateSetting(key: string, value: string, type: string, description?: string): Promise<Settings>;
 }
 
 export class MemStorage implements IStorage {
@@ -434,6 +439,97 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     };
   }
+
+  // Settings methods (MemStorage stubs - for development only)
+  async getSettings(): Promise<Settings[]> {
+    // MemStorage stub - returning mock settings for development
+    return [
+      {
+        id: 1,
+        key: 'delivery_fee',
+        value: '3500',
+        type: 'number',
+        description: 'Delivery fee in Iraqi Dinars',
+        updatedAt: new Date()
+      }
+    ];
+  }
+
+  async getSetting(key: string): Promise<Settings | undefined> {
+    // MemStorage stub - returning mock setting for development
+    if (key === 'delivery_fee') {
+      return {
+        id: 1,
+        key: 'delivery_fee',
+        value: '3500',
+        type: 'number',
+        description: 'Delivery fee in Iraqi Dinars',
+        updatedAt: new Date()
+      };
+    }
+    return undefined;
+  }
+
+  async updateSetting(key: string, value: string, type: string, description?: string): Promise<Settings> {
+    // MemStorage stub - returning mock updated setting for development
+    return {
+      id: 1,
+      key,
+      value,
+      type,
+      description: description || 'Mock setting',
+      updatedAt: new Date()
+    };
+  }
+
+  // Driver methods (MemStorage stubs - for development only)
+  async getDrivers(): Promise<Driver[]> {
+    // MemStorage stub - returning empty array for development
+    return [];
+  }
+
+  async getDriver(id: number): Promise<Driver | undefined> {
+    // MemStorage stub - returning undefined for development
+    return undefined;
+  }
+
+  async getDriverByEmail(email: string): Promise<Driver | undefined> {
+    // MemStorage stub - returning undefined for development
+    return undefined;
+  }
+
+  async createDriver(driver: InsertDriver): Promise<Driver> {
+    // MemStorage stub - returning mock driver for development
+    return {
+      id: 1,
+      fullName: driver.fullName,
+      phone: driver.phone,
+      email: driver.email,
+      password: driver.password,
+      isActive: driver.isActive || true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async updateDriver(id: number, driver: Partial<InsertDriver>): Promise<Driver> {
+    // MemStorage stub - returning mock updated driver for development
+    return {
+      id,
+      fullName: driver.fullName || 'Mock Driver',
+      phone: driver.phone || '1234567890',
+      email: driver.email || 'mock@example.com',
+      password: driver.password || 'mockpassword',
+      isActive: driver.isActive !== undefined ? driver.isActive : true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }
+
+  async deleteDriver(id: number): Promise<void> {
+    // MemStorage stub - no operation for development
+    return;
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -786,6 +882,43 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDriver(id: number): Promise<void> {
     await db.delete(drivers).where(eq(drivers.id, id));
+  }
+
+  // Settings Implementation
+  async getSettings(): Promise<Settings[]> {
+    return await db.select().from(settings).orderBy(sql`${settings.updatedAt} DESC`);
+  }
+
+  async getSetting(key: string): Promise<Settings | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting || undefined;
+  }
+
+  async updateSetting(key: string, value: string, type: string, description?: string): Promise<Settings> {
+    const updateData: any = {
+      value,
+      type,
+      updatedAt: sql`NOW()`
+    };
+    
+    if (description !== undefined) {
+      updateData.description = description;
+    }
+
+    const [updated] = await db.insert(settings)
+      .values({
+        key,
+        value,
+        type,
+        description
+      })
+      .onConflictDoUpdate({
+        target: settings.key,
+        set: updateData
+      })
+      .returning();
+    
+    return updated;
   }
 }
 
