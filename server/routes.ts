@@ -49,6 +49,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Settings Management Routes - Added early to avoid compilation issues
+  app.get("/api/settings", async (req, res) => {
+    try {
+      // Get current settings from database
+      const settingsResult = await storage.getSettings();
+      
+      // Convert settings array to object format
+      const settingsObject: Record<string, any> = {};
+      settingsResult.forEach(setting => {
+        if (setting.type === 'number') {
+          settingsObject[setting.key] = parseInt(setting.value);
+        } else if (setting.type === 'boolean') {
+          settingsObject[setting.key] = setting.value === 'true';
+        } else {
+          settingsObject[setting.key] = setting.value;
+        }
+      });
+
+      // Ensure delivery fee exists with default value
+      if (!settingsObject.delivery_fee) {
+        settingsObject.delivery_fee = 3500;
+      }
+
+      res.json(settingsObject);
+    } catch (error) {
+      console.error('Settings fetch error:', error);
+      res.status(500).json({ 
+        message: "Failed to fetch settings", 
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.put("/api/settings/delivery-fee", async (req, res) => {
+    try {
+      const { deliveryFee } = req.body;
+      
+      // Validate delivery fee
+      if (typeof deliveryFee !== 'number' || deliveryFee < 0 || deliveryFee > 50000) {
+        return res.status(400).json({ 
+          message: "Invalid delivery fee. Must be a number between 0 and 50,000" 
+        });
+      }
+
+      // Update delivery fee setting
+      await storage.updateSetting('delivery_fee', deliveryFee.toString(), 'number', 'Delivery fee in Iraqi Dinars');
+      
+      console.log(`✅ Delivery fee updated to: ${deliveryFee} IQD`);
+      
+      res.json({ 
+        message: "Delivery fee updated successfully",
+        deliveryFee: deliveryFee
+      });
+    } catch (error) {
+      console.error('Delivery fee update error:', error);
+      res.status(500).json({ 
+        message: "Failed to update delivery fee", 
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Request logger for debugging
   app.use('/api/*', (req, res, next) => {
     console.log(`API Request: ${req.method} ${req.url}`);
