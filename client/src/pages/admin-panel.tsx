@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1300,11 +1300,168 @@ function ItemsManagement() {
   );
 }
 
+// Settings Management Component
+function SettingsManagement() {
+  const { toast } = useToast();
+  const [deliveryFee, setDeliveryFee] = useState(3500);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch current delivery fee
+  const { data: currentSettings } = useQuery({
+    queryKey: ['/api/settings'],
+    queryFn: () => fetch('/api/settings').then(res => res.json()),
+    onSuccess: (data) => {
+      if (data && data.deliveryFee) {
+        setDeliveryFee(data.deliveryFee);
+      }
+    }
+  });
+
+  // Update delivery fee mutation
+  const updateDeliveryFeeMutation = useMutation({
+    mutationFn: async (newFee: number) => {
+      const response = await fetch('/api/settings/delivery-fee', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deliveryFee: newFee })
+      });
+      if (!response.ok) throw new Error('Failed to update delivery fee');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "✅ تم تحديث رسوم التوصيل",
+        description: `رسوم التوصيل الجديدة: ${formatPrice(deliveryFee)} د.ع`,
+        duration: 3000,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "❌ خطأ في التحديث",
+        description: "فشل في تحديث رسوم التوصيل. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
+  const handleSaveDeliveryFee = () => {
+    if (deliveryFee < 0 || deliveryFee > 50000) {
+      toast({
+        title: "❌ قيمة غير صحيحة",
+        description: "رسوم التوصيل يجب أن تكون بين 0 و 50,000 د.ع",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+    updateDeliveryFeeMutation.mutate(deliveryFee);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">إعدادات التطبيق</h1>
+          <p className="text-gray-600 mt-1">إدارة إعدادات النظام والتكوين</p>
+        </div>
+      </div>
+
+      {/* Delivery Fee Settings Card */}
+      <Card className="p-6">
+        <CardHeader className="px-0 pt-0">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <ShoppingCart className="h-5 w-5 text-blue-600" />
+            </div>
+            إعدادات رسوم التوصيل
+          </CardTitle>
+          <p className="text-sm text-gray-600 mt-1">
+            تحديد رسوم التوصيل المطبقة على جميع الطلبات
+          </p>
+        </CardHeader>
+
+        <CardContent className="px-0 space-y-6">
+          {/* Current Delivery Fee Display */}
+          <div className="bg-gray-50 rounded-xl p-4 border">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700">رسوم التوصيل الحالية:</span>
+              <span className="text-xl font-bold text-green-600">
+                {formatPrice(currentSettings?.deliveryFee || 3500)} د.ع
+              </span>
+            </div>
+          </div>
+
+          {/* New Delivery Fee Input */}
+          <div className="space-y-3">
+            <Label htmlFor="delivery-fee" className="text-sm font-medium text-gray-700">
+              رسوم التوصيل الجديدة (بالدينار العراقي)
+            </Label>
+            <div className="flex gap-3">
+              <Input
+                id="delivery-fee"
+                type="number"
+                value={deliveryFee}
+                onChange={(e) => setDeliveryFee(Number(e.target.value))}
+                placeholder="3500"
+                min="0"
+                max="50000"
+                step="250"
+                className="flex-1 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+              />
+              <Button
+                onClick={handleSaveDeliveryFee}
+                disabled={updateDeliveryFeeMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-xl"
+              >
+                {updateDeliveryFeeMutation.isPending ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    حفظ...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Save className="h-4 w-4" />
+                    حفظ
+                  </div>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              القيمة بالدينار العراقي (مثال: 3500 = 3,500 د.ع)
+            </p>
+          </div>
+
+          {/* Preview Section */}
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+            <h4 className="font-medium text-blue-900 mb-2">معاينة:</h4>
+            <div className="text-sm text-blue-800">
+              <div className="flex justify-between">
+                <span>مجموع المنتجات:</span>
+                <span>10,000 د.ع</span>
+              </div>
+              <div className="flex justify-between">
+                <span>رسوم التوصيل:</span>
+                <span>{formatPrice(deliveryFee)} د.ع</span>
+              </div>
+              <div className="border-t border-blue-300 mt-2 pt-2 flex justify-between font-semibold">
+                <span>المجموع الكلي:</span>
+                <span>{formatPrice(10000 + deliveryFee)} د.ع</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Admin Sidebar Component
 function AdminSidebar({ isOpen, onClose, setCurrentView }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  setCurrentView: (view: 'orders' | 'items') => void;
+  setCurrentView: (view: 'orders' | 'items' | 'settings') => void;
 }) {
   return (
     <>
@@ -1356,6 +1513,21 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
               <div className="text-left">
                 <div className="font-medium">Items Management</div>
                 <div className="text-sm text-gray-500">Manage products and inventory</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start p-3 h-auto rounded-xl"
+              onClick={() => {
+                setCurrentView('settings');
+                onClose();
+              }}
+            >
+              <Settings className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">App Settings</div>
+                <div className="text-sm text-gray-500">Configure delivery fee and more</div>
               </div>
             </Button>
           </div>
@@ -1960,7 +2132,7 @@ export default function AdminPanel() {
   });
 
 
-  const [currentView, setCurrentView] = useState<'orders' | 'items'>('orders');
+  const [currentView, setCurrentView] = useState<'orders' | 'items' | 'settings'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
@@ -2322,8 +2494,10 @@ export default function AdminPanel() {
             )}
           </div>
         </div>
-      ) : (
+      ) : currentView === 'items' ? (
         <ItemsManagement />
+      ) : (
+        <SettingsManagement />
       )}
 
       {/* Admin Sidebar */}
