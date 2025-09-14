@@ -75,16 +75,15 @@ export default function CategoriesSection() {
     if (!hasInitialized.current && categories && categories.length > 0) {
       hasInitialized.current = true;
       
-      // Check if any category is already selected
-      const hasSelectedCategory = categories.some(cat => cat.isSelected);
+      // Always ensure خضروات (Vegetables - ID: 2) is selected on startup
+      const vegetablesCategory = categories.find(cat => cat.id === 2);
+      const isVegetablesSelected = vegetablesCategory?.isSelected;
       
-      // If no category is selected, auto-select خضروات (Vegetables - ID: 2)
-      if (!hasSelectedCategory) {
-        const vegetablesCategory = categories.find(cat => cat.id === 2);
-        if (vegetablesCategory) {
-          console.log('🥬 Auto-selecting خضروات (Vegetables) category on startup');
-          selectCategoryMutation.mutate(2);
-        }
+      if (vegetablesCategory && !isVegetablesSelected) {
+        console.log('🥬 Auto-selecting خضروات (Vegetables) category on startup');
+        selectCategoryMutation.mutate(2);
+      } else if (isVegetablesSelected) {
+        console.log('🥬 خضروات (Vegetables) category already selected');
       }
     }
   }, [categories, selectCategoryMutation]);
