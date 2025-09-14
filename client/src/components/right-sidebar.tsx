@@ -201,6 +201,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
 
   const [currentView, setCurrentView] = useState<'cart' | 'checkout' | 'final'>('cart');
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponError, setCouponError] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [notification, setNotification] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
@@ -252,7 +255,61 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   // Get dynamic delivery fee from settings
   const { deliveryFee: shippingFee } = useDeliveryFee();
-  const totalWithShipping = getCartTotal() + shippingFee;
+  
+  // Calculate coupon discount
+  const getCouponDiscount = () => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.type === 'amount') {
+      // Ensure discount doesn't exceed cart total
+      return Math.min(appliedCoupon.amount, getCartTotal());
+    }
+    return 0; // For free delivery, discount is applied to shipping
+  };
+  
+  // Calculate final shipping fee (considering free delivery coupons)
+  const getFinalShippingFee = () => {
+    if (appliedCoupon && appliedCoupon.type === 'free_delivery') {
+      return 0;
+    }
+    return shippingFee;
+  };
+  
+  const cartTotal = getCartTotal();
+  const couponDiscount = getCouponDiscount();
+  const finalShippingFee = getFinalShippingFee();
+  // Ensure total never goes negative
+  const totalWithShipping = Math.max(0, cartTotal - couponDiscount + finalShippingFee);
+  
+  // Apply coupon function
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('الرجاء إدخال رمز الكوبون');
+      return;
+    }
+    
+    try {
+      const response = await apiRequest('POST', '/api/coupons/validate', { code: couponCode });
+      const coupon = await response.json();
+      setAppliedCoupon(coupon);
+      setCouponError('');
+      setNotification({
+        show: true,
+        message: `تم تطبيق كوبون "${coupon.name}" بنجاح!`,
+        type: 'success'
+      });
+      setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+    } catch (error: any) {
+      setCouponError(error.message || 'كوبون غير صالح');
+      setAppliedCoupon(null);
+    }
+  };
+  
+  // Remove coupon function
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
 
   const iraqiGovernorates = [
     'بغداد', 'نينوى', 'البصرة', 'صلاح الدين', 'دهوك', 'أربيل', 'السليمانية', 
@@ -627,18 +684,86 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       )}
 
+      {/* Coupon Section */}
+      <div className="px-6 py-4 border-t border-gray-100" dir="rtl">
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            كوبون الخصم
+          </h3>
+          
+          {appliedCoupon ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-800">{appliedCoupon.name}</p>
+                  <p className="text-xs text-green-600">
+                    {appliedCoupon.type === 'amount' 
+                      ? `خصم ${formatPrice(appliedCoupon.amount)} د.ع` 
+                      : 'توصيل مجاني'}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeCoupon}
+                  className="text-green-600 hover:text-green-800 hover:bg-green-100"
+                  data-testid="button-remove-coupon"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="أدخل رمز الكوبون"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  data-testid="input-coupon-code"
+                />
+                {couponError && (
+                  <p className="text-xs text-red-600 mt-1">{couponError}</p>
+                )}
+              </div>
+              <Button
+                onClick={applyCoupon}
+                variant="outline"
+                size="sm"
+                className="px-4 border-green-500 text-green-600 hover:bg-green-50"
+                data-testid="button-apply-coupon"
+              >
+                تطبيق
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Price Breakdown */}
       <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>السعر الكلي:</span>
-            <span className="font-medium">{formatPrice(getCartTotal())} IQD</span>
+            <span className="font-medium">{formatPrice(cartTotal)} IQD</span>
           </div>
           
           <div className="flex justify-between items-center">
             <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>أجور التوصيل:</span>
-            <span className="font-medium">{formatPrice(shippingFee)} IQD</span>
+            <span className="font-medium">{formatPrice(finalShippingFee)} IQD</span>
           </div>
+          
+          {appliedCoupon && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الكوبون:</span>
+              <span className="font-medium text-green-600">
+                -{formatPrice(couponDiscount + (finalShippingFee !== shippingFee ? shippingFee : 0))} IQD
+              </span>
+            </div>
+          )}
           
           <div className="border-t border-gray-200 pt-3">
             <div className="flex justify-between items-center">

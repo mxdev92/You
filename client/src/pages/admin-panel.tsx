@@ -1461,11 +1461,377 @@ function SettingsManagement() {
   );
 }
 
+// Coupon Management Component
+function CouponManagement() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<any>(null);
+
+  // Fetch coupons
+  const { data: coupons = [], isLoading } = useQuery({
+    queryKey: ['/api/coupons']
+  });
+
+  // Create coupon mutation
+  const createCouponMutation = useMutation({
+    mutationFn: (couponData: any) =>
+      apiRequest('POST', '/api/coupons', couponData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coupons'] });
+      setShowCreateDialog(false);
+      toast({
+        title: "✅ تم إنشاء الكوبون",
+        description: "تم إنشاء الكوبون بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "❌ خطأ في إنشاء الكوبون",
+        description: "فشل في إنشاء الكوبون. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
+  // Update coupon mutation
+  const updateCouponMutation = useMutation({
+    mutationFn: ({ id, ...couponData }: any) =>
+      apiRequest('PATCH', `/api/coupons/${id}`, couponData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coupons'] });
+      setEditingCoupon(null);
+      toast({
+        title: "✅ تم تحديث الكوبون",
+        description: "تم تحديث الكوبون بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "❌ خطأ في تحديث الكوبون",
+        description: "فشل في تحديث الكوبون. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
+  // Delete coupon mutation
+  const deleteCouponMutation = useMutation({
+    mutationFn: (couponId: number) =>
+      apiRequest('DELETE', `/api/coupons/${couponId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coupons'] });
+      toast({
+        title: "✅ تم حذف الكوبون",
+        description: "تم حذف الكوبون بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "❌ خطأ في حذف الكوبون",
+        description: "فشل في حذف الكوبون. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">إدارة الكوبونات</h1>
+        <Button 
+          onClick={() => setShowCreateDialog(true)}
+          className="bg-green-600 hover:bg-green-700 text-white"
+          data-testid="button-create-coupon"
+        >
+          <Plus className="h-4 w-4 ml-2" />
+          إنشاء كوبون جديد
+        </Button>
+      </div>
+
+      {/* Coupons List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>قائمة الكوبونات</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">جاري تحميل الكوبونات...</p>
+            </div>
+          ) : coupons.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p>لا توجد كوبونات متاحة</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {coupons.map((coupon: any) => (
+                <div key={coupon.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-lg">{coupon.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
+                            {coupon.code}
+                          </span>
+                          <Badge className={coupon.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {coupon.isActive ? 'فعال' : 'غير فعال'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">النوع:</span>
+                          <p className="font-medium">
+                            {coupon.type === 'amount' ? `خصم ${coupon.amount} د.ع` : 'توصيل مجاني'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">الاستخدام:</span>
+                          <p className="font-medium">
+                            {coupon.usedCount} / {coupon.maxUses || '∞'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">تاريخ الإنشاء:</span>
+                          <p className="font-medium">
+                            {new Date(coupon.createdAt).toLocaleDateString('ar-EG')}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">الصلاحية:</span>
+                          <p className="font-medium">
+                            {coupon.endAt ? new Date(coupon.endAt).toLocaleDateString('ar-EG') : 'بلا انتهاء'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingCoupon(coupon)}
+                        data-testid={`button-edit-coupon-${coupon.id}`}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteCouponMutation.mutate(coupon.id)}
+                        className="text-red-600 hover:bg-red-50"
+                        data-testid={`button-delete-coupon-${coupon.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Create/Edit Coupon Dialog */}
+      <Dialog open={showCreateDialog || !!editingCoupon} onOpenChange={(open) => {
+        if (!open) {
+          setShowCreateDialog(false);
+          setEditingCoupon(null);
+        }
+      }}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCoupon ? 'تعديل الكوبون' : 'إنشاء كوبون جديد'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <CouponForm
+            initialData={editingCoupon}
+            onSubmit={(data) => {
+              if (editingCoupon) {
+                updateCouponMutation.mutate({ id: editingCoupon.id, ...data });
+              } else {
+                createCouponMutation.mutate(data);
+              }
+            }}
+            isLoading={createCouponMutation.isPending || updateCouponMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Coupon Form Component
+function CouponForm({ initialData, onSubmit, isLoading }: {
+  initialData?: any;
+  onSubmit: (data: any) => void;
+  isLoading: boolean;
+}) {
+  const [formData, setFormData] = useState({
+    name: initialData?.name || '',
+    code: initialData?.code || '',
+    type: initialData?.type || 'amount',
+    amount: initialData?.amount || 0,
+    isActive: initialData?.isActive ?? true,
+    maxUses: initialData?.maxUses || '',
+    startAt: initialData?.startAt ? new Date(initialData.startAt).toISOString().split('T')[0] : '',
+    endAt: initialData?.endAt ? new Date(initialData.endAt).toISOString().split('T')[0] : ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim() || !formData.code.trim()) {
+      return;
+    }
+
+    const submitData = {
+      ...formData,
+      amount: formData.type === 'amount' ? parseInt(String(formData.amount)) : 0,
+      maxUses: formData.maxUses ? parseInt(String(formData.maxUses)) : null,
+      startAt: formData.startAt ? new Date(formData.startAt) : null,
+      endAt: formData.endAt ? new Date(formData.endAt) : null
+    };
+
+    onSubmit(submitData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="coupon-name">اسم الكوبون</Label>
+        <Input
+          id="coupon-name"
+          type="text"
+          value={formData.name}
+          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          placeholder="أدخل اسم الكوبون"
+          required
+          data-testid="input-coupon-name"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="coupon-code">رمز الكوبون</Label>
+        <Input
+          id="coupon-code"
+          type="text"
+          value={formData.code}
+          onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+          placeholder="مثل: SAVE20"
+          required
+          data-testid="input-coupon-code"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="coupon-type">نوع الخصم</Label>
+        <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+          <SelectTrigger data-testid="select-coupon-type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="amount">خصم بمبلغ محدد</SelectItem>
+            <SelectItem value="free_delivery">توصيل مجاني</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {formData.type === 'amount' && (
+        <div>
+          <Label htmlFor="coupon-amount">مبلغ الخصم (د.ع)</Label>
+          <Input
+            id="coupon-amount"
+            type="number"
+            value={formData.amount}
+            onChange={(e) => setFormData(prev => ({ ...prev, amount: parseInt(e.target.value) || 0 }))}
+            placeholder="مثل: 1000"
+            min="0"
+            required
+            data-testid="input-coupon-amount"
+          />
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="coupon-start">تاريخ البداية</Label>
+          <Input
+            id="coupon-start"
+            type="date"
+            value={formData.startAt}
+            onChange={(e) => setFormData(prev => ({ ...prev, startAt: e.target.value }))}
+            data-testid="input-coupon-start-date"
+          />
+        </div>
+        <div>
+          <Label htmlFor="coupon-end">تاريخ الانتهاء</Label>
+          <Input
+            id="coupon-end"
+            type="date"
+            value={formData.endAt}
+            onChange={(e) => setFormData(prev => ({ ...prev, endAt: e.target.value }))}
+            data-testid="input-coupon-end-date"
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="coupon-max-uses">الحد الأقصى للاستخدام</Label>
+        <Input
+          id="coupon-max-uses"
+          type="number"
+          value={formData.maxUses}
+          onChange={(e) => setFormData(prev => ({ ...prev, maxUses: e.target.value }))}
+          placeholder="اتركه فارغاً للاستخدام غير المحدود"
+          min="1"
+          data-testid="input-coupon-max-uses"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2 space-x-reverse">
+        <Checkbox
+          id="coupon-active"
+          checked={formData.isActive}
+          onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked as boolean }))}
+          data-testid="checkbox-coupon-active"
+        />
+        <Label htmlFor="coupon-active">الكوبون فعال</Label>
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button 
+          type="submit" 
+          disabled={isLoading}
+          className="flex-1"
+          data-testid="button-save-coupon"
+        >
+          {isLoading ? 'جاري الحفظ...' : (initialData ? 'تحديث' : 'إنشاء')}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 // Admin Sidebar Component
 function AdminSidebar({ isOpen, onClose, setCurrentView }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  setCurrentView: (view: 'orders' | 'items' | 'users' | 'drivers' | 'settings') => void;
+  setCurrentView: (view: 'orders' | 'items' | 'users' | 'drivers' | 'settings' | 'coupons') => void;
 }) {
   return (
     <>
@@ -1532,6 +1898,21 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
               <div className="text-left">
                 <div className="font-medium">App Settings</div>
                 <div className="text-sm text-gray-500">Configure delivery fee and more</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start p-3 h-auto rounded-xl"
+              onClick={() => {
+                setCurrentView('coupons');
+                onClose();
+              }}
+            >
+              <Package className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Coupon Management</div>
+                <div className="text-sm text-gray-500">إدارة الكوبونات والخصومات</div>
               </div>
             </Button>
           </div>
@@ -1993,7 +2374,7 @@ function UsersManagement() {
 
 // Main Admin Panel Component
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users' | 'drivers' | 'settings'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users' | 'drivers' | 'settings' | 'coupons'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const queryClient = useQueryClient();
@@ -2514,6 +2895,10 @@ export default function AdminPanel() {
       ) : activeTab === 'settings' ? (
         <div className="max-w-7xl mx-auto p-6">
           <SettingsManagement />
+        </div>
+      ) : activeTab === 'coupons' ? (
+        <div className="max-w-7xl mx-auto p-6">
+          <CouponManagement />
         </div>
       ) : null}
 
