@@ -1,4 +1,4 @@
-import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, settings, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type Settings, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertSettings } from "@shared/schema";
+import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, settings, coupons, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type Settings, type Coupon, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertSettings, type InsertCoupon } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -63,6 +63,14 @@ export interface IStorage {
   getSettings(): Promise<Settings[]>;
   getSetting(key: string): Promise<Settings | undefined>;
   updateSetting(key: string, value: string, type: string, description?: string): Promise<Settings>;
+
+  // Coupons
+  getCoupons(): Promise<Coupon[]>;
+  getCouponByCode(code: string): Promise<Coupon | undefined>;
+  createCoupon(coupon: InsertCoupon): Promise<Coupon>;
+  updateCoupon(id: number, coupon: Partial<InsertCoupon>): Promise<Coupon>;
+  deleteCoupon(id: number): Promise<void>;
+  incrementCouponUsage(id: number): Promise<Coupon>;
 }
 
 export class MemStorage implements IStorage {
@@ -72,12 +80,14 @@ export class MemStorage implements IStorage {
   private orders: Map<number, Order>;
   private users: Map<number, User>;
   private userAddresses: Map<number, UserAddress>;
+  private coupons: Map<number, Coupon>;
   private currentCategoryId: number;
   private currentProductId: number;
   private currentCartItemId: number;
   private currentOrderId: number;
   private currentUserId: number;
   private currentUserAddressId: number;
+  private currentCouponId: number;
 
   constructor() {
     this.categories = new Map();
@@ -86,12 +96,14 @@ export class MemStorage implements IStorage {
     this.orders = new Map();
     this.users = new Map();
     this.userAddresses = new Map();
+    this.coupons = new Map();
     this.currentCategoryId = 1;
     this.currentProductId = 1;
     this.currentCartItemId = 1;
     this.currentOrderId = 1;
     this.currentUserId = 1;
     this.currentUserAddressId = 1;
+    this.currentCouponId = 1;
 
     // Initialize with sample data
     this.initializeData();
@@ -530,6 +542,65 @@ export class MemStorage implements IStorage {
     // MemStorage stub - no operation for development
     return;
   }
+
+  // Coupon methods (MemStorage stubs - for development only)
+  async getCoupons(): Promise<Coupon[]> {
+    return Array.from(this.coupons.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getCouponByCode(code: string): Promise<Coupon | undefined> {
+    const normalizedCode = code.toUpperCase();
+    return Array.from(this.coupons.values()).find(coupon => 
+      coupon.code.toUpperCase() === normalizedCode
+    );
+  }
+
+  async createCoupon(coupon: InsertCoupon): Promise<Coupon> {
+    const id = this.currentCouponId++;
+    const newCoupon: Coupon = {
+      id,
+      ...coupon,
+      code: coupon.code.toUpperCase(),
+      usedCount: 0,
+      createdAt: new Date()
+    };
+    this.coupons.set(id, newCoupon);
+    return newCoupon;
+  }
+
+  async updateCoupon(id: number, couponData: Partial<InsertCoupon>): Promise<Coupon> {
+    const existingCoupon = this.coupons.get(id);
+    if (!existingCoupon) {
+      throw new Error(`Coupon with id ${id} not found`);
+    }
+
+    const updatedCoupon: Coupon = {
+      ...existingCoupon,
+      ...couponData,
+      id,
+      code: couponData.code ? couponData.code.toUpperCase() : existingCoupon.code
+    };
+    
+    this.coupons.set(id, updatedCoupon);
+    return updatedCoupon;
+  }
+
+  async deleteCoupon(id: number): Promise<void> {
+    this.coupons.delete(id);
+  }
+
+  async incrementCouponUsage(id: number): Promise<Coupon> {
+    const coupon = this.coupons.get(id);
+    if (!coupon) {
+      throw new Error(`Coupon with id ${id} not found`);
+    }
+    
+    const updatedCoupon = { ...coupon, usedCount: coupon.usedCount + 1 };
+    this.coupons.set(id, updatedCoupon);
+    return updatedCoupon;
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -917,6 +988,59 @@ export class DatabaseStorage implements IStorage {
         set: updateData
       })
       .returning();
+    
+    return updated;
+  }
+
+  // Coupons Implementation
+  async getCoupons(): Promise<Coupon[]> {
+    return await db.select().from(coupons).orderBy(sql`${coupons.createdAt} DESC`);
+  }
+
+  async getCouponByCode(code: string): Promise<Coupon | undefined> {
+    const normalizedCode = code.toUpperCase();
+    const [coupon] = await db.select().from(coupons).where(sql`UPPER(${coupons.code}) = ${normalizedCode}`);
+    return coupon || undefined;
+  }
+
+  async createCoupon(coupon: InsertCoupon): Promise<Coupon> {
+    const [newCoupon] = await db.insert(coupons).values({
+      ...coupon,
+      code: coupon.code.toUpperCase()
+    }).returning();
+    return newCoupon;
+  }
+
+  async updateCoupon(id: number, couponData: Partial<InsertCoupon>): Promise<Coupon> {
+    const updateData = couponData.code 
+      ? { ...couponData, code: couponData.code.toUpperCase() }
+      : couponData;
+
+    const [updated] = await db.update(coupons)
+      .set(updateData)
+      .where(eq(coupons.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error(`Coupon with id ${id} not found`);
+    }
+    
+    return updated;
+  }
+
+  async deleteCoupon(id: number): Promise<void> {
+    await db.delete(coupons).where(eq(coupons.id, id));
+  }
+
+  async incrementCouponUsage(id: number): Promise<Coupon> {
+    const [updated] = await db.update(coupons)
+      .set({ usedCount: sql`${coupons.usedCount} + 1` })
+      .where(eq(coupons.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error(`Coupon with id ${id} not found`);
+    }
     
     return updated;
   }
