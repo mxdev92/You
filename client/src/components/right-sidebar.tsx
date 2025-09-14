@@ -749,36 +749,36 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       {/* Price Breakdown */}
       <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
         <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>السعر الكلي:</span>
+          <div className="flex justify-between items-center" dir="rtl">
             <span className="font-medium">{formatPrice(cartTotal)} IQD</span>
+            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>السعر الكلي:</span>
           </div>
           
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>أجور التوصيل:</span>
+          <div className="flex justify-between items-center" dir="rtl">
             <span className="font-medium">{formatPrice(finalShippingFee)} IQD</span>
+            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>أجور التوصيل:</span>
           </div>
           
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>آب سيرفز:</span>
+          <div className="flex justify-between items-center" dir="rtl">
             <span className="font-medium">{formatPrice(appServicesFee)} IQD</span>
+            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>آب سيرفز:</span>
           </div>
           
           {appliedCoupon && (
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الكوبون:</span>
+            <div className="flex justify-between items-center" dir="rtl">
               <span className="font-medium text-green-600">
                 -{formatPrice(couponDiscount + (finalShippingFee !== shippingFee ? shippingFee : 0))} IQD
               </span>
+              <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الكوبون:</span>
             </div>
           )}
           
           <div className="border-t border-gray-200 pt-3">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الكلي:</span>
+            <div className="flex justify-between items-center" dir="rtl">
               <span className="text-xl font-bold text-fresh-green">
                 {formatPrice(totalWithShipping)} IQD
               </span>
+              <span className="text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الكلي:</span>
             </div>
           </div>
         </div>
