@@ -167,16 +167,22 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
   const order = orders[0]; // Get first order
   const items = order.items || [];
   
-  // Get dynamic delivery fee from settings
-  let deliveryFee = 3500; // Default fallback
+  // Get dynamic delivery fee from settings (single source of truth)
+  let deliveryFee = 0;
   try {
     const settingsResult = await storage.getSettings();
     const deliveryFeeSetting = settingsResult.find(setting => setting.key === 'delivery_fee');
     if (deliveryFeeSetting) {
       deliveryFee = parseInt(deliveryFeeSetting.value);
+    } else {
+      // Initialize delivery fee in database if not exists
+      await storage.updateSetting('delivery_fee', '2500', 'number', 'Delivery fee in Iraqi Dinars');
+      deliveryFee = 2500;
+      console.log('🔧 Initialized delivery fee in database: 2500 IQD');
     }
   } catch (error) {
-    console.error('Failed to fetch delivery fee from settings, using default:', error);
+    console.error('Failed to fetch delivery fee from settings:', error);
+    throw new Error('Cannot generate invoice without delivery fee settings');
   }
   
   // Calculate totals explicitly

@@ -372,7 +372,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       }
       
       // Track successful purchase with Meta Pixel
-      MetaPixel.trackPurchase(orderData.totalAmount + 3500, orderId.toString()); // Include delivery fee
+      MetaPixel.trackPurchase(orderData.totalAmount + (shippingFee || 0), orderId.toString()); // Include delivery fee
       
       // Clear cart using CartFlow store for immediate UI update
       await clearCartFlow();
@@ -937,7 +937,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           <Button 
             onClick={() => {
               // Track checkout initiation with Meta Pixel
-              MetaPixel.trackInitiateCheckout(getCartTotal() + 2500); // Include delivery fee
+              MetaPixel.trackInitiateCheckout(getCartTotal() + (shippingFee || 0)); // Include delivery fee
               setCurrentView('checkout');
             }}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"

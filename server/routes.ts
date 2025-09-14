@@ -67,9 +67,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Ensure delivery fee exists with default value
+      // Initialize delivery fee in database if not exists (no hardcoded fallback)
       if (!settingsObject.delivery_fee) {
-        settingsObject.delivery_fee = 3500;
+        try {
+          await storage.updateSetting('delivery_fee', '2500', 'number', 'Delivery fee in Iraqi Dinars');
+          settingsObject.delivery_fee = 2500;
+          console.log('🔧 Initialized delivery fee in database: 2500 IQD');
+        } catch (initError) {
+          console.error('Failed to initialize delivery fee:', initError);
+          return res.status(500).json({ message: 'Failed to initialize settings' });
+        }
       }
 
       res.json(settingsObject);
@@ -2727,13 +2734,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const driverId = req.driver.id;
       const orders = await storage.getOrders();
       
+      // Get dynamic delivery fee from database
+      const deliveryFee = await getDeliveryFee();
+      
       // Filter orders delivered by this driver
       const driverOrders = orders.filter(order => order.driverId === driverId);
       const deliveredOrders = driverOrders.filter(order => order.status === 'delivered');
       
       // Calculate stats
       const totalDeliveries = deliveredOrders.length;
-      const totalEarnings = deliveredOrders.reduce((sum, order) => sum + 3500, 0); // 3500 per delivery
+      const totalEarnings = deliveredOrders.reduce((sum, order) => sum + deliveryFee, 0);
       const todayOrders = deliveredOrders.filter(order => {
         const today = new Date().toDateString();
         const orderDate = new Date(order.orderDate).toDateString();
@@ -2746,7 +2756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalDeliveries,
           totalEarnings: totalEarnings.toLocaleString(),
           todayDeliveries: todayOrders.length,
-          todayEarnings: (todayOrders.length * 3500).toLocaleString(),
+          todayEarnings: (todayOrders.length * deliveryFee).toLocaleString(),
           currentOrders: driverOrders.filter(order => 
             order.status === 'out-for-delivery' || order.status === 'picked-up'
           ).length,
@@ -3089,38 +3099,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Settings Management Routes
-  app.get("/api/settings", async (req, res) => {
-    try {
-      // Get current settings from database
-      const settingsResult = await storage.getSettings();
-      
-      // Convert settings array to object format
-      const settingsObject: Record<string, any> = {};
-      settingsResult.forEach(setting => {
-        if (setting.type === 'number') {
-          settingsObject[setting.key] = parseInt(setting.value);
-        } else if (setting.type === 'boolean') {
-          settingsObject[setting.key] = setting.value === 'true';
-        } else {
-          settingsObject[setting.key] = setting.value;
-        }
-      });
-
-      // Ensure delivery fee exists with default value
-      if (!settingsObject.delivery_fee) {
-        settingsObject.delivery_fee = 3500;
-      }
-
-      sendOptimizedResponse(res, settingsObject, 'public, max-age=60'); // 1 minute cache
-    } catch (error) {
-      console.error('Settings fetch error:', error);
-      res.status(500).json({ 
-        message: "Failed to fetch settings", 
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+  // Duplicate endpoint removed - using the one above
 
   app.put("/api/settings/delivery-fee", async (req, res) => {
     try {

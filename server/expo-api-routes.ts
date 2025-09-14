@@ -47,6 +47,25 @@ const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('en-US').format(price);
 };
 
+// Helper function to get delivery fee from database (single source of truth)
+const getDeliveryFee = async (): Promise<number> => {
+  try {
+    const settingsResult = await storage.getSettings();
+    const deliveryFeeSetting = settingsResult.find(setting => setting.key === 'delivery_fee');
+    if (deliveryFeeSetting) {
+      return parseInt(deliveryFeeSetting.value);
+    } else {
+      // Initialize delivery fee in database if not exists
+      await storage.updateSetting('delivery_fee', '2500', 'number', 'Delivery fee in Iraqi Dinars');
+      console.log('🔧 Initialized delivery fee in database: 2500 IQD');
+      return 2500;
+    }
+  } catch (error) {
+    console.error('Failed to fetch delivery fee from settings:', error);
+    throw new Error('Cannot get delivery fee from database');
+  }
+};
+
 // ==================== AUTHENTICATION ENDPOINTS ====================
 
 // Mobile App Login
@@ -306,6 +325,9 @@ router.get('/api/mobile/cart', authenticateToken, async (req, res) => {
       sum + (item.product.price * item.quantity), 0
     );
 
+    // Get dynamic delivery fee from database
+    const deliveryFee = await getDeliveryFee();
+
     res.json({
       success: true,
       cart: {
@@ -313,10 +335,10 @@ router.get('/api/mobile/cart', authenticateToken, async (req, res) => {
         itemCount: validCartItems.reduce((sum, item) => sum + item.quantity, 0),
         totalAmount: totalAmount,
         totalAmountFormatted: formatPrice(totalAmount),
-        deliveryFee: 3500,
-        deliveryFeeFormatted: formatPrice(3500),
-        grandTotal: totalAmount + 3500,
-        grandTotalFormatted: formatPrice(totalAmount + 3500)
+        deliveryFee: deliveryFee,
+        deliveryFeeFormatted: formatPrice(deliveryFee),
+        grandTotal: totalAmount + deliveryFee,
+        grandTotalFormatted: formatPrice(totalAmount + deliveryFee)
       }
     });
   } catch (error) {
@@ -562,6 +584,9 @@ router.get('/api/mobile/orders', authenticateToken, async (req, res) => {
       .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
       .slice(0, parseInt(limit as string));
 
+    // Get dynamic delivery fee from database
+    const deliveryFee = await getDeliveryFee();
+
     const ordersWithFormatting = sortedOrders.map(order => {
       // Parse items from JSON field
       const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
@@ -571,8 +596,8 @@ router.get('/api/mobile/orders', authenticateToken, async (req, res) => {
         status: order.status,
         totalAmount: order.totalAmount,
         totalAmountFormatted: formatPrice(order.totalAmount),
-        deliveryFee: 3500, // Fixed delivery fee
-        deliveryFeeFormatted: formatPrice(3500),
+        deliveryFee: deliveryFee,
+        deliveryFeeFormatted: formatPrice(deliveryFee),
         createdAt: order.orderDate,
         items: Array.isArray(items) ? items : []
       };
@@ -604,6 +629,9 @@ router.get('/api/mobile/orders/:id', authenticateToken, async (req, res) => {
     // Parse address from JSON field
     const address = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
 
+    // Get dynamic delivery fee from database
+    const deliveryFee = await getDeliveryFee();
+
     res.json({
       success: true,
       order: {
@@ -611,8 +639,8 @@ router.get('/api/mobile/orders/:id', authenticateToken, async (req, res) => {
         status: order.status,
         totalAmount: order.totalAmount,
         totalAmountFormatted: formatPrice(order.totalAmount),
-        deliveryFee: 3500,
-        deliveryFeeFormatted: formatPrice(3500),
+        deliveryFee: deliveryFee,
+        deliveryFeeFormatted: formatPrice(deliveryFee),
         customerName: order.customerName,
         customerPhone: order.customerPhone,
         customerAddress: address ? `${address.governorate} - ${address.district} - ${address.neighborhood}` : '',
@@ -673,7 +701,7 @@ router.post('/api/mobile/orders', authenticateToken, async (req, res) => {
       });
     }
 
-    const deliveryFee = 3500;
+    const deliveryFee = await getDeliveryFee();
     const grandTotal = totalAmount + deliveryFee;
 
     // Check wallet balance if paying with wallet
@@ -810,14 +838,18 @@ router.get('/api/mobile/health', (req, res) => {
 });
 
 // Get App Configuration
-router.get('/api/mobile/config', (req, res) => {
-  res.json({
-    success: true,
-    config: {
-      appName: 'PAKETY',
-      appNameAr: 'باكيتي',
-      deliveryFee: 3500,
-      deliveryFeeFormatted: formatPrice(3500),
+router.get('/api/mobile/config', async (req, res) => {
+  try {
+    // Get dynamic delivery fee from database
+    const deliveryFee = await getDeliveryFee();
+    
+    res.json({
+      success: true,
+      config: {
+        appName: 'PAKETY',
+        appNameAr: 'باكيتي',
+        deliveryFee: deliveryFee,
+        deliveryFeeFormatted: formatPrice(deliveryFee),
       minWalletCharge: 5000,
       minWalletChargeFormatted: formatPrice(5000),
       currency: 'IQD',
@@ -832,6 +864,10 @@ router.get('/api/mobile/config', (req, res) => {
       ]
     }
   });
+  } catch (error) {
+    console.error('Config fetch error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;

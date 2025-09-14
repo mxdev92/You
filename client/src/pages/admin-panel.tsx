@@ -1304,19 +1304,20 @@ function ItemsManagement() {
 // Settings Management Component
 function SettingsManagement() {
   const { toast } = useToast();
-  const [deliveryFee, setDeliveryFee] = useState(3500);
+  const queryClient = useQueryClient();
+  const { data: currentSettings, isLoading: settingsLoading } = useSettings();
+  const [deliveryFee, setDeliveryFee] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch current delivery fee
-  const { data: currentSettings } = useQuery({
-    queryKey: ['/api/settings'],
-    queryFn: () => fetch('/api/settings').then(res => res.json()),
-    onSuccess: (data) => {
-      if (data && data.delivery_fee) {
-        setDeliveryFee(data.delivery_fee);
-      }
+  // Update local state when settings are loaded
+  React.useEffect(() => {
+    if (currentSettings?.delivery_fee && deliveryFee === undefined) {
+      setDeliveryFee(currentSettings.delivery_fee);
     }
-  });
+  }, [currentSettings?.delivery_fee, deliveryFee]);
+
+  // Use the current settings as the authoritative source
+  const actualDeliveryFee = currentSettings?.delivery_fee;
 
   // Update delivery fee mutation
   const updateDeliveryFeeMutation = useMutation({
@@ -1330,9 +1331,11 @@ function SettingsManagement() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate the settings cache globally to update all components
+      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
       toast({
         title: "✅ تم تحديث رسوم التوصيل",
-        description: `رسوم التوصيل الجديدة: ${formatPrice(deliveryFee)} د.ع`,
+        description: `رسوم التوصيل الجديدة: ${formatPrice(deliveryFee || 0)} د.ع`,
         duration: 3000,
       });
     },
@@ -1347,7 +1350,7 @@ function SettingsManagement() {
   });
 
   const handleSaveDeliveryFee = () => {
-    if (deliveryFee < 0 || deliveryFee > 50000) {
+    if (!deliveryFee || deliveryFee < 0 || deliveryFee > 50000) {
       toast({
         title: "❌ قيمة غير صحيحة",
         description: "رسوم التوصيل يجب أن تكون بين 0 و 50,000 د.ع",
@@ -1389,7 +1392,7 @@ function SettingsManagement() {
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700">رسوم التوصيل الحالية:</span>
               <span className="text-xl font-bold text-green-600">
-                {formatPrice(currentSettings?.delivery_fee || 3500)} د.ع
+                {actualDeliveryFee ? formatPrice(actualDeliveryFee) : '...'} د.ع
               </span>
             </div>
           </div>
@@ -1403,9 +1406,9 @@ function SettingsManagement() {
               <Input
                 id="delivery-fee"
                 type="number"
-                value={deliveryFee}
+                value={deliveryFee || ''}
                 onChange={(e) => setDeliveryFee(Number(e.target.value))}
-                placeholder="3500"
+                placeholder="مثال: 3000"
                 min="0"
                 max="50000"
                 step="250"
@@ -1413,7 +1416,7 @@ function SettingsManagement() {
               />
               <Button
                 onClick={handleSaveDeliveryFee}
-                disabled={updateDeliveryFeeMutation.isPending}
+                disabled={updateDeliveryFeeMutation.isPending || !deliveryFee}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-xl"
               >
                 {updateDeliveryFeeMutation.isPending ? (
@@ -1430,7 +1433,7 @@ function SettingsManagement() {
               </Button>
             </div>
             <p className="text-xs text-gray-500">
-              القيمة بالدينار العراقي (مثال: 3500 = 3,500 د.ع)
+              القيمة بالدينار العراقي (مثال: 3000 = 3,000 د.ع)
             </p>
           </div>
 
@@ -2599,12 +2602,12 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>رسوم التوصيل:</span>
-                  <span>{formatPrice(currentSettings?.delivery_fee || 3500)} د.ع</span>
+                  <span>{formatPrice(actualDeliveryFee)} د.ع</span>
                 </div>
                 <div className="border-t border-gray-300 pt-3">
                   <div className="flex justify-between font-bold text-lg">
                     <span>المجموع الكلي:</span>
-                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + (currentSettings?.delivery_fee || 3500))} د.ع</span>
+                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + actualDeliveryFee)} د.ع</span>
                   </div>
                 </div>
               </div>

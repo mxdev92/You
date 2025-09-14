@@ -17,7 +17,7 @@ export const useDeliveryFee = () => {
   const { data: settings, isLoading, error } = useSettings();
   
   return {
-    deliveryFee: settings?.delivery_fee || 3500, // fallback to 3500 if not loaded
+    deliveryFee: settings?.delivery_fee, // No hardcoded fallback - will be undefined while loading
     isLoading,
     error
   };
