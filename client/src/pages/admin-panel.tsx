@@ -1998,6 +1998,15 @@ export default function AdminPanel() {
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Get delivery fee for order calculations (single source of truth)
+  const { deliveryFee: currentDeliveryFee } = useSettings();
+  const { data: currentSettings } = useQuery({
+    queryKey: ['/api/settings'],
+    queryFn: () => fetch('/api/settings').then(res => res.json()) as Promise<{delivery_fee: number}>
+  });
+  
+  const actualDeliveryFee = currentDeliveryFee || currentSettings?.delivery_fee || 2000;
 
   // Handle order selection
   const handleOrderSelect = (orderId: number, checked: boolean) => {
@@ -2602,12 +2611,12 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>رسوم التوصيل:</span>
-                  <span>{formatPrice(actualDeliveryFee)} د.ع</span>
+                  <span>{formatPrice(actualDeliveryFee || 0)} د.ع</span>
                 </div>
                 <div className="border-t border-gray-300 pt-3">
                   <div className="flex justify-between font-bold text-lg">
                     <span>المجموع الكلي:</span>
-                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + actualDeliveryFee)} د.ع</span>
+                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + (actualDeliveryFee || 0))} د.ع</span>
                   </div>
                 </div>
               </div>
