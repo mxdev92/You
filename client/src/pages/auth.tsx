@@ -8,8 +8,6 @@ import { usePostgresAddressStore } from '@/store/postgres-address-store';
 import { useLocation } from 'wouter';
 import paketyLogo from '@/assets/pakety-logo.png';
 import { MetaPixel } from '@/lib/meta-pixel';
-import { getDeviceInfo, checkPasskeySupport, getPasskeyMessage } from '@/lib/device-utils';
-import { authenticateWithPasskey } from '@/lib/webauthn-utils';
 
 interface SignupData {
   email: string;
@@ -122,11 +120,6 @@ const AuthPage: React.FC = () => {
   });
 
   const [rememberMe, setRememberMe] = useState(true);
-
-  // Passkey-related state
-  const [deviceInfo, setDeviceInfo] = useState(() => getDeviceInfo());
-  const [passkeySupported, setPasskeySupported] = useState(false);
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   const [signupData, setSignupData] = useState<SignupData>({
     email: '',
@@ -314,22 +307,6 @@ const AuthPage: React.FC = () => {
     }
   }, []);
 
-  // Check passkey support on component mount
-  useEffect(() => {
-    const initPasskeySupport = async () => {
-      try {
-        const supported = await checkPasskeySupport();
-        setPasskeySupported(supported);
-        console.log('🔐 Passkey support detected:', supported, 'Device:', deviceInfo.isAndroid ? 'Android' : deviceInfo.isIOS ? 'iOS' : 'Desktop');
-      } catch (error) {
-        console.error('Error checking passkey support:', error);
-        setPasskeySupported(false);
-      }
-    };
-
-    initPasskeySupport();
-  }, [deviceInfo]);
-
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
@@ -371,35 +348,6 @@ const AuthPage: React.FC = () => {
       showNotification('خطأ في تسجيل الدخول: ' + (error.message || 'خطأ غير معروف'));
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Handle passkey authentication
-  const handlePasskeyLogin = async () => {
-    if (!passkeySupported) {
-      showNotification('جهازك لا يدعم مفاتيح المرور');
-      return;
-    }
-
-    setPasskeyLoading(true);
-    try {
-      const result = await authenticateWithPasskey(loginData.email || undefined);
-      
-      if (result.success) {
-        showNotification('تم تسجيل الدخول بنجاح باستخدام مفتاح المرور', 'success');
-        
-        // Track successful passkey login
-        MetaPixel.trackLogin();
-        
-        setLocation('/');
-      } else {
-        showNotification(result.error || 'فشل في تسجيل الدخول بمفتاح المرور');
-      }
-    } catch (error: any) {
-      console.error('Passkey login error:', error);
-      showNotification('فشل في تسجيل الدخول بمفتاح المرور');
-    } finally {
-      setPasskeyLoading(false);
     }
   };
 
@@ -669,51 +617,6 @@ const AuthPage: React.FC = () => {
                 >
                   {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
                 </Button>
-
-                {/* Passkey Login Button for supported devices */}
-                {passkeySupported && deviceInfo.isMobile && (
-                  <>
-                    <div className="flex items-center justify-center my-4">
-                      <div className="border-t border-gray-300 flex-grow"></div>
-                      <span className="mx-4 text-gray-500 text-sm" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        أو
-                      </span>
-                      <div className="border-t border-gray-300 flex-grow"></div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      onClick={handlePasskeyLogin}
-                      disabled={passkeyLoading}
-                      className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl shadow-lg flex items-center justify-center gap-2"
-                      style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                    >
-                      {passkeyLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          جاري المصادقة...
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg">🔐</span>
-                          {getPasskeyMessage(deviceInfo)}
-                        </>
-                      )}
-                    </Button>
-
-                    {deviceInfo.isAndroid && (
-                      <p className="text-xs text-gray-500 text-center mt-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        يمكنك تسجيل الدخول باستخدام بصمة الإصبع أو الوجه أو رمز المرور
-                      </p>
-                    )}
-
-                    {deviceInfo.isIOS && (
-                      <p className="text-xs text-gray-500 text-center mt-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                        يمكنك تسجيل الدخول باستخدام Touch ID أو Face ID أو رمز المرور
-                      </p>
-                    )}
-                  </>
-                )}
               </form>
 
               <div className="mt-6 text-center">
