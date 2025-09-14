@@ -278,41 +278,34 @@ const AuthPage: React.FC = () => {
     }
   };
 
-  // Load saved credentials and attempt auto-login on component mount
+  // Load saved user preferences and clean up old insecure storage
   useEffect(() => {
-    const savedCredentials = localStorage.getItem('pakety_saved_credentials');
-    if (savedCredentials) {
+    // Clean up old insecure credential storage (if it exists)
+    const oldCredentials = localStorage.getItem('pakety_saved_credentials');
+    if (oldCredentials) {
+      console.log('🧹 Removing old insecure credential storage');
+      localStorage.removeItem('pakety_saved_credentials');
+    }
+    
+    // Load safe preferences (email only)
+    const savedPreferences = localStorage.getItem('pakety_login_preferences');
+    if (savedPreferences) {
       try {
-        const { email, password, rememberMe: savedRememberMe } = JSON.parse(savedCredentials);
+        const { email, rememberMe: savedRememberMe } = JSON.parse(savedPreferences);
         if (savedRememberMe) {
-          setLoginData({ email, password });
+          setLoginData(prev => ({ ...prev, email }));
           setRememberMe(true);
           
-          // Attempt auto-login if not already logged in
-          if (!user) {
-            console.log('🔐 Attempting auto-login with saved credentials for:', email);
-            setIsLoading(true);
-            login(email, password)
-              .then(() => {
-                console.log('✅ Auto-login successful');
-                showNotification('تم تسجيل الدخول تلقائياً - مرحباً بعودتك!', 'success');
-              })
-              .catch((error) => {
-                console.error('❌ Auto-login failed:', error);
-                // Don't show error notification for auto-login failure to avoid confusion
-                // Just keep the form with saved credentials for manual login
-              })
-              .finally(() => {
-                setIsLoading(false);
-              });
-          }
+          // The session restoration is already handled by the auth hook
+          // No need to attempt login here - just prefill the email
+          console.log('🔐 Email prefilled for returning user');
         }
       } catch (error) {
-        console.error('Failed to load saved credentials:', error);
-        localStorage.removeItem('pakety_saved_credentials');
+        console.error('Failed to load saved preferences:', error);
+        localStorage.removeItem('pakety_login_preferences');
       }
     }
-  }, [user, login]);
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -335,17 +328,16 @@ const AuthPage: React.FC = () => {
     try {
       await login(loginData.email, loginData.password);
       
-      // Save credentials if remember me is checked
+      // Save only email and preference if remember me is checked (NEVER save password)
       if (rememberMe) {
-        localStorage.setItem('pakety_saved_credentials', JSON.stringify({
+        localStorage.setItem('pakety_login_preferences', JSON.stringify({
           email: loginData.email,
-          password: loginData.password,
           rememberMe: true
         }));
-        showNotification('تم حفظ بيانات الدخول لسهولة الدخول في المرات القادمة', 'success');
+        showNotification('تم حفظ البريد الإلكتروني لسهولة الدخول في المرات القادمة', 'success');
       } else {
-        // Remove saved credentials if remember me is not checked
-        localStorage.removeItem('pakety_saved_credentials');
+        // Remove saved preferences if remember me is not checked
+        localStorage.removeItem('pakety_login_preferences');
       }
       
       // Track successful login with Meta Pixel
@@ -612,7 +604,7 @@ const AuthPage: React.FC = () => {
                       className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 ml-2"
                     />
                     <span className="text-sm text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      تذكرني للدخول السريع
+                      حفظ البريد الإلكتروني
                     </span>
                   </label>
                 </div>
