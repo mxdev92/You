@@ -119,6 +119,8 @@ const AuthPage: React.FC = () => {
     password: ''
   });
 
+  const [rememberMe, setRememberMe] = useState(false);
+
   const [signupData, setSignupData] = useState<SignupData>({
     email: '',
     password: '',
@@ -276,6 +278,42 @@ const AuthPage: React.FC = () => {
     }
   };
 
+  // Load saved credentials and attempt auto-login on component mount
+  useEffect(() => {
+    const savedCredentials = localStorage.getItem('pakety_saved_credentials');
+    if (savedCredentials) {
+      try {
+        const { email, password, rememberMe: savedRememberMe } = JSON.parse(savedCredentials);
+        if (savedRememberMe) {
+          setLoginData({ email, password });
+          setRememberMe(true);
+          
+          // Attempt auto-login if not already logged in
+          if (!user) {
+            console.log('🔐 Attempting auto-login with saved credentials for:', email);
+            setIsLoading(true);
+            login(email, password)
+              .then(() => {
+                console.log('✅ Auto-login successful');
+                showNotification('تم تسجيل الدخول تلقائياً - مرحباً بعودتك!', 'success');
+              })
+              .catch((error) => {
+                console.error('❌ Auto-login failed:', error);
+                // Don't show error notification for auto-login failure to avoid confusion
+                // Just keep the form with saved credentials for manual login
+              })
+              .finally(() => {
+                setIsLoading(false);
+              });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load saved credentials:', error);
+        localStorage.removeItem('pakety_saved_credentials');
+      }
+    }
+  }, [user, login]);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
@@ -296,6 +334,19 @@ const AuthPage: React.FC = () => {
     setIsLoading(true);
     try {
       await login(loginData.email, loginData.password);
+      
+      // Save credentials if remember me is checked
+      if (rememberMe) {
+        localStorage.setItem('pakety_saved_credentials', JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+          rememberMe: true
+        }));
+        showNotification('تم حفظ بيانات الدخول لسهولة الدخول في المرات القادمة', 'success');
+      } else {
+        // Remove saved credentials if remember me is not checked
+        localStorage.removeItem('pakety_saved_credentials');
+      }
       
       // Track successful login with Meta Pixel
       MetaPixel.trackLogin();
@@ -550,6 +601,22 @@ const AuthPage: React.FC = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                
+                {/* Remember Me Checkbox */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center cursor-pointer" dir="rtl">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 ml-2"
+                    />
+                    <span className="text-sm text-gray-700" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      تذكرني للدخول السريع
+                    </span>
+                  </label>
+                </div>
+
                 <Button
                   type="submit"
                   disabled={!loginData.email || !loginData.password || isLoading}
