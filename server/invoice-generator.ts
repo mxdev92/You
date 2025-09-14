@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import QRCode from 'qrcode';
+import { storage } from './storage';
 
 // Single order PDF generation (for WhatsApp delivery)
 export async function generateInvoicePDF(order: any): Promise<Buffer> {
@@ -166,9 +167,20 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
   const order = orders[0]; // Get first order
   const items = order.items || [];
   
+  // Get dynamic delivery fee from settings
+  let deliveryFee = 3500; // Default fallback
+  try {
+    const settingsResult = await storage.getSettings();
+    const deliveryFeeSetting = settingsResult.find(setting => setting.key === 'delivery_fee');
+    if (deliveryFeeSetting) {
+      deliveryFee = parseInt(deliveryFeeSetting.value);
+    }
+  } catch (error) {
+    console.error('Failed to fetch delivery fee from settings, using default:', error);
+  }
+  
   // Calculate totals explicitly
   const subtotal = Math.round(order.totalAmount);
-  const deliveryFee = 3500; // Fixed delivery fee of 3,500 IQD
   const finalTotal = subtotal + deliveryFee;
   
   // Generate QR code for order ID

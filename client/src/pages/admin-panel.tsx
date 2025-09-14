@@ -13,6 +13,7 @@ import { getOrders, updateOrderStatus, deleteOrder, Order } from '@/lib/api-clie
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { formatPrice } from '@/lib/price-utils';
+import { useSettings } from '@/hooks/use-settings';
 import type { Product, InsertProduct } from '@shared/schema';
 
 // Helper functions for product operations
@@ -1311,8 +1312,8 @@ function SettingsManagement() {
     queryKey: ['/api/settings'],
     queryFn: () => fetch('/api/settings').then(res => res.json()),
     onSuccess: (data) => {
-      if (data && data.deliveryFee) {
-        setDeliveryFee(data.deliveryFee);
+      if (data && data.delivery_fee) {
+        setDeliveryFee(data.delivery_fee);
       }
     }
   });
@@ -1388,7 +1389,7 @@ function SettingsManagement() {
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700">رسوم التوصيل الحالية:</span>
               <span className="text-xl font-bold text-green-600">
-                {formatPrice(currentSettings?.deliveryFee || 3500)} د.ع
+                {formatPrice(currentSettings?.delivery_fee || 3500)} د.ع
               </span>
             </div>
           </div>
@@ -2598,12 +2599,12 @@ export default function AdminPanel() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>رسوم التوصيل:</span>
-                  <span>{formatPrice(3500)} د.ع</span>
+                  <span>{formatPrice(currentSettings?.delivery_fee || 3500)} د.ع</span>
                 </div>
                 <div className="border-t border-gray-300 pt-3">
                   <div className="flex justify-between font-bold text-lg">
                     <span>المجموع الكلي:</span>
-                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + 3500)} د.ع</span>
+                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + (currentSettings?.delivery_fee || 3500))} د.ع</span>
                   </div>
                 </div>
               </div>

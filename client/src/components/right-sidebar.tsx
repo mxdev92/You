@@ -15,6 +15,7 @@ import { formatPrice } from "@/lib/utils";
 import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
 import { Link } from "wouter";
+import { useDeliveryFee } from "@/hooks/use-settings";
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -249,7 +250,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     };
   }, [isOpen]);
 
-  const shippingFee = 3500; // Fixed delivery fee in IQD
+  // Get dynamic delivery fee from settings
+  const { deliveryFee: shippingFee } = useDeliveryFee();
   const totalWithShipping = getCartTotal() + shippingFee;
 
   const iraqiGovernorates = [
