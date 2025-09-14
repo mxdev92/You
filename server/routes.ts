@@ -631,6 +631,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public: Validate coupon (POST version for cart)
+  app.post("/api/coupons/validate", async (req, res) => {
+    try {
+      const { code } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ message: 'كود الكوبون مطلوب' });
+      }
+
+      const coupon = await storage.getCouponByCode(code.toUpperCase());
+      
+      if (!coupon) {
+        return res.status(404).json({ message: 'كوبون غير صالح' });
+      }
+
+      // Check if coupon is active
+      if (!coupon.isActive) {
+        return res.status(400).json({ message: 'هذا الكوبون غير فعال' });
+      }
+
+      const now = new Date();
+      
+      // Check start date
+      if (coupon.startAt && new Date(coupon.startAt) > now) {
+        return res.status(400).json({ message: 'لم يحن وقت استخدام هذا الكوبون بعد' });
+      }
+
+      // Check end date
+      if (coupon.endAt && new Date(coupon.endAt) < now) {
+        return res.status(400).json({ message: 'انتهت صلاحية هذا الكوبون' });
+      }
+
+      // Check usage limit
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+        return res.status(400).json({ message: 'تم استنفاد هذا الكوبون' });
+      }
+
+      // Return coupon data for cart application
+      res.json({
+        id: coupon.id,
+        code: coupon.code,
+        name: coupon.name,
+        type: coupon.type,
+        amount: coupon.amount,
+        isActive: coupon.isActive
+      });
+    } catch (error) {
+      console.error('Error validating coupon:', error);
+      res.status(500).json({ message: 'خطأ في التحقق من الكوبون' });
+    }
+  });
+
   // Public: Apply coupon to cart
   app.post("/api/cart/apply-coupon", async (req, res) => {
     try {

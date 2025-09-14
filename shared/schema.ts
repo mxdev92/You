@@ -176,6 +176,9 @@ export const insertCouponSchema = createInsertSchema(coupons).omit({
   id: true,
   usedCount: true,
   createdAt: true,
+}).extend({
+  startAt: z.string().datetime().nullable().optional().transform(val => val ? new Date(val) : null),
+  endAt: z.string().datetime().nullable().optional().transform(val => val ? new Date(val) : null),
 });
 
 export type Category = typeof categories.$inferSelect;

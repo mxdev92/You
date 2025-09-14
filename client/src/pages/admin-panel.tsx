@@ -1703,8 +1703,8 @@ function CouponForm({ initialData, onSubmit, isLoading }: {
       ...formData,
       amount: formData.type === 'amount' ? parseInt(String(formData.amount)) : 0,
       maxUses: formData.maxUses ? parseInt(String(formData.maxUses)) : null,
-      startAt: formData.startAt ? new Date(formData.startAt) : null,
-      endAt: formData.endAt ? new Date(formData.endAt) : null
+      startAt: formData.startAt ? new Date(formData.startAt).toISOString() : null,
+      endAt: formData.endAt ? new Date(formData.endAt).toISOString() : null
     };
 
     onSubmit(submitData);
