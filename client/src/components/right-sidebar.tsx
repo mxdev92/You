@@ -256,6 +256,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   // Get dynamic delivery fee from settings
   const { deliveryFee: shippingFee } = useDeliveryFee();
   
+  // App services fee (constant)
+  const appServicesFee = 500;
+  
   // Calculate coupon discount
   const getCouponDiscount = () => {
     if (!appliedCoupon) return 0;
@@ -278,7 +281,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   const couponDiscount = getCouponDiscount();
   const finalShippingFee = getFinalShippingFee();
   // Ensure total never goes negative
-  const totalWithShipping = Math.max(0, cartTotal - couponDiscount + finalShippingFee);
+  const totalWithShipping = Math.max(0, cartTotal - couponDiscount + finalShippingFee + appServicesFee);
   
   // Apply coupon function
   const applyCoupon = async () => {
@@ -429,7 +432,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       }
       
       // Track successful purchase with Meta Pixel
-      MetaPixel.trackPurchase(orderData.totalAmount + (shippingFee || 0), orderId.toString()); // Include delivery fee
+      MetaPixel.trackPurchase(orderData.totalAmount + (shippingFee || 0) + appServicesFee, orderId.toString()); // Include delivery fee and app services fee
       
       // Clear cart using CartFlow store for immediate UI update
       await clearCartFlow();
@@ -756,6 +759,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             <span className="font-medium">{formatPrice(finalShippingFee)} IQD</span>
           </div>
           
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>آب سيرفز:</span>
+            <span className="font-medium">{formatPrice(appServicesFee)} IQD</span>
+          </div>
+          
           {appliedCoupon && (
             <div className="flex justify-between items-center">
               <span className="text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الكوبون:</span>
@@ -1062,7 +1070,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           <Button 
             onClick={() => {
               // Track checkout initiation with Meta Pixel
-              MetaPixel.trackInitiateCheckout(getCartTotal() + (shippingFee || 0)); // Include delivery fee
+              MetaPixel.trackInitiateCheckout(getCartTotal() + (shippingFee || 0) + appServicesFee); // Include delivery fee and app services fee
               setCurrentView('checkout');
             }}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
