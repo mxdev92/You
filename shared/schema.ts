@@ -111,6 +111,21 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Coupons for discount management
+export const coupons = pgTable("coupons", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'amount' | 'free_delivery'
+  amount: integer("amount").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  startAt: timestamp("start_at"),
+  endAt: timestamp("end_at"),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
 });
@@ -157,6 +172,12 @@ export const insertSettingsSchema = createInsertSchema(settings).omit({
   updatedAt: true,
 });
 
+export const insertCouponSchema = createInsertSchema(coupons).omit({
+  id: true,
+  usedCount: true,
+  createdAt: true,
+});
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
@@ -166,6 +187,7 @@ export type UserAddress = typeof userAddresses.$inferSelect;
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
 export type Driver = typeof drivers.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
+export type Coupon = typeof coupons.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
@@ -175,3 +197,4 @@ export type InsertUserAddress = z.infer<typeof insertUserAddressSchema>;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+export type InsertCoupon = z.infer<typeof insertCouponSchema>;
