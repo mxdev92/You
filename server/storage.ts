@@ -1056,8 +1056,8 @@ const initializeDatabase = async () => {
     if (existingCategories.length === 0) {
       // Create categories
       const categoriesData: InsertCategory[] = [
-        { name: "Fruits", icon: "Apple", isSelected: true },
-        { name: "Vegetables", icon: "Carrot", isSelected: false },
+        { name: "Fruits", icon: "Apple", isSelected: false },
+        { name: "Vegetables", icon: "Carrot", isSelected: true },
         { name: "Dairy", icon: "Milk", isSelected: false },
         { name: "Bakery", icon: "Cookie", isSelected: false },
         { name: "Seafood", icon: "Fish", isSelected: false },
