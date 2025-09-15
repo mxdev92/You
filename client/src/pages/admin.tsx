@@ -22,7 +22,7 @@ const statusConfig = {
   cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800', icon: Trash2 }
 };
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order, deliveryFee }: { order: Order; deliveryFee: number }) {
   const queryClient = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -187,11 +187,11 @@ function OrderCard({ order }: { order: Order }) {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span>المجموع الفرعي:</span>
-                          <span>{(order.totalAmount - 3000 - 500).toLocaleString()} IQD</span>
+                          <span>{(order.totalAmount - deliveryFee - 500).toLocaleString()} IQD</span>
                         </div>
                         <div className="flex justify-between">
                           <span>رسوم التوصيل:</span>
-                          <span>3,000 IQD</span>
+                          <span>{deliveryFee.toLocaleString()} IQD</span>
                         </div>
                         <div className="flex justify-between">
                           <span>آب سيرفز:</span>
@@ -361,6 +361,16 @@ export default function AdminPanel() {
     refetchOnMount: 'always',
   });
 
+  // Fetch settings for dynamic delivery fee
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/settings');
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      return response.json();
+    },
+  });
+
   // Debug logging
   console.log('Admin Panel - Orders:', orders);
   console.log('Admin Panel - Loading:', isLoading);
@@ -479,7 +489,7 @@ export default function AdminPanel() {
             ) : (
               <div className="space-y-4">
                 {filteredOrders.map((order) => (
-                  <OrderCard key={order.id} order={order} />
+                  <OrderCard key={order.id} order={order} deliveryFee={settings?.delivery_fee || 3000} />
                 ))}
               </div>
             )}
