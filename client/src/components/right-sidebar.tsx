@@ -751,17 +751,17 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         <div className="space-y-3">
           <div className="grid grid-cols-2 items-center gap-x-4">
             <span className="justify-self-start font-medium whitespace-nowrap">{formatPrice(cartTotal)} IQD</span>
-            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>السعر الكلي:</span>
+            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">السعر الكلي:</span>
           </div>
           
           <div className="grid grid-cols-2 items-center gap-x-4">
             <span className="justify-self-start font-medium whitespace-nowrap">{formatPrice(finalShippingFee)} IQD</span>
-            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>أجور التوصيل:</span>
+            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">أجور التوصيل:</span>
           </div>
           
           <div className="grid grid-cols-2 items-center gap-x-4">
             <span className="justify-self-start font-medium whitespace-nowrap">{formatPrice(appServicesFee)} IQD</span>
-            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>آب سيرفز:</span>
+            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">آب سيرفز:</span>
           </div>
           
           {appliedCoupon && (
@@ -769,7 +769,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <span className="justify-self-start font-medium text-green-600 whitespace-nowrap">
                 -{formatPrice(couponDiscount + (finalShippingFee !== shippingFee ? shippingFee : 0))} IQD
               </span>
-              <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الكوبون:</span>
+              <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">الكوبون:</span>
             </div>
           )}
           
@@ -778,7 +778,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               <span className="justify-self-start text-xl font-bold text-fresh-green whitespace-nowrap">
                 {formatPrice(totalWithShipping)} IQD
               </span>
-              <span className="justify-self-end text-right text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الكلي:</span>
+              <span className="justify-self-end text-right text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">المبلغ الكلي:</span>
             </div>
           </div>
         </div>
