@@ -179,11 +179,20 @@ export class WasenderAPIService {
       console.log(`📊 WasenderAPI Response Status:`, response.status);
       console.log(`📊 WasenderAPI Response Data:`, JSON.stringify(response.data, null, 2));
 
-      console.log(`✅ FIXED METHOD: PDF sent successfully to ${formattedPhone}`);
-      return {
-        success: true,
-        message: 'PDF sent successfully via direct base64 method'
-      };
+      // Check if response indicates success (status 200 and no error message)
+      if (response.status === 200 && response.data && !response.data.error) {
+        console.log(`✅ FIXED METHOD: PDF sent successfully to ${formattedPhone}`);
+        return {
+          success: true,
+          message: 'PDF sent successfully via direct base64 method'
+        };
+      } else {
+        console.log(`❌ FIXED METHOD: PDF failed to send to ${formattedPhone} - Status: ${response.status}`);
+        return {
+          success: false,
+          message: JSON.stringify(response.data)
+        };
+      }
     } catch (error: any) {
       console.error('❌ WasenderAPI: Failed to send PDF:', error.response?.data || error.message);
       console.error('📊 Full error details:', error);
