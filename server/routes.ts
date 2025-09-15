@@ -828,7 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Send to customer via WasenderAPI
           const customerResult = await wasenderService.sendPDFDocument(
-            order.phone, 
+            order.customerPhone, 
             pdfBuffer, 
             fileName, 
             `🧾 فاتورة الطلب رقم ${order.id}\n\nشكراً لك على اختيار باكيتي للتوصيل السريع 💚`
@@ -839,7 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             '07511856947', 
             pdfBuffer, 
             `admin-${fileName}`, 
-            `📋 *طلب جديد رقم ${order.id}*\n\n👤 العميل: ${order.customerName}\n📱 الهاتف: ${order.phone}\n💰 المبلغ الإجمالي: ${order.totalAmount} IQD`
+            `📋 *طلب جديد رقم ${order.id}*\n\n👤 العميل: ${order.customerName}\n📱 الهاتف: ${order.customerPhone}\n💰 المبلغ الإجمالي: ${order.totalAmount} IQD`
           );
 
           console.log(`✅ WasenderAPI PDF delivery completed for Order ${order.id} - Customer: ${customerResult.success}, Admin: ${adminResult.success}`);

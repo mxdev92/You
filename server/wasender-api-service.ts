@@ -148,23 +148,36 @@ export class WasenderAPIService {
     try {
       const formattedPhone = this.formatPhoneNumber(phone);
       
-      // Convert buffer to base64
-      const base64PDF = pdfBuffer.toString('base64');
-      
+      // Step 1: Upload PDF to get temporary URL
+      console.log(`📤 Uploading PDF to WasenderAPI: ${fileName}`);
+      const uploadResponse = await axios.post(`${this.baseUrl}/api/upload`, pdfBuffer, {
+        headers: {
+          'Content-Type': 'application/pdf'
+        },
+        timeout: 30000 // 30 second timeout for PDF uploads
+      });
+
+      if (!uploadResponse.data.success || !uploadResponse.data.url) {
+        throw new Error('Failed to upload PDF to WasenderAPI');
+      }
+
+      const documentUrl = uploadResponse.data.url;
+      console.log(`✅ PDF uploaded successfully: ${documentUrl}`);
+
+      // Step 2: Send document message with the uploaded URL
       const payload = {
         to: formattedPhone,
+        documentUrl: documentUrl,
         text: message,
-        file_base64: base64PDF,
-        filename: fileName,
-        type: 'document'
+        filename: fileName
       };
 
-      const response = await axios.post(`https://wasenderapi.com/api/send-document`, payload, {
+      const response = await axios.post(`${this.baseUrl}/api/send-message`, payload, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        timeout: 30000 // 30 second timeout for PDF uploads
+        timeout: 10000 // 10 second timeout for sending
       });
 
       console.log(`📄 WasenderAPI: PDF sent to ${formattedPhone} - ${fileName}`);
