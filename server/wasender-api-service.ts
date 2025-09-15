@@ -148,18 +148,30 @@ export class WasenderAPIService {
     try {
       const formattedPhone = this.formatPhoneNumber(phone);
       
-      // Step 1: Upload PDF to get temporary URL
+      // Step 1: Upload PDF to get temporary URL using FormData for file upload
       console.log(`📤 Uploading PDF to WasenderAPI: ${fileName}`);
-      const uploadResponse = await axios.post(`${this.baseUrl}/api/upload`, pdfBuffer, {
+      
+      const FormData = require('form-data');
+      const formData = new FormData();
+      formData.append('file', pdfBuffer, {
+        filename: fileName,
+        contentType: 'application/pdf'
+      });
+      
+      const uploadResponse = await axios.post(`${this.baseUrl}/api/upload`, formData, {
         headers: {
-          'Content-Type': 'application/pdf',
+          ...formData.getHeaders(),
           'Authorization': `Bearer ${this.apiKey}`
         },
         timeout: 30000 // 30 second timeout for PDF uploads
       });
 
+      console.log(`📊 WasenderAPI Upload Response:`, JSON.stringify(uploadResponse.data, null, 2));
+      console.log(`📊 Response Status:`, uploadResponse.status);
+
       if (!uploadResponse.data.success || !uploadResponse.data.url) {
-        throw new Error('Failed to upload PDF to WasenderAPI');
+        console.error('❌ Upload failed - Response structure:', uploadResponse.data);
+        throw new Error(`Failed to upload PDF to WasenderAPI: ${JSON.stringify(uploadResponse.data)}`);
       }
 
       const documentUrl = uploadResponse.data.url;
