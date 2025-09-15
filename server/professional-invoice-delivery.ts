@@ -89,8 +89,8 @@ export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
 
 عدد المنتجات: ${order.items.length}`;
 
-    console.log(`⏱️ Waiting 10 seconds for WasenderAPI rate limiting...`);
-    await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay for absolute safety
+    console.log(`⏱️ Waiting 3 seconds for WasenderAPI rate limiting...`);
+    await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay (reasonable for rate limiting)
 
     console.log(`📱 Sending admin notification...`);
     const adminResult = await wasenderService.sendPDFDocumentViaURL(

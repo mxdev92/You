@@ -219,7 +219,7 @@ export class WasenderAPIService {
         type: 'document',
         media_url: pdfUrl,
         filename: fileName,
-        caption: message  // Use caption instead of text for media
+        text: message  // WasenderAPI requires 'text' field, not 'caption'
       };
 
       console.log(`📡 Sending PDF via WasenderAPI CORRECT method...`);
