@@ -183,28 +183,53 @@ function OrderCard({ order, deliveryFee }: { order: Order; deliveryFee: number }
                       ))}
                     </div>
                     <div className="mt-3 pt-3 border-t">
-                      {/* Order Summary with Breakdown */}
+                      {/* Order Summary with Breakdown - Use cart data as main reference */}
                       <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>المجموع الفرعي:</span>
-                          <span>{(order.totalAmount - deliveryFee - 500).toLocaleString()} IQD</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>رسوم التوصيل:</span>
-                          <span>{deliveryFee.toLocaleString()} IQD</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>آب سيرفز:</span>
-                          <span>500 IQD</span>
-                        </div>
-                        <div className="border-t pt-2">
-                          <div className="flex justify-between font-bold text-lg">
-                            <span>المجموع الكلي:</span>
-                            <span className="text-green-600">
-                              {order.totalAmount.toLocaleString()} IQD
-                            </span>
-                          </div>
-                        </div>
+                        {(() => {
+                          // Calculate totals from actual cart items
+                          let productsTotal = 0;
+                          let appServicesFee = 0;
+                          
+                          order.items.forEach((item: any) => {
+                            const itemTotal = parseFloat(item.price) * parseFloat(item.quantity);
+                            
+                            // Separate products from services based on cart data
+                            if (item.productId === 'app_services' || item.productName === 'آب سيرفز') {
+                              appServicesFee += itemTotal;
+                            } else {
+                              productsTotal += itemTotal;
+                            }
+                          });
+
+                          const finalTotal = productsTotal + deliveryFee + appServicesFee;
+                          
+                          return (
+                            <>
+                              <div className="flex justify-between">
+                                <span>مجموع المنتجات:</span>
+                                <span>{productsTotal.toLocaleString()} IQD</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>رسوم التوصيل:</span>
+                                <span>{deliveryFee.toLocaleString()} IQD</span>
+                              </div>
+                              {appServicesFee > 0 && (
+                                <div className="flex justify-between">
+                                  <span>آب سيرفز:</span>
+                                  <span>{appServicesFee.toLocaleString()} IQD</span>
+                                </div>
+                              )}
+                              <div className="border-t pt-2">
+                                <div className="flex justify-between font-bold text-lg">
+                                  <span>المجموع الكلي:</span>
+                                  <span className="text-green-600">
+                                    {finalTotal.toLocaleString()} IQD
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

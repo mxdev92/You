@@ -185,10 +185,22 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
     throw new Error('Cannot generate invoice without delivery fee settings');
   }
   
-  // Calculate totals correctly - totalAmount already includes delivery fee + app services fee
-  const appServicesFee = 500; // App Services fee (آب سيرفز)
-  const subtotal = order.totalAmount - deliveryFee - appServicesFee;
-  const finalTotal = order.totalAmount; // Final total is already calculated correctly
+  // Use cart items as the main reference - calculate from actual items
+  let productsTotal = 0;
+  let appServicesFee = 0;
+  
+  items.forEach((item: any) => {
+    const itemTotal = parseFloat(item.price) * parseFloat(item.quantity);
+    
+    // Separate products from services based on cart data
+    if (item.productId === 'app_services' || item.productName === 'آب سيرفز') {
+      appServicesFee += itemTotal;
+    } else {
+      productsTotal += itemTotal;
+    }
+  });
+
+  const finalTotal = productsTotal + deliveryFee + appServicesFee;
   
   // Generate QR code for order ID
   const qrCodeDataURL = await generateQRCode(order.id);
@@ -470,17 +482,17 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
         <div class="totals-section">
           <table class="totals-table">
             <tr>
-              <td class="label">المجموع الفرعي:</td>
-              <td class="value">${subtotal.toLocaleString('en-US')} دينار</td>
+              <td class="label">مجموع المنتجات:</td>
+              <td class="value">${productsTotal.toLocaleString('en-US')} دينار</td>
             </tr>
             <tr>
               <td class="label">رسوم التوصيل:</td>
               <td class="value">${deliveryFee.toLocaleString('en-US')} دينار</td>
             </tr>
-            <tr>
+            ${appServicesFee > 0 ? `<tr>
               <td class="label">آب سيرفز:</td>
               <td class="value">${appServicesFee.toLocaleString('en-US')} دينار</td>
-            </tr>
+            </tr>` : ''}
             <tr class="total-row">
               <td class="label">المجموع الكلي:</td>
               <td class="value">${finalTotal.toLocaleString('en-US')} دينار</td>
