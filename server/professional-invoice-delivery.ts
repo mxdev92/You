@@ -45,7 +45,7 @@ export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
       customerMessage
     );
 
-    // Step 4: Send admin notification
+    // Step 4: Send admin notification (with rate limiting delay)
     const adminMessage = `📋 **طلب جديد رقم ${order.id}**
 
 👤 العميل: ${order.customerName}
@@ -53,6 +53,9 @@ export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
 💰 المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
 
 عدد المنتجات: ${order.items.length}`;
+
+    console.log(`⏱️ Waiting 5 seconds for WasenderAPI rate limiting...`);
+    await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
 
     console.log(`📱 Sending admin notification...`);
     const adminResult = await wasenderService.sendPDFDocument(
