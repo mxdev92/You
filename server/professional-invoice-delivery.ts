@@ -1,6 +1,4 @@
-import { generateInvoicePDF } from './invoice-generator.js';
 import { WasenderAPIService } from './wasender-api-service.js';
-import { randomBytes } from 'crypto';
 
 interface Order {
   id: number;
@@ -15,97 +13,95 @@ interface Order {
 
 const wasenderService = new WasenderAPIService();
 
-// Global tempPDFs storage - will be set by routes.ts
-let tempPDFsStorage: Map<string, Buffer> | null = null;
-export function setTempPDFsStorage(storage: Map<string, Buffer>) {
-  console.log(`🔧 Setting tempPDFs storage - received Map with size:`, storage.size);
-  tempPDFsStorage = storage;
-  console.log(`✅ tempPDFs storage initialized successfully!`);
-}
-
-// Get current domain for PDF URLs
-function getCurrentDomain(): string {
-  return process.env.REPL_URL || 'http://localhost:5000';
-}
-
 /**
- * FULLY FIXED PROFESSIONAL INVOICE DELIVERY SYSTEM
- * Uses correct WasenderAPI URL-based media format
+ * COMPREHENSIVE TEXT MESSAGE INVOICE DELIVERY SYSTEM
+ * Sends detailed WhatsApp messages with all order information
  */
 export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
-  console.log(`🚀 FULLY FIXED Invoice Delivery Started for Order #${order.id}`);
+  console.log(`📱 TEXT Invoice Delivery Started for Order #${order.id}`);
   
   try {
-    if (!tempPDFsStorage) {
-      throw new Error('tempPDFs storage not initialized - contact developer');
-    }
+    // Generate detailed order information message
+    let itemDetails = '';
+    let totalPrice = 0;
+    
+    order.items.forEach((item: any, index: number) => {
+      const itemTotal = parseFloat(item.price) * parseFloat(item.quantity);
+      totalPrice += itemTotal;
+      
+      itemDetails += `${index + 1}. ${item.productName}
+   🔸 الكمية: ${item.quantity} ${item.unit}
+   🔸 السعر: ${parseFloat(item.price).toLocaleString()} د.ع / ${item.unit}
+   🔸 المجموع: ${itemTotal.toLocaleString()} د.ع
 
-    // Step 1: Generate professional Arabic RTL PDF invoice
-    console.log(`📄 Generating professional PDF invoice...`);
-    const pdfBuffer = await generateInvoicePDF(order);
-    console.log(`✅ PDF generated successfully - Size: ${pdfBuffer.length} bytes`);
+`;
+    });
 
-    // Step 2: Store PDF temporarily with secure token
-    const token = randomBytes(32).toString('hex');
-    tempPDFsStorage.set(token, pdfBuffer);
-    console.log(`🔐 PDF stored with secure token: ${token.substring(0, 8)}...`);
+    // Comprehensive customer message with all details
+    const customerMessage = `🧾 *فاتورة الطلب رقم ${order.id}*
 
-    // Step 3: Generate public PDF URL
-    const currentDomain = getCurrentDomain();
-    const pdfUrl = `${currentDomain}/temp-pdf/${token}`;
-    console.log(`🔗 PDF URL generated: ${pdfUrl}`);
+✅ *تم استلام طلبكم بنجاح*
 
-    // Step 4: Prepare comprehensive WhatsApp message
-    const customerMessage = `🧾 **فاتورة الطلب رقم ${order.id}**
+━━━━━━━━━━━━━━━━━━━━
+👤 *معلومات العميل:*
+الاسم: ${order.customerName}
+الهاتف: ${order.customerPhone}
+العنوان: ${typeof order.address === 'object' ? 
+  `${order.address.governorate} - ${order.address.district} - ${order.address.neighborhood}${order.address.notes ? ' - ' + order.address.notes : ''}` : 
+  order.address}
 
-✅ **تم استلام طلبكم بنجاح**
+━━━━━━━━━━━━━━━━━━━━
+🛒 *تفاصيل الطلب:*
 
-👤 العميل: ${order.customerName}
-📍 العنوان: ${order.address}
-📱 الهاتف: ${order.customerPhone}
-💰 المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
-📦 عدد المنتجات: ${order.items.length}
+${itemDetails}━━━━━━━━━━━━━━━━━━━━
+💰 *ملخص الأسعار:*
+مجموع المنتجات: ${totalPrice.toLocaleString()} د.ع
+رسوم التوصيل: 3,000 د.ع
+━━━━━━━━━━━━━━━━━━━━
+*المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع*
 
-📄 **الفاتورة التفصيلية مرفقة أعلاه**
+🚚 سيتم التواصل معك قريباً لتأكيد الطلب وترتيب التوصيل
 
-شكراً لك على اختيار باكيتي للتوصيل السريع 💚
-سيتم التواصل معك قريباً لتأكيد الطلب وترتيب التوصيل`;
+شكراً لك على اختيار باكيتي 💚`;
 
-    // Step 5: Send PDF to customer using CORRECT URL method
-    console.log(`📱 Sending PDF invoice to customer: ${order.customerPhone}`);
-    const customerResult = await wasenderService.sendPDFDocumentViaURL(
+    // Send comprehensive text message to customer
+    console.log(`📱 Sending detailed text invoice to customer: ${order.customerPhone}`);
+    const customerResult = await wasenderService.sendTextMessage(
       order.customerPhone,
-      pdfUrl,
-      `invoice-${order.id}.pdf`,
       customerMessage
     );
 
-    // Step 6: Send admin notification (with rate limiting delay)
-    const adminMessage = `📋 **طلب جديد رقم ${order.id}**
+    // Admin notification with same detailed information
+    const adminMessage = `📋 *طلب جديد رقم ${order.id}*
 
 👤 العميل: ${order.customerName}
 📱 الهاتف: ${order.customerPhone}
 💰 المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
 
-عدد المنتجات: ${order.items.length}`;
+🛒 *المنتجات المطلوبة:*
+${itemDetails}
+━━━━━━━━━━━━━━━━━━━━
+📍 العنوان: ${typeof order.address === 'object' ? 
+  `${order.address.governorate} - ${order.address.district} - ${order.address.neighborhood}${order.address.notes ? ' - ' + order.address.notes : ''}` : 
+  order.address}
+
+⏰ يجب التواصل مع العميل لتأكيد الطلب`;
 
     console.log(`⏱️ Waiting 3 seconds for WasenderAPI rate limiting...`);
-    await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay (reasonable for rate limiting)
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     console.log(`📱 Sending admin notification...`);
-    const adminResult = await wasenderService.sendPDFDocumentViaURL(
+    const adminResult = await wasenderService.sendTextMessage(
       '07511856947',
-      pdfUrl,
-      `admin-invoice-${order.id}.pdf`,
       adminMessage
     );
 
-    // Step 7: Report results
-    console.log(`✅ FULLY FIXED Invoice Delivery Completed for Order #${order.id}`);
+    // Report results
+    console.log(`✅ TEXT Invoice Delivery Completed for Order #${order.id}`);
     console.log(`   Customer delivery: ${customerResult.success ? '✅ SUCCESS' : '❌ FAILED'}`);
     console.log(`   Admin notification: ${adminResult.success ? '✅ SUCCESS' : '❌ FAILED'}`);
 
-    // Step 8: Log detailed results for debugging
+    // Log detailed results for debugging
     if (!customerResult.success) {
       console.error(`❌ Customer delivery failed:`, customerResult.message);
     }
@@ -114,10 +110,7 @@ export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
     }
 
   } catch (error: any) {
-    console.error(`❌ FULLY FIXED Invoice Delivery FAILED for Order #${order.id}:`, error.message);
+    console.error(`❌ TEXT Invoice Delivery FAILED for Order #${order.id}:`, error.message);
     console.error(`   Full error details:`, error);
-    
-    // Don't throw error - don't want to break order creation
-    // But ensure we have detailed logging for debugging
   }
 }

@@ -10,7 +10,7 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { wasenderService } from './wasender-api-service';
 import { zaincashService } from './zaincash-service';
-import { deliverInvoiceToCustomer, setTempPDFsStorage } from './professional-invoice-delivery.js';
+import { deliverInvoiceToCustomer } from './professional-invoice-delivery.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { setupPerformanceOptimizations, SmartCache, sendOptimizedResponse, getPerformanceMetrics } from './performance';
@@ -50,27 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Temporary PDF hosting for WasenderAPI (in-memory Map for security)
-  const tempPDFs = new Map<string, Buffer>();
-  
-  // Initialize PDF storage for professional invoice delivery
-  setTempPDFsStorage(tempPDFs);
-  
-  app.get("/temp-pdf/:token", (req, res) => {
-    const token = req.params.token;
-    const pdfBuffer = tempPDFs.get(token);
-    
-    if (!pdfBuffer) {
-      return res.status(404).json({ error: 'PDF not found or expired' });
-    }
-    
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename="invoice.pdf"');
-    res.send(pdfBuffer);
-    
-    // Auto-cleanup after 5 minutes for security
-    setTimeout(() => tempPDFs.delete(token), 5 * 60 * 1000);
-  });
+  // Text-only invoice delivery - no PDF hosting needed
 
   // Settings Management Routes - Added early to avoid compilation issues
   app.get("/api/settings", async (req, res) => {
