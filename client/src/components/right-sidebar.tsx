@@ -817,28 +817,6 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         {/* Delivery Notes - Clean */}
         <DeliveryNotesComponent />
 
-        {/* Address - Clean */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-            العنوان:
-          </h3>
-          {hasAddress && (
-            <div className="space-y-2">
-              <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'عميل'}
-              </p>
-              <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {primaryAddress?.governorate} - {primaryAddress?.district}
-              </p>
-              <p className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {primaryAddress?.neighborhood}
-              </p>
-              <p className="text-sm text-gray-900 font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {primaryAddress?.notes?.match(/\d{10,}/)?.[0] || '07501234567'}
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* Time Selection - Clean */}
         <div className="bg-white rounded-xl p-4 shadow-sm">
