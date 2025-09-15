@@ -18,7 +18,9 @@ const wasenderService = new WasenderAPIService();
 // Global tempPDFs storage - will be set by routes.ts
 let tempPDFsStorage: Map<string, Buffer> | null = null;
 export function setTempPDFsStorage(storage: Map<string, Buffer>) {
+  console.log(`🔧 Setting tempPDFs storage - received Map with size:`, storage.size);
   tempPDFsStorage = storage;
+  console.log(`✅ tempPDFs storage initialized successfully!`);
 }
 
 // Get current domain for PDF URLs
