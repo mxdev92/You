@@ -152,7 +152,8 @@ export class WasenderAPIService {
       console.log(`📤 Uploading PDF to WasenderAPI: ${fileName}`);
       const uploadResponse = await axios.post(`${this.baseUrl}/api/upload`, pdfBuffer, {
         headers: {
-          'Content-Type': 'application/pdf'
+          'Content-Type': 'application/pdf',
+          'Authorization': `Bearer ${this.apiKey}`
         },
         timeout: 30000 // 30 second timeout for PDF uploads
       });
