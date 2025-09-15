@@ -183,11 +183,28 @@ function OrderCard({ order }: { order: Order }) {
                       ))}
                     </div>
                     <div className="mt-3 pt-3 border-t">
-                      <div className="flex justify-between font-bold text-lg">
-                        <span>Total:</span>
-                        <span className="text-green-600">
-                          {order.totalAmount.toLocaleString()} IQD
-                        </span>
+                      {/* Order Summary with Breakdown */}
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>المجموع الفرعي:</span>
+                          <span>{(order.totalAmount - (order.deliveryFee || 3000) - 500).toLocaleString()} IQD</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>رسوم التوصيل:</span>
+                          <span>{(order.deliveryFee || 3000).toLocaleString()} IQD</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>آب سيرفز:</span>
+                          <span>500 IQD</span>
+                        </div>
+                        <div className="border-t pt-2">
+                          <div className="flex justify-between font-bold text-lg">
+                            <span>المجموع الكلي:</span>
+                            <span className="text-green-600">
+                              {order.totalAmount.toLocaleString()} IQD
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
