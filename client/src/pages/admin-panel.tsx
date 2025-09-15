@@ -329,7 +329,19 @@ function OrderCard({ order, onStatusChange }: any) {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    orderIds: [order.id]
+                    orderData: {
+                      id: order.id,
+                      customerName: order.customerName,
+                      customerEmail: order.customerEmail,
+                      customerPhone: order.customerPhone,
+                      items: order.items,
+                      totalAmount: order.totalAmount,
+                      orderDate: order.orderDate,
+                      status: order.status,
+                      address: order.address,
+                      deliveryTime: order.deliveryTime,
+                      notes: order.notes
+                    }
                   })
                 });
 
@@ -2557,7 +2569,19 @@ export default function AdminPanel() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orderIds: [selectedOrder.id]
+          orderData: {
+            id: selectedOrder.id,
+            customerName: selectedOrder.customerName,
+            customerEmail: selectedOrder.customerEmail,
+            customerPhone: selectedOrder.customerPhone,
+            items: selectedOrder.items,
+            totalAmount: selectedOrder.totalAmount,
+            orderDate: selectedOrder.orderDate,
+            status: selectedOrder.status,
+            address: selectedOrder.address,
+            deliveryTime: selectedOrder.deliveryTime,
+            notes: selectedOrder.notes
+          }
         })
       });
 
@@ -2988,22 +3012,52 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Price Breakdown */}
+              {/* Price Breakdown - Use cart data as main reference */}
               <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span>المجموع الفرعي:</span>
-                  <span>{formatPrice(selectedOrder.totalAmount)} د.ع</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>رسوم التوصيل:</span>
-                  <span>{formatPrice(actualDeliveryFee || 0)} د.ع</span>
-                </div>
-                <div className="border-t border-gray-300 pt-3">
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>المجموع الكلي:</span>
-                    <span className="text-green-600">{formatPrice(selectedOrder.totalAmount + (actualDeliveryFee || 0))} د.ع</span>
-                  </div>
-                </div>
+                {(() => {
+                  // Calculate totals from actual cart items
+                  let productsTotal = 0;
+                  let appServicesFee = 0;
+                  
+                  selectedOrder.items.forEach((item: any) => {
+                    const itemTotal = parseFloat(item.price) * parseFloat(item.quantity);
+                    
+                    // Separate products from services based on cart data
+                    if (item.productId === 'app_services' || item.productName === 'آب سيرفز') {
+                      appServicesFee += itemTotal;
+                    } else {
+                      productsTotal += itemTotal;
+                    }
+                  });
+
+                  const deliveryFee = actualDeliveryFee || 0;
+                  const finalTotal = productsTotal + deliveryFee + appServicesFee;
+
+                  return (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span>مجموع المنتجات:</span>
+                        <span>{formatPrice(productsTotal)} د.ع</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>رسوم التوصيل:</span>
+                        <span>{formatPrice(deliveryFee)} د.ع</span>
+                      </div>
+                      {appServicesFee > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span>آب سيرفز:</span>
+                          <span>{formatPrice(appServicesFee)} د.ع</span>
+                        </div>
+                      )}
+                      <div className="border-t border-gray-300 pt-3">
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>المجموع الكلي:</span>
+                          <span className="text-green-600">{formatPrice(finalTotal)} د.ع</span>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
 
