@@ -204,6 +204,60 @@ export class WasenderAPIService {
   }
 
   /**
+   * Send PDF document via URL-based media (CORRECT WasenderAPI format)
+   */
+  async sendPDFDocumentViaURL(phone: string, pdfUrl: string, fileName: string, message: string): Promise<{success: boolean, message: string}> {
+    try {
+      const formattedPhone = this.formatPhoneNumber(phone);
+      
+      console.log(`📄 CORRECT METHOD: Sending PDF via URL to ${formattedPhone}: ${fileName}`);
+      console.log(`📄 PDF URL: ${pdfUrl}`);
+      
+      // Use the CORRECT WasenderAPI format for document with URL
+      const payload = {
+        to: formattedPhone,
+        type: 'document',
+        media_url: pdfUrl,
+        filename: fileName,
+        caption: message  // Use caption instead of text for media
+      };
+
+      console.log(`📡 Sending PDF via WasenderAPI CORRECT method...`);
+      const response = await axios.post(`https://wasenderapi.com/api/send-message`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        timeout: 30000
+      });
+
+      console.log(`📊 WasenderAPI Response Status:`, response.status);
+      console.log(`📊 WasenderAPI Response Data:`, JSON.stringify(response.data, null, 2));
+
+      // STRICT success validation
+      if (response.status === 200 && response.data?.success === true && response.data?.messageId) {
+        console.log(`✅ CORRECT METHOD: PDF sent successfully to ${formattedPhone}`);
+        return {
+          success: true,
+          message: 'PDF sent successfully via URL method'
+        };
+      } else {
+        console.log(`❌ CORRECT METHOD: PDF failed - No success flag or messageId`);
+        return {
+          success: false,
+          message: `API returned: ${JSON.stringify(response.data)}`
+        };
+      }
+    } catch (error: any) {
+      console.error('❌ WasenderAPI URL method failed:', error.response?.data || error.message);
+      return {
+        success: false,
+        message: JSON.stringify(error.response?.data || error.message)
+      };
+    }
+  }
+
+  /**
    * Send OTP message for user verification
    */
   async sendOTPMessage(phone: string, otp: string): Promise<WasenderAPIResponse> {
