@@ -27,14 +27,21 @@ export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
     const pdfBuffer = await generateInvoicePDF(order);
     console.log(`✅ PDF generated successfully - Size: ${pdfBuffer.length} bytes`);
 
-    // Step 2: Prepare WhatsApp message
+    // Step 2: Prepare comprehensive WhatsApp message (text + PDF in single message)
     const customerMessage = `🧾 **فاتورة الطلب رقم ${order.id}**
 
+✅ **تم استلام طلبكم بنجاح**
+
 👤 العميل: ${order.customerName}
+📍 العنوان: ${order.address}
+📱 الهاتف: ${order.customerPhone}
 💰 المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع
+📦 عدد المنتجات: ${order.items.length}
+
+📄 **الفاتورة التفصيلية مرفقة أعلاه**
 
 شكراً لك على اختيار باكيتي للتوصيل السريع 💚
-سيتم التواصل معك قريباً لتأكيد الطلب`;
+سيتم التواصل معك قريباً لتأكيد الطلب وترتيب التوصيل`;
 
     // Step 3: Send PDF to customer immediately
     console.log(`📱 Sending PDF invoice to customer: ${order.customerPhone}`);
