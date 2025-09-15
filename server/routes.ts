@@ -10,6 +10,7 @@ import { inArray } from "drizzle-orm";
 import { generateInvoicePDF, generateBatchInvoicePDF } from "./invoice-generator";
 import { wasenderService } from './wasender-api-service';
 import { zaincashService } from './zaincash-service';
+import { deliverInvoiceToCustomer } from './professional-invoice-delivery.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { setupPerformanceOptimizations, SmartCache, sendOptimizedResponse, getPerformanceMetrics } from './performance';
@@ -816,38 +817,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Error sending driver notifications, but order created successfully:', notificationError);
       }
 
-      // WASENDERAPI PDF DELIVERY - Unified messaging system
-      console.log(`🚀 Starting WasenderAPI PDF delivery for Order ${order.id}`);
-      
-      // Execute PDF delivery silently in background
-      setTimeout(async () => {
-        try {
-          // Generate PDF
-          const pdfBuffer = await generateInvoicePDF(order);
-          const fileName = `invoice-${order.id}.pdf`;
-
-          // Send to customer via WasenderAPI
-          const customerResult = await wasenderService.sendPDFDocument(
-            order.customerPhone, 
-            pdfBuffer, 
-            fileName, 
-            `🧾 فاتورة الطلب رقم ${order.id}\n\nشكراً لك على اختيار باكيتي للتوصيل السريع 💚`
-          );
-
-          // Send to admin via WasenderAPI
-          const adminResult = await wasenderService.sendPDFDocument(
-            '07511856947', 
-            pdfBuffer, 
-            `admin-${fileName}`, 
-            `📋 *طلب جديد رقم ${order.id}*\n\n👤 العميل: ${order.customerName}\n📱 الهاتف: ${order.customerPhone}\n💰 المبلغ الإجمالي: ${order.totalAmount} IQD`
-          );
-
-          console.log(`✅ WasenderAPI PDF delivery completed for Order ${order.id} - Customer: ${customerResult.success}, Admin: ${adminResult.success}`);
-        } catch (error: any) {
-          // Silent error handling - never affect order creation
-          console.log(`⚠️ WasenderAPI PDF delivery error for Order ${order.id}:`, error.message || error);
-        }
-      }, 500); // Very fast initiation - 0.5 seconds
+      // NEW PROFESSIONAL INVOICE DELIVERY SYSTEM
+      await deliverInvoiceToCustomer({
+        id: order.id,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        totalAmount: order.totalAmount,
+        items: order.items as any[],
+        address: order.address,
+        orderDate: order.orderDate
+      });
       
       res.status(201).json(order);
     } catch (error: any) {
