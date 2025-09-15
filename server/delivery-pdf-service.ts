@@ -1,4 +1,4 @@
-import BaileysWhatsAppService from './baileys-whatsapp-service';
+import { WasenderAPIService } from './wasender-api-service';
 import { generateInvoicePDF } from './invoice-generator';
 import { storage } from './storage';
 
@@ -13,13 +13,13 @@ interface DeliveryTracker {
 }
 
 export class DeliveryPDFService {
-  private whatsappService: BaileysWhatsAppService;
+  private whatsappService: WasenderAPIService;
   private deliveryTracker = new Map<number, DeliveryTracker>();
   private adminWhatsApp = '07511856947'; // Admin WhatsApp number
   private maxRetries = 3;
   private retryDelay = 5000; // 5 seconds
 
-  constructor(whatsappService: BaileysWhatsAppService) {
+  constructor(whatsappService: WasenderAPIService) {
     this.whatsappService = whatsappService;
   }
 
@@ -132,33 +132,16 @@ export class DeliveryPDFService {
 
   private async ensureSecureConnection(): Promise<boolean> {
     try {
-      console.log(`🔐 Verifying secure WhatsApp connection...`);
+      console.log(`🔐 Verifying WasenderAPI connection...`);
       
-      // Check if WhatsApp service is initialized and connected
-      const status = this.whatsappService.getStatus();
-      
-      if (status.status === 'connected' && status.isConnected) {
-        console.log(`✅ WhatsApp connection verified - ready for PDF delivery`);
+      // For WasenderAPI, we just check if the service is initialized
+      if (this.whatsappService) {
+        console.log(`✅ WasenderAPI service ready for PDF delivery`);
         return true;
       }
 
-      console.log(`🔄 WhatsApp not connected - attempting to establish connection...`);
-      
-      // Try to establish connection with timeout
-      const connectionPromise = this.whatsappService.ensureConnectionReady(30000); // 30 second timeout
-      const timeoutPromise = new Promise<boolean>((resolve) => {
-        setTimeout(() => resolve(false), 35000); // 35 second timeout
-      });
-
-      const connected = await Promise.race([connectionPromise, timeoutPromise]);
-      
-      if (connected) {
-        console.log(`✅ WhatsApp connection established successfully`);
-        return true;
-      } else {
-        console.log(`❌ Failed to establish WhatsApp connection within timeout`);
-        return false;
-      }
+      console.log(`❌ WasenderAPI service not initialized`);
+      return false;
 
     } catch (error: any) {
       console.error(`❌ Connection verification error:`, error);
@@ -290,7 +273,7 @@ export class DeliveryPDFService {
   cleanupOldDeliveries(): void {
     const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
     
-    for (const [orderId, tracker] of this.deliveryTracker.entries()) {
+    for (const [orderId, tracker] of Array.from(this.deliveryTracker.entries())) {
       if (tracker.timestamp < oneDayAgo) {
         this.deliveryTracker.delete(orderId);
       }
@@ -304,7 +287,7 @@ export class DeliveryPDFService {
 export let deliveryPDFService: DeliveryPDFService;
 
 // Initialize service
-export function initializeDeliveryPDFService(whatsappService: BaileysWhatsAppService): void {
+export function initializeDeliveryPDFService(whatsappService: WasenderAPIService): void {
   deliveryPDFService = new DeliveryPDFService(whatsappService);
   
   // Clean up old deliveries every hour
