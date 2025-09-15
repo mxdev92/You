@@ -1061,11 +1061,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       {/* Footer */}
       {cartItems.length > 0 && (
         <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-lg font-semibold text-gray-800">Total:</span>
-            <span className="text-xl font-bold text-fresh-green">
+          <div className="grid grid-cols-2 items-center gap-x-4 mb-4">
+            <span className="justify-self-start text-xl font-bold text-fresh-green whitespace-nowrap">
               {formatPrice(getCartTotal())} IQD
             </span>
+            <span className="justify-self-end text-right text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">المجموع:</span>
           </div>
           <Button 
             onClick={() => {
