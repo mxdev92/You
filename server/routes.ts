@@ -741,45 +741,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Professional Invoice Generation - Rebuilt from scratch
-  app.post('/api/generate-invoice-pdf', async (req, res) => {
-    try {
-      const { orderIds } = req.body;
-      
-      if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-        return res.status(400).json({ message: "Order IDs are required" });
-      }
-
-      // Import the new invoice generator
-      const { generateBatchInvoicePDF } = await import('./invoice-generator');
-
-      // Fetch orders from database
-      const orders = await db.select().from(ordersTable).where(
-        inArray(ordersTable.id, orderIds)
-      );
-
-      if (orders.length === 0) {
-        return res.status(404).json({ message: 'No orders found' });
-      }
-
-      // Generate PDF
-      const pdfBuffer = await generateBatchInvoicePDF(orderIds, orders);
-
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename=invoice.pdf',
-        'Content-Length': pdfBuffer.length
-      });
-
-      res.send(pdfBuffer);
-    } catch (error) {
-      console.error('Error generating invoice PDF:', error);
-      res.status(500).json({ 
-        message: 'Failed to generate PDF', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
-    }
-  });
 
   // Orders
   app.get("/api/orders", async (req, res) => {

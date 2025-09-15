@@ -185,9 +185,10 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
     throw new Error('Cannot generate invoice without delivery fee settings');
   }
   
-  // Calculate totals explicitly
-  const subtotal = Math.round(order.totalAmount);
-  const finalTotal = subtotal + deliveryFee;
+  // Calculate totals correctly - totalAmount already includes delivery fee + app services fee
+  const appServicesFee = 500; // App Services fee (آب سيرفز)
+  const subtotal = order.totalAmount - deliveryFee - appServicesFee;
+  const finalTotal = order.totalAmount; // Final total is already calculated correctly
   
   // Generate QR code for order ID
   const qrCodeDataURL = await generateQRCode(order.id);
@@ -469,15 +470,19 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
         <div class="totals-section">
           <table class="totals-table">
             <tr>
-              <td class="label">مجموع الطلبات الكلي:</td>
+              <td class="label">المجموع الفرعي:</td>
               <td class="value">${subtotal.toLocaleString('en-US')} دينار</td>
             </tr>
             <tr>
-              <td class="label">اجور التوصيل:</td>
+              <td class="label">رسوم التوصيل:</td>
               <td class="value">${deliveryFee.toLocaleString('en-US')} دينار</td>
             </tr>
+            <tr>
+              <td class="label">آب سيرفز:</td>
+              <td class="value">${appServicesFee.toLocaleString('en-US')} دينار</td>
+            </tr>
             <tr class="total-row">
-              <td class="label">المبلغ الاجمالي:</td>
+              <td class="label">المجموع الكلي:</td>
               <td class="value">${finalTotal.toLocaleString('en-US')} دينار</td>
             </tr>
           </table>
