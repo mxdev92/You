@@ -36,6 +36,27 @@ export const productNameToKey: Record<string, TranslationKey> = {
   'ركي': 'raki',
   'تفاح أخضر': 'tuffahAkhdar',
   
+  // Arabic vegetable names (comprehensive mapping for all products)
+  'طماطة': 'tamata',
+  'خيار': 'khiyar',
+  'بصل': 'basal',
+  'ثوم': 'thoom',
+  'بيذنجان': 'bidhanjan',
+  'بطاطا': 'batata',
+  'شجر': 'shajar',
+  'ليمون اصفر': 'laymonAsfar',
+  'شوندر': 'shondar',
+  'فجل': 'fujl',
+  'ورق عنب': 'waraqInab',
+  'فلفل اخضر بارد': 'fulfulAkhdarBarid',
+  'لوبيا': 'lubiya',
+  'باميه': 'bamiya',
+  'قرنابيط': 'qarnabeet',
+  'سلك': 'silk',
+  'معدنوس': 'maadnoos',
+  'شبيت': 'shabeet',
+  'كرفس': 'karafs',
+  
   // English products
   'Fresh Spinach': 'freshSpinach',
   'Bell Peppers': 'bellPeppers',
@@ -63,5 +84,5 @@ export const getProductTranslationKey = (productName: string): TranslationKey =>
   
   // For unknown products, return a generic key or the original name
   console.warn(`No translation found for product: ${productName}`);
-  return 'organicApples'; // This should be improved to return the original name
+  return 'vegetables'; // Fallback to vegetables category
 };

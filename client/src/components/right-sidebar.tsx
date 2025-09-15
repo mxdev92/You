@@ -796,37 +796,37 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   const FinalScreen = () => (
     <div className="h-full flex flex-col bg-gray-50" dir="rtl">
-      {/* Clean Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+      {/* Compact Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
         <div className="w-6" />
-        <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+        <h2 className="text-base font-semibold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
           تأكيد الطلب النهائي
         </h2>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setCurrentView('checkout')}
-          className="hover:bg-gray-100 p-2"
+          className="hover:bg-gray-100 p-1.5"
         >
-          <ArrowLeft className="h-5 w-5 rotate-180" />
+          <ArrowLeft className="h-4 w-4 rotate-180" />
         </Button>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      {/* Compact Content - No Scrolling */}
+      <div className="flex-1 px-4 py-3 space-y-3 overflow-hidden">
         {/* Delivery Notes - Clean */}
         <DeliveryNotesComponent />
 
 
-        {/* Time Selection - Clean */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+        {/* Time Selection - Compact */}
+        <div className="bg-white rounded-lg p-3 shadow-sm">
+          <h3 className="text-xs font-medium text-gray-700 mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
             اختيار وقت التوصيل:
           </h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={() => setDeliveryTime('8 - 11 صباحا')}
-              className={`w-full p-4 text-sm rounded-xl transition-all ${
+              className={`p-2 text-xs rounded-lg transition-all ${
                 deliveryTime === '8 - 11 صباحا' 
                   ? 'bg-blue-500 text-white shadow-md' 
                   : 'bg-blue-50 text-gray-700 hover:bg-blue-100'
@@ -837,7 +837,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             </button>
             <button
               onClick={() => setDeliveryTime('2 - 8 مساءا')}
-              className={`w-full p-4 text-sm rounded-xl transition-all ${
+              className={`p-2 text-xs rounded-lg transition-all ${
                 deliveryTime === '2 - 8 مساءا' 
                   ? 'bg-blue-500 text-white shadow-md' 
                   : 'bg-blue-50 text-gray-700 hover:bg-blue-100'
@@ -849,16 +849,16 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           </div>
         </div>
 
-        {/* Payment Method Selection */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+        {/* Payment Method Selection - Compact */}
+        <div className="bg-white rounded-lg p-3 shadow-sm">
+          <h3 className="text-xs font-medium text-gray-700 mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
             طرق الدفع:
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Wallet Payment Option */}
             <button
               onClick={() => setPaymentMethod('wallet')}
-              className={`w-full p-4 text-sm rounded-xl transition-all border-2 ${
+              className={`w-full p-2.5 text-xs rounded-lg transition-all border ${
                 paymentMethod === 'wallet' 
                   ? 'bg-blue-500 text-white shadow-md border-blue-500' 
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
@@ -866,15 +866,14 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
             >
               <div className="flex items-center justify-between">
-                <span>💳 الدفع من المحفظة</span>
-                <span className="text-xs">
-                  (الرصيد: {formatPrice(walletData?.balance || 0)})
+                <span>💳 المحفظة</span>
+                <span className="text-xs opacity-75">
+                  ({formatPrice(walletData?.balance || 0)})
                 </span>
               </div>
               {paymentMethod === 'wallet' && walletData && walletData.balance < totalWithShipping && (
-                <div className="mt-2 text-xs text-red-200 bg-red-600/20 rounded-lg p-2 flex items-center justify-between">
-                  <span>رصيد غير كافي - يرجى شحن المحفظة أولاً</span>
-                  <Link to="/wallet" className="text-yellow-300 underline text-xs hover:text-yellow-100">شحن الآن</Link>
+                <div className="mt-1 text-xs text-red-200 bg-red-600/20 rounded p-1 text-center">
+                  رصيد غير كافي
                 </div>
               )}
             </button>
@@ -882,7 +881,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             {/* Cash on Delivery Option */}
             <button
               onClick={() => setPaymentMethod('cash')}
-              className={`w-full p-4 text-sm rounded-xl transition-all border-2 ${
+              className={`w-full p-2.5 text-xs rounded-lg transition-all border ${
                 paymentMethod === 'cash' 
                   ? 'bg-green-500 text-white shadow-md border-green-500' 
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'
@@ -890,40 +889,34 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
             >
               <div className="flex items-center justify-between">
-                <span>💰 الدفع عند الاستلام</span>
-                <span className="text-xs opacity-75">نقداً للسائق</span>
+                <span>💰 نقداً</span>
+                <span className="text-xs opacity-75">عند الاستلام</span>
               </div>
             </button>
           </div>
         </div>
 
-        {/* Total Payment - Clean */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-700 mb-3" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-            {paymentMethod === 'wallet' ? 'المبلغ الكلي المطلوب خصمه من المحفظة:' : 'المبلغ الكلي للطلب:'}
-          </h3>
-          <div className={`${paymentMethod === 'wallet' ? 'bg-blue-50' : 'bg-green-50'} rounded-lg p-4 text-center`}>
-            <p className={`text-2xl font-bold ${paymentMethod === 'wallet' ? 'text-blue-600' : 'text-green-600'}`}>
+        {/* Total Payment - Compact */}
+        <div className="bg-white rounded-lg p-3 shadow-sm">
+          <div className={`${paymentMethod === 'wallet' ? 'bg-blue-50' : 'bg-green-50'} rounded-lg p-3 text-center`}>
+            <p className={`text-lg font-bold ${paymentMethod === 'wallet' ? 'text-blue-600' : 'text-green-600'}`} style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
               {formatPrice(totalWithShipping)} IQD
             </p>
-            {paymentMethod === 'wallet' ? (
-              <p className="text-xs text-gray-600 mt-1">
-                الرصيد المتبقي: {formatPrice(Math.max(0, (walletData?.balance || 0) - totalWithShipping))} IQD
-              </p>
-            ) : (
-              <p className="text-xs text-gray-600 mt-1">
-                سيتم الدفع نقداً للسائق عند التوصيل
-              </p>
-            )}
+            <p className="text-xs text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              {paymentMethod === 'wallet' ? 
+                `الرصيد المتبقي: ${formatPrice(Math.max(0, (walletData?.balance || 0) - totalWithShipping))} IQD` : 
+                'سيتم الدفع نقداً للسائق'
+              }
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Submit Button - Clean */}
-      <div className="px-4 py-4 bg-white border-t border-gray-200">
+      {/* Submit Button - Compact */}
+      <div className="px-4 py-3 bg-white border-t border-gray-200">
         <Button 
           onClick={handlePlaceOrder}
-          className="w-full bg-green-500 hover:bg-green-600 text-white rounded-xl h-14 text-base font-medium shadow-lg"
+          className="w-full bg-green-500 hover:bg-green-600 text-white rounded-lg h-12 text-sm font-medium shadow-lg"
           disabled={isPlacingOrder || !deliveryTime || (paymentMethod === 'wallet' && walletData && walletData.balance < totalWithShipping)}
           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
         >
