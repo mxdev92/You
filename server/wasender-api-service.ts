@@ -1,4 +1,5 @@
 import axios from 'axios';
+import FormData from 'form-data';
 
 interface WasenderAPIResponse {
   success: boolean;
@@ -151,7 +152,6 @@ export class WasenderAPIService {
       // Step 1: Upload PDF to get temporary URL using FormData for file upload
       console.log(`📤 Uploading PDF to WasenderAPI: ${fileName}`);
       
-      const FormData = require('form-data');
       const formData = new FormData();
       formData.append('file', pdfBuffer, {
         filename: fileName,
