@@ -23,11 +23,19 @@ export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
   try {
     // Generate detailed order information message
     let itemDetails = '';
-    let totalPrice = 0;
+    let productsTotal = 0;
+    let servicesTotal = 0;
+    let deliveryFee = 3000;
     
     order.items.forEach((item: any, index: number) => {
       const itemTotal = parseFloat(item.price) * parseFloat(item.quantity);
-      totalPrice += itemTotal;
+      
+      // Separate products from services
+      if (item.productId === 'app_services' || item.productName === 'آب سيرفز') {
+        servicesTotal += itemTotal;
+      } else {
+        productsTotal += itemTotal;
+      }
       
       itemDetails += `${index + 1}. ${item.productName}
    🔸 الكمية: ${item.quantity} ${item.unit}
@@ -55,10 +63,10 @@ export async function deliverInvoiceToCustomer(order: Order): Promise<void> {
 
 ${itemDetails}━━━━━━━━━━━━━━━━━━━━
 💰 *ملخص الأسعار:*
-مجموع المنتجات: ${totalPrice.toLocaleString()} د.ع
-رسوم التوصيل: 3,000 د.ع
-━━━━━━━━━━━━━━━━━━━━
-*المبلغ الإجمالي: ${order.totalAmount.toLocaleString()} د.ع*
+مجموع المنتجات: ${productsTotal.toLocaleString()} د.ع
+رسوم التوصيل: ${deliveryFee.toLocaleString()} د.ع
+${servicesTotal > 0 ? `آب سيرفز: ${servicesTotal.toLocaleString()} د.ع\n` : ''}━━━━━━━━━━━━━━━━━━━━
+*المبلغ الإجمالي: ${(productsTotal + deliveryFee + servicesTotal).toLocaleString()} د.ع*
 
 🚚 سيتم التواصل معك قريباً لتأكيد الطلب وترتيب التوصيل
 

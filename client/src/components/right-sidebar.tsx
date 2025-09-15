@@ -384,14 +384,25 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           neighborhood: primaryAddress.neighborhood,
           notes: primaryAddress.neighborhood // Only store landmark/neighborhood, not phone
         },
-        items: Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
-          productId: item.productId,
-          productName: item.product.name,
-          quantity: item.quantity,
-          price: item.product.price,
-          unit: item.product.unit
-        })) : [],
-        totalAmount: getCartTotal(),
+        items: [
+          // Regular cart items
+          ...(Array.isArray(cartItems) ? cartItems.map((item: CartItem & { product: Product }) => ({
+            productId: item.productId,
+            productName: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+            unit: item.product.unit
+          })) : []),
+          // Add App Services Fee as a separate item
+          {
+            productId: 'app_services',
+            productName: 'آب سيرفز',
+            quantity: '1',
+            price: appServicesFee.toString(),
+            unit: 'خدمة'
+          }
+        ],
+        totalAmount: getCartTotal() + appServicesFee,
         paymentMethod: paymentMethod,
         status: 'pending',
         deliveryTime: deliveryTime,
