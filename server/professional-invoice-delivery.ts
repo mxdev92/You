@@ -66,7 +66,7 @@ ${itemDetails}━━━━━━━━━━━━━━━━━━━━
 
     // Send comprehensive text message to customer
     console.log(`📱 Sending detailed text invoice to customer: ${order.customerPhone}`);
-    const customerResult = await wasenderService.sendTextMessage(
+    const customerResult = await wasenderService.sendMessage(
       order.customerPhone,
       customerMessage
     );
@@ -91,7 +91,7 @@ ${itemDetails}
     await new Promise(resolve => setTimeout(resolve, 3000));
 
     console.log(`📱 Sending admin notification...`);
-    const adminResult = await wasenderService.sendTextMessage(
+    const adminResult = await wasenderService.sendMessage(
       '07511856947',
       adminMessage
     );
