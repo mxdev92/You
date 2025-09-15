@@ -149,60 +149,47 @@ export class WasenderAPIService {
     try {
       const formattedPhone = this.formatPhoneNumber(phone);
       
-      // Step 1: Upload PDF to get temporary URL using FormData for file upload
-      console.log(`📤 Uploading PDF to WasenderAPI: ${fileName}`);
+      console.log(`📄 FIXED METHOD: Sending PDF directly to ${formattedPhone}: ${fileName}`);
       
-      const formData = new FormData();
-      formData.append('file', pdfBuffer, {
-        filename: fileName,
-        contentType: 'application/pdf'
-      });
+      // Convert PDF buffer to base64
+      const base64Data = pdfBuffer.toString('base64');
+      console.log(`✅ PDF converted to base64 - Size: ${base64Data.length} chars`);
       
-      const uploadResponse = await axios.post(`${this.baseUrl}/api/upload`, formData, {
-        headers: {
-          ...formData.getHeaders(),
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        timeout: 30000 // 30 second timeout for PDF uploads
-      });
-
-      console.log(`📊 WasenderAPI Upload Response:`, JSON.stringify(uploadResponse.data, null, 2));
-      console.log(`📊 Response Status:`, uploadResponse.status);
-
-      if (!uploadResponse.data.success || !uploadResponse.data.url) {
-        console.error('❌ Upload failed - Response structure:', uploadResponse.data);
-        throw new Error(`Failed to upload PDF to WasenderAPI: ${JSON.stringify(uploadResponse.data)}`);
-      }
-
-      const documentUrl = uploadResponse.data.url;
-      console.log(`✅ PDF uploaded successfully: ${documentUrl}`);
-
-      // Step 2: Send document message with the uploaded URL
+      // Send document directly with base64 data
       const payload = {
         to: formattedPhone,
-        documentUrl: documentUrl,
-        text: message,
-        filename: fileName
+        type: 'document',
+        document: {
+          data: base64Data,
+          filename: fileName,
+          mimetype: 'application/pdf'
+        },
+        text: message
       };
 
+      console.log(`📡 Sending PDF via WasenderAPI direct method...`);
       const response = await axios.post(`${this.baseUrl}/api/send-message`, payload, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        timeout: 10000 // 10 second timeout for sending
+        timeout: 60000 // 60 second timeout for PDF uploads
       });
 
-      console.log(`📄 WasenderAPI: PDF sent to ${formattedPhone} - ${fileName}`);
+      console.log(`📊 WasenderAPI Response Status:`, response.status);
+      console.log(`📊 WasenderAPI Response Data:`, JSON.stringify(response.data, null, 2));
+
+      console.log(`✅ FIXED METHOD: PDF sent successfully to ${formattedPhone}`);
       return {
         success: true,
-        message: 'PDF sent successfully'
+        message: 'PDF sent successfully via direct base64 method'
       };
     } catch (error: any) {
       console.error('❌ WasenderAPI: Failed to send PDF:', error.response?.data || error.message);
+      console.error('📊 Full error details:', error);
       return {
         success: false,
-        message: error.response?.data?.message || error.message
+        message: JSON.stringify(error.response?.data || error.message)
       };
     }
   }
