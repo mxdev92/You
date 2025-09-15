@@ -187,11 +187,11 @@ function OrderCard({ order }: { order: Order }) {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span>المجموع الفرعي:</span>
-                          <span>{(order.totalAmount - (order.deliveryFee || 3000) - 500).toLocaleString()} IQD</span>
+                          <span>{(order.totalAmount - 3000 - 500).toLocaleString()} IQD</span>
                         </div>
                         <div className="flex justify-between">
                           <span>رسوم التوصيل:</span>
-                          <span>{(order.deliveryFee || 3000).toLocaleString()} IQD</span>
+                          <span>3,000 IQD</span>
                         </div>
                         <div className="flex justify-between">
                           <span>آب سيرفز:</span>
