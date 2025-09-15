@@ -1205,9 +1205,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PDF Generation endpoint for single invoice
   app.post('/api/generate-invoice-pdf', async (req, res) => {
     try {
+      console.log('📥 PDF Request received. Headers:', req.headers);
+      console.log('📥 PDF Request body:', JSON.stringify(req.body, null, 2));
+      
       const { orderData } = req.body;
       
       if (!orderData) {
+        console.log('❌ No orderData found in request body');
         return res.status(400).json({ error: 'Order data is required' });
       }
 
