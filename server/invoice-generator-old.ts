@@ -291,9 +291,24 @@ function generateOrderHTML(order: any): string {
   const orderDate = new Date(order.orderDate || Date.now()).toLocaleDateString('ar-EG');
   const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items || [];
   const address = typeof order.address === 'string' ? JSON.parse(order.address) : order.address || {};
-  const subtotal = Number(order.totalAmount || 0);
+  
+  // Calculate products total and app services fee separately
+  let productsTotal = 0;
+  let appServicesFee = 0;
+  
+  items.forEach((item: any) => {
+    const itemTotal = Number(item.price || 0) * Number(item.quantity || 1);
+    
+    // Separate products from services based on cart data
+    if (item.productId === 'app_services' || item.productName === 'آب سيرفز') {
+      appServicesFee += itemTotal;
+    } else {
+      productsTotal += itemTotal;
+    }
+  });
+  
   const deliveryFee = 1000;
-  const total = subtotal + deliveryFee;
+  const total = productsTotal + deliveryFee + appServicesFee;
   
   // Clean address parsing - remove phone numbers completely
   let cleanAddress = 'غير محدد';
@@ -350,7 +365,9 @@ function generateOrderHTML(order: any): string {
           </tr>
         </thead>
         <tbody>
-          ${items.map((item: any) => `
+          ${items
+            .filter((item: any) => !(item.productId === 'app_services' || item.productName === 'آب سيرفز'))
+            .map((item: any) => `
             <tr>
               <td>${item.productName || 'غير محدد'}</td>
               <td>${Number(item.price || 0).toLocaleString('ar-IQ')} دينار</td>
@@ -364,13 +381,17 @@ function generateOrderHTML(order: any): string {
       <div class="totals-section">
         <div class="totals-title">ملخص الفاتورة</div>
         <div class="totals-row">
-          <span>المجموع الفرعي:</span>
-          <span>${subtotal.toLocaleString('ar-IQ')} دينار</span>
+          <span>مجموع المنتجات:</span>
+          <span>${productsTotal.toLocaleString('ar-IQ')} دينار</span>
         </div>
         <div class="totals-row">
           <span>رسوم التوصيل:</span>
           <span>${deliveryFee.toLocaleString('ar-IQ')} دينار</span>
         </div>
+        ${appServicesFee > 0 ? `<div class="totals-row">
+          <span>آب سيرفز:</span>
+          <span>${appServicesFee.toLocaleString('ar-IQ')} دينار</span>
+        </div>` : ''}
         <div class="totals-row">
           <span>المجموع الكلي:</span>
           <span>${total.toLocaleString('ar-IQ')} دينار</span>

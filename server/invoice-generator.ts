@@ -467,7 +467,9 @@ async function generateInvoiceHTML(orders: any[]): Promise<string> {
             </tr>
           </thead>
           <tbody>
-            ${items.slice(0, 25).map((item: any) => `
+            ${items
+              .filter((item: any) => !(item.productId === 'app_services' || item.productName === 'آب سيرفز'))
+              .slice(0, 25).map((item: any) => `
               <tr>
                 <td>${item.productName}</td>
                 <td>${parseInt(item.price).toLocaleString('en-US')} دينار</td>

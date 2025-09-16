@@ -2997,7 +2997,9 @@ export default function AdminPanel() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(selectedOrder.items as any[]).map((item: any, index: number) => (
+                      {(selectedOrder.items as any[])
+                        .filter((item: any) => !(item.productId === 'app_services' || item.productName === 'آب سيرفز'))
+                        .map((item: any, index: number) => (
                         <tr key={index} className="hover:bg-gray-50">
                           <td className="border border-gray-300 px-2 py-1 font-medium">{item.productName}</td>
                           <td className="border border-gray-300 px-2 py-1">{formatPrice(item.price)} د.ع</td>
