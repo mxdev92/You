@@ -1,7 +1,6 @@
-const CACHE_NAME = 'pakety-v2.4.1-arabic';
-const API_CACHE_NAME = 'pakety-api-v2.4.1-arabic';
+const CACHE_NAME = 'pakety-v3.0.0-fresh';
+const API_CACHE_NAME = 'pakety-api-v3.0.0-fresh';
 const urlsToCache = [
-  '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
 ];
