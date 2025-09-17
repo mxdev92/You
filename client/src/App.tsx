@@ -17,6 +17,7 @@ import WalletFailed from "@/pages/wallet-failed";
 import DriverPage from "@/pages/driver";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import React from "react";
 
 // Global Error Boundary Component
@@ -157,6 +158,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
+          <PWAInstallPrompt />
           <Router />
         </TooltipProvider>
       </QueryClientProvider>

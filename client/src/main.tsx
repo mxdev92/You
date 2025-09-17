@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.tsx";
 import { initializeLanguage } from "./hooks/use-language.ts";
+import { registerServiceWorker } from "./lib/pwa";
 import "./index.css";
 
 // Initialize language settings
@@ -90,6 +91,11 @@ const forceAppUpdate = () => {
 
 // Execute aggressive update check
 forceAppUpdate();
+
+// Register PWA Service Worker after cache clearing
+setTimeout(() => {
+  registerServiceWorker();
+}, 1000);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
