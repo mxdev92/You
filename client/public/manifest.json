@@ -1,8 +1,8 @@
 {
   "name": "باكيتي",
-  "short_name": "باكيتي",
+  "short_name": "باكيتي", 
   "description": "باكيتي للتوصيل السريع",
-  "start_url": "/",
+  "start_url": "/?v=2024091801",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#22c55e",
@@ -11,6 +11,7 @@
   "lang": "ar",
   "dir": "rtl",
   "categories": ["shopping", "food"],
+  "version": "2.4.1",
   "icons": [
     {
       "src": "/icons/icon-48x48.png",
