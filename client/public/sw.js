@@ -1,85 +1,82 @@
-const CACHE_NAME = 'pakety-v1.0.0';
-const API_CACHE_NAME = 'pakety-api-v1.0.0';
+const CACHE_NAME = 'pakety-v1.0.1';
+const API_CACHE_NAME = 'pakety-api-v1.0.1';
 const urlsToCache = [
-  '/',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  // Cache Google Fonts
-  'https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap',
 ];
 
 // Install Service Worker
 self.addEventListener('install', (event) => {
   console.log('PWA Service Worker installing...');
+  // Skip waiting to activate immediately
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('PWA Cache opened');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((error) => {
-        console.log('PWA Cache failed:', error);
+        return cache.addAll(urlsToCache).catch(error => {
+          console.log('PWA Cache failed for some assets:', error);
+          // Don't fail the whole installation if some assets fail to cache
+        });
       })
   );
 });
 
-// Fetch event with proper offline support for grocery browsing
+// Activate Service Worker
+self.addEventListener('activate', (event) => {
+  console.log('PWA Service Worker activating...');
+  // Take control immediately
+  event.waitUntil(clients.claim());
+});
+
+// Fetch event - minimal interference with app loading
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   
-  // Handle API calls with stale-while-revalidate strategy
+  // Skip service worker for navigation requests to prevent blank screen
+  if (request.mode === 'navigate') {
+    return;
+  }
+  
+  // Handle API calls with simple network-first strategy
   if (url.pathname.startsWith('/api/')) {
-    // For grocery data (products, categories), use cache-first for offline browsing
+    // For grocery data (products, categories), cache for offline browsing
     if (url.pathname.includes('/api/products') || url.pathname.includes('/api/categories')) {
       event.respondWith(
-        caches.open(API_CACHE_NAME).then(cache => {
-          return cache.match(request).then(cachedResponse => {
-            const fetchPromise = fetch(request).then(networkResponse => {
-              // Update cache with fresh data
+        fetch(request).then(networkResponse => {
+          // Cache successful responses
+          if (networkResponse.ok) {
+            caches.open(API_CACHE_NAME).then(cache => {
               cache.put(request, networkResponse.clone());
-              return networkResponse;
-            }).catch(() => {
-              // Return cached version if network fails (offline mode)
-              return cachedResponse;
             });
-            
-            // Return cached version immediately, update in background
-            return cachedResponse || fetchPromise;
+          }
+          return networkResponse;
+        }).catch(() => {
+          // Return cached version if network fails
+          return caches.open(API_CACHE_NAME).then(cache => {
+            return cache.match(request);
           });
         })
       );
       return;
     }
     
-    // For other API calls (orders, auth), try network first
-    event.respondWith(
-      fetch(request).catch(() => {
-        // Could add specific offline fallbacks here
-        return new Response(
-          JSON.stringify({ error: 'Offline', message: 'تحقق من اتصال الإنترنت' }),
-          {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'application/json' }
-          }
-        );
-      })
-    );
+    // For other API calls, just use network
     return;
   }
   
-  // Handle static assets
-  event.respondWith(
-    caches.match(request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(request);
+  // Handle static assets with network-first
+  if (request.destination === 'image' || request.destination === 'font' || 
+      url.pathname.includes('/icons/') || url.pathname.includes('/manifest.json')) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return caches.match(request);
       })
-  );
+    );
+  }
 });
 
 // Activate Service Worker
