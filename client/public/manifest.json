@@ -1,7 +1,7 @@
 {
-  "name": "PAKETY - تطبيق توصيل البقالة",
-  "short_name": "PAKETY",
-  "description": "تطبيق توصيل البقالة السريع والموثوق - PAKETY Grocery Delivery App",
+  "name": "باكيتي",
+  "short_name": "باكيتي",
+  "description": "باكيتي للتوصيل السريع",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
