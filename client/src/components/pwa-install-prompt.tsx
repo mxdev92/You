@@ -93,7 +93,7 @@ export function PWAInstallPrompt() {
             
             {/* Middle: Text */}
             <div className="flex-1">
-              <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+              <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
                 احصل على تجربة افضل
               </p>
             </div>
