@@ -80,19 +80,19 @@ export function PWAInstallPrompt() {
 
   return (
     <div 
-      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50 animate-in slide-in-from-bottom-4 duration-700"
+      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-xs z-50 animate-in slide-in-from-bottom-2 duration-500"
       data-testid="pwa-install-prompt"
     >
-      <Card className="bg-white dark:bg-gray-800 shadow-lg border border-green-200 dark:border-green-700 backdrop-blur-sm">
-        <div className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md">
-                <Download className="h-5 w-5 text-white drop-shadow-sm" />
+      <Card className="bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-600">
+        <div className="px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-green-600 rounded-md flex items-center justify-center">
+                <Download className="h-3.5 w-3.5 text-white" />
               </div>
               <div className="text-right">
-                <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                  ثبت تطبيق باكيتي لتجربة افضل
+                <p className="font-medium text-xs text-gray-800 dark:text-gray-200">
+                  ثبت باكيتي
                 </p>
               </div>
             </div>
@@ -101,7 +101,7 @@ export function PWAInstallPrompt() {
               <Button
                 size="sm"
                 onClick={handleInstallClick}
-                className="bg-green-600 hover:bg-green-700 text-white font-medium text-sm px-3 py-1.5 h-8 rounded-md shadow-sm transition-colors duration-200"
+                className="bg-green-600 hover:bg-green-700 text-white font-medium text-xs px-2 py-1 h-6 rounded-sm transition-colors duration-200"
                 data-testid="install-button"
               >
                 تثبيت
@@ -111,10 +111,10 @@ export function PWAInstallPrompt() {
                 size="sm"
                 variant="ghost"
                 onClick={handleDismiss}
-                className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+                className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-sm transition-colors duration-200"
                 data-testid="dismiss-button"
               >
-                <X className="h-3.5 w-3.5 text-gray-400" />
+                <X className="h-3 w-3 text-gray-400" />
               </Button>
             </div>
           </div>
