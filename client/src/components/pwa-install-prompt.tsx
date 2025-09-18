@@ -88,7 +88,7 @@ export function PWAInstallPrompt() {
           <div className="flex items-center justify-between gap-4">
             {/* Left: Text */}
             <div className="flex-1">
-              <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+              <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">
                 احصل على تجربة افضل
               </p>
             </div>
