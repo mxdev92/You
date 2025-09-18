@@ -98,8 +98,8 @@ export function PWAInstallPrompt() {
             </Button>
             
             {/* Middle: Text */}
-            <div className="flex-1">
-              <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900 dark:text-gray-100 text-sm truncate" title="احصل على تجربة افضل">
                 احصل على تجربة افضل
               </p>
             </div>
