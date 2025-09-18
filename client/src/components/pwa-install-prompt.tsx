@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-// No icons needed for this component
+import { X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -84,24 +84,36 @@ export function PWAInstallPrompt() {
       data-testid="pwa-install-prompt"
     >
       <Card className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm animate-bounce" style={{animationDuration: '3s', animationIterationCount: '2'}}>
-        <div className="px-5 py-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Left: Text */}
+        <div className="px-5 py-3">
+          <div className="flex items-center gap-3">
+            {/* Left: Text with flexible space */}
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-gray-900 dark:text-gray-100 text-sm" title="احصل على تجربة افضل">
+              <p className="font-bold text-gray-900 dark:text-gray-100 text-sm whitespace-normal break-words text-right" dir="rtl" title="احصل على تجربة افضل" data-testid="text-pwa-message">
                 احصل على تجربة افضل
               </p>
             </div>
             
-            {/* Right: Install Button */}
-            <Button
-              size="sm"
-              onClick={handleInstallClick}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium text-sm px-4 py-2 h-9 rounded-lg transition-all duration-200"
-              data-testid="install-button"
-            >
-              تثبيت التطبيق
-            </Button>
+            {/* Right: Buttons - fixed size */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Button
+                size="sm"
+                onClick={handleInstallClick}
+                className="bg-green-600 hover:bg-green-700 text-white font-medium text-sm px-4 py-2 h-9 rounded-lg transition-all duration-200"
+                data-testid="install-button"
+              >
+                تثبيت التطبيق
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDismiss}
+                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                data-testid="dismiss-button"
+              >
+                <X className="h-4 w-4 text-gray-400" />
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
