@@ -169,7 +169,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      return apiRequest('POST', '/api/orders', orderData);
+      const response = await apiRequest('POST', '/api/orders', orderData);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
@@ -423,27 +424,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         notes: typeof orderData.notes
       });
       
-      const orderResponse = await createOrderMutation.mutateAsync(orderData);
-      console.log('Full order response:', orderResponse);
+      const order = await createOrderMutation.mutateAsync(orderData);
+      console.log('Order created successfully:', order);
       
-      // Handle different response formats
-      let orderId;
-      if (orderResponse && typeof orderResponse === 'object') {
-        if (orderResponse.id) {
-          orderId = orderResponse.id;
-        } else if (orderResponse.data && orderResponse.data.id) {
-          orderId = orderResponse.data.id;
-        } else {
-          // If response is just the ID number
-          orderId = orderResponse;
-        }
-      } else {
-        // If response is just the ID number
-        orderId = orderResponse;
-      }
-      
-      console.log('Extracted order ID:', orderId);
-      
+      const orderId = order.id;
       if (!orderId) {
         throw new Error('No order ID received from server');
       }
