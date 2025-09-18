@@ -15,6 +15,7 @@ import WalletPage from "@/pages/wallet";
 import WalletSuccess from "@/pages/wallet-success";
 import WalletFailed from "@/pages/wallet-failed";
 import DriverPage from "@/pages/driver";
+import OrderConfirmation from "@/pages/order-confirmation";
 import NotFound from "@/pages/not-found";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
@@ -136,6 +137,9 @@ function Router() {
       
       {/* Home page - allows anonymous browsing */}
       <Route path="/" component={Home} />
+      
+      {/* Order Confirmation - protected route */}
+      <Route path="/order-confirmation" component={() => <ProtectedRoute component={OrderConfirmation} />} />
       
       {/* Privacy Policy - public access */}
       <Route path="/privacy-policy" component={PrivacyPolicy} />

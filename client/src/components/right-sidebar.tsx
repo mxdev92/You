@@ -14,7 +14,7 @@ import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/utils";
 import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useDeliveryFee } from "@/hooks/use-settings";
 
 interface RightSidebarProps {
@@ -138,6 +138,7 @@ DeliveryNotesComponent.displayName = 'DeliveryNotesComponent';
 
 export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }: RightSidebarProps) {
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   // Use CartFlow store for cart data
   const { cartItems, isLoading: isLoadingCart, loadCart, updateQuantity: updateCartQuantity, removeFromCart: removeCartItem, clearCart: clearCartFlow } = useCartFlow();
@@ -422,7 +423,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         notes: typeof orderData.notes
       });
       
-      const orderId = await createOrderMutation.mutateAsync(orderData);
+      const orderResponse = await createOrderMutation.mutateAsync(orderData);
+      const orderId = orderResponse.id;
       console.log('Order created successfully with ID:', orderId);
 
       // Deduct amount from wallet only for wallet payments
@@ -455,8 +457,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       queryClient.invalidateQueries({ queryKey: ['/api/wallet/transactions'] });
       console.log('Caches invalidated');
       
-      showNotification('تم استلام طلبكم بنجاح', 'success');
-      setCurrentView('cart');
+      // Store order details temporarily for the confirmation page
+      localStorage.setItem('lastOrderId', orderId.toString());
+      localStorage.setItem('lastOrderTotal', totalWithShipping.toString());
+      
+      // Navigate to order confirmation page
+      setLocation(`/order-confirmation?orderId=${orderId}&totalAmount=${totalWithShipping}`);
       onClose();
     } catch (error: any) {
       console.error('Error placing order:', error);
