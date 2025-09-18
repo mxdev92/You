@@ -83,37 +83,36 @@ export function PWAInstallPrompt() {
       className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-700"
       data-testid="pwa-install-prompt"
     >
-      <Card className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+      <Card className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm animate-bounce" style={{animationDuration: '3s', animationIterationCount: '2'}}>
         <div className="px-5 py-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* Left: Text */}
+          <div className="flex items-center gap-4">
+            {/* Left: Close Button */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleDismiss}
+              className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              data-testid="dismiss-button"
+            >
+              <X className="h-4 w-4 text-gray-400" />
+            </Button>
+            
+            {/* Middle: Text */}
             <div className="flex-1">
               <p className="font-bold text-gray-900 dark:text-gray-100 text-sm">
                 احصل على تجربة افضل
               </p>
             </div>
             
-            {/* Right: Install Button and Close */}
-            <div className="flex items-center gap-3">
-              <Button
-                size="sm"
-                onClick={handleInstallClick}
-                className="bg-green-600 hover:bg-green-700 text-white font-medium text-sm px-4 py-2 h-9 rounded-lg transition-all duration-200"
-                data-testid="install-button"
-              >
-                تثبيت التطبيق
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleDismiss}
-                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                data-testid="dismiss-button"
-              >
-                <X className="h-4 w-4 text-gray-400" />
-              </Button>
-            </div>
+            {/* Right: Install Button */}
+            <Button
+              size="sm"
+              onClick={handleInstallClick}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium text-sm px-4 py-2 h-9 rounded-lg transition-all duration-200"
+              data-testid="install-button"
+            >
+              تثبيت التطبيق
+            </Button>
           </div>
         </div>
       </Card>
