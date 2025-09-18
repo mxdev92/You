@@ -424,8 +424,29 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       });
       
       const orderResponse = await createOrderMutation.mutateAsync(orderData);
-      const orderId = orderResponse.id;
-      console.log('Order created successfully with ID:', orderId);
+      console.log('Full order response:', orderResponse);
+      
+      // Handle different response formats
+      let orderId;
+      if (orderResponse && typeof orderResponse === 'object') {
+        if (orderResponse.id) {
+          orderId = orderResponse.id;
+        } else if (orderResponse.data && orderResponse.data.id) {
+          orderId = orderResponse.data.id;
+        } else {
+          // If response is just the ID number
+          orderId = orderResponse;
+        }
+      } else {
+        // If response is just the ID number
+        orderId = orderResponse;
+      }
+      
+      console.log('Extracted order ID:', orderId);
+      
+      if (!orderId) {
+        throw new Error('No order ID received from server');
+      }
 
       // Deduct amount from wallet only for wallet payments
       if (paymentMethod === 'wallet') {
