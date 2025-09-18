@@ -91,9 +91,6 @@ export function PWAInstallPrompt() {
               <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
                 احصل على تجربة افضل
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                قم بتثبيت التطبيق للوصول السريع
-              </p>
             </div>
             
             {/* Right: Install Button and Close */}
