@@ -76,13 +76,20 @@ export const getCategoryTranslationKey = (categoryName: string): TranslationKey 
 
 // Get translation key for product name
 export const getProductTranslationKey = (productName: string): TranslationKey => {
-  // Return the mapped key if it exists, otherwise return the original name as a fallback
+  // Return the mapped key if it exists
   const mappedKey = productNameToKey[productName];
   if (mappedKey) {
     return mappedKey;
   }
   
-  // For unknown products, return a generic key or the original name
+  // For Arabic product names (contain Arabic characters), return the name as-is
+  const hasArabic = /[\u0600-\u06FF]/.test(productName);
+  if (hasArabic) {
+    // Return the product name as a translation key - it will display as-is
+    return productName as TranslationKey;
+  }
+  
+  // For unknown English products, log warning and return name as-is
   console.warn(`No translation found for product: ${productName}`);
-  return 'vegetables'; // Fallback to vegetables category
+  return productName as TranslationKey;
 };
