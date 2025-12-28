@@ -1,4 +1,4 @@
-import { Check, Target } from "lucide-react";
+import { Check, Gift } from "lucide-react";
 import { useMemo } from "react";
 import { usePromotionTiers } from "@/hooks/use-promotions";
 
@@ -87,7 +87,7 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
                 {isCompleted ? (
                   <Check className="h-5 w-5" strokeWidth={3} />
                 ) : (
-                  <Target className="h-4 w-4" />
+                  <Gift className="h-4 w-4" />
                 )}
               </div>
               
