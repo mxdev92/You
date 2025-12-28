@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Apple, Carrot, Milk, Cookie, Fish, Beef, Cherry, Banana, CircleDot, Circle, Leaf } from "lucide-react";
 import type { Category } from "@shared/schema";
@@ -6,16 +6,18 @@ import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "@/hooks/use-translation";
 import { getCategoryTranslationKey } from "@/lib/category-mapping";
 import { useEffect, useRef } from "react";
+import { useCategoryStore } from "@/store/category-store";
 
 export default function CategoriesSection() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const hasInitialized = useRef(false);
+  const { selectedCategoryId, setSelectedCategory } = useCategoryStore();
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 300000, // Cache categories for 5 minutes for ultra-fast performance
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    staleTime: 300000, // 5 minutes cache
+    refetchOnWindowFocus: false,
   });
 
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -30,66 +32,55 @@ export default function CategoriesSection() {
     CircleDot,
     Circle,
     Leaf,
-    // Custom tomato icon using Circle with red fill
     Tomato: ({ className }: { className?: string }) => (
       <Circle className={className} fill="currentColor" />
     ),
   };
 
-  const selectCategoryMutation = useMutation({
-    mutationFn: async (categoryId: number) => {
-      const response = await apiRequest("PATCH", `/api/categories/${categoryId}/select`);
-      return response.json();
-    },
-    onMutate: async (categoryId: number) => {
-      // Cancel any outgoing queries
-      await queryClient.cancelQueries({ queryKey: ["/api/categories"] });
-      
-      // Optimistically update the UI immediately
-      const previousCategories = queryClient.getQueryData<Category[]>(["/api/categories"]);
-      
-      if (previousCategories) {
-        const updatedCategories = previousCategories.map(cat => ({
-          ...cat,
-          isSelected: cat.id === categoryId
-        }));
-        queryClient.setQueryData(["/api/categories"], updatedCategories);
-      }
-      
-      return { previousCategories };
-    },
-    onError: (err, categoryId, context) => {
-      // Rollback on error
-      if (context?.previousCategories) {
-        queryClient.setQueryData(["/api/categories"], context.previousCategories);
-      }
-    },
-    onSuccess: () => {
-      // Immediately trigger product fetch with background update
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-    },
-  });
-
-  // Auto-select خضروات (Vegetables) category on app startup
+  // Initialize default category on startup
   useEffect(() => {
     if (!hasInitialized.current && categories && categories.length > 0) {
       hasInitialized.current = true;
       
-      // Always ensure خضروات (Vegetables - ID: 2) is selected on startup
-      const vegetablesCategory = categories.find(cat => cat.id === 2);
-      const isVegetablesSelected = vegetablesCategory?.isSelected;
-      
-      if (vegetablesCategory && !isVegetablesSelected) {
-        console.log('🥬 Auto-selecting خضروات (Vegetables) category on startup');
-        selectCategoryMutation.mutate(2);
-      } else if (isVegetablesSelected) {
-        console.log('🥬 خضروات (Vegetables) category already selected');
+      // Sync local state with server's selected category
+      const serverSelected = categories.find(cat => cat.isSelected);
+      if (serverSelected) {
+        setSelectedCategory(serverSelected.id);
+      } else if (!selectedCategoryId) {
+        setSelectedCategory(2); // Default vegetables
       }
     }
-  }, [categories, selectCategoryMutation]);
+  }, [categories, selectedCategoryId, setSelectedCategory]);
 
+  // Smart prefetch: only prefetch adjacent categories when one is selected
+  const prefetchCategory = (categoryId: number) => {
+    queryClient.prefetchQuery({
+      queryKey: ["/api/products", categoryId],
+      queryFn: async () => {
+        const response = await fetch(`/api/products?categoryId=${categoryId}`, { credentials: "include" });
+        if (!response.ok) throw new Error("Failed to fetch products");
+        return response.json();
+      },
+      staleTime: 60000,
+    });
+  };
+
+  // INSTANT category switch - update UI immediately, sync backend in background
   const handleCategorySelect = (categoryId: number) => {
-    selectCategoryMutation.mutate(categoryId);
+    // 1. Update local state IMMEDIATELY (instant UI)
+    setSelectedCategory(categoryId);
+    
+    // 2. Sync with backend in background (non-blocking, fire-and-forget)
+    apiRequest("PATCH", `/api/categories/${categoryId}/select`).catch(() => {
+      // Silent fail - UI already updated
+    });
+    
+    // 3. Smart prefetch adjacent categories for next potential click
+    if (categories) {
+      const currentIndex = categories.findIndex(c => c.id === categoryId);
+      if (currentIndex > 0) prefetchCategory(categories[currentIndex - 1].id);
+      if (currentIndex < categories.length - 1) prefetchCategory(categories[currentIndex + 1].id);
+    }
   };
 
   if (isLoading) {
@@ -110,46 +101,49 @@ export default function CategoriesSection() {
   return (
     <section className="py-0.5">
       <div className="flex space-x-1 overflow-x-auto scrollbar-hide pb-0.5 touch-action-pan-x px-4">
-        {categories?.map((category, index) => (
-          <motion.div
-            key={category.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.03, duration: 0.2 }}
-            className="flex-shrink-0 flex flex-col items-center justify-center min-w-16 w-16 h-16"
-          >
+        {categories?.map((category, index) => {
+          const isSelected = category.id === selectedCategoryId;
+          return (
             <motion.div
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
-              onClick={() => handleCategorySelect(category.id)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-100 relative touch-action-manipulation min-h-12 min-w-12 ${
-                category.isSelected
-                  ? "shadow-lg"
-                  : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
-              }`}
-              style={category.isSelected ? { backgroundColor: '#22c55e' } : {}}
+              key={category.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03, duration: 0.2 }}
+              className="flex-shrink-0 flex flex-col items-center justify-center min-w-16 w-16 h-16"
             >
-              {(() => {
-                const IconComponent = iconMap[category.icon];
-                return IconComponent ? (
-                  <IconComponent className={`w-4 h-4 ${
-                    category.isSelected ? "text-white" : "text-gray-600"
-                  }`} />
-                ) : (
-                  <Apple className={`w-4 h-4 ${
-                    category.isSelected ? "text-white" : "text-gray-600"
-                  }`} />
-                );
-              })()}
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.05, ease: "easeOut" }}
+                onClick={() => handleCategorySelect(category.id)}
+                className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-50 relative touch-action-manipulation min-h-12 min-w-12 ${
+                  isSelected
+                    ? "shadow-lg"
+                    : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
+                }`}
+                style={isSelected ? { backgroundColor: '#22c55e' } : {}}
+              >
+                {(() => {
+                  const IconComponent = iconMap[category.icon];
+                  return IconComponent ? (
+                    <IconComponent className={`w-4 h-4 ${
+                      isSelected ? "text-white" : "text-gray-600"
+                    }`} />
+                  ) : (
+                    <Apple className={`w-4 h-4 ${
+                      isSelected ? "text-white" : "text-gray-600"
+                    }`} />
+                  );
+                })()}
+              </motion.div>
+              <span className={`text-[10px] font-medium text-center w-full leading-tight flex items-center justify-center ${
+                isSelected ? "text-black" : "text-gray-700"
+              }`}>
+                {t(getCategoryTranslationKey(category.name))}
+              </span>
             </motion.div>
-            <span className={`text-[10px] font-medium text-center w-full leading-tight flex items-center justify-center ${
-              category.isSelected ? "text-black" : "text-gray-700"
-            }`}>
-              {t(getCategoryTranslationKey(category.name))}
-            </span>
-          </motion.div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

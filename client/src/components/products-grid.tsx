@@ -1,29 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import type { Product, Category } from "@shared/schema";
+import type { Product } from "@shared/schema";
 import ProductCard from "./product-card";
+import { useCategoryStore } from "@/store/category-store";
 
 export default function ProductsGrid() {
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
-
-  const selectedCategory = categories?.find(cat => cat.isSelected);
+  const { selectedCategoryId } = useCategoryStore();
 
   const { data: products, isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products", selectedCategory?.id || 2],
+    queryKey: ["/api/products", selectedCategoryId],
     queryFn: async () => {
-      const categoryId = selectedCategory?.id || 2; // Default to vegetables (ID: 2)
-      const url = `/api/products?categoryId=${categoryId}`;
-      
-      const response = await fetch(url, { credentials: "include" });
+      const response = await fetch(`/api/products?categoryId=${selectedCategoryId}`, { credentials: "include" });
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },
-    staleTime: 30000, // Cache products for 30 seconds for faster switching
-    refetchInterval: 5000, // Reduced refetch to 5 seconds for better performance
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches on focus
-    placeholderData: (previousData) => previousData, // Keep previous data while loading new category
+    staleTime: 60000, // Products stay fresh for 1 minute
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData, // INSTANT: Keep previous data while loading
   });
 
   return (
