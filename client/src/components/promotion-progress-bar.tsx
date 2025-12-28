@@ -26,7 +26,7 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
         id: tier.id,
         label: tier.rewardType === 'free_delivery' 
           ? 'توصيل مجاني' 
-          : `خصم ${tier.rewardValue.toLocaleString('ar-IQ')}`,
+          : `خصم ${tier.rewardValue.toLocaleString('en-US')}`,
         amount: tier.minAmount,
       }))
     ];
