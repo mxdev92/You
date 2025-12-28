@@ -13,7 +13,6 @@ interface SignupData {
   phone: string;
   password: string;
   confirmPassword: string;
-  name: string;
   governorate: string;
   district: string;
   landmark: string;
@@ -114,7 +113,7 @@ const AuthPage: React.FC = () => {
   });
 
   const [loginData, setLoginData] = useState({
-    identifier: '', // Can be phone or email
+    phone: '',
     password: ''
   });
 
@@ -124,7 +123,6 @@ const AuthPage: React.FC = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    name: '',
     governorate: '',
     district: '',
     landmark: ''
@@ -224,8 +222,8 @@ const AuthPage: React.FC = () => {
         setOtpSent(true);
         showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق الواتساب', 'success');
       }
-    } catch (error) {
-      if (error.name === 'AbortError') {
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
         // Set OtpSent to true even on timeout since backend likely processed it
         setOtpSent(true);
         showNotification('تم إرسال رمز التحقق - يرجى مراجعة تطبيق الواتساب', 'success');
@@ -285,19 +283,15 @@ const AuthPage: React.FC = () => {
       localStorage.removeItem('pakety_saved_credentials');
     }
     
-    // Load safe preferences (identifier - can be phone or email)
+    // Load safe preferences (phone only)
     const savedPreferences = localStorage.getItem('pakety_login_preferences');
     if (savedPreferences) {
       try {
-        const { identifier, phone, email, rememberMe: savedRememberMe } = JSON.parse(savedPreferences);
-        if (savedRememberMe) {
-          // Support all old formats and new identifier format
-          const savedValue = identifier || phone || email || '';
-          if (savedValue) {
-            setLoginData(prev => ({ ...prev, identifier: savedValue }));
-          }
+        const { phone, rememberMe: savedRememberMe } = JSON.parse(savedPreferences);
+        if (savedRememberMe && phone) {
+          setLoginData(prev => ({ ...prev, phone }));
           setRememberMe(true);
-          console.log('🔐 Login identifier prefilled for returning user');
+          console.log('🔐 Phone prefilled for returning user');
         }
       } catch (error) {
         console.error('Failed to load saved preferences:', error);
@@ -321,37 +315,25 @@ const AuthPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginData.identifier || !loginData.password) return;
+    if (!loginData.phone || !loginData.password) return;
     
-    // Normalize identifier: trim whitespace and convert to lowercase for emails
-    const normalizedIdentifier = loginData.identifier.trim().toLowerCase();
-    
-    // Check if it's an email (contains @) first, then phone
-    const isEmail = normalizedIdentifier.includes('@');
-    const isPhone = !isEmail && normalizedIdentifier.startsWith('07');
-    
-    // Validate format based on type
-    if (isPhone && normalizedIdentifier.length !== 11) {
+    // Validate phone number format (must be 11 digits starting with 07)
+    if (loginData.phone.length !== 11 || !loginData.phone.startsWith('07')) {
       showNotification('يرجى إدخال رقم موبايل صحيح (07xxxxxxxxx)');
-      return;
-    }
-    if (!isEmail && !isPhone) {
-      showNotification('يرجى إدخال رقم موبايل (07xxxxxxxxx) أو بريد إلكتروني صحيح');
       return;
     }
     
     setIsLoading(true);
     try {
-      await login(normalizedIdentifier, loginData.password);
+      await login(loginData.phone, loginData.password);
       
-      // Save identifier and preference if remember me is checked (NEVER save password)
+      // Save phone and preference if remember me is checked (NEVER save password)
       if (rememberMe) {
         localStorage.setItem('pakety_login_preferences', JSON.stringify({
-          identifier: normalizedIdentifier,
+          phone: loginData.phone,
           rememberMe: true
         }));
       } else {
-        // Remove saved preferences if remember me is not checked
         localStorage.removeItem('pakety_login_preferences');
       }
       
@@ -375,7 +357,6 @@ const AuthPage: React.FC = () => {
       phone: '',
       password: '',
       confirmPassword: '',
-      name: '',
       governorate: '',
       district: '',
       landmark: ''
@@ -423,20 +404,9 @@ const AuthPage: React.FC = () => {
         showNotification('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
         return;
       }
-      // Move to next step after validation passes
+      // Move to address step after validation passes
       console.log('✅ Step 2 validation passed, moving to step 3');
       setSignupStep(3);
-    }
-    else if (step === 3) {
-      console.log('📝 Validating step 3 data');
-      if (!signupData.name.trim()) {
-        console.log('❌ Name is empty');
-        showNotification('يرجى إدخال الاسم الكامل');
-        return;
-      }
-      // Move to next step after validation passes
-      console.log('✅ Step 3 validation passed, moving to step 4');
-      setSignupStep(4);
     }
   };
 
@@ -459,8 +429,8 @@ const AuthPage: React.FC = () => {
       // Generate email from phone number for backend compatibility
       const email = `${signupData.phone}@pakety.app`;
       
-      // Register user with full name and phone
-      const newUser = await register(email, signupData.password, signupData.name, signupData.phone);
+      // Register user with phone (no name required)
+      const newUser = await register(email, signupData.password, undefined, signupData.phone);
       console.log('User registered successfully:', newUser);
       
       // Create address record from signup data
@@ -494,7 +464,7 @@ const AuthPage: React.FC = () => {
           credentials: 'include',
           body: JSON.stringify({
             phone: signupData.phone,
-            name: signupData.name
+            name: 'عميل جديد'
           })
         });
         console.log('Welcome WhatsApp message sent successfully');
@@ -572,14 +542,20 @@ const AuthPage: React.FC = () => {
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <Input
-                  type="text"
-                  placeholder="رقم الموبايل أو البريد الإلكتروني"
-                  value={loginData.identifier}
-                  onChange={(e) => setLoginData(prev => ({ ...prev, identifier: e.target.value }))}
-                  className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
-                  style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  dir="rtl"
-                  data-testid="input-identifier-login"
+                  type="tel"
+                  placeholder="07000000000"
+                  value={loginData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    if (value.length <= 11 && (value.startsWith('07') || value === '' || value === '0')) {
+                      setLoginData(prev => ({ ...prev, phone: value }));
+                    }
+                  }}
+                  className="w-full h-12 text-center text-lg border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '18px' }}
+                  maxLength={11}
+                  dir="ltr"
+                  data-testid="input-phone-login"
                 />
                 <div className="relative">
                   <Input
@@ -617,7 +593,7 @@ const AuthPage: React.FC = () => {
 
                 <Button
                   type="submit"
-                  disabled={!loginData.identifier || !loginData.password || isLoading}
+                  disabled={loginData.phone.length !== 11 || !loginData.password || isLoading}
                   className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                   data-testid="button-login"
@@ -649,10 +625,10 @@ const AuthPage: React.FC = () => {
                   إنشاء حساب جديد
                 </h2>
                 <div className="flex justify-center mt-4 space-x-2 rtl:space-x-reverse">
-                  {[1, 2, 3, 4].map((step) => (
+                  {[1, 2, 3].map((step) => (
                     <div
                       key={step}
-                      className={`w-8 h-2 rounded-full ${
+                      className={`w-10 h-2 rounded-full ${
                         step <= signupStep ? 'bg-green-600' : 'bg-gray-200'
                       }`}
                     />
@@ -786,23 +762,6 @@ const AuthPage: React.FC = () => {
                     )}
 
                     {signupStep === 3 && (
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          المعلومات الشخصية
-                        </h3>
-                        <Input
-                          type="text"
-                          placeholder="الاسم الكامل"
-                          value={signupData.name}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
-                          className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          dir="rtl"
-                        />
-                      </div>
-                    )}
-
-                    {signupStep === 4 && (
                       <div className="space-y-4 relative z-10" style={{ minHeight: '300px' }}>
                         <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                           عنوان التوصيل
@@ -840,29 +799,14 @@ const AuthPage: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              {signupStep === 2 && (
-                <div className="mt-1" style={{ visibility: 'hidden', height: 0 }}>
-                  {/* Button already in step 2 content */}
-                </div>
-              )}
               {signupStep === 3 && (
-                <div className="mt-1">
-                  <Button
-                    onClick={handleSignupNext}
-                    className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
-                    style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                  >
-                    التالي
-                  </Button>
-                </div>
-              )}
-              {signupStep === 4 && (
                 <div className="mt-1">
                   <Button
                     onClick={handleSignupComplete}
                     disabled={isLoading}
                     className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                     style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                    data-testid="button-complete-signup"
                   >
                     {isLoading ? 'جاري إنشاء الحساب...' : 'إتمام التسجيل'}
                   </Button>
