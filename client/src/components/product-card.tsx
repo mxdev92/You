@@ -20,22 +20,23 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
   const { user } = usePostgresAuth();
   const [, setLocation] = useLocation();
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
+  const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!product.available) return;
+    if (!product.available || isAdding) return;
     
     if (!user) {
       setLocation('/auth');
       return;
     }
     
+    // Instant visual feedback
     setIsAdding(true);
-    try {
-      await addToCart({ productId: product.id, quantity: 1 });
-      setTimeout(() => setIsAdding(false), 150);
-    } catch (error) {
-      setIsAdding(false);
-    }
+    
+    // Fire API call in background (don't await)
+    addToCart({ productId: product.id, quantity: 1 }).catch(() => {});
+    
+    // Quick checkmark flash then reset
+    setTimeout(() => setIsAdding(false), 400);
   };
 
   const translationKey = getProductTranslationKey(product.name);
