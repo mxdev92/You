@@ -259,6 +259,26 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   // App services fee (constant)
   const appServicesFee = 500;
   
+  // Fetch promotion calculation
+  const { data: promotionData } = useQuery({
+    queryKey: ['/api/promotions/calculate', getCartTotal()],
+    queryFn: () => fetch(`/api/promotions/calculate?subtotal=${getCartTotal()}`).then(res => res.json()),
+    enabled: getCartTotal() > 0,
+    staleTime: 1000, // Refresh every second for smooth updates
+  });
+  
+  // Calculate promotion discount
+  const getPromotionDiscount = () => {
+    if (!promotionData?.currentTier) return 0;
+    if (promotionData.currentTier.rewardType === 'discount') {
+      return promotionData.currentTier.rewardValue || 0;
+    }
+    return 0;
+  };
+  
+  // Check if promotion grants free delivery
+  const hasPromotionFreeDelivery = promotionData?.currentTier?.rewardType === 'free_delivery';
+  
   // Calculate coupon discount
   const getCouponDiscount = () => {
     if (!appliedCoupon) return 0;
@@ -269,9 +289,12 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     return 0; // For free delivery, discount is applied to shipping
   };
   
-  // Calculate final shipping fee (considering free delivery coupons)
+  // Calculate final shipping fee (considering free delivery coupons AND promotions)
   const getFinalShippingFee = () => {
     if (appliedCoupon && appliedCoupon.type === 'free_delivery') {
+      return 0;
+    }
+    if (hasPromotionFreeDelivery) {
       return 0;
     }
     return shippingFee;
@@ -279,9 +302,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   
   const cartTotal = getCartTotal();
   const couponDiscount = getCouponDiscount();
+  const promotionDiscount = getPromotionDiscount();
   const finalShippingFee = getFinalShippingFee();
   // Ensure total never goes negative
-  const totalWithShipping = Math.max(0, cartTotal - couponDiscount + finalShippingFee + appServicesFee);
+  const totalWithShipping = Math.max(0, cartTotal - couponDiscount - promotionDiscount + finalShippingFee + appServicesFee);
   
   // Apply coupon function
   const applyCoupon = async () => {
@@ -787,9 +811,23 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           {appliedCoupon && (
             <div className="grid grid-cols-2 items-center gap-x-4">
               <span className="justify-self-start font-medium text-green-600 whitespace-nowrap">
-                -{formatPrice(couponDiscount + (finalShippingFee !== shippingFee ? shippingFee : 0))} IQD
+                -{formatPrice(couponDiscount + (finalShippingFee !== shippingFee && !hasPromotionFreeDelivery ? shippingFee : 0))} IQD
               </span>
               <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">الكوبون:</span>
+            </div>
+          )}
+          
+          {/* Promotion Rewards */}
+          {promotionData?.currentTier && (
+            <div className="grid grid-cols-2 items-center gap-x-4">
+              <span className="justify-self-start font-medium text-green-600 whitespace-nowrap">
+                {hasPromotionFreeDelivery ? 
+                  `توصيل مجاني (-${formatPrice(shippingFee)} IQD)` : 
+                  `-${formatPrice(promotionDiscount)} IQD`}
+              </span>
+              <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">
+                🎁 عرض التسوق:
+              </span>
             </div>
           )}
           
