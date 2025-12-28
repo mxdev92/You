@@ -764,56 +764,18 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       </div>
 
-      {/* Price Breakdown - Fixed */}
+      {/* Total & Button - Fixed */}
       <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 bg-gray-50">
-        <div className="space-y-2" dir="rtl">
-          {/* Subtotal */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المجموع:</span>
-            <span className="text-sm font-medium">{formatPrice(cartTotal)} IQD</span>
-          </div>
-          
-          {/* Delivery Fee */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>اجور التوصيل:</span>
-            {hasPromotionFreeDelivery ? (
-              <span className="text-sm font-medium flex items-center gap-2">
-                <span className="text-green-600 font-semibold">مجاني</span>
-                <span className="line-through text-gray-400 text-xs">{formatPrice(baseDeliveryFee)}</span>
-              </span>
-            ) : (
-              <span className="text-sm font-medium">{formatPrice(baseDeliveryFee)} IQD</span>
-            )}
-          </div>
-          
-          {/* Discount */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الخصومات:</span>
-            <span className={`text-sm font-medium ${promotionDiscount > 0 ? 'text-green-600' : ''}`}>
-              {promotionDiscount > 0 ? `-${formatPrice(promotionDiscount)} IQD` : '0 IQD'}
-            </span>
-          </div>
-          
-          {/* Coupon if applied */}
-          {appliedCoupon && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الكوبون:</span>
-              <span className="text-sm font-medium text-green-600">-{formatPrice(couponDiscount)} IQD</span>
-            </div>
-          )}
-          
-          {/* Total */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-            <span className="text-base font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الاجمالي:</span>
-            <span className="text-lg font-bold text-fresh-green">
-              {formatPrice(cartTotal + promotion.deliveryFee - promotionDiscount - couponDiscount)} IQD
-            </span>
-          </div>
+        <div className="flex items-center justify-between mb-4" dir="rtl">
+          <span className="text-base font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الاجمالي:</span>
+          <span className="text-lg font-bold text-fresh-green">
+            {formatPrice(cartTotal + promotion.deliveryFee - promotionDiscount - couponDiscount)} IQD
+          </span>
         </div>
 
         <Button 
           onClick={hasAddress ? () => setCurrentView('final') : onNavigateToAddresses}
-          className="w-full mt-6 bg-fresh-green hover:bg-fresh-green-dark"
+          className="w-full bg-fresh-green hover:bg-fresh-green-dark"
           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
         >
           {hasAddress ? 'اكمال عملية الطلب' : 'اضافة عنوان توصيل'}
