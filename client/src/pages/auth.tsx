@@ -13,6 +13,7 @@ interface SignupData {
   phone: string;
   password: string;
   confirmPassword: string;
+  name: string;
   governorate: string;
   district: string;
   landmark: string;
@@ -123,6 +124,7 @@ const AuthPage: React.FC = () => {
     phone: '',
     password: '',
     confirmPassword: '',
+    name: '',
     governorate: '',
     district: '',
     landmark: ''
@@ -357,6 +359,7 @@ const AuthPage: React.FC = () => {
       phone: '',
       password: '',
       confirmPassword: '',
+      name: '',
       governorate: '',
       district: '',
       landmark: ''
@@ -411,6 +414,10 @@ const AuthPage: React.FC = () => {
   };
 
   const handleSignupComplete = async () => {
+    if (!signupData.name.trim()) {
+      showNotification('يرجى إدخال الاسم الكامل');
+      return;
+    }
     if (!signupData.governorate) {
       showNotification('يرجى اختيار المحافظة');
       return;
@@ -429,8 +436,8 @@ const AuthPage: React.FC = () => {
       // Generate email from phone number for backend compatibility
       const email = `${signupData.phone}@pakety.app`;
       
-      // Register user with phone (no name required)
-      const newUser = await register(email, signupData.password, undefined, signupData.phone);
+      // Register user with phone and name
+      const newUser = await register(email, signupData.password, signupData.name, signupData.phone);
       console.log('User registered successfully:', newUser);
       
       // Create address record from signup data
@@ -464,7 +471,7 @@ const AuthPage: React.FC = () => {
           credentials: 'include',
           body: JSON.stringify({
             phone: signupData.phone,
-            name: 'عميل جديد'
+            name: signupData.name
           })
         });
         console.log('Welcome WhatsApp message sent successfully');
@@ -764,8 +771,18 @@ const AuthPage: React.FC = () => {
                     {signupStep === 3 && (
                       <div className="space-y-4 relative z-10" style={{ minHeight: '300px' }}>
                         <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          عنوان التوصيل
+                          المعلومات الشخصية وعنوان التوصيل
                         </h3>
+                        <Input
+                          type="text"
+                          placeholder="الاسم الكامل"
+                          value={signupData.name}
+                          onChange={(e) => setSignupData(prev => ({ ...prev, name: e.target.value }))}
+                          className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                          dir="rtl"
+                          data-testid="input-name"
+                        />
                         <div className="relative">
                           <CustomDropdown
                             value={signupData.governorate}
@@ -782,6 +799,7 @@ const AuthPage: React.FC = () => {
                           className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                           dir="rtl"
+                          data-testid="input-district"
                         />
                         <Input
                           type="text"
@@ -791,6 +809,7 @@ const AuthPage: React.FC = () => {
                           className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                           style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                           dir="rtl"
+                          data-testid="input-landmark"
                         />
                       </div>
                     )}
