@@ -640,86 +640,74 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         <div className="w-10" /> {/* Spacer */}
       </div>
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Items List */}
-        <div className="px-6 py-4">
-          <div className="space-y-3">
-            {cartItems.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-gray-100"
-              >
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={item.product.imageUrl}
-                    alt={item.product.name}
-                    className="w-12 h-12 object-cover rounded-lg"
-                  />
-                  <div>
-                    <h4 className="font-medium text-gray-800 text-sm" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                      {item.product.name}
-                    </h4>
-                    <p className="text-xs text-gray-500">{item.product.unit}</p>
-                  </div>
+      {/* Cart Items - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="space-y-3">
+          {cartItems.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-gray-100"
+            >
+              <div className="flex items-center space-x-3">
+                <img
+                  src={item.product.imageUrl}
+                  alt={item.product.name}
+                  className="w-12 h-12 object-cover rounded-lg"
+                />
+                <div>
+                  <h4 className="font-medium text-gray-800 text-sm" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    {item.product.name}
+                  </h4>
+                  <p className="text-xs text-gray-500">{item.product.unit}</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-800">{item.quantity}x</p>
-                  <p className="text-fresh-green font-semibold text-sm">
-                    {(parseFloat(item.product.price) * parseFloat(item.quantity)).toFixed(0)} IQD
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+              </div>
+              <div className="text-right">
+                <p className="font-medium text-gray-800">{item.quantity}x</p>
+                <p className="text-fresh-green font-semibold text-sm">
+                  {(parseFloat(item.product.price) * parseFloat(item.quantity)).toFixed(0)} IQD
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </div>
+      </div>
 
-        {/* Address Section */}
-        {hasAddress && primaryAddress && (
-          <div className="px-6 py-4">
-          <div className="bg-white rounded-lg p-4 border border-green-200" dir="rtl">
-            <div className="flex items-center justify-between mb-3">
+      {/* Address Section - Fixed */}
+      {hasAddress && primaryAddress && (
+        <div className="flex-shrink-0 px-6 py-3 border-t border-gray-100">
+          <div className="bg-white rounded-lg p-3 border border-green-200" dir="rtl">
+            <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                 عنوان التوصيل:
               </h3>
               <MapPin className="h-4 w-4 text-green-600" />
             </div>
-            <div className="space-y-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              {/* الاسم */}
+            <div className="space-y-1 text-xs" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
               <div className="flex items-start gap-2">
-                <span className="text-xs font-medium text-gray-500 min-w-[40px]">الاسم:</span>
-                <span className="text-sm text-gray-800 font-medium">
+                <span className="font-medium text-gray-500">الاسم:</span>
+                <span className="text-gray-800 font-medium">
                   {postgresUser?.fullName || postgresUser?.email?.split('@')[0] || 'غير محدد'}
                 </span>
               </div>
-              
-              {/* الرقم */}
               <div className="flex items-start gap-2">
-                <span className="text-xs font-medium text-gray-500 min-w-[40px]">الرقم:</span>
-                <span className="text-sm text-gray-800 font-medium">
-                  {postgresUser?.phone || 'غير محدد'}
-                </span>
+                <span className="font-medium text-gray-500">الرقم:</span>
+                <span className="text-gray-800 font-medium">{postgresUser?.phone || 'غير محدد'}</span>
               </div>
-              
-              {/* العنوان */}
               <div className="flex items-start gap-2">
-                <span className="text-xs font-medium text-gray-500 min-w-[40px]">العنوان:</span>
-                <div className="text-sm text-gray-800">
-                  <p className="font-medium">{primaryAddress.governorate} - {primaryAddress.district}</p>
-                  <p className="text-gray-600">{primaryAddress.neighborhood}</p>
-                </div>
+                <span className="font-medium text-gray-500">العنوان:</span>
+                <span className="text-gray-800">{primaryAddress.governorate} - {primaryAddress.district}</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-        {/* Coupon Section */}
-        <div className="px-6 py-4" dir="rtl">
-        <div className="space-y-3">
+      {/* Coupon Section - Fixed */}
+      <div className="flex-shrink-0 px-6 py-3 border-t border-gray-100" dir="rtl">
+        <div className="space-y-2">
           <h3 className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
             كوبون الخصم
           </h3>
@@ -774,11 +762,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             </div>
           )}
         </div>
-        </div>
       </div>
 
-      {/* Price Breakdown - Using same calculations as cart */}
-      <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
+      {/* Price Breakdown - Fixed */}
+      <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 bg-gray-50">
         <div className="space-y-2" dir="rtl">
           {/* Subtotal */}
           <div className="flex items-center justify-between">
