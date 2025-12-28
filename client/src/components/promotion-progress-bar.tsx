@@ -1,4 +1,4 @@
-import { Check, Gift } from "lucide-react";
+import { Check, Target } from "lucide-react";
 import { useMemo } from "react";
 import { usePromotionTiers } from "@/hooks/use-promotions";
 
@@ -12,7 +12,6 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
   // Build steps from tiers - memoized for stability
   const displaySteps = useMemo(() => {
     if (tiers.length === 0) {
-      // Default steps if no tiers loaded yet
       return [
         { id: 0, label: 'البداية', amount: 0 },
         { id: 1, label: 'توصيل مجاني', amount: 15000 },
@@ -66,35 +65,36 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
 
   return (
     <div className="bg-gray-50 rounded-lg p-3 mb-3" dir="rtl">
-      {/* Step Icons */}
-      <div className="flex justify-between items-center mb-1">
+      {/* Step Icons - Equal spacing */}
+      <div className="flex justify-between items-start mb-2">
         {displaySteps.map((step, index) => {
           const isCompleted = cartTotal >= step.amount;
-          const isCurrent = index === currentStepIndex && cartTotal > 0;
           
           return (
-            <div key={step.id} className="flex flex-col items-center" style={{ width: '22%' }}>
+            <div 
+              key={step.id} 
+              className="flex flex-col items-center"
+              style={{ flex: '1 1 0', maxWidth: '25%' }}
+            >
+              {/* Icon Circle */}
               <div 
-                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors duration-150 ${
+                className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors duration-150 ${
                   isCompleted 
-                    ? index === 0 
-                      ? 'bg-green-500 border-green-500 text-white' 
-                      : isCurrent 
-                        ? 'bg-blue-500 border-blue-500 text-white'
-                        : 'bg-green-500 border-green-500 text-white'
-                    : 'bg-white border-gray-300 text-gray-400'
+                    ? 'bg-green-500 border-green-500 text-white'
+                    : 'bg-gray-100 border-gray-300 text-gray-400'
                 }`}
               >
                 {isCompleted ? (
-                  <Check className="h-4 w-4" />
+                  <Check className="h-5 w-5" strokeWidth={3} />
                 ) : (
-                  <Gift className="h-4 w-4" />
+                  <Target className="h-4 w-4" />
                 )}
               </div>
               
+              {/* Label */}
               <span 
-                className={`text-[10px] mt-1 text-center leading-tight transition-colors duration-150 ${
-                  isCompleted ? 'text-gray-800 font-medium' : 'text-gray-500'
+                className={`text-[10px] mt-1.5 text-center leading-tight transition-colors duration-150 ${
+                  isCompleted ? 'text-gray-800 font-semibold' : 'text-gray-500'
                 }`}
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
               >
@@ -106,20 +106,20 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
       </div>
       
       {/* Progress Bar */}
-      <div className="relative h-1.5 bg-gray-200 rounded-full mx-4 mb-1 overflow-hidden">
+      <div className="relative h-2 bg-gray-200 rounded-full mx-2 mb-2 overflow-hidden">
         <div 
           className="absolute top-0 right-0 h-full bg-gradient-to-l from-green-500 to-green-400 rounded-full transition-[width] duration-150 ease-out"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
       
-      {/* Amount Labels (in thousands) */}
-      <div className="flex justify-between items-center px-1">
+      {/* Amount Labels (in thousands) - Equal spacing */}
+      <div className="flex justify-between items-center mx-2">
         {displaySteps.map((step) => (
           <span 
             key={step.id} 
-            className="text-[10px] text-gray-500"
-            style={{ width: '22%', textAlign: 'center' }}
+            className="text-[11px] text-gray-500 font-medium"
+            style={{ flex: '1 1 0', maxWidth: '25%', textAlign: 'center' }}
           >
             {step.amount === 0 ? '0' : Math.round(step.amount / 1000)}
           </span>
