@@ -7,8 +7,6 @@ import { useTranslation } from "@/hooks/use-translation";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useRef, useEffect } from "react";
-import { createUserOrder } from "@/lib/firebase-user-data";
-import { useAuth } from "@/hooks/use-auth";
 import { usePostgresAuth } from "@/hooks/use-postgres-auth";
 import { usePostgresAddressStore } from "@/store/postgres-address-store";
 import { formatPrice } from "@/lib/utils";
@@ -178,7 +176,6 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   });
 
   const { t } = useTranslation();
-  const { user } = useAuth();
   
   // Calculate cart totals
   const getCartTotal = () => {
@@ -328,7 +325,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
   const handlePlaceOrder = async () => {
     console.log('Starting order placement...');
-    console.log('User:', user);
+    console.log('User:', postgresUser);
     console.log('hasAddress:', hasAddress);
     console.log('primaryAddress:', primaryAddress);
     
