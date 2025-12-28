@@ -14,6 +14,7 @@ import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
 import { Link, useLocation } from "wouter";
 import { useDeliveryFee } from "@/hooks/use-settings";
+import PromotionProgressBar from "@/components/promotion-progress-bar";
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -950,6 +951,9 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     <>
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
+        {/* Promotion Progress Bar */}
+        <PromotionProgressBar cartTotal={getCartTotal()} />
+        
         {isLoadingCart ? (
           <div className="text-center py-8">
             <p className="text-gray-500">Loading cart...</p>
