@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Settings } from 'lucide-react';
+import { Package, List, ShoppingCart, X, ArrowLeft, Search, Apple, Carrot, Milk, Beef, Package2, Plus, Upload, Save, Edit, LogOut, Download, Printer, Trash2, Users, Clock, Mail, Phone, Calendar, Settings, Gift, Truck, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -1843,7 +1843,7 @@ function CouponForm({ initialData, onSubmit, isLoading }: {
 function AdminSidebar({ isOpen, onClose, setCurrentView }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  setCurrentView: (view: 'orders' | 'items' | 'users' | 'drivers' | 'settings' | 'coupons') => void;
+  setCurrentView: (view: 'orders' | 'items' | 'users' | 'drivers' | 'settings' | 'coupons' | 'promotions') => void;
 }) {
   return (
     <>
@@ -1925,6 +1925,21 @@ function AdminSidebar({ isOpen, onClose, setCurrentView }: {
               <div className="text-left">
                 <div className="font-medium">Coupon Management</div>
                 <div className="text-sm text-gray-500">إدارة الكوبونات والخصومات</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start p-3 h-auto rounded-xl"
+              onClick={() => {
+                setCurrentView('promotions');
+                onClose();
+              }}
+            >
+              <Gift className="h-5 w-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">Promotions</div>
+                <div className="text-sm text-gray-500">إدارة عروض التسوق التصاعدية</div>
               </div>
             </Button>
           </div>
@@ -2181,6 +2196,195 @@ function DriversManagement() {
   );
 }
 
+// Promotions Management Component
+function PromotionsManagement() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  interface PromotionTier {
+    id: number;
+    tierRank: number;
+    minAmount: number;
+    maxAmount: number | null;
+    rewardType: string;
+    rewardValue: number;
+    isEnabled: boolean;
+    updatedAt: string;
+  }
+  
+  const { data: tiers = [], isLoading } = useQuery<PromotionTier[]>({
+    queryKey: ['/api/admin/promotions/tiers'],
+    queryFn: () => fetch('/api/admin/promotions/tiers').then(res => res.json()),
+  });
+
+  const updateTierMutation = useMutation({
+    mutationFn: ({ id, ...data }: { id: number; minAmount?: number; maxAmount?: number | null; rewardType?: string; rewardValue?: number; isEnabled?: boolean }) => 
+      fetch(`/api/admin/promotions/tiers/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(res => res.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/promotions/tiers'] });
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث العرض بنجاح",
+        duration: 3000,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث العرض. حاول مرة أخرى.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  });
+
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString('ar-IQ') + ' د.ع';
+  };
+
+  const getRewardLabel = (tier: PromotionTier) => {
+    if (tier.rewardType === 'free_delivery') {
+      return 'توصيل مجاني';
+    }
+    return `خصم ${formatAmount(tier.rewardValue)}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">جاري تحميل العروض...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+          إدارة عروض التسوق التصاعدية
+        </h1>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            مستويات العروض
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+            العروض التصاعدية تشجع العملاء على زيادة مشترياتهم للحصول على مكافآت أفضل
+          </p>
+          
+          <div className="space-y-4">
+            {tiers.map((tier) => (
+              <div 
+                key={tier.id} 
+                className={`p-4 border rounded-lg ${tier.isEnabled ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    {tier.rewardType === 'free_delivery' ? (
+                      <Truck className="h-5 w-5 text-blue-600" />
+                    ) : (
+                      <Tag className="h-5 w-5 text-green-600" />
+                    )}
+                    <span className="font-semibold" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      المستوى {tier.tierRank}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`tier-${tier.id}-enabled`}
+                      checked={tier.isEnabled}
+                      onCheckedChange={(checked) => {
+                        updateTierMutation.mutate({ id: tier.id, isEnabled: checked as boolean });
+                      }}
+                    />
+                    <Label htmlFor={`tier-${tier.id}-enabled`} className="text-sm">
+                      مفعل
+                    </Label>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label className="text-xs text-gray-500">الحد الأدنى</Label>
+                    <Input
+                      type="number"
+                      value={tier.minAmount}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        updateTierMutation.mutate({ id: tier.id, minAmount: value });
+                      }}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">الحد الأقصى</Label>
+                    <Input
+                      type="number"
+                      value={tier.maxAmount || ''}
+                      placeholder="غير محدود"
+                      onChange={(e) => {
+                        const value = e.target.value ? parseInt(e.target.value) : null;
+                        updateTierMutation.mutate({ id: tier.id, maxAmount: value });
+                      }}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">نوع المكافأة</Label>
+                    <Select
+                      value={tier.rewardType}
+                      onValueChange={(value) => {
+                        updateTierMutation.mutate({ id: tier.id, rewardType: value });
+                      }}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free_delivery">توصيل مجاني</SelectItem>
+                        <SelectItem value="discount">خصم</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">قيمة الخصم (د.ع)</Label>
+                    <Input
+                      type="number"
+                      value={tier.rewardValue}
+                      disabled={tier.rewardType === 'free_delivery'}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 0;
+                        updateTierMutation.mutate({ id: tier.id, rewardValue: value });
+                      }}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-3 p-2 bg-white rounded border">
+                  <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                    عند شراء {formatAmount(tier.minAmount)}
+                    {tier.maxAmount ? ` - ${formatAmount(tier.maxAmount)}` : ' فما فوق'}
+                    : <strong className="text-green-600">{getRewardLabel(tier)}</strong>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // Users Management Component
 function UsersManagement() {
   const queryClient = useQueryClient();
@@ -2386,7 +2590,7 @@ function UsersManagement() {
 
 // Main Admin Panel Component
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users' | 'drivers' | 'settings' | 'coupons'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'items' | 'users' | 'drivers' | 'settings' | 'coupons' | 'promotions'>('orders');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
   const queryClient = useQueryClient();
@@ -2923,6 +3127,10 @@ export default function AdminPanel() {
       ) : activeTab === 'coupons' ? (
         <div className="max-w-7xl mx-auto p-6">
           <CouponManagement />
+        </div>
+      ) : activeTab === 'promotions' ? (
+        <div className="max-w-7xl mx-auto p-6">
+          <PromotionsManagement />
         </div>
       ) : null}
 
