@@ -32,8 +32,8 @@ const ProductCardComponent = ({ product }: ProductCardProps) => {
     // Instant visual feedback
     setIsAdding(true);
     
-    // Fire API call in background (don't await)
-    addToCart({ productId: product.id, quantity: 1 }).catch(() => {});
+    // Fire API call with product data for instant cart update
+    addToCart({ productId: product.id, quantity: 1 }, product).catch(() => {});
     
     // Quick checkmark flash then reset
     setTimeout(() => setIsAdding(false), 400);

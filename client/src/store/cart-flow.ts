@@ -12,7 +12,7 @@ interface CartFlowState {
 
 interface CartFlowActions {
   loadCart: () => Promise<void>;
-  addToCart: (item: InsertCartItem) => Promise<void>;
+  addToCart: (item: InsertCartItem, product?: Product) => Promise<void>;
   removeFromCart: (itemId: number) => Promise<void>;
   updateQuantity: (itemId: number, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -44,7 +44,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
     }
   },
 
-  addToCart: async (item: InsertCartItem) => {
+  addToCart: async (item: InsertCartItem, product?: Product) => {
     try {
       // Get current state for optimistic update
       const currentItems = get().cartItems;
@@ -56,7 +56,7 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       
       // Optimistically update UI immediately
       if (existingItemIndex >= 0) {
-        // Update existing item quantity - ensure proper number arithmetic
+        // Update existing item quantity
         const updatedItems = [...currentItems];
         const currentQty = parseFloat(updatedItems[existingItemIndex].quantity);
         const addQty = item.quantity || 1;
@@ -65,9 +65,17 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
           quantity: String(currentQty + addQty)
         };
         set({ cartItems: updatedItems });
-      } else {
-        // For new items, don't add optimistically - wait for server response
-        // This prevents crashes when product data is missing
+      } else if (product) {
+        // For new items, add optimistically with product data
+        const tempId = -Date.now(); // Negative temp ID to avoid conflicts
+        const optimisticItem: CartItemWithProduct = {
+          id: tempId,
+          userId: item.userId || 0,
+          productId: item.productId,
+          quantity: String(item.quantity || 1),
+          product: product
+        };
+        set({ cartItems: [...currentItems, optimisticItem] });
       }
 
       // Send to server (background operation)
@@ -78,16 +86,10 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       });
       
       if (response.ok) {
-        // Immediately refresh cart to get updated data with product info
-        try {
-          const updatedResponse = await fetch("/api/cart");
-          if (updatedResponse.ok) {
-            const items = await updatedResponse.json();
-            set({ cartItems: items });
-          }
-        } catch (error) {
-          console.log("Cart sync failed:", error);
-        }
+        // Sync with server in background
+        fetch("/api/cart").then(res => {
+          if (res.ok) res.json().then(items => set({ cartItems: items }));
+        }).catch(() => {});
       } else {
         // Revert optimistic update on error
         get().loadCart();
@@ -95,7 +97,6 @@ export const useCartFlow = create<CartFlowStore>((set, get) => ({
       }
     } catch (error) {
       console.error("CartFlow: Failed to add item:", error);
-      // Revert optimistic update on error
       get().loadCart();
       throw error;
     }
