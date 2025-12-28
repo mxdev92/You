@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Gift, Truck, Tag } from "lucide-react";
+import { Check, Gift } from "lucide-react";
 import type { PromotionTier } from "@shared/schema";
 
 interface PromotionProgressBarProps {
@@ -18,120 +18,124 @@ interface PromotionCalculation {
 export default function PromotionProgressBar({ cartTotal }: PromotionProgressBarProps) {
   const { data: promoData, isLoading } = useQuery<PromotionCalculation>({
     queryKey: ['/api/promotions/calculate', cartTotal],
-    enabled: cartTotal > 0,
+    enabled: true,
     refetchOnWindowFocus: false,
     staleTime: 30000,
   });
 
-  if (isLoading || !promoData || promoData.allTiers.length === 0) {
+  if (isLoading || !promoData) {
     return null;
   }
 
-  const { currentTier, nextTier, amountToNext, allTiers } = promoData;
+  const { allTiers } = promoData;
   
-  // Calculate progress percentage for the entire promotion journey
-  const maxAmount = Math.max(...allTiers.map(t => t.minAmount || 0));
-  const progressPercent = maxAmount > 0 ? Math.min((cartTotal / maxAmount) * 100, 100) : 0;
+  // Define 4 steps: Start, Free Delivery, 2000 Discount, 5000 Discount
+  const steps = [
+    { id: 0, label: 'البداية', amount: 0, rewardType: 'start' },
+    ...allTiers.map(tier => ({
+      id: tier.id,
+      label: tier.rewardType === 'free_delivery' ? 'توصيل مجاني' : `خصم ${(tier.rewardValue / 1000).toLocaleString('ar-IQ')},000`,
+      amount: tier.minAmount,
+      rewardType: tier.rewardType
+    }))
+  ];
 
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString('ar-IQ') + ' د.ع';
-  };
-
-  const getRewardText = (tier: PromotionTier) => {
-    if (tier.rewardType === 'free_delivery') {
-      return 'توصيل مجاني';
-    } else if (tier.rewardType === 'discount') {
-      return `خصم ${formatAmount(tier.rewardValue)}`;
+  // Find max amount for progress calculation
+  const maxAmount = steps.length > 1 ? steps[steps.length - 1].amount : 1;
+  
+  // Calculate which step is current
+  const getCurrentStepIndex = () => {
+    for (let i = steps.length - 1; i >= 0; i--) {
+      if (cartTotal >= steps[i].amount) {
+        return i;
+      }
     }
-    return '';
+    return 0;
+  };
+  
+  const currentStepIndex = getCurrentStepIndex();
+  
+  // Calculate progress percentage between steps
+  const getProgressPercent = () => {
+    if (currentStepIndex >= steps.length - 1) return 100;
+    
+    const currentStep = steps[currentStepIndex];
+    const nextStep = steps[currentStepIndex + 1];
+    const stepRange = nextStep.amount - currentStep.amount;
+    const progressInStep = cartTotal - currentStep.amount;
+    const stepProgress = stepRange > 0 ? (progressInStep / stepRange) : 0;
+    
+    // Calculate total progress: completed steps + current step progress
+    const completedPercent = (currentStepIndex / (steps.length - 1)) * 100;
+    const stepPercent = (1 / (steps.length - 1)) * 100 * stepProgress;
+    
+    return Math.min(completedPercent + stepPercent, 100);
   };
 
-  const getRewardIcon = (tier: PromotionTier) => {
-    if (tier.rewardType === 'free_delivery') {
-      return <Truck className="h-3 w-3" />;
-    }
-    return <Tag className="h-3 w-3" />;
-  };
+  const progressPercent = getProgressPercent();
 
   return (
-    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 mb-4" dir="rtl">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-2">
-        <Gift className="h-4 w-4 text-green-600" />
-        <span className="text-xs font-semibold text-green-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-          عروض التسوق
-        </span>
-      </div>
-
-      {/* Progress bar */}
-      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-        <div 
-          className="absolute top-0 right-0 h-full bg-gradient-to-l from-green-500 to-emerald-400 rounded-full transition-all duration-500"
-          style={{ width: `${progressPercent}%` }}
-        />
-        {/* Tier markers */}
-        {allTiers.map((tier, index) => {
-          const tierPercent = maxAmount > 0 ? (tier.minAmount / maxAmount) * 100 : 0;
-          const isAchieved = cartTotal >= tier.minAmount;
+    <div className="bg-gray-50 rounded-lg p-3 mb-3" dir="rtl">
+      {/* Step Icons */}
+      <div className="flex justify-between items-center mb-1">
+        {steps.map((step, index) => {
+          const isCompleted = cartTotal >= step.amount;
+          const isCurrent = index === currentStepIndex && cartTotal > 0;
+          
           return (
-            <div
-              key={tier.id}
-              className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border ${
-                isAchieved 
-                  ? 'bg-green-600 border-green-700' 
-                  : 'bg-white border-gray-400'
-              }`}
-              style={{ right: `${tierPercent}%`, transform: 'translate(50%, -50%)' }}
-              data-testid={`tier-marker-${tier.id}`}
-            />
-          );
-        })}
-      </div>
-
-      {/* Current reward or next goal */}
-      {currentTier ? (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1 text-green-700">
-            {getRewardIcon(currentTier)}
-            <span className="text-xs font-medium" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              حصلت على: {getRewardText(currentTier)}
-            </span>
-          </div>
-          {nextTier && (
-            <span className="text-xs text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              أضف {formatAmount(amountToNext)} للحصول على {getRewardText(nextTier)}
-            </span>
-          )}
-        </div>
-      ) : nextTier ? (
-        <div className="flex items-center justify-center gap-1 text-gray-700">
-          <span className="text-xs" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-            أضف {formatAmount(amountToNext)} للحصول على {getRewardText(nextTier)}
-          </span>
-        </div>
-      ) : null}
-
-      {/* All tiers summary */}
-      <div className="mt-2 pt-2 border-t border-green-200 flex flex-wrap gap-2">
-        {allTiers.map((tier) => {
-          const isAchieved = cartTotal >= tier.minAmount;
-          return (
-            <div
-              key={tier.id}
-              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                isAchieved 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}
-              data-testid={`tier-badge-${tier.id}`}
-            >
-              {getRewardIcon(tier)}
-              <span style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                {formatAmount(tier.minAmount)}+
+            <div key={step.id} className="flex flex-col items-center" style={{ width: '22%' }}>
+              {/* Icon Circle */}
+              <div 
+                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                  isCompleted 
+                    ? index === 0 
+                      ? 'bg-green-500 border-green-500 text-white' 
+                      : isCurrent 
+                        ? 'bg-blue-500 border-blue-500 text-white'
+                        : 'bg-green-500 border-green-500 text-white'
+                    : 'bg-white border-gray-300 text-gray-400'
+                }`}
+              >
+                {isCompleted ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Gift className="h-4 w-4" />
+                )}
+              </div>
+              
+              {/* Label */}
+              <span 
+                className={`text-[10px] mt-1 text-center leading-tight ${
+                  isCompleted ? 'text-gray-800 font-medium' : 'text-gray-500'
+                }`}
+                style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+              >
+                {step.label}
               </span>
             </div>
           );
         })}
+      </div>
+      
+      {/* Progress Bar */}
+      <div className="relative h-1.5 bg-gray-200 rounded-full mx-4 mb-1">
+        <div 
+          className="absolute top-0 right-0 h-full bg-green-500 rounded-full transition-all duration-500"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+      
+      {/* Amount Labels */}
+      <div className="flex justify-between items-center px-1">
+        {steps.map((step) => (
+          <span 
+            key={step.id} 
+            className="text-[10px] text-gray-500"
+            style={{ width: '22%', textAlign: 'center' }}
+          >
+            {step.amount === 0 ? '0' : (step.amount / 1000).toLocaleString('ar-IQ')}
+          </span>
+        ))}
       </div>
     </div>
   );

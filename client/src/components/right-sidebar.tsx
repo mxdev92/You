@@ -989,9 +989,6 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     <>
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        {/* Promotion Progress Bar */}
-        <PromotionProgressBar cartTotal={getCartTotal()} />
-        
         {isLoadingCart ? (
           <div className="text-center py-8">
             <p className="text-gray-500">Loading cart...</p>
@@ -1092,8 +1089,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
 
       {/* Footer */}
       {cartItems.length > 0 && (
-        <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
-          <div className="grid grid-cols-2 items-center gap-x-4 mb-4">
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+          {/* Promotion Progress Bar */}
+          <PromotionProgressBar cartTotal={getCartTotal()} />
+          
+          <div className="grid grid-cols-2 items-center gap-x-4 mb-3">
             <span className="justify-self-start text-xl font-bold text-fresh-green whitespace-nowrap">
               {formatPrice(getCartTotal())} IQD
             </span>
