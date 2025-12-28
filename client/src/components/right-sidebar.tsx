@@ -943,17 +943,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           </div>
         </div>
 
-        {/* Total Payment - Compact */}
+        {/* Total - Using correct calculation from cart */}
         <div className="bg-white rounded-lg p-3 shadow-sm">
-          <div className={`${paymentMethod === 'wallet' ? 'bg-blue-50' : 'bg-green-50'} rounded-lg p-3 text-center`}>
-            <p className={`text-lg font-bold ${paymentMethod === 'wallet' ? 'text-blue-600' : 'text-green-600'}`} style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              {formatPrice(totalWithShipping)} IQD
-            </p>
-            <p className="text-xs text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-              {paymentMethod === 'wallet' ? 
-                `الرصيد المتبقي: ${formatPrice(Math.max(0, (walletData?.balance || 0) - totalWithShipping))} IQD` : 
-                'سيتم الدفع نقداً للسائق'
-              }
+          <div className="bg-green-50 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-green-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+              {formatPrice(cartTotal + promotion.deliveryFee - promotionDiscount - couponDiscount)} IQD
             </p>
           </div>
         </div>
