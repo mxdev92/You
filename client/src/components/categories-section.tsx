@@ -12,11 +12,12 @@ export default function CategoriesSection() {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const hasInitialized = useRef(false);
+  const hasMounted = useRef(false);
   const { selectedCategoryId, setSelectedCategory } = useCategoryStore();
   
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
-    staleTime: 300000, // 5 minutes cache
+    staleTime: 300000,
     refetchOnWindowFocus: false,
   });
 
@@ -37,22 +38,22 @@ export default function CategoriesSection() {
     ),
   };
 
-  // Initialize default category on startup
+  useEffect(() => {
+    hasMounted.current = true;
+  }, []);
+
   useEffect(() => {
     if (!hasInitialized.current && categories && categories.length > 0) {
       hasInitialized.current = true;
-      
-      // Sync local state with server's selected category
       const serverSelected = categories.find(cat => cat.isSelected);
       if (serverSelected) {
         setSelectedCategory(serverSelected.id);
       } else if (!selectedCategoryId) {
-        setSelectedCategory(2); // Default vegetables
+        setSelectedCategory(2);
       }
     }
   }, [categories, selectedCategoryId, setSelectedCategory]);
 
-  // Smart prefetch: only prefetch adjacent categories when one is selected
   const prefetchCategory = (categoryId: number) => {
     queryClient.prefetchQuery({
       queryKey: ["/api/products", categoryId],
@@ -65,17 +66,9 @@ export default function CategoriesSection() {
     });
   };
 
-  // INSTANT category switch - update UI immediately, sync backend in background
   const handleCategorySelect = (categoryId: number) => {
-    // 1. Update local state IMMEDIATELY (instant UI)
     setSelectedCategory(categoryId);
-    
-    // 2. Sync with backend in background (non-blocking, fire-and-forget)
-    apiRequest("PATCH", `/api/categories/${categoryId}/select`).catch(() => {
-      // Silent fail - UI already updated
-    });
-    
-    // 3. Smart prefetch adjacent categories for next potential click
+    apiRequest("PATCH", `/api/categories/${categoryId}/select`).catch(() => {});
     if (categories) {
       const currentIndex = categories.findIndex(c => c.id === categoryId);
       if (currentIndex > 0) prefetchCategory(categories[currentIndex - 1].id);
@@ -106,38 +99,36 @@ export default function CategoriesSection() {
           return (
             <motion.div
               key={category.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={!hasMounted.current ? { opacity: 0, y: 10 } : false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03, duration: 0.2 }}
+              transition={{ delay: !hasMounted.current ? index * 0.02 : 0, duration: 0.15 }}
               className="flex-shrink-0 flex flex-col items-center justify-center min-w-16 w-16 h-16"
             >
               <motion.div
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.05, ease: "easeOut" }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.1, ease: "easeOut" }}
                 onClick={() => handleCategorySelect(category.id)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer transition-all duration-50 relative touch-action-manipulation min-h-12 min-w-12 ${
+                className={`w-12 h-12 rounded-full flex items-center justify-center mb-0.5 cursor-pointer relative touch-action-manipulation min-h-12 min-w-12 transform-gpu transition-colors duration-200 ${
                   isSelected
-                    ? "shadow-lg"
+                    ? "shadow-lg bg-green-500"
                     : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
                 }`}
-                style={isSelected ? { backgroundColor: '#22c55e' } : {}}
               >
                 {(() => {
                   const IconComponent = iconMap[category.icon];
                   return IconComponent ? (
-                    <IconComponent className={`w-4 h-4 ${
+                    <IconComponent className={`w-4 h-4 transition-colors duration-200 ${
                       isSelected ? "text-white" : "text-gray-600"
                     }`} />
                   ) : (
-                    <Apple className={`w-4 h-4 ${
+                    <Apple className={`w-4 h-4 transition-colors duration-200 ${
                       isSelected ? "text-white" : "text-gray-600"
                     }`} />
                   );
                 })()}
               </motion.div>
-              <span className={`text-[10px] font-medium text-center w-full leading-tight flex items-center justify-center ${
-                isSelected ? "text-black" : "text-gray-700"
+              <span className={`text-[10px] font-medium text-center w-full leading-tight flex items-center justify-center transition-colors duration-200 ${
+                isSelected ? "text-green-600 font-semibold" : "text-gray-700"
               }`}>
                 {t(getCategoryTranslationKey(category.name))}
               </span>

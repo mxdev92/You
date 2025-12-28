@@ -30,6 +30,16 @@
   animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
 }
 
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Arabic language support */
 * {
   font-family: 'Cairo', Inter, system-ui, sans-serif;
