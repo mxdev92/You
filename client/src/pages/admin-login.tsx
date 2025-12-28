@@ -23,7 +23,7 @@ export default function AdminLogin() {
     console.log('Login attempt:', { email: formData.email, password: formData.password });
 
     // Ultra-stable admin authentication with persistent session
-    if (formData.email.toLowerCase() === 'mustafa@yalla.com' && formData.password === 'Password1000') {
+    if (formData.email.toLowerCase() === 'mx@admin.co' && formData.password === '1234567') {
       console.log('Admin authentication successful');
       
       // Set ultra-stable admin session with timestamp and expiry
