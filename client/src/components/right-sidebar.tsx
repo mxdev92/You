@@ -774,54 +774,50 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       </div>
 
-      {/* Price Breakdown */}
+      {/* Price Breakdown - Using same calculations as cart */}
       <div className="px-6 py-6 border-t border-gray-100 bg-gray-50">
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 items-center gap-x-4">
-            <span className="justify-self-start font-medium whitespace-nowrap">{formatPrice(cartTotal)} IQD</span>
-            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">السعر الكلي:</span>
+        <div className="space-y-2" dir="rtl">
+          {/* Subtotal */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المجموع:</span>
+            <span className="text-sm font-medium">{formatPrice(cartTotal)} IQD</span>
           </div>
           
-          <div className="grid grid-cols-2 items-center gap-x-4">
-            <span className="justify-self-start font-medium whitespace-nowrap">{formatPrice(finalShippingFee)} IQD</span>
-            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">أجور التوصيل:</span>
+          {/* Delivery Fee */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>اجور التوصيل:</span>
+            {hasPromotionFreeDelivery ? (
+              <span className="text-sm font-medium flex items-center gap-2">
+                <span className="text-green-600 font-semibold">مجاني</span>
+                <span className="line-through text-gray-400 text-xs">{formatPrice(baseDeliveryFee)}</span>
+              </span>
+            ) : (
+              <span className="text-sm font-medium">{formatPrice(baseDeliveryFee)} IQD</span>
+            )}
           </div>
           
-          <div className="grid grid-cols-2 items-center gap-x-4">
-            <span className="justify-self-start font-medium whitespace-nowrap">{formatPrice(appServicesFee)} IQD</span>
-            <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">آب سيرفز:</span>
+          {/* Discount */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الخصومات:</span>
+            <span className={`text-sm font-medium ${promotionDiscount > 0 ? 'text-green-600' : ''}`}>
+              {promotionDiscount > 0 ? `-${formatPrice(promotionDiscount)} IQD` : '0 IQD'}
+            </span>
           </div>
           
+          {/* Coupon if applied */}
           {appliedCoupon && (
-            <div className="grid grid-cols-2 items-center gap-x-4">
-              <span className="justify-self-start font-medium text-green-600 whitespace-nowrap">
-                -{formatPrice(couponDiscount + (finalShippingFee !== shippingFee && !hasPromotionFreeDelivery ? shippingFee : 0))} IQD
-              </span>
-              <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">الكوبون:</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>الكوبون:</span>
+              <span className="text-sm font-medium text-green-600">-{formatPrice(couponDiscount)} IQD</span>
             </div>
           )}
           
-          {/* Promotion Rewards */}
-          {(hasPromotionFreeDelivery || promotionDiscount > 0) && (
-            <div className="grid grid-cols-2 items-center gap-x-4">
-              <span className="justify-self-start font-medium text-green-600 whitespace-nowrap">
-                {hasPromotionFreeDelivery ? 
-                  `توصيل مجاني (-${formatPrice(baseDeliveryFee)} IQD)` : 
-                  `-${formatPrice(promotionDiscount)} IQD`}
-              </span>
-              <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">
-                🎁 عرض التسوق:
-              </span>
-            </div>
-          )}
-          
-          <div className="border-t border-gray-200 pt-3">
-            <div className="grid grid-cols-2 items-center gap-x-4">
-              <span className="justify-self-start text-xl font-bold text-fresh-green whitespace-nowrap">
-                {formatPrice(totalWithShipping)} IQD
-              </span>
-              <span className="justify-self-end text-right text-lg font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">المبلغ الكلي:</span>
-            </div>
+          {/* Total */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+            <span className="text-base font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الاجمالي:</span>
+            <span className="text-lg font-bold text-fresh-green">
+              {formatPrice(cartTotal + promotion.deliveryFee - promotionDiscount - couponDiscount)} IQD
+            </span>
           </div>
         </div>
 
