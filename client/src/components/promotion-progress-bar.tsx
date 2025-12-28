@@ -1,29 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
 import { Check, Gift } from "lucide-react";
 import { useMemo } from "react";
-import type { PromotionTier } from "@shared/schema";
+import { usePromotionTiers } from "@/hooks/use-promotions";
 
 interface PromotionProgressBarProps {
   cartTotal: number;
 }
 
 export default function PromotionProgressBar({ cartTotal }: PromotionProgressBarProps) {
-  // Fetch tiers only once - cached for stability
-  const { data: tiers = [] } = useQuery<PromotionTier[]>({
-    queryKey: ['/api/admin/promotions/tiers'],
-    queryFn: () => fetch('/api/admin/promotions/tiers').then(res => res.json()),
-    refetchOnWindowFocus: false,
-    staleTime: 60000,
-  });
+  const { tiers } = usePromotionTiers();
 
-  // Build steps from tiers - memoized for performance
+  // Build steps from tiers - memoized for stability
   const displaySteps = useMemo(() => {
-    const enabledTiers = tiers
-      .filter(t => t.isEnabled)
-      .sort((a, b) => a.tierRank - b.tierRank);
-
-    if (enabledTiers.length === 0) {
-      // Default steps if no tiers loaded
+    if (tiers.length === 0) {
+      // Default steps if no tiers loaded yet
       return [
         { id: 0, label: 'البداية', amount: 0 },
         { id: 1, label: 'توصيل مجاني', amount: 15000 },
@@ -34,7 +23,7 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
 
     return [
       { id: 0, label: 'البداية', amount: 0 },
-      ...enabledTiers.map(tier => ({
+      ...tiers.map(tier => ({
         id: tier.id,
         label: tier.rewardType === 'free_delivery' 
           ? 'توصيل مجاني' 
@@ -44,9 +33,8 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
     ];
   }, [tiers]);
 
-  // Calculate progress in real-time based on cartTotal
+  // Calculate progress - all local, no network calls
   const { currentStepIndex, progressPercent } = useMemo(() => {
-    // Find current step
     let stepIndex = 0;
     for (let i = displaySteps.length - 1; i >= 0; i--) {
       if (cartTotal >= displaySteps[i].amount) {
@@ -55,7 +43,6 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
       }
     }
 
-    // Calculate progress percentage
     let progress = 0;
     if (displaySteps.length <= 1) {
       progress = 0;
@@ -87,9 +74,8 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
           
           return (
             <div key={step.id} className="flex flex-col items-center" style={{ width: '22%' }}>
-              {/* Icon Circle */}
               <div 
-                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-200 ${
+                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors duration-150 ${
                   isCompleted 
                     ? index === 0 
                       ? 'bg-green-500 border-green-500 text-white' 
@@ -106,9 +92,8 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
                 )}
               </div>
               
-              {/* Label */}
               <span 
-                className={`text-[10px] mt-1 text-center leading-tight transition-colors duration-200 ${
+                className={`text-[10px] mt-1 text-center leading-tight transition-colors duration-150 ${
                   isCompleted ? 'text-gray-800 font-medium' : 'text-gray-500'
                 }`}
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
@@ -121,9 +106,9 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
       </div>
       
       {/* Progress Bar */}
-      <div className="relative h-1.5 bg-gray-200 rounded-full mx-4 mb-1">
+      <div className="relative h-1.5 bg-gray-200 rounded-full mx-4 mb-1 overflow-hidden">
         <div 
-          className="absolute top-0 right-0 h-full bg-green-500 rounded-full transition-all duration-200 ease-out"
+          className="absolute top-0 right-0 h-full bg-gradient-to-l from-green-500 to-green-400 rounded-full transition-[width] duration-150 ease-out"
           style={{ width: `${progressPercent}%` }}
         />
       </div>

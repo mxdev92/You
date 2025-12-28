@@ -14,6 +14,7 @@ import type { CartItem, Product } from "@shared/schema";
 import { MetaPixel } from "@/lib/meta-pixel";
 import { Link, useLocation } from "wouter";
 import { useDeliveryFee } from "@/hooks/use-settings";
+import { usePromotions } from "@/hooks/use-promotions";
 import PromotionProgressBar from "@/components/promotion-progress-bar";
 
 interface RightSidebarProps {
@@ -254,39 +255,27 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
   }, [isOpen]);
 
   // Get dynamic delivery fee from settings
-  const { deliveryFee: shippingFee } = useDeliveryFee();
+  const { deliveryFee: baseDeliveryFee } = useDeliveryFee();
   
   // App services fee (constant)
   const appServicesFee = 500;
   
-  // Fetch promotion calculation
-  const { data: promotionData } = useQuery({
-    queryKey: ['/api/promotions/calculate', getCartTotal()],
-    queryFn: () => fetch(`/api/promotions/calculate?subtotal=${getCartTotal()}`).then(res => res.json()),
-    enabled: getCartTotal() > 0,
-    staleTime: 1000, // Refresh every second for smooth updates
-  });
+  // Use stable promotion calculations - NO refetching on cart changes
+  const cartTotal = getCartTotal();
+  const promotion = usePromotions(cartTotal, baseDeliveryFee);
   
-  // Calculate promotion discount
-  const getPromotionDiscount = () => {
-    if (!promotionData?.currentTier) return 0;
-    if (promotionData.currentTier.rewardType === 'discount') {
-      return promotionData.currentTier.rewardValue || 0;
-    }
-    return 0;
-  };
-  
-  // Check if promotion grants free delivery
-  const hasPromotionFreeDelivery = promotionData?.currentTier?.rewardType === 'free_delivery';
+  // Extract values from promotion hook for easy access
+  const hasPromotionFreeDelivery = promotion.hasFreeDelivery;
+  const promotionDiscount = promotion.discount;
+  const shippingFee = baseDeliveryFee; // Keep for display reference
   
   // Calculate coupon discount
   const getCouponDiscount = () => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.type === 'amount') {
-      // Ensure discount doesn't exceed cart total
-      return Math.min(appliedCoupon.amount, getCartTotal());
+      return Math.min(appliedCoupon.amount, cartTotal);
     }
-    return 0; // For free delivery, discount is applied to shipping
+    return 0;
   };
   
   // Calculate final shipping fee (considering free delivery coupons AND promotions)
@@ -294,15 +283,10 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
     if (appliedCoupon && appliedCoupon.type === 'free_delivery') {
       return 0;
     }
-    if (hasPromotionFreeDelivery) {
-      return 0;
-    }
-    return shippingFee;
+    return promotion.deliveryFee;
   };
   
-  const cartTotal = getCartTotal();
   const couponDiscount = getCouponDiscount();
-  const promotionDiscount = getPromotionDiscount();
   const finalShippingFee = getFinalShippingFee();
   // Ensure total never goes negative
   const totalWithShipping = Math.max(0, cartTotal - couponDiscount - promotionDiscount + finalShippingFee + appServicesFee);
@@ -818,11 +802,11 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
           )}
           
           {/* Promotion Rewards */}
-          {promotionData?.currentTier && (
+          {(hasPromotionFreeDelivery || promotionDiscount > 0) && (
             <div className="grid grid-cols-2 items-center gap-x-4">
               <span className="justify-self-start font-medium text-green-600 whitespace-nowrap">
                 {hasPromotionFreeDelivery ? 
-                  `توصيل مجاني (-${formatPrice(shippingFee)} IQD)` : 
+                  `توصيل مجاني (-${formatPrice(baseDeliveryFee)} IQD)` : 
                   `-${formatPrice(promotionDiscount)} IQD`}
               </span>
               <span className="justify-self-end text-right text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }} dir="rtl">
@@ -1091,29 +1075,27 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
       {cartItems.length > 0 && (
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
           {/* Promotion Progress Bar */}
-          <PromotionProgressBar cartTotal={getCartTotal()} />
+          <PromotionProgressBar cartTotal={cartTotal} />
           
-          {/* Price Breakdown */}
+          {/* Price Breakdown - Stable calculations */}
           <div className="space-y-2 mb-3" dir="rtl">
             {/* Subtotal */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المجموع:</span>
-              <span className="text-sm font-medium">{formatPrice(getCartTotal())} IQD</span>
+              <span className="text-sm font-medium">{formatPrice(cartTotal)} IQD</span>
             </div>
             
             {/* Delivery Fee */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>اجور التوصيل:</span>
-              <span className={`text-sm font-medium ${hasPromotionFreeDelivery ? 'text-green-600 line-through' : ''}`}>
-                {hasPromotionFreeDelivery ? (
-                  <span className="flex items-center gap-1">
-                    <span className="text-green-600 no-underline">مجاني</span>
-                    <span className="line-through text-gray-400">{formatPrice(shippingFee)}</span>
-                  </span>
-                ) : (
-                  `${formatPrice(shippingFee)} IQD`
-                )}
-              </span>
+              {hasPromotionFreeDelivery ? (
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <span className="text-green-600 font-semibold">مجاني</span>
+                  <span className="line-through text-gray-400 text-xs">{formatPrice(baseDeliveryFee)}</span>
+                </span>
+              ) : (
+                <span className="text-sm font-medium">{formatPrice(baseDeliveryFee)} IQD</span>
+              )}
             </div>
             
             {/* Discount */}
@@ -1128,15 +1110,14 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
               <span className="text-base font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>المبلغ الاجمالي:</span>
               <span className="text-lg font-bold text-fresh-green">
-                {formatPrice(getCartTotal() + (hasPromotionFreeDelivery ? 0 : shippingFee) - promotionDiscount)} IQD
+                {formatPrice(cartTotal + promotion.deliveryFee - promotionDiscount)} IQD
               </span>
             </div>
           </div>
           
           <Button 
             onClick={() => {
-              // Track checkout initiation with Meta Pixel
-              MetaPixel.trackInitiateCheckout(getCartTotal() + (shippingFee || 0) + appServicesFee); // Include delivery fee and app services fee
+              MetaPixel.trackInitiateCheckout(cartTotal + baseDeliveryFee + appServicesFee);
               setCurrentView('checkout');
             }}
             className="w-full bg-fresh-green hover:bg-fresh-green-dark"
