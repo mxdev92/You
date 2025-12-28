@@ -111,6 +111,18 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Promotion tiers for spend threshold incentives
+export const promotionTiers = pgTable("promotion_tiers", {
+  id: serial("id").primaryKey(),
+  tierRank: integer("tier_rank").notNull(), // 1, 2, 3 for ordering
+  minAmount: integer("min_amount").notNull(), // Minimum spend in IQD
+  maxAmount: integer("max_amount"), // Maximum spend (null = unlimited)
+  rewardType: text("reward_type").notNull(), // 'free_delivery' or 'discount'
+  rewardValue: integer("reward_value").default(0).notNull(), // Discount amount in IQD (0 for free delivery)
+  isEnabled: boolean("is_enabled").default(true).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Coupons for discount management
 export const coupons = pgTable("coupons", {
   id: serial("id").primaryKey(),
@@ -181,6 +193,11 @@ export const insertCouponSchema = createInsertSchema(coupons).omit({
   endAt: z.string().datetime().nullable().optional().transform(val => val ? new Date(val) : null),
 });
 
+export const insertPromotionTierSchema = createInsertSchema(promotionTiers).omit({
+  id: true,
+  updatedAt: true,
+});
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type CartItem = typeof cartItems.$inferSelect;
@@ -191,6 +208,7 @@ export type WalletTransaction = typeof walletTransactions.$inferSelect;
 export type Driver = typeof drivers.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
 export type Coupon = typeof coupons.$inferSelect;
+export type PromotionTier = typeof promotionTiers.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
@@ -201,3 +219,4 @@ export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSche
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 export type InsertCoupon = z.infer<typeof insertCouponSchema>;
+export type InsertPromotionTier = z.infer<typeof insertPromotionTierSchema>;
