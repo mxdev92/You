@@ -640,44 +640,46 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         <div className="w-10" /> {/* Spacer */}
       </div>
 
-      {/* Items List - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        <div className="space-y-3">
-          {cartItems.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-gray-100"
-            >
-              <div className="flex items-center space-x-3">
-                <img
-                  src={item.product.imageUrl}
-                  alt={item.product.name}
-                  className="w-12 h-12 object-cover rounded-lg"
-                />
-                <div>
-                  <h4 className="font-medium text-gray-800 text-sm" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                    {item.product.name}
-                  </h4>
-                  <p className="text-xs text-gray-500">{item.product.unit}</p>
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Items List */}
+        <div className="px-6 py-4">
+          <div className="space-y-3">
+            {cartItems.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-gray-100"
+              >
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={item.product.imageUrl}
+                    alt={item.product.name}
+                    className="w-12 h-12 object-cover rounded-lg"
+                  />
+                  <div>
+                    <h4 className="font-medium text-gray-800 text-sm" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                      {item.product.name}
+                    </h4>
+                    <p className="text-xs text-gray-500">{item.product.unit}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="font-medium text-gray-800">{item.quantity}x</p>
-                <p className="text-fresh-green font-semibold text-sm">
-                  {(parseFloat(item.product.price) * item.quantity).toFixed(0)} IQD
-                </p>
-              </div>
-            </motion.div>
-          ))}
+                <div className="text-right">
+                  <p className="font-medium text-gray-800">{item.quantity}x</p>
+                  <p className="text-fresh-green font-semibold text-sm">
+                    {(parseFloat(item.product.price) * parseFloat(item.quantity)).toFixed(0)} IQD
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Address Section */}
-      {hasAddress && primaryAddress && (
-        <div className="px-6 py-4 border-t border-gray-100">
+        {/* Address Section */}
+        {hasAddress && primaryAddress && (
+          <div className="px-6 py-4">
           <div className="bg-white rounded-lg p-4 border border-green-200" dir="rtl">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
@@ -715,8 +717,8 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
         </div>
       )}
 
-      {/* Coupon Section */}
-      <div className="px-6 py-4 border-t border-gray-100" dir="rtl">
+        {/* Coupon Section */}
+        <div className="px-6 py-4" dir="rtl">
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-gray-800" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
             كوبون الخصم
@@ -771,6 +773,7 @@ export default function RightSidebar({ isOpen, onClose, onNavigateToAddresses }:
               </Button>
             </div>
           )}
+        </div>
         </div>
       </div>
 
