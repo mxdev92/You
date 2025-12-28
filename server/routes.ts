@@ -744,6 +744,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Promotion Tiers Management
+
+  // Public: Get all enabled promotion tiers
+  app.get("/api/promotions/tiers", async (req, res) => {
+    try {
+      const tiers = await storage.getPromotionTiers();
+      res.json(tiers.filter(t => t.isEnabled));
+    } catch (error) {
+      console.error('Get promotion tiers error:', error);
+      res.status(500).json({ message: "Failed to get promotion tiers" });
+    }
+  });
+
+  // Admin: Get all promotion tiers (including disabled)
+  app.get("/api/admin/promotions/tiers", async (req, res) => {
+    try {
+      const tiers = await storage.getPromotionTiers();
+      res.json(tiers);
+    } catch (error) {
+      console.error('Get admin promotion tiers error:', error);
+      res.status(500).json({ message: "Failed to get promotion tiers" });
+    }
+  });
+
+  // Admin: Update promotion tier
+  app.patch("/api/admin/promotions/tiers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { minAmount, maxAmount, rewardType, rewardValue, isEnabled } = req.body;
+      
+      const tier = await storage.updatePromotionTier(id, {
+        minAmount: minAmount !== undefined ? parseInt(minAmount) : undefined,
+        maxAmount: maxAmount !== undefined ? (maxAmount === null ? null : parseInt(maxAmount)) : undefined,
+        rewardType: rewardType || undefined,
+        rewardValue: rewardValue !== undefined ? parseInt(rewardValue) : undefined,
+        isEnabled: isEnabled !== undefined ? isEnabled : undefined,
+      });
+      res.json(tier);
+    } catch (error) {
+      console.error('Update promotion tier error:', error);
+      res.status(500).json({ message: "Failed to update promotion tier" });
+    }
+  });
+
+  // Public: Calculate promotion for cart
+  app.get("/api/promotions/calculate", async (req, res) => {
+    try {
+      const { subtotal } = req.query;
+      
+      if (!subtotal) {
+        return res.status(400).json({ message: "Subtotal is required" });
+      }
+
+      const subtotalNum = parseFloat(String(subtotal));
+      const tiers = await storage.getPromotionTiers();
+      const enabledTiers = tiers.filter(t => t.isEnabled);
+      
+      // Find the current tier based on cart subtotal
+      let currentTier = null;
+      let nextTier = null;
+      let amountToNext = 0;
+      
+      for (const tier of enabledTiers) {
+        const minAmount = tier.minAmount || 0;
+        const maxAmount = tier.maxAmount;
+        
+        if (subtotalNum >= minAmount && (maxAmount === null || subtotalNum < maxAmount)) {
+          currentTier = tier;
+        } else if (subtotalNum < minAmount) {
+          if (!nextTier || tier.minAmount < nextTier.minAmount) {
+            nextTier = tier;
+            amountToNext = minAmount - subtotalNum;
+          }
+        }
+      }
+      
+      // Calculate reward details
+      let freeDelivery = false;
+      let discountAmount = 0;
+      
+      if (currentTier) {
+        if (currentTier.rewardType === 'free_delivery') {
+          freeDelivery = true;
+        } else if (currentTier.rewardType === 'discount') {
+          discountAmount = currentTier.rewardValue || 0;
+        }
+      }
+
+      res.json({
+        currentTier,
+        nextTier,
+        amountToNext: Math.max(0, amountToNext),
+        freeDelivery,
+        discountAmount,
+        allTiers: enabledTiers
+      });
+    } catch (error) {
+      console.error('Calculate promotion error:', error);
+      res.status(500).json({ message: "Failed to calculate promotion" });
+    }
+  });
 
   // Orders
   app.get("/api/orders", async (req, res) => {

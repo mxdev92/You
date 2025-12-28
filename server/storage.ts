@@ -1,4 +1,4 @@
-import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, settings, coupons, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type Settings, type Coupon, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertSettings, type InsertCoupon } from "@shared/schema";
+import { categories, products, cartItems, orders, users, userAddresses, walletTransactions, drivers, settings, coupons, promotionTiers, type Category, type Product, type CartItem, type Order, type User, type UserAddress, type WalletTransaction, type Driver, type Settings, type Coupon, type PromotionTier, type InsertCategory, type InsertProduct, type InsertCartItem, type InsertOrder, type InsertUser, type InsertUserAddress, type InsertWalletTransaction, type InsertDriver, type InsertSettings, type InsertCoupon, type InsertPromotionTier } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -71,6 +71,10 @@ export interface IStorage {
   updateCoupon(id: number, coupon: Partial<InsertCoupon>): Promise<Coupon>;
   deleteCoupon(id: number): Promise<void>;
   incrementCouponUsage(id: number): Promise<Coupon>;
+
+  // Promotion Tiers
+  getPromotionTiers(): Promise<PromotionTier[]>;
+  updatePromotionTier(id: number, tier: Partial<InsertPromotionTier>): Promise<PromotionTier>;
 }
 
 export class MemStorage implements IStorage {
@@ -611,6 +615,14 @@ export class MemStorage implements IStorage {
     this.coupons.set(id, updatedCoupon);
     return updatedCoupon;
   }
+
+  async getPromotionTiers(): Promise<PromotionTier[]> {
+    return [];
+  }
+
+  async updatePromotionTier(id: number, tier: Partial<InsertPromotionTier>): Promise<PromotionTier> {
+    throw new Error("Promotion tiers not supported in memory storage");
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1043,6 +1055,23 @@ export class DatabaseStorage implements IStorage {
     
     if (!updated) {
       throw new Error(`Coupon with id ${id} not found`);
+    }
+    
+    return updated;
+  }
+
+  async getPromotionTiers(): Promise<PromotionTier[]> {
+    return await db.select().from(promotionTiers).orderBy(promotionTiers.tierRank);
+  }
+
+  async updatePromotionTier(id: number, tier: Partial<InsertPromotionTier>): Promise<PromotionTier> {
+    const [updated] = await db.update(promotionTiers)
+      .set({ ...tier, updatedAt: new Date() })
+      .where(eq(promotionTiers.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error(`Promotion tier with id ${id} not found`);
     }
     
     return updated;
