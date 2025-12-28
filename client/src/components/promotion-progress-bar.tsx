@@ -64,9 +64,9 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
   }, [cartTotal, displaySteps]);
 
   return (
-    <div className="bg-gray-50 rounded-lg p-3 mb-3" dir="rtl">
-      {/* Step Icons - Equal spacing */}
-      <div className="flex justify-between items-start mb-2">
+    <div className="bg-gray-50 rounded-lg p-2 mb-2" dir="rtl">
+      {/* Step Icons - Compact */}
+      <div className="flex justify-between items-start mb-1">
         {displaySteps.map((step, index) => {
           const isCompleted = cartTotal >= step.amount;
           
@@ -76,24 +76,24 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
               className="flex flex-col items-center"
               style={{ flex: '1 1 0', maxWidth: '25%' }}
             >
-              {/* Icon Circle */}
+              {/* Icon Circle - Smaller */}
               <div 
-                className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors duration-150 ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-colors duration-150 ${
                   isCompleted 
                     ? 'bg-green-500 border-green-500 text-white'
                     : 'bg-gray-100 border-gray-300 text-gray-400'
                 }`}
               >
                 {isCompleted ? (
-                  <Check className="h-5 w-5" strokeWidth={3} />
+                  <Check className="h-4 w-4" strokeWidth={3} />
                 ) : (
-                  <Gift className="h-4 w-4" />
+                  <Gift className="h-3 w-3" />
                 )}
               </div>
               
-              {/* Label */}
+              {/* Label - Smaller */}
               <span 
-                className={`text-[10px] mt-1.5 text-center leading-tight transition-colors duration-150 ${
+                className={`text-[9px] mt-1 text-center leading-tight transition-colors duration-150 ${
                   isCompleted ? 'text-gray-800 font-semibold' : 'text-gray-500'
                 }`}
                 style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
@@ -105,20 +105,20 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
         })}
       </div>
       
-      {/* Progress Bar */}
-      <div className="relative h-2 bg-gray-200 rounded-full mx-2 mb-2 overflow-hidden">
+      {/* Progress Bar - Thinner */}
+      <div className="relative h-1.5 bg-gray-200 rounded-full mx-1 mb-1 overflow-hidden">
         <div 
           className="absolute top-0 right-0 h-full bg-gradient-to-l from-green-500 to-green-400 rounded-full transition-[width] duration-150 ease-out"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
       
-      {/* Amount Labels (in thousands) - Equal spacing */}
-      <div className="flex justify-between items-center mx-2">
+      {/* Amount Labels - Smaller */}
+      <div className="flex justify-between items-center mx-1">
         {displaySteps.map((step) => (
           <span 
             key={step.id} 
-            className="text-[11px] text-gray-500 font-medium"
+            className="text-[9px] text-gray-500 font-medium"
             style={{ flex: '1 1 0', maxWidth: '25%', textAlign: 'center' }}
           >
             {step.amount === 0 ? '0' : Math.round(step.amount / 1000)}
