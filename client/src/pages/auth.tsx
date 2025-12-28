@@ -10,11 +10,10 @@ import paketyLogo from '@/assets/pakety-logo.png';
 import { MetaPixel } from '@/lib/meta-pixel';
 
 interface SignupData {
-  email: string;
+  phone: string;
   password: string;
   confirmPassword: string;
   name: string;
-  phone: string;
   governorate: string;
   district: string;
   landmark: string;
@@ -115,18 +114,17 @@ const AuthPage: React.FC = () => {
   });
 
   const [loginData, setLoginData] = useState({
-    email: '',
+    identifier: '', // Can be phone or email
     password: ''
   });
 
   const [rememberMe, setRememberMe] = useState(true);
 
   const [signupData, setSignupData] = useState<SignupData>({
-    email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     name: '',
-    phone: '',
     governorate: '',
     district: '',
     landmark: ''
@@ -264,9 +262,9 @@ const AuthPage: React.FC = () => {
       if (response.ok && data.valid) {
         showNotification('تم التحقق من رقم WhatsApp بنجاح', 'success');
         
-        // Automatically proceed to next step after successful verification
+        // Automatically proceed to password step after successful verification
         setTimeout(() => {
-          setSignupStep(3);
+          setSignupStep(2);
         }, 1000);
       } else {
         showNotification('رمز التحقق غير صحيح أو منتهي الصلاحية');
@@ -287,18 +285,19 @@ const AuthPage: React.FC = () => {
       localStorage.removeItem('pakety_saved_credentials');
     }
     
-    // Load safe preferences (email only)
+    // Load safe preferences (identifier - can be phone or email)
     const savedPreferences = localStorage.getItem('pakety_login_preferences');
     if (savedPreferences) {
       try {
-        const { email, rememberMe: savedRememberMe } = JSON.parse(savedPreferences);
+        const { identifier, phone, email, rememberMe: savedRememberMe } = JSON.parse(savedPreferences);
         if (savedRememberMe) {
-          setLoginData(prev => ({ ...prev, email }));
+          // Support all old formats and new identifier format
+          const savedValue = identifier || phone || email || '';
+          if (savedValue) {
+            setLoginData(prev => ({ ...prev, identifier: savedValue }));
+          }
           setRememberMe(true);
-          
-          // The session restoration is already handled by the auth hook
-          // No need to attempt login here - just prefill the email
-          console.log('🔐 Email prefilled for returning user');
+          console.log('🔐 Login identifier prefilled for returning user');
         }
       } catch (error) {
         console.error('Failed to load saved preferences:', error);
@@ -322,19 +321,35 @@ const AuthPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginData.email || !loginData.password) return;
+    if (!loginData.identifier || !loginData.password) return;
+    
+    // Normalize identifier: trim whitespace and convert to lowercase for emails
+    const normalizedIdentifier = loginData.identifier.trim().toLowerCase();
+    
+    // Check if it's an email (contains @) first, then phone
+    const isEmail = normalizedIdentifier.includes('@');
+    const isPhone = !isEmail && normalizedIdentifier.startsWith('07');
+    
+    // Validate format based on type
+    if (isPhone && normalizedIdentifier.length !== 11) {
+      showNotification('يرجى إدخال رقم موبايل صحيح (07xxxxxxxxx)');
+      return;
+    }
+    if (!isEmail && !isPhone) {
+      showNotification('يرجى إدخال رقم موبايل (07xxxxxxxxx) أو بريد إلكتروني صحيح');
+      return;
+    }
     
     setIsLoading(true);
     try {
-      await login(loginData.email, loginData.password);
+      await login(normalizedIdentifier, loginData.password);
       
-      // Save only email and preference if remember me is checked (NEVER save password)
+      // Save identifier and preference if remember me is checked (NEVER save password)
       if (rememberMe) {
         localStorage.setItem('pakety_login_preferences', JSON.stringify({
-          email: loginData.email,
+          identifier: normalizedIdentifier,
           rememberMe: true
         }));
-        showNotification('تم حفظ البريد الإلكتروني لسهولة الدخول في المرات القادمة', 'success');
       } else {
         // Remove saved preferences if remember me is not checked
         localStorage.removeItem('pakety_login_preferences');
@@ -357,11 +372,10 @@ const AuthPage: React.FC = () => {
     
     // Clear all signup data
     setSignupData({
-      email: '',
+      phone: '',
       password: '',
       confirmPassword: '',
       name: '',
-      phone: '',
       governorate: '',
       district: '',
       landmark: ''
@@ -392,17 +406,13 @@ const AuthPage: React.FC = () => {
     const step = signupStep;
     
     if (step === 1) {
-      console.log('📝 Validating step 1 data');
-      if (!signupData.email.trim()) {
-        console.log('❌ Email is empty');
-        showNotification('يرجى إدخال البريد الإلكتروني');
-        return;
-      }
-      if (!signupData.email.includes('@')) {
-        console.log('❌ Email format invalid');
-        showNotification('يرجى إدخال بريد إلكتروني صحيح');
-        return;
-      }
+      // Step 1 is WhatsApp verification - handled separately by sendOTP and verifyOTP
+      console.log('⚠️ Step 1 - WhatsApp verification handled separately');
+      return;
+    }
+    else if (step === 2) {
+      // Step 2: Password validation
+      console.log('📝 Validating step 2 password data');
       if (signupData.password.length < 6) {
         console.log('❌ Password too short');
         showNotification('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
@@ -414,13 +424,8 @@ const AuthPage: React.FC = () => {
         return;
       }
       // Move to next step after validation passes
-      console.log('✅ Step 1 validation passed, moving to step 2');
-      setSignupStep(2);
-    }
-    else if (step === 2) {
-      // Step 2 is WhatsApp verification - handled separately
-      console.log('⚠️ Step 2 - WhatsApp verification handled separately');
-      return;
+      console.log('✅ Step 2 validation passed, moving to step 3');
+      setSignupStep(3);
     }
     else if (step === 3) {
       console.log('📝 Validating step 3 data');
@@ -451,8 +456,8 @@ const AuthPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // NEW WORKFLOW: Create account only on final step completion
-      const email = signupData.email;
+      // Generate email from phone number for backend compatibility
+      const email = `${signupData.phone}@pakety.app`;
       
       // Register user with full name and phone
       const newUser = await register(email, signupData.password, signupData.name, signupData.phone);
@@ -567,13 +572,14 @@ const AuthPage: React.FC = () => {
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <Input
-                  type="email"
-                  placeholder="البريد الإلكتروني"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                  type="text"
+                  placeholder="رقم الموبايل أو البريد الإلكتروني"
+                  value={loginData.identifier}
+                  onChange={(e) => setLoginData(prev => ({ ...prev, identifier: e.target.value }))}
                   className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                   dir="rtl"
+                  data-testid="input-identifier-login"
                 />
                 <div className="relative">
                   <Input
@@ -611,9 +617,10 @@ const AuthPage: React.FC = () => {
 
                 <Button
                   type="submit"
-                  disabled={!loginData.email || !loginData.password || isLoading}
+                  disabled={!loginData.identifier || !loginData.password || isLoading}
                   className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
                   style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                  data-testid="button-login"
                 >
                   {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
                 </Button>
@@ -666,57 +673,6 @@ const AuthPage: React.FC = () => {
                     className="absolute inset-0"
                   >
                     {signupStep === 1 && (
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-gray-800 text-center mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
-                          بيانات الحساب
-                        </h3>
-                        <Input
-                          type="email"
-                          placeholder="البريد الإلكتروني"
-                          value={signupData.email}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))}
-                          className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          dir="rtl"
-                        />
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="كلمة المرور"
-                            value={signupData.password}
-                            onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
-                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl pr-4 pl-12"
-                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                            dir="rtl"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                          >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                        <Input
-                          type="password"
-                          placeholder="تأكيد كلمة المرور"
-                          value={signupData.confirmPassword}
-                          onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                          className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl mb-3"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                          dir="rtl"
-                        />
-                        <Button
-                          onClick={handleSignupNext}
-                          className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
-                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
-                        >
-                          التالي
-                        </Button>
-                      </div>
-                    )}
-
-                    {signupStep === 2 && (
                       <div className="space-y-4">
                         <h3 className="text-sm font-medium text-gray-800 text-center mb-4" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
                           التحقق من رقم WhatsApp
@@ -745,6 +701,7 @@ const AuthPage: React.FC = () => {
                           style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace', fontSize: '18px', lineHeight: '1', fontWeight: 'normal' }}
                           maxLength={11}
                           dir="ltr"
+                          data-testid="input-phone-signup"
                         />
                         {!otpSent ? (
                           <Button
@@ -752,6 +709,7 @@ const AuthPage: React.FC = () => {
                             disabled={signupData.phone.length !== 11 || !signupData.phone.startsWith('07') || isLoading}
                             className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl transition-all duration-300"
                             style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            data-testid="button-send-otp"
                           >
                             {isLoading ? 'جاري الإرسال...' : 'إرسال رمز التأكيد'}
                           </Button>
@@ -765,17 +723,65 @@ const AuthPage: React.FC = () => {
                               className="w-full h-12 text-center text-lg border-gray-300 focus:border-green-400 focus:ring-0 rounded-xl tracking-wider"
                               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
                               maxLength={4}
+                              data-testid="input-otp"
                             />
                             <Button
                               onClick={verifyOTP}
                               disabled={otpCode.length !== 4 || isLoading}
                               className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl transition-all duration-300"
                               style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                              data-testid="button-verify-otp"
                             >
                               {isLoading ? 'جاري التحقق...' : 'تأكيد الرمز'}
                             </Button>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {signupStep === 2 && (
+                      <div className="space-y-3">
+                        <h3 className="text-sm font-medium text-gray-800 text-center mb-2" style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}>
+                          إنشاء كلمة المرور
+                        </h3>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="كلمة المرور"
+                            value={signupData.password}
+                            onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
+                            className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl pr-4 pl-12"
+                            style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                            dir="rtl"
+                            data-testid="input-password-signup"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        <Input
+                          type="password"
+                          placeholder="تأكيد كلمة المرور"
+                          value={signupData.confirmPassword}
+                          onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          className="w-full h-12 text-right text-sm border-gray-300 focus:border-gray-400 focus:ring-0 rounded-xl"
+                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                          dir="rtl"
+                          data-testid="input-confirm-password"
+                        />
+                        <Button
+                          onClick={handleSignupNext}
+                          disabled={signupData.password.length < 6 || signupData.password !== signupData.confirmPassword}
+                          className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-sm rounded-xl shadow-lg"
+                          style={{ fontFamily: 'Cairo, system-ui, sans-serif' }}
+                          data-testid="button-next-password"
+                        >
+                          التالي
+                        </Button>
                       </div>
                     )}
 
@@ -834,6 +840,11 @@ const AuthPage: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
+              {signupStep === 2 && (
+                <div className="mt-1" style={{ visibility: 'hidden', height: 0 }}>
+                  {/* Button already in step 2 content */}
+                </div>
+              )}
               {signupStep === 3 && (
                 <div className="mt-1">
                   <Button

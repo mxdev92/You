@@ -50,14 +50,20 @@ class PostgresAuthService {
     }
   }
 
-  async signIn(email: string, password: string): Promise<AuthUser> {
-    console.log('PostgreSQL Auth: Signing in', email);
+  async signIn(identifier: string, password: string): Promise<AuthUser> {
+    console.log('PostgreSQL Auth: Signing in', identifier);
     try {
+      // Check if identifier is phone (starts with 07) or email (contains @)
+      const isPhone = identifier.startsWith('07') && !identifier.includes('@');
+      const body = isPhone 
+        ? { phone: identifier, password }
+        : { email: identifier, password };
+      
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {

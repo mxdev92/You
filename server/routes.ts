@@ -1108,13 +1108,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/signin', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, phone } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Email and password are required' });
+      // Support both phone and email login
+      if (!password || (!email && !phone)) {
+        return res.status(400).json({ message: 'Phone/email and password are required' });
       }
 
-      const user = await storage.getUserByEmail(email);
+      // Try to find user by phone first, then by email
+      let user = null;
+      if (phone) {
+        user = await storage.getUserByPhone(phone);
+      } else if (email) {
+        user = await storage.getUserByEmail(email);
+      }
+      
       if (!user || user.passwordHash !== password) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
