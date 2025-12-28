@@ -6,47 +6,47 @@ interface PromotionProgressBarProps {
   cartTotal: number;
 }
 
-interface PromotionCalculation {
-  currentTier: PromotionTier | null;
-  nextTier: PromotionTier | null;
-  amountToNext: number;
-  freeDelivery: boolean;
-  discountAmount: number;
-  allTiers: PromotionTier[];
-}
-
 export default function PromotionProgressBar({ cartTotal }: PromotionProgressBarProps) {
-  const { data: promoData, isLoading } = useQuery<PromotionCalculation>({
-    queryKey: ['/api/promotions/calculate', cartTotal],
-    enabled: true,
+  // Fetch tiers only once - don't include cartTotal in query key
+  const { data: tiers = [], isLoading } = useQuery<PromotionTier[]>({
+    queryKey: ['/api/admin/promotions/tiers'],
+    queryFn: () => fetch('/api/admin/promotions/tiers').then(res => res.json()),
     refetchOnWindowFocus: false,
-    staleTime: 30000,
+    staleTime: 60000, // Cache for 1 minute
   });
 
-  if (isLoading || !promoData) {
-    return null;
-  }
+  // Filter only enabled tiers and sort by tierRank
+  const enabledTiers = tiers
+    .filter(t => t.isEnabled)
+    .sort((a, b) => a.tierRank - b.tierRank);
 
-  const { allTiers } = promoData;
-  
-  // Define 4 steps: Start, Free Delivery, 2000 Discount, 5000 Discount
+  // Define 4 steps: Start + 3 tier rewards
   const steps = [
-    { id: 0, label: 'البداية', amount: 0, rewardType: 'start' },
-    ...allTiers.map(tier => ({
+    { id: 0, label: 'البداية', amount: 0, rewardType: 'start', rewardValue: 0 },
+    ...enabledTiers.map(tier => ({
       id: tier.id,
       label: tier.rewardType === 'free_delivery' ? 'توصيل مجاني' : `خصم ${(tier.rewardValue / 1000).toLocaleString('ar-IQ')},000`,
       amount: tier.minAmount,
-      rewardType: tier.rewardType
+      rewardType: tier.rewardType,
+      rewardValue: tier.rewardValue
     }))
   ];
 
+  // Always show the banner even during initial load (with placeholder steps)
+  const displaySteps = steps.length > 1 ? steps : [
+    { id: 0, label: 'البداية', amount: 0, rewardType: 'start', rewardValue: 0 },
+    { id: 1, label: 'توصيل مجاني', amount: 15000, rewardType: 'free_delivery', rewardValue: 0 },
+    { id: 2, label: 'خصم 2,000', amount: 35000, rewardType: 'discount', rewardValue: 2000 },
+    { id: 3, label: 'خصم 5,000', amount: 50000, rewardType: 'discount', rewardValue: 5000 },
+  ];
+
   // Find max amount for progress calculation
-  const maxAmount = steps.length > 1 ? steps[steps.length - 1].amount : 1;
+  const maxAmount = displaySteps.length > 1 ? displaySteps[displaySteps.length - 1].amount : 1;
   
   // Calculate which step is current
   const getCurrentStepIndex = () => {
-    for (let i = steps.length - 1; i >= 0; i--) {
-      if (cartTotal >= steps[i].amount) {
+    for (let i = displaySteps.length - 1; i >= 0; i--) {
+      if (cartTotal >= displaySteps[i].amount) {
         return i;
       }
     }
@@ -57,17 +57,18 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
   
   // Calculate progress percentage between steps
   const getProgressPercent = () => {
-    if (currentStepIndex >= steps.length - 1) return 100;
+    if (displaySteps.length <= 1) return 0;
+    if (currentStepIndex >= displaySteps.length - 1) return 100;
     
-    const currentStep = steps[currentStepIndex];
-    const nextStep = steps[currentStepIndex + 1];
+    const currentStep = displaySteps[currentStepIndex];
+    const nextStep = displaySteps[currentStepIndex + 1];
     const stepRange = nextStep.amount - currentStep.amount;
     const progressInStep = cartTotal - currentStep.amount;
     const stepProgress = stepRange > 0 ? (progressInStep / stepRange) : 0;
     
     // Calculate total progress: completed steps + current step progress
-    const completedPercent = (currentStepIndex / (steps.length - 1)) * 100;
-    const stepPercent = (1 / (steps.length - 1)) * 100 * stepProgress;
+    const completedPercent = (currentStepIndex / (displaySteps.length - 1)) * 100;
+    const stepPercent = (1 / (displaySteps.length - 1)) * 100 * stepProgress;
     
     return Math.min(completedPercent + stepPercent, 100);
   };
@@ -78,7 +79,7 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
     <div className="bg-gray-50 rounded-lg p-3 mb-3" dir="rtl">
       {/* Step Icons */}
       <div className="flex justify-between items-center mb-1">
-        {steps.map((step, index) => {
+        {displaySteps.map((step, index) => {
           const isCompleted = cartTotal >= step.amount;
           const isCurrent = index === currentStepIndex && cartTotal > 0;
           
@@ -120,14 +121,14 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
       {/* Progress Bar */}
       <div className="relative h-1.5 bg-gray-200 rounded-full mx-4 mb-1">
         <div 
-          className="absolute top-0 right-0 h-full bg-green-500 rounded-full transition-all duration-500"
+          className="absolute top-0 right-0 h-full bg-green-500 rounded-full transition-all duration-300"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
       
       {/* Amount Labels */}
       <div className="flex justify-between items-center px-1">
-        {steps.map((step) => (
+        {displaySteps.map((step) => (
           <span 
             key={step.id} 
             className="text-[10px] text-gray-500"
