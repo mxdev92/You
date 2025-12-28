@@ -64,7 +64,7 @@ export default function PromotionProgressBar({ cartTotal }: PromotionProgressBar
   }, [cartTotal, displaySteps]);
 
   return (
-    <div className="bg-gray-50 rounded-lg p-2 mb-2" dir="rtl">
+    <div className="bg-gray-50 rounded-t-2xl p-2 mb-2" dir="rtl">
       {/* Step Icons - Compact */}
       <div className="flex justify-between items-start mb-1">
         {displaySteps.map((step, index) => {
