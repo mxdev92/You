@@ -333,34 +333,42 @@ export class WasenderAPIService {
   }
 
   /**
-   * Format Iraqi phone numbers for WasenderAPI (requires +964 format)
+   * Format Iraqi phone numbers for WasenderAPI (requires 964 format without + sign)
    */
   private formatPhoneNumber(phone: string): string {
-    // Remove any non-digit characters
+    // Remove any non-digit characters (including + sign)
     let cleaned = phone.replace(/\D/g, '');
     
-    // Handle Iraqi format: 07XXXXXXXX -> +9647XXXXXXXX
+    // Handle Iraqi format: 07XXXXXXXX -> 9647XXXXXXXX
     if (cleaned.startsWith('07') && cleaned.length === 11) {
-      return `+964${cleaned.substring(1)}`;
+      const formatted = `964${cleaned.substring(1)}`;
+      console.log(`📱 Phone format: ${phone} -> ${formatted}`);
+      return formatted;
     }
     
-    // Handle international format: 9647XXXXXXXX -> +9647XXXXXXXX
+    // Handle international format: 9647XXXXXXXX -> 9647XXXXXXXX (already correct)
     if (cleaned.startsWith('964') && cleaned.length === 13) {
-      return `+${cleaned}`;
+      console.log(`📱 Phone format: ${phone} -> ${cleaned}`);
+      return cleaned;
     }
     
-    // Handle without country code: 7XXXXXXXX -> +9647XXXXXXXX
+    // Handle without country code: 7XXXXXXXX -> 9647XXXXXXXX
     if (cleaned.startsWith('7') && cleaned.length === 10) {
-      return `+964${cleaned}`;
+      const formatted = `964${cleaned}`;
+      console.log(`📱 Phone format: ${phone} -> ${formatted}`);
+      return formatted;
     }
     
-    // Handle already formatted with +
+    // Handle already formatted with + (remove the +)
     if (phone.startsWith('+964')) {
-      return phone;
+      const formatted = phone.substring(1);
+      console.log(`📱 Phone format: ${phone} -> ${formatted}`);
+      return formatted;
     }
     
-    // Return with + prefix if not already there
-    return phone.startsWith('+') ? phone : `+${cleaned}`;
+    // Return cleaned number (digits only)
+    console.log(`📱 Phone format: ${phone} -> ${cleaned}`);
+    return cleaned;
   }
 
   /**
