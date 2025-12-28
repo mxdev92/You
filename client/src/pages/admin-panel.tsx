@@ -2212,6 +2212,13 @@ function PromotionsManagement() {
     updatedAt: string;
   }
   
+  // Local state for editing values (prevents saving on every keystroke)
+  const [editingValues, setEditingValues] = useState<Record<number, {
+    minAmount?: string;
+    maxAmount?: string;
+    rewardValue?: string;
+  }>>({});
+  
   const { data: tiers = [], isLoading } = useQuery<PromotionTier[]>({
     queryKey: ['/api/admin/promotions/tiers'],
     queryFn: () => fetch('/api/admin/promotions/tiers').then(res => res.json()),
@@ -2229,7 +2236,7 @@ function PromotionsManagement() {
       toast({
         title: "تم التحديث",
         description: "تم تحديث العرض بنجاح",
-        duration: 3000,
+        duration: 2000,
       });
     },
     onError: () => {
@@ -2241,6 +2248,53 @@ function PromotionsManagement() {
       });
     }
   });
+  
+  // Get current editing value or fall back to tier value
+  const getEditValue = (tierId: number, field: 'minAmount' | 'maxAmount' | 'rewardValue', tierValue: number | null) => {
+    const editing = editingValues[tierId];
+    if (editing && editing[field] !== undefined) {
+      return editing[field];
+    }
+    return tierValue?.toString() || '';
+  };
+  
+  // Update local editing state
+  const handleInputChange = (tierId: number, field: 'minAmount' | 'maxAmount' | 'rewardValue', value: string) => {
+    setEditingValues(prev => ({
+      ...prev,
+      [tierId]: {
+        ...prev[tierId],
+        [field]: value
+      }
+    }));
+  };
+  
+  // Save on blur
+  const handleInputBlur = (tierId: number, field: 'minAmount' | 'maxAmount' | 'rewardValue', originalValue: number | null) => {
+    const editing = editingValues[tierId];
+    if (!editing || editing[field] === undefined) return;
+    
+    const newValue = field === 'maxAmount' 
+      ? (editing[field] ? parseInt(editing[field]!) : null)
+      : parseInt(editing[field]!) || 0;
+    
+    // Only save if value changed
+    if (newValue !== originalValue) {
+      updateTierMutation.mutate({ id: tierId, [field]: newValue });
+    }
+    
+    // Clear local editing state for this field
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      if (newState[tierId]) {
+        delete newState[tierId][field];
+        if (Object.keys(newState[tierId]).length === 0) {
+          delete newState[tierId];
+        }
+      }
+      return newState;
+    });
+  };
 
   const formatAmount = (amount: number) => {
     return amount.toLocaleString('ar-IQ') + ' د.ع';
@@ -2316,11 +2370,9 @@ function PromotionsManagement() {
                     <Label className="text-xs text-gray-500">الحد الأدنى</Label>
                     <Input
                       type="number"
-                      value={tier.minAmount}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 0;
-                        updateTierMutation.mutate({ id: tier.id, minAmount: value });
-                      }}
+                      value={getEditValue(tier.id, 'minAmount', tier.minAmount)}
+                      onChange={(e) => handleInputChange(tier.id, 'minAmount', e.target.value)}
+                      onBlur={() => handleInputBlur(tier.id, 'minAmount', tier.minAmount)}
                       className="mt-1"
                     />
                   </div>
@@ -2328,12 +2380,10 @@ function PromotionsManagement() {
                     <Label className="text-xs text-gray-500">الحد الأقصى</Label>
                     <Input
                       type="number"
-                      value={tier.maxAmount || ''}
+                      value={getEditValue(tier.id, 'maxAmount', tier.maxAmount)}
                       placeholder="غير محدود"
-                      onChange={(e) => {
-                        const value = e.target.value ? parseInt(e.target.value) : null;
-                        updateTierMutation.mutate({ id: tier.id, maxAmount: value });
-                      }}
+                      onChange={(e) => handleInputChange(tier.id, 'maxAmount', e.target.value)}
+                      onBlur={() => handleInputBlur(tier.id, 'maxAmount', tier.maxAmount)}
                       className="mt-1"
                     />
                   </div>
@@ -2358,12 +2408,10 @@ function PromotionsManagement() {
                     <Label className="text-xs text-gray-500">قيمة الخصم (د.ع)</Label>
                     <Input
                       type="number"
-                      value={tier.rewardValue}
+                      value={getEditValue(tier.id, 'rewardValue', tier.rewardValue)}
                       disabled={tier.rewardType === 'free_delivery'}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 0;
-                        updateTierMutation.mutate({ id: tier.id, rewardValue: value });
-                      }}
+                      onChange={(e) => handleInputChange(tier.id, 'rewardValue', e.target.value)}
+                      onBlur={() => handleInputBlur(tier.id, 'rewardValue', tier.rewardValue)}
                       className="mt-1"
                     />
                   </div>
