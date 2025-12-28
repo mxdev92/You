@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
 import type { Product } from "@shared/schema";
 import ProductCard from "./product-card";
 import { useCategoryStore } from "@/store/category-store";
-import { useRef, useEffect, useState } from "react";
+import { useEffect } from "react";
 
 function ShimmerCard() {
   return (
@@ -27,88 +26,54 @@ function ShimmerCard() {
 }
 
 export default function ProductsGrid() {
-  const { selectedCategoryId } = useCategoryStore();
-  const hasMounted = useRef(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const prevCategoryRef = useRef(selectedCategoryId);
+  const { selectedCategoryId, productsByCategory, allProductsLoaded, setAllProducts } = useCategoryStore();
 
-  const { data: products, isLoading, isFetching } = useQuery<Product[]>({
-    queryKey: ["/api/products", selectedCategoryId],
+  // Load ALL products once - enables instant switching
+  const { isLoading } = useQuery<Product[]>({
+    queryKey: ["/api/products/all"],
     queryFn: async () => {
-      const response = await fetch(`/api/products?categoryId=${selectedCategoryId}`, { credentials: "include" });
+      const response = await fetch("/api/products", { credentials: "include" });
       if (!response.ok) throw new Error("Failed to fetch products");
-      return response.json();
+      const products = await response.json();
+      setAllProducts(products);
+      return products;
     },
-    staleTime: 60000,
-    gcTime: 300000,
+    staleTime: 300000,
+    gcTime: 600000,
     refetchOnWindowFocus: false,
-    placeholderData: (previousData) => previousData,
+    enabled: !allProductsLoaded,
   });
 
-  useEffect(() => {
-    if (prevCategoryRef.current !== selectedCategoryId) {
-      setIsTransitioning(true);
-      prevCategoryRef.current = selectedCategoryId;
-      const timer = setTimeout(() => setIsTransitioning(false), 150);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedCategoryId]);
+  // Get products INSTANTLY from memory - no animation delay
+  const products = productsByCategory[selectedCategoryId] || [];
+  const showShimmer = isLoading && !allProductsLoaded;
 
-  useEffect(() => {
-    hasMounted.current = true;
-  }, []);
-
-  const showShimmer = isLoading && !products;
-
-  return (
-    <section className="px-4 py-6">
-      {showShimmer ? (
+  if (showShimmer) {
+    return (
+      <section className="px-4 py-6">
         <div className="grid grid-cols-3 gap-3 md:gap-4">
           {Array.from({ length: 9 }).map((_, index) => (
             <ShimmerCard key={index} />
           ))}
         </div>
-      ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedCategoryId}
-            className="grid grid-cols-3 gap-3 md:gap-4"
-            initial={hasMounted.current ? { opacity: 0.7 } : false}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0.7 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-          >
-            {products?.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={!hasMounted.current ? { opacity: 0, scale: 0.95 } : false}
-                animate={{ 
-                  opacity: isTransitioning ? 0.8 : 1, 
-                  scale: 1,
-                }}
-                transition={{ 
-                  duration: 0.15, 
-                  delay: !hasMounted.current ? index * 0.02 : 0,
-                  ease: "easeOut"
-                }}
-                className="transform-gpu"
-              >
-                <ProductCard product={product} />
-              </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
-      )}
+      </section>
+    );
+  }
 
-      {!isLoading && products?.length === 0 && (
-        <motion.div 
-          className="text-center py-12"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
+  return (
+    <section className="px-4 py-6">
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
+        {products.map((product) => (
+          <div key={product.id} className="transform-gpu">
+            <ProductCard product={product} />
+          </div>
+        ))}
+      </div>
+
+      {allProductsLoaded && products.length === 0 && (
+        <div className="text-center py-12">
           <p className="text-gray-500">No products found in this category.</p>
-        </motion.div>
+        </div>
       )}
     </section>
   );
